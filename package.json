@@ -1,0 +1,53 @@
+{
+  "name": "bulk-whatsapp-manager-backend",
+  "version": "1.0.0",
+  "description": "This is a backend of bulk whatsapp messenger app using MySQL database",
+  "keywords": [
+    "Javascript",
+    "MySQL",
+    "Node",
+    "Express",
+    "Bulk",
+    "Whatsapp"
+  ],
+  "homepage": "https://github.com/NileshKumar2404/Bulk-whatsapp-Manager-Backend#readme",
+  "bugs": {
+    "url": "https://github.com/NileshKumar2404/Bulk-whatsapp-Manager-Backend/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NileshKumar2404/Bulk-whatsapp-Manager-Backend.git"
+  },
+  "license": "ISC",
+  "author": "Nilesh Kumar",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "DOTENV_CONFIG_PATH=./property.env nodemon -r dotenv/config --experimental-json-modules src/index.js",
+    "start": "DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules src/index.js",
+    "reset-db": "DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules reset-database.js",
+    "seed-db": "DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules seed-database.js",
+    "migrate-password-reset": "DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules database/migrate_password_reset.js",
+    "migrate-password-reset-sequelize": "DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules database/migrate_password_reset_sequelize.js"
+  },
+  "dependencies": {
+    "axios": "^1.12.2",
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
+    "express": "^5.1.0",
+    "express-handlebars": "^8.0.3",
+    "handlebars": "^4.7.8",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
+    "mysql2": "^3.15.2",
+    "nodemailer": "^7.0.11",
+    "nodemon": "^3.1.10",
+    "pdfkit": "^0.17.2",
+    "puppeteer": "^24.31.0",
+    "sequelize": "^6.37.7",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
+  }
+}

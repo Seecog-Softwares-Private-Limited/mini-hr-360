@@ -1,0 +1,544 @@
+{{!-- views/documents.hbs --}}
+<div class="container-fluid documents-page">
+  <div class="row">
+    {{!-- Sidebar same as Employees page, but Documents active --}}
+    <div class="col-md-3 col-lg-2 px-0">
+      <div class="sidebar-wrapper">
+        <button class="sidebar-toggle" aria-label="Toggle sidebar">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <div class="sidebar p-3">
+        <div class="text-center mb-2">
+          <h5 class="text-white">mini HR 360</h5>
+          <div class="user-info">
+            <div class="user-avatar">
+              <i class="fas fa-user"></i>
+            </div>
+            <div class="user-name">
+              <span class="user-name-text">{{user.firstName}} {{user.lastName}}</span>
+            </div>
+          </div>
+        </div>
+        <nav class="nav flex-column">
+          <!-- WhatsApp Menu - DISABLED -->
+          {{!-- <div class="menu-toggle" onclick="toggleMenu('whatsapp-submenu')">
+            <div class="nav-link">
+              <i class="fab fa-whatsapp"></i> WhatsApp
+              <i class="fas fa-chevron-down float-end"></i>
+            </div>
+          </div>
+          <div class="submenu show" id="whatsapp-submenu">
+            <a class="nav-link" href="/dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a class="nav-link" href="/business"><i class="fas fa-building"></i> My Businesses</a>
+            <a class="nav-link" href="/customers"><i class="fas fa-users"></i> Customers</a>
+            <a class="nav-link" href="/templates"><i class="fas fa-file-alt"></i> Templates</a>
+            <a class="nav-link" href="/campaigns"><i class="fas fa-bullhorn"></i> Campaigns</a>
+          </div> --}}
+
+          <!-- HR Tools Menu -->
+          <div class="menu-toggle" onclick="toggleMenu('hr-submenu')">
+            <div class="nav-link active">
+              <i class="fas fa-users-cog"></i> HR Tools
+              <i class="fas fa-chevron-down float-end"></i>
+            </div>
+          </div>
+          <div class="submenu show" id="hr-submenu">
+            <a class="nav-link" href="/employees"><i class="fas fa-user-tie"></i> Employees</a>
+            <a class="nav-link active" href="/documents"><i class="fas fa-file-signature"></i> Generate Documents</a>
+          </div>
+
+          <div class="menu-toggle mt-2" onclick="toggleMenu('utilities-submenu')">
+            <div class="nav-link">
+              <i class="fas fa-tools"></i> Utilities
+              <i class="fas fa-chevron-down float-end"></i>
+            </div>
+          </div>
+          <div class="submenu" id="utilities-submenu">
+            <a class="nav-link" href="/document-types"><i class="fas fa-layer-group"></i> Document Templates</a>
+          </div>
+
+          <hr class="text-white-50" />
+          <a class="nav-link logout-link" href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </nav>
+        </div>
+      </div>
+      <div class="main-content-overlay"></div>
+    </div>
+
+    <div class="col-md-9 col-lg-10">
+      <div class="main-content p-4">
+        <h2 class="mb-4">Generate Documents</h2>
+
+        <div class="card">
+          <div class="card-body">
+            <form id="generateDocumentForm" method="POST" action="/documents/generate">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Employee</label>
+                  <select name="employeeId" id="employeeSelect" class="form-select" required>
+                    <option value="">Select employee</option>
+                    {{#each employees}}
+                      <option
+                        value="{{id}}"
+                        data-internship-start-date="{{internshipStartDatePrefill}}"
+                        data-internship-offer-date="{{internshipOfferDatePrefill}}"
+                      >
+                        {{empName}} ({{empId}})
+                      </option>
+                    {{/each}}
+                  </select>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Document Type</label>
+                  {{!-- Custom dropdown with icons --}}
+                  <div class="custom-select-wrapper">
+                    <select
+                      name="documentTypeId"
+                      id="documentTypeSelect"
+                      class="form-select custom-select-hidden"
+                      required
+                    >
+                      <option value="">Select document type</option>
+                      {{#each documentTypes}}
+                        <option
+                          value="{{id}}"
+                          data-code="{{code}}"
+                          data-icon="{{icon}}"
+                        >
+                          {{name}}
+                        </option>
+                      {{/each}}
+                    </select>
+                    <div class="custom-select" id="customDocumentTypeSelect">
+                      <div class="custom-select-trigger">
+                        <span class="custom-select-value">
+                          <i class="fas fa-file-alt me-2"></i>
+                          <span class="custom-select-text">Select document type</span>
+                        </span>
+                        <i class="fas fa-chevron-down custom-select-arrow"></i>
+                      </div>
+                      <div class="custom-select-options" id="customDocumentTypeOptions">
+                        <div class="custom-select-option" data-value="">
+                          <i class="fas fa-file-alt me-2"></i>
+                          <span>Select document type</span>
+                        </div>
+                        {{#each documentTypes}}
+                          <div class="custom-select-option" data-value="{{id}}" data-code="{{code}}">
+                            {{#if icon}}
+                              <i class="{{icon}} me-2"></i>
+                            {{else}}
+                              <i class="fas fa-file-alt me-2"></i>
+                            {{/if}}
+                            <span>{{name}}</span>
+                          </div>
+                        {{/each}}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {{!-- Extra dynamic fields section --}}
+              <div class="row g-3 mt-3">
+                {{!-- Bonus Letter extra field --}}
+                <div class="col-md-6" id="bonusFieldWrapper" style="display: none;">
+                  <label class="form-label" for="bonusAmount">
+                    Bonus Amount (₹)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    class="form-control"
+                    id="bonusAmount"
+                    name="bonusAmount"
+                    placeholder="Enter bonus amount"
+                  />
+                </div>
+
+                {{!-- Increment Letter extra field --}}
+                <div class="col-md-6" id="incrementFieldWrapper" style="display: none;">
+                  <label class="form-label" for="incrementAmount">
+                    Salary Increment (₹)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    class="form-control"
+                    id="incrementAmount"
+                    name="incrementAmount"
+                    placeholder="Enter increment amount"
+                  />
+                </div>
+              </div>
+
+              {{!-- Salary Slip extra fields --}}
+              <div class="row g-3 mt-3">
+                <div class="col-md-6" id="salaryMonthWrapper" style="display: none;">
+                  <label class="form-label" for="salaryMonth">
+                    Salary Month
+                  </label>
+                  <select
+                    class="form-select"
+                    id="salaryMonth"
+                    name="salaryMonth"
+                  >
+                    <option value="">Select month</option>
+                    <option value="1">January</option>
+                    <option value="2">February</option>
+                    <option value="3">March</option>
+                    <option value="4">April</option>
+                    <option value="5">May</option>
+                    <option value="6">June</option>
+                    <option value="7">July</option>
+                    <option value="8">August</option>
+                    <option value="9">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                  </select>
+                </div>
+
+                <div class="col-md-6" id="reimbursementWrapper" style="display: none;">
+                  <label class="form-label" for="reimbursement">
+                    Reimbursement (₹)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    class="form-control"
+                    id="reimbursement"
+                    name="reimbursement"
+                    placeholder="Enter reimbursement amount"
+                  />
+                </div>
+
+                {{!-- ✅ NEW: Non Paid Leave (0 to 28) --}}
+                <div class="col-md-6" id="nonPaidLeaveWrapper" style="display: none;">
+                  <label class="form-label" for="nonPaidLeave">
+                    Non Paid Leave (LOP Days)
+                  </label>
+                  <select class="form-select" id="nonPaidLeave" name="nonPaidLeave">
+                    <option value="0">0</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">10</option>
+                    <option value="11">11</option>
+                    <option value="12">12</option>
+                    <option value="13">13</option>
+                    <option value="14">14</option>
+                    <option value="15">15</option>
+                    <option value="16">16</option>
+                    <option value="17">17</option>
+                    <option value="18">18</option>
+                    <option value="19">19</option>
+                    <option value="20">20</option>
+                    <option value="21">21</option>
+                    <option value="22">22</option>
+                    <option value="23">23</option>
+                    <option value="24">24</option>
+                    <option value="25">25</option>
+                    <option value="26">26</option>
+                    <option value="27">27</option>
+                    <option value="28">28</option>
+                  </select>
+                </div>
+              </div>
+
+              {{!-- Offer Letter extra fields --}}
+              <div class="row g-3 mt-3">
+                <div class="col-md-6" id="offerJoiningDateWrapper" style="display: none;">
+                  <label class="form-label" for="offerJoiningDate">
+                    Joining Date
+                  </label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="offerJoiningDate"
+                    name="joiningDate"
+                  />
+                </div>
+              </div>
+
+              {{!-- Internship Offer extra fields --}}
+              <div class="row g-3 mt-3">
+                <div class="col-md-6" id="internshipOfferDateWrapper" style="display: none;">
+                  <label class="form-label" for="internshipOfferDate">
+                    Internship Offer Date
+                  </label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="internshipOfferDate"
+                    name="internshipOfferDate"
+                  />
+                </div>
+                
+                <div class="col-md-6" id="internshipStartWrapper" style="display: none;">
+                  <label class="form-label" for="internshipStartDate">
+                    Internship Start Date
+                  </label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="internshipStartDate"
+                    name="internshipStartDate"
+                  />
+                </div>
+
+                
+              </div>
+
+              <div class="mt-4 d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary">
+                  <i class="fas fa-file-pdf me-2"></i>Generate Document (PDF)
+                </button>
+              </div>
+            </form>
+
+            <p class="text-muted mt-3">
+              The PDF will be generated in A4 size and downloaded automatically.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const docTypeSelect = document.getElementById('documentTypeSelect');
+    const employeeSelect = document.getElementById('employeeSelect');
+    const customSelect = document.getElementById('customDocumentTypeSelect');
+    const customSelectTrigger = customSelect?.querySelector('.custom-select-trigger');
+    const customSelectOptions = document.getElementById('customDocumentTypeOptions');
+    const customSelectValue = customSelect?.querySelector('.custom-select-value');
+    const customSelectText = customSelectValue?.querySelector('.custom-select-text');
+
+    // Initialize custom dropdown
+    function initCustomDropdown() {
+      if (!customSelect || !docTypeSelect) return;
+
+      // Sync custom dropdown with native select
+      function syncCustomDropdown() {
+        const selectedOption = docTypeSelect.options[docTypeSelect.selectedIndex];
+        if (!selectedOption || !selectedOption.value) {
+          customSelectText.textContent = 'Select document type';
+          customSelectValue.innerHTML = '<i class="fas fa-file-alt me-2"></i><span class="custom-select-text">Select document type</span>';
+          customSelectOptions.querySelectorAll('.custom-select-option').forEach(opt => opt.classList.remove('selected'));
+          return;
+        }
+
+        const optionElement = customSelectOptions.querySelector(`[data-value="${selectedOption.value}"]`);
+        if (optionElement) {
+          const icon = selectedOption.getAttribute('data-icon') || 'fas fa-file-alt';
+          customSelectValue.innerHTML = `<i class="${icon} me-2"></i><span class="custom-select-text">${selectedOption.textContent}</span>`;
+          
+          customSelectOptions.querySelectorAll('.custom-select-option').forEach(opt => opt.classList.remove('selected'));
+          optionElement.classList.add('selected');
+        }
+      }
+
+      // Handle custom dropdown click
+      customSelectTrigger.addEventListener('click', function(e) {
+        e.stopPropagation();
+        customSelect.classList.toggle('open');
+      });
+
+      // Handle option selection
+      customSelectOptions.querySelectorAll('.custom-select-option').forEach(option => {
+        option.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const value = this.getAttribute('data-value');
+          const code = this.getAttribute('data-code');
+          
+          // Update native select
+          docTypeSelect.value = value;
+          
+          // Update custom dropdown display
+          const icon = this.querySelector('i').className;
+          const text = this.querySelector('span').textContent;
+          customSelectValue.innerHTML = `<i class="${icon} me-2"></i><span class="custom-select-text">${text}</span>`;
+          
+          // Update selected state
+          customSelectOptions.querySelectorAll('.custom-select-option').forEach(opt => opt.classList.remove('selected'));
+          this.classList.add('selected');
+          
+          // Close dropdown
+          customSelect.classList.remove('open');
+          
+          // Trigger change event on native select
+          const changeEvent = new Event('change', { bubbles: true });
+          docTypeSelect.dispatchEvent(changeEvent);
+        });
+      });
+
+      // Close dropdown when clicking outside
+      document.addEventListener('click', function(e) {
+        if (!customSelect.contains(e.target)) {
+          customSelect.classList.remove('open');
+        }
+      });
+
+      // Initial sync
+      syncCustomDropdown();
+
+      // Sync when native select changes (if changed programmatically)
+      docTypeSelect.addEventListener('change', syncCustomDropdown);
+    }
+
+    // Initialize custom dropdown on page load
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initCustomDropdown);
+    } else {
+      initCustomDropdown();
+    }
+
+    const bonusFieldWrapper = document.getElementById('bonusFieldWrapper');
+    const incrementFieldWrapper = document.getElementById('incrementFieldWrapper');
+    const bonusAmountInput = document.getElementById('bonusAmount');
+    const incrementAmountInput = document.getElementById('incrementAmount');
+
+    const salaryMonthWrapper = document.getElementById('salaryMonthWrapper');
+    const reimbursementWrapper = document.getElementById('reimbursementWrapper');
+    const salaryMonthInput = document.getElementById('salaryMonth');
+    const reimbursementInput = document.getElementById('reimbursement');
+
+    // ✅ NEW: Non Paid Leave
+    const nonPaidLeaveWrapper = document.getElementById('nonPaidLeaveWrapper');
+    const nonPaidLeaveInput = document.getElementById('nonPaidLeave');
+
+    const offerJoiningDateWrapper = document.getElementById('offerJoiningDateWrapper');
+    const offerJoiningDateInput = document.getElementById('offerJoiningDate');
+
+    // Internship Offer fields
+    const internshipStartWrapper = document.getElementById('internshipStartWrapper');
+    const internshipOfferDateWrapper = document.getElementById('internshipOfferDateWrapper');
+    const internshipStartInput = document.getElementById('internshipStartDate');
+    const internshipOfferDateInput = document.getElementById('internshipOfferDate');
+
+    function resetDynamicFields() {
+      bonusFieldWrapper.style.display = 'none';
+      incrementFieldWrapper.style.display = 'none';
+      salaryMonthWrapper.style.display = 'none';
+      reimbursementWrapper.style.display = 'none';
+      offerJoiningDateWrapper.style.display = 'none';
+      internshipStartWrapper.style.display = 'none';
+      internshipOfferDateWrapper.style.display = 'none';
+
+      // ✅ NEW
+      if (nonPaidLeaveWrapper) nonPaidLeaveWrapper.style.display = 'none';
+
+      if (bonusAmountInput) bonusAmountInput.value = '';
+      if (incrementAmountInput) incrementAmountInput.value = '';
+      if (salaryMonthInput) salaryMonthInput.selectedIndex = 0;
+      if (reimbursementInput) reimbursementInput.value = '';
+      if (offerJoiningDateInput) offerJoiningDateInput.value = '';
+      if (internshipStartInput) internshipStartInput.value = '';
+      if (internshipOfferDateInput) internshipOfferDateInput.value = '';
+
+      // ✅ NEW
+      if (nonPaidLeaveInput) nonPaidLeaveInput.selectedIndex = 0;
+    }
+
+    function isInternshipOfferSelected() {
+      const selectedOption = docTypeSelect.options[docTypeSelect.selectedIndex];
+      if (!selectedOption) return false;
+
+      const rawCode = selectedOption.getAttribute('data-code') || '';
+      const code = rawCode.toUpperCase();
+
+      return (
+        code === 'INTERNSHIP_OFFER' ||
+        code === 'INTERN_OFFER' ||
+        code === 'INTERNSHIP_OFFER_LETTER'
+      );
+    }
+
+    function prefillInternshipDatesFromEmployee() {
+      if (!employeeSelect || !internshipStartInput || !internshipOfferDateInput) return;
+
+      const empOpt = employeeSelect.options[employeeSelect.selectedIndex];
+      if (!empOpt) return;
+
+      const dbStart = empOpt.getAttribute('data-internship-start-date') || '';
+      const dbOffer = empOpt.getAttribute('data-internship-offer-date') || '';
+
+      // If DB has values, set them
+      if (dbStart) internshipStartInput.value = dbStart;
+      if (dbOffer) internshipOfferDateInput.value = dbOffer;
+    }
+
+    function handleDocTypeChange() {
+      resetDynamicFields();
+
+      const selectedOption = docTypeSelect.options[docTypeSelect.selectedIndex];
+      if (!selectedOption) return;
+
+      const rawCode = selectedOption.getAttribute('data-code') || '';
+      const code = rawCode.toUpperCase();
+
+      // Show Bonus field for BONUS_LETTER / BONUS
+      if (code === 'BONUS_LETTER' || code === 'BONUS') {
+        bonusFieldWrapper.style.display = 'block';
+      }
+
+      // Show Increment field for INCREMENT_LETTER / INCREMENT
+      if (code === 'INCREMENT_LETTER' || code === 'INCREMENT') {
+        incrementFieldWrapper.style.display = 'block';
+      }
+
+      // Show Salary Slip fields for SALARY_SLIP
+      if (code === 'SALARY_SLIP') {
+        salaryMonthWrapper.style.display = 'block';
+        reimbursementWrapper.style.display = 'block';
+
+        // ✅ NEW
+        if (nonPaidLeaveWrapper) nonPaidLeaveWrapper.style.display = 'block';
+      }
+
+      // Show Offer Letter fields for OFFER_LETTER
+      if (code === 'OFFER_LETTER') {
+        offerJoiningDateWrapper.style.display = 'block';
+      }
+
+      // Show Internship Offer fields
+      if (isInternshipOfferSelected()) {
+        internshipStartWrapper.style.display = 'block';
+        internshipOfferDateWrapper.style.display = 'block';
+
+        // ✅ Prefill from DB (employee option dataset)
+        prefillInternshipDatesFromEmployee();
+      }
+    }
+
+    function handleEmployeeChange() {
+      // Only prefill when Internship Offer is selected
+      if (isInternshipOfferSelected()) {
+        prefillInternshipDatesFromEmployee();
+      }
+    }
+
+    if (docTypeSelect) {
+      docTypeSelect.addEventListener('change', handleDocTypeChange);
+      handleDocTypeChange();
+    }
+
+    if (employeeSelect) {
+      employeeSelect.addEventListener('change', handleEmployeeChange);
+      handleEmployeeChange();
+    }
+  })();
+</script>
