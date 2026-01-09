@@ -3,6 +3,7 @@ import cors from 'cors';
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import { engine } from 'express-handlebars';
+import handlebars from 'handlebars';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { setupSwagger } from './swagger.js';
@@ -13,6 +14,9 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+// Ensure helpers exist on the exact Handlebars instance used by express-handlebars
+handlebars.registerHelper('eq', (a, b) => a === b);
+
 // Avoid favicon spam
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 
@@ -20,6 +24,7 @@ app.get('/favicon.ico', (req, res) => res.status(204).end());
 app.engine(
     'hbs',
     engine({
+        handlebars,
         extname: '.hbs',
         defaultLayout: 'main',
         layoutsDir: path.join(__dirname, 'views/layouts'),
@@ -55,12 +60,13 @@ app.set('view engine', 'hbs');
 app.set('views', path.join(__dirname, 'views'));
 
 // ---------- Middleware ----------
-// Import config (env should be loaded by index.js before this)
-import { CORS_ORIGINS } from './config/app.config.js';
-
 app.use(
     cors({
-        origin: CORS_ORIGINS,
+        origin: [
+            'http://localhost:3007',
+            'http://localhost:5173',
+            'https://bulk-whatsapp-manager-backend.onrender.com',
+        ],
         credentials: true,
     })
 );
@@ -101,40 +107,42 @@ import { renderEmailTemplatesPage } from './controllers/emailTemplate.controller
 // ---------- Frontend pages ----------
 app.get('/', (req, res) => res.redirect('/login'));
 
-app.get('/login', (req, res) => res.render('login', { title: 'Login' }));
-app.get('/register', (req, res) => res.render('register', { title: 'Register' }));
-app.get('/forgot-password', (req, res) => res.render('forgotPassword', { title: 'Forgot Password' }));
-app.get('/reset-password', (req, res) => {
-  const token = req.query.token;
-  if (!token) {
-    return res.redirect('/forgot-password');
-  }
-  res.render('resetPassword', { title: 'Reset Password', token });
-});
+app.get('/login', (req, res) => res.render('login', { title: 'mini-hr-360', pageClass: 'auth' }));
+app.get('/register', (req, res) => res.render('register', { title: 'mini-hr-360', pageClass: 'auth' }));
 
 app.get('/dashboard', verifyUser, (req, res) => {
     const user = { firstName: req.user.firstName, lastName: req.user.lastName };
-    res.render('dashboard', { title: 'Dashboard', user });
+    res.render('dashboard', { title: 'Dashboard', user, active: 'dashboard', activeGroup: 'workspace' });
 });
 
 app.get('/customers', verifyUser, (req, res) => {
     const user = { firstName: req.user.firstName, lastName: req.user.lastName };
-    res.render('customers', { title: 'Customers', user });
+    res.render('customers', { title: 'Customers', user, active: 'customers', activeGroup: 'workspace' });
 });
 
 app.get('/business', verifyUser, (req, res) => {
     const user = { firstName: req.user.firstName, lastName: req.user.lastName };
-    res.render('business', { title: 'Business', user });
+    res.render('business', { title: 'Business', user, active: 'business', activeGroup: 'workspace' });
 });
 
 app.get('/templates', verifyUser, (req, res) => {
     const user = { firstName: req.user.firstName, lastName: req.user.lastName };
-    res.render('templates', { title: 'Templates', user });
+    res.render('templates', { title: 'Templates', user, active: 'templates', activeGroup: 'workspace' });
 });
 
 app.get('/campaigns', verifyUser, (req, res) => {
     const user = { firstName: req.user.firstName, lastName: req.user.lastName };
-    res.render('campaigns', { title: 'Campaigns', user });
+    res.render('campaigns', { title: 'Campaigns', user, active: 'campaigns', activeGroup: 'workspace' });
+});
+
+app.get('/designations', verifyUser, (req, res) => {
+    const user = { firstName: req.user.firstName, lastName: req.user.lastName };
+    res.render('designations', { title: 'Designations', user, active: 'designations', activeGroup: 'workspace' });
+});
+
+app.get('/departments', verifyUser, (req, res) => {
+    const user = { firstName: req.user.firstName, lastName: req.user.lastName };
+    res.render('departments', { title: 'Departments', user, active: 'departments', activeGroup: 'workspace' });
 });
 
 app.get('/clear-storage', (req, res) => {
@@ -200,41 +208,5 @@ app.get('/email-templates', verifyUser, renderEmailTemplatesPage);
 
 // API routes under /api/v1/email-templates
 app.use('/', emailTemplateRoutes);
-
-// Error handling middleware (must be last)
-app.use((err, req, res, next) => {
-  console.error('❌ Error:', err);
-  console.error('Stack:', err.stack);
-  
-  // If response already sent, delegate to default Express error handler
-  if (res.headersSent) {
-    return next(err);
-  }
-
-  // Handle ApiError instances
-  if (err.statusCode) {
-    return res.status(err.statusCode).json({
-      success: false,
-      message: err.message,
-      ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-    });
-  }
-
-  // Handle Sequelize errors
-  if (err.name === 'SequelizeDatabaseError' || err.name === 'SequelizeValidationError') {
-    return res.status(400).json({
-      success: false,
-      message: err.message || 'Database error',
-      ...(process.env.NODE_ENV === 'development' && { details: err })
-    });
-  }
-
-  // Default error handler
-  res.status(500).json({
-    success: false,
-    message: err.message || 'Internal server error',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-  });
-});
 
 export { app };

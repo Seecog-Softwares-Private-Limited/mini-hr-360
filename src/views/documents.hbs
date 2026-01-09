@@ -1,68 +1,9 @@
 {{!-- views/documents.hbs --}}
-<div class="container-fluid documents-page">
+<div class="container-fluid">
   <div class="row">
     {{!-- Sidebar same as Employees page, but Documents active --}}
     <div class="col-md-3 col-lg-2 px-0">
-      <div class="sidebar-wrapper">
-        <button class="sidebar-toggle" aria-label="Toggle sidebar">
-          <i class="fas fa-chevron-left"></i>
-        </button>
-        <div class="sidebar p-3">
-        <div class="text-center mb-2">
-          <h5 class="text-white">mini HR 360</h5>
-          <div class="user-info">
-            <div class="user-avatar">
-              <i class="fas fa-user"></i>
-            </div>
-            <div class="user-name">
-              <span class="user-name-text">{{user.firstName}} {{user.lastName}}</span>
-            </div>
-          </div>
-        </div>
-        <nav class="nav flex-column">
-          <!-- WhatsApp Menu - DISABLED -->
-          {{!-- <div class="menu-toggle" onclick="toggleMenu('whatsapp-submenu')">
-            <div class="nav-link">
-              <i class="fab fa-whatsapp"></i> WhatsApp
-              <i class="fas fa-chevron-down float-end"></i>
-            </div>
-          </div>
-          <div class="submenu show" id="whatsapp-submenu">
-            <a class="nav-link" href="/dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-            <a class="nav-link" href="/business"><i class="fas fa-building"></i> My Businesses</a>
-            <a class="nav-link" href="/customers"><i class="fas fa-users"></i> Customers</a>
-            <a class="nav-link" href="/templates"><i class="fas fa-file-alt"></i> Templates</a>
-            <a class="nav-link" href="/campaigns"><i class="fas fa-bullhorn"></i> Campaigns</a>
-          </div> --}}
-
-          <!-- HR Tools Menu -->
-          <div class="menu-toggle" onclick="toggleMenu('hr-submenu')">
-            <div class="nav-link active">
-              <i class="fas fa-users-cog"></i> HR Tools
-              <i class="fas fa-chevron-down float-end"></i>
-            </div>
-          </div>
-          <div class="submenu show" id="hr-submenu">
-            <a class="nav-link" href="/employees"><i class="fas fa-user-tie"></i> Employees</a>
-            <a class="nav-link active" href="/documents"><i class="fas fa-file-signature"></i> Generate Documents</a>
-          </div>
-
-          <div class="menu-toggle mt-2" onclick="toggleMenu('utilities-submenu')">
-            <div class="nav-link">
-              <i class="fas fa-tools"></i> Utilities
-              <i class="fas fa-chevron-down float-end"></i>
-            </div>
-          </div>
-          <div class="submenu" id="utilities-submenu">
-            <a class="nav-link" href="/document-types"><i class="fas fa-layer-group"></i> Document Templates</a>
-          </div>
-
-          <hr class="text-white-50" />
-          <a class="nav-link logout-link" href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</a>
-        </nav>
-        </div>
-      </div>
-      <div class="main-content-overlay"></div>
+      {{> sidebar}}
     </div>
 
     <div class="col-md-9 col-lg-10">
@@ -91,51 +32,64 @@
 
                 <div class="col-md-6">
                   <label class="form-label">Document Type</label>
-                  {{!-- Custom dropdown with icons --}}
-                  <div class="custom-select-wrapper">
-                    <select
-                      name="documentTypeId"
-                      id="documentTypeSelect"
-                      class="form-select custom-select-hidden"
-                      required
+                  {{!-- Icon-capable dropdown (keeps hidden select for form submit + existing JS) --}}
+                  <div class="dropdown w-100" id="documentTypeDropdown">
+                    <button
+                      class="btn btn-outline-secondary dropdown-toggle w-100 text-start d-flex align-items-center justify-content-between"
+                      type="button"
+                      data-bs-toggle="dropdown"
+                      aria-expanded="false"
+                      id="documentTypeDropdownBtn"
                     >
-                      <option value="">Select document type</option>
+                      <span class="d-flex align-items-center gap-2" id="documentTypeDropdownLabel">
+                        <i class="fas fa-file-lines text-muted"></i>
+                        <span>Select document type</span>
+                      </span>
+                    </button>
+                    <ul
+                      class="dropdown-menu w-100"
+                      id="documentTypeDropdownMenu"
+                      style="max-height: 280px; overflow:auto;"
+                    >
                       {{#each documentTypes}}
-                        <option
-                          value="{{id}}"
-                          data-code="{{code}}"
-                          data-icon="{{icon}}"
-                        >
-                          {{name}}
-                        </option>
-                      {{/each}}
-                    </select>
-                    <div class="custom-select" id="customDocumentTypeSelect">
-                      <div class="custom-select-trigger">
-                        <span class="custom-select-value">
-                          <i class="fas fa-file-alt me-2"></i>
-                          <span class="custom-select-text">Select document type</span>
-                        </span>
-                        <i class="fas fa-chevron-down custom-select-arrow"></i>
-                      </div>
-                      <div class="custom-select-options" id="customDocumentTypeOptions">
-                        <div class="custom-select-option" data-value="">
-                          <i class="fas fa-file-alt me-2"></i>
-                          <span>Select document type</span>
-                        </div>
-                        {{#each documentTypes}}
-                          <div class="custom-select-option" data-value="{{id}}" data-code="{{code}}">
+                        <li>
+                          <button
+                            class="dropdown-item d-flex align-items-center gap-2"
+                            type="button"
+                            data-id="{{id}}"
+                            data-code="{{code}}"
+                            data-icon="{{icon}}"
+                          >
                             {{#if icon}}
-                              <i class="{{icon}} me-2"></i>
+                              <i class="{{icon}}"></i>
                             {{else}}
-                              <i class="fas fa-file-alt me-2"></i>
+                              <i class="fas fa-file-lines"></i>
                             {{/if}}
                             <span>{{name}}</span>
-                          </div>
-                        {{/each}}
-                      </div>
-                    </div>
+                          </button>
+                        </li>
+                      {{/each}}
+                    </ul>
                   </div>
+
+                  {{!-- Hidden select still drives form submit + dynamic-field JS --}}
+                  <select
+                    name="documentTypeId"
+                    id="documentTypeSelect"
+                    class="form-select d-none"
+                    required
+                  >
+                    <option value="">Select document type</option>
+                    {{#each documentTypes}}
+                      <option
+                        value="{{id}}"
+                        data-code="{{code}}"
+                        data-icon="{{icon}}"
+                      >
+                        {{name}}
+                      </option>
+                    {{/each}}
+                  </select>
                 </div>
               </div>
 
@@ -320,91 +274,9 @@
 <script>
   (function () {
     const docTypeSelect = document.getElementById('documentTypeSelect');
+    const docTypeDropdownMenu = document.getElementById('documentTypeDropdownMenu');
+    const docTypeDropdownLabel = document.getElementById('documentTypeDropdownLabel');
     const employeeSelect = document.getElementById('employeeSelect');
-    const customSelect = document.getElementById('customDocumentTypeSelect');
-    const customSelectTrigger = customSelect?.querySelector('.custom-select-trigger');
-    const customSelectOptions = document.getElementById('customDocumentTypeOptions');
-    const customSelectValue = customSelect?.querySelector('.custom-select-value');
-    const customSelectText = customSelectValue?.querySelector('.custom-select-text');
-
-    // Initialize custom dropdown
-    function initCustomDropdown() {
-      if (!customSelect || !docTypeSelect) return;
-
-      // Sync custom dropdown with native select
-      function syncCustomDropdown() {
-        const selectedOption = docTypeSelect.options[docTypeSelect.selectedIndex];
-        if (!selectedOption || !selectedOption.value) {
-          customSelectText.textContent = 'Select document type';
-          customSelectValue.innerHTML = '<i class="fas fa-file-alt me-2"></i><span class="custom-select-text">Select document type</span>';
-          customSelectOptions.querySelectorAll('.custom-select-option').forEach(opt => opt.classList.remove('selected'));
-          return;
-        }
-
-        const optionElement = customSelectOptions.querySelector(`[data-value="${selectedOption.value}"]`);
-        if (optionElement) {
-          const icon = selectedOption.getAttribute('data-icon') || 'fas fa-file-alt';
-          customSelectValue.innerHTML = `<i class="${icon} me-2"></i><span class="custom-select-text">${selectedOption.textContent}</span>`;
-          
-          customSelectOptions.querySelectorAll('.custom-select-option').forEach(opt => opt.classList.remove('selected'));
-          optionElement.classList.add('selected');
-        }
-      }
-
-      // Handle custom dropdown click
-      customSelectTrigger.addEventListener('click', function(e) {
-        e.stopPropagation();
-        customSelect.classList.toggle('open');
-      });
-
-      // Handle option selection
-      customSelectOptions.querySelectorAll('.custom-select-option').forEach(option => {
-        option.addEventListener('click', function(e) {
-          e.stopPropagation();
-          const value = this.getAttribute('data-value');
-          const code = this.getAttribute('data-code');
-          
-          // Update native select
-          docTypeSelect.value = value;
-          
-          // Update custom dropdown display
-          const icon = this.querySelector('i').className;
-          const text = this.querySelector('span').textContent;
-          customSelectValue.innerHTML = `<i class="${icon} me-2"></i><span class="custom-select-text">${text}</span>`;
-          
-          // Update selected state
-          customSelectOptions.querySelectorAll('.custom-select-option').forEach(opt => opt.classList.remove('selected'));
-          this.classList.add('selected');
-          
-          // Close dropdown
-          customSelect.classList.remove('open');
-          
-          // Trigger change event on native select
-          const changeEvent = new Event('change', { bubbles: true });
-          docTypeSelect.dispatchEvent(changeEvent);
-        });
-      });
-
-      // Close dropdown when clicking outside
-      document.addEventListener('click', function(e) {
-        if (!customSelect.contains(e.target)) {
-          customSelect.classList.remove('open');
-        }
-      });
-
-      // Initial sync
-      syncCustomDropdown();
-
-      // Sync when native select changes (if changed programmatically)
-      docTypeSelect.addEventListener('change', syncCustomDropdown);
-    }
-
-    // Initialize custom dropdown on page load
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initCustomDropdown);
-    } else {
-      initCustomDropdown();
-    }
 
     const bonusFieldWrapper = document.getElementById('bonusFieldWrapper');
     const incrementFieldWrapper = document.getElementById('incrementFieldWrapper');
@@ -524,6 +396,29 @@
       }
     }
 
+    function syncDocTypeDropdownLabel() {
+      if (!docTypeDropdownLabel || !docTypeSelect) return;
+      const opt = docTypeSelect.options[docTypeSelect.selectedIndex];
+      if (!opt || !opt.value) {
+        docTypeDropdownLabel.innerHTML = `<i class="fas fa-file-lines text-muted"></i><span>Select document type</span>`;
+        return;
+      }
+      const iconClass = opt.getAttribute('data-icon') || 'fas fa-file-lines';
+      const name = opt.textContent || 'Selected';
+      docTypeDropdownLabel.innerHTML = `<i class="${iconClass}"></i><span>${name}</span>`;
+    }
+
+    // Dropdown click -> update hidden select + trigger existing logic
+    if (docTypeDropdownMenu && docTypeSelect) {
+      docTypeDropdownMenu.addEventListener('click', function (e) {
+        const btn = e.target.closest('button.dropdown-item');
+        if (!btn) return;
+        const id = btn.getAttribute('data-id') || '';
+        docTypeSelect.value = id;
+        docTypeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+    }
+
     function handleEmployeeChange() {
       // Only prefill when Internship Offer is selected
       if (isInternshipOfferSelected()) {
@@ -533,7 +428,9 @@
 
     if (docTypeSelect) {
       docTypeSelect.addEventListener('change', handleDocTypeChange);
+      docTypeSelect.addEventListener('change', syncDocTypeDropdownLabel);
       handleDocTypeChange();
+      syncDocTypeDropdownLabel();
     }
 
     if (employeeSelect) {

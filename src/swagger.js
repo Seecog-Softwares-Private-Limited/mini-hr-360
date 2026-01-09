@@ -4,14 +4,14 @@ import swaggerJSDoc from "swagger-jsdoc";
 const swaggerDefinition = {
   openapi: "3.0.3",
   info: {
-    title: "mini HR 360 API",
+    title: "Bulk WhatsApp Manager API",
     version: "1.0.0",
     description:
-      "API documentation for mini HR 360. Includes auth, business, customers, templates, campaigns and webhook endpoints.",
+      "API documentation for Bulk WhatsApp Manager Backend. Includes auth, business, customers, templates, campaigns and webhook endpoints.",
   },
   servers: [
     {
-      url: "http://localhost:" + (process.env.PORT || 3000),
+      url: "http://localhost:" + (process.env.PORT || 3007),
       description: "Local server",
     },
   ],

@@ -1,1 +1,1 @@
-export const DB_NAME = "mini_hr_360"
+export const DB_NAME = "saas_whatsapp_manager"

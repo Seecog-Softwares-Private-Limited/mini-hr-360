@@ -4,7 +4,6 @@ import { WhatsAppConnection } from "../../models/WhatsAppConnection.js";
 import { Business } from "../../models/Business.js";
 import { encrypt } from "../../utils/cripto.utils.js";
 import { getDisplayPhone } from "../../utils/wa.graph.js";
-import { APP_URL } from "../../config/app.config.js";
 
 // ─────────────────────────────────────────────
 // A) Embedded Signup (recommended)
@@ -17,7 +16,7 @@ export async function getEmbeddedSignupConfig(req, res) {
         data: {
             appId: process.env.META_APP_ID,
             graphVersion: process.env.META_GRAPH_VERSION,
-            redirectUri: `${APP_URL}/wa/connect/callback/client`
+            redirectUri: `${process.env.APP_URL}/wa/connect/callback/client`
         }
     });
 }
@@ -42,7 +41,7 @@ export async function embeddedSignupCallback(req, res) {
                 client_secret: process.env.META_APP_SECRET,
                 code
                 // NOTE: if you used redirect_uri on the client to start signup, include the SAME redirect_uri here as well.
-                // redirect_uri: `${APP_URL}/wa/connect/callback/client`
+                // redirect_uri: `${process.env.APP_URL}/wa/connect/callback/client`
             }
         });
 

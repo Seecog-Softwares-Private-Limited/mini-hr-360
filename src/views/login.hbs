@@ -1,519 +1,70 @@
-<style>
-  /* Premium Login Page Styles */
-  .login-page-wrapper {
-    min-height: 100vh;
-    background: #ffffff;
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-  }
-
-  /* Animated Background Icons - Cartoon Style */
-  .hr-icons-background {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-    z-index: 0;
-    pointer-events: none;
-    overflow: hidden;
-  }
-
-  .hr-icon {
-    position: absolute;
-    font-size: 3rem;
-    animation: float 8s ease-in-out infinite;
-    opacity: 0.35;
-    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.15));
-    transition: all 0.3s ease;
-  }
-
-  /* Position icons across the background with vibrant colors */
-  .hr-icon:nth-child(1) { top: 8%; left: 7%; animation-delay: 0s; color: #3182ce; }
-  .hr-icon:nth-child(2) { top: 18%; right: 10%; animation-delay: 1s; color: #38a169; }
-  .hr-icon:nth-child(3) { top: 42%; left: 4%; animation-delay: 2s; color: #dd6b20; }
-  .hr-icon:nth-child(4) { top: 58%; right: 7%; animation-delay: 3s; color: #805ad5; }
-  .hr-icon:nth-child(5) { bottom: 12%; left: 12%; animation-delay: 4s; color: #e53e3e; }
-  .hr-icon:nth-child(6) { bottom: 22%; right: 15%; animation-delay: 5s; color: #2c5282; }
-  .hr-icon:nth-child(7) { top: 32%; left: 48%; animation-delay: 1.5s; color: #2c7a7b; }
-  .hr-icon:nth-child(8) { bottom: 38%; right: 22%; animation-delay: 2.5s; color: #c05621; }
-  .hr-icon:nth-child(9) { top: 68%; left: 22%; animation-delay: 3.5s; color: #6b46c1; }
-  .hr-icon:nth-child(10) { top: 12%; left: 32%; animation-delay: 4.5s; color: #2f855a; }
-  .hr-icon:nth-child(11) { top: 55%; left: 35%; animation-delay: 0.8s; color: #c53030; }
-  .hr-icon:nth-child(12) { bottom: 30%; left: 45%; animation-delay: 1.8s; color: #2b6cb0; }
-  .hr-icon:nth-child(13) { top: 25%; right: 30%; animation-delay: 2.8s; color: #234e52; }
-  .hr-icon:nth-child(14) { bottom: 15%; left: 30%; animation-delay: 3.8s; color: #b7791f; }
-  .hr-icon:nth-child(15) { top: 50%; right: 20%; animation-delay: 4.8s; color: #553c9a; }
-
-  @keyframes float {
-    0%, 100% { 
-      transform: translateY(0px) translateX(0px) rotate(0deg) scale(1); 
-    }
-    25% { 
-      transform: translateY(-15px) translateX(5px) rotate(3deg) scale(1.05); 
-    }
-    50% { 
-      transform: translateY(-25px) translateX(-5px) rotate(-3deg) scale(1.1); 
-    }
-    75% { 
-      transform: translateY(-10px) translateX(3px) rotate(2deg) scale(1.05); 
-    }
-  }
-
-  /* Make icons look more cartoon-like and visible */
-  .hr-icon i {
-    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.2));
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-
-  /* Hover effect for icons (subtle) */
-  .hr-icon:hover {
-    opacity: 0.5;
-    transform: scale(1.1);
-  }
-
-  /* Subtle Pattern Overlay - Very Light */
-  .login-page-wrapper::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: 
-      radial-gradient(circle at 20% 50%, rgba(66, 153, 225, 0.015) 0%, transparent 50%),
-      radial-gradient(circle at 80% 80%, rgba(66, 153, 225, 0.015) 0%, transparent 50%),
-      radial-gradient(circle at 40% 20%, rgba(66, 153, 225, 0.01) 0%, transparent 50%);
-    z-index: 0;
-    pointer-events: none;
-  }
-
-  /* Premium Login Card */
-  .login-card {
-    position: relative;
-    z-index: 10;
-    width: 100%;
-    max-width: 440px;
-    background: #ffffff;
-    border-radius: 24px;
-    box-shadow: 
-      0 20px 60px rgba(0, 0, 0, 0.08),
-      0 0 0 1px rgba(0, 0, 0, 0.04);
-    padding: 3rem 2.5rem;
-    animation: slideUp 0.6s ease-out;
-  }
-
-  @keyframes slideUp {
-    from {
-      opacity: 0;
-      transform: translateY(30px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  /* Logo Section */
-  .login-logo-section {
-    text-align: center;
-    margin-bottom: 2.5rem;
-  }
-
-  .login-logo-icon {
-    width: 80px;
-    height: 80px;
-    background: linear-gradient(135deg, #4299e1 0%, #3182ce 30%, #805ad5 60%, #9f7aea 100%);
-    border-radius: 22px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 1.5rem;
-    box-shadow: 
-      0 10px 30px rgba(66, 153, 225, 0.35),
-      0 0 0 4px rgba(66, 153, 225, 0.1),
-      inset 0 2px 4px rgba(255, 255, 255, 0.3);
-    animation: logoFloat 3s ease-in-out infinite;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .login-logo-icon::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-    animation: shine 3s ease-in-out infinite;
-  }
-
-  @keyframes logoFloat {
-    0%, 100% { 
-      transform: translateY(0px) scale(1);
-      box-shadow: 
-        0 10px 30px rgba(66, 153, 225, 0.35),
-        0 0 0 4px rgba(66, 153, 225, 0.1),
-        inset 0 2px 4px rgba(255, 255, 255, 0.3);
-    }
-    50% { 
-      transform: translateY(-8px) scale(1.05);
-      box-shadow: 
-        0 15px 40px rgba(66, 153, 225, 0.45),
-        0 0 0 6px rgba(66, 153, 225, 0.15),
-        inset 0 2px 4px rgba(255, 255, 255, 0.3);
-    }
-  }
-
-  @keyframes shine {
-    0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
-    100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
-  }
-
-  .login-logo-icon i {
-    font-size: 2.25rem;
-    color: #ffffff;
-    position: relative;
-    z-index: 1;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-  }
-
-  .login-title {
-    font-size: 2.5rem;
-    font-weight: 800;
-    margin-bottom: 0.75rem;
-    letter-spacing: -1px;
-    line-height: 1.2;
-    position: relative;
-    display: inline-block;
-    background: linear-gradient(135deg, #4299e1 0%, #3182ce 25%, #805ad5 50%, #9f7aea 75%, #4299e1 100%);
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    animation: gradientShift 3s ease infinite;
-    text-shadow: 0 0 30px rgba(66, 153, 225, 0.3);
-  }
-
-  @keyframes gradientShift {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-  }
-
-  .login-title::before {
-    content: 'mini HR 360';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, #4299e1 0%, #3182ce 25%, #805ad5 50%, #9f7aea 75%, #4299e1 100%);
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    filter: blur(8px);
-    opacity: 0.5;
-    z-index: -1;
-    animation: gradientShift 3s ease infinite;
-  }
-
-  .login-title::after {
-    content: '';
-    position: absolute;
-    bottom: -8px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 60px;
-    height: 4px;
-    background: linear-gradient(90deg, transparent, #4299e1, #805ad5, transparent);
-    border-radius: 2px;
-    animation: underlineExpand 1.5s ease-out;
-  }
-
-  @keyframes underlineExpand {
-    from {
-      width: 0;
-      opacity: 0;
-    }
-    to {
-      width: 60px;
-      opacity: 1;
-    }
-  }
-
-  .login-subtitle {
-    font-size: 1rem;
-    color: #4a5568;
-    font-weight: 500;
-    margin-top: 0.5rem;
-    letter-spacing: 0.3px;
-  }
-
-  /* Form Styles */
-  .login-form-group {
-    margin-bottom: 1.5rem;
-  }
-
-  .login-form-label {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #2d3748;
-    margin-bottom: 0.5rem;
-    display: block;
-  }
-
-  .login-form-input {
-    width: 100%;
-    padding: 0.875rem 1.125rem;
-    font-size: 0.95rem;
-    border: 2px solid #e2e8f0;
-    border-radius: 12px;
-    background: #ffffff;
-    color: #1a202c;
-    transition: all 0.2s ease;
-    outline: none;
-  }
-
-  .login-form-input:focus {
-    border-color: #4299e1;
-    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
-    background: #ffffff;
-  }
-
-  .login-form-input::placeholder {
-    color: #a0aec0;
-  }
-
-  /* Premium Button */
-  .login-btn {
-    width: 100%;
-    padding: 0.875rem 1.5rem;
-    font-size: 1rem;
-    font-weight: 600;
-    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
-    color: #ffffff;
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
-    position: relative;
-    overflow: hidden;
-    margin-top: 0.5rem;
-  }
-
-  .login-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.5s ease;
-  }
-
-  .login-btn:hover::before {
-    left: 100%;
-  }
-
-  .login-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(66, 153, 225, 0.4);
-  }
-
-  .login-btn:active {
-    transform: translateY(0);
-  }
-
-  .login-btn:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  /* Alert Container */
-  #alertContainer {
-    margin-bottom: 1.5rem;
-  }
-
-  /* Footer Links */
-  .login-footer {
-    text-align: center;
-    margin-top: 2rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid #e2e8f0;
-  }
-
-  .login-footer-text {
-    font-size: 0.875rem;
-    color: #718096;
-    margin-bottom: 0.75rem;
-  }
-
-  .login-footer-link {
-    color: #4299e1;
-    text-decoration: none;
-    font-weight: 500;
-    transition: color 0.2s ease;
-  }
-
-  .login-footer-link:hover {
-    color: #3182ce;
-    text-decoration: underline;
-  }
-
-  .login-clear-storage {
-    font-size: 0.75rem;
-    color: #a0aec0;
-    background: none;
-    border: none;
-    padding: 0.5rem;
-    cursor: pointer;
-    transition: color 0.2s ease;
-  }
-
-  .login-clear-storage:hover {
-    color: #718096;
-  }
-
-  /* Responsive */
-  @media (max-width: 576px) {
-    .login-card {
-      padding: 2rem 1.5rem;
-      border-radius: 20px;
-    }
-
-    .login-title {
-      font-size: 2rem;
-      letter-spacing: -0.8px;
-    }
-
-    .login-logo-icon {
-      width: 70px;
-      height: 70px;
-    }
-
-    .login-logo-icon i {
-      font-size: 2rem;
-    }
-
-    .hr-icon {
-      font-size: 2rem;
-      opacity: 0.25;
-    }
-  }
-
-  /* Hide icons on very small screens */
-  @media (max-width: 400px) {
-    .hr-icons-background {
-      display: none;
-    }
-  }
-
-  /* Loading Spinner */
-  .spinner-border-sm {
-    width: 1rem;
-    height: 1rem;
-    border-width: 0.15em;
-  }
-</style>
-
-<div class="login-page-wrapper">
-  <!-- Animated HR Icons Background - Cartoon Style -->
-  <div class="hr-icons-background">
-    <div class="hr-icon"><i class="fas fa-users"></i></div>
-    <div class="hr-icon"><i class="fas fa-file-alt"></i></div>
-    <div class="hr-icon"><i class="fas fa-money-bill-wave"></i></div>
-    <div class="hr-icon"><i class="fas fa-chart-bar"></i></div>
-    <div class="hr-icon"><i class="fas fa-calendar-check"></i></div>
-    <div class="hr-icon"><i class="fas fa-check-circle"></i></div>
-    <div class="hr-icon"><i class="fas fa-clipboard-list"></i></div>
-    <div class="hr-icon"><i class="fas fa-bullseye"></i></div>
-    <div class="hr-icon"><i class="fas fa-chart-line"></i></div>
-    <div class="hr-icon"><i class="fas fa-shield-alt"></i></div>
-    <div class="hr-icon"><i class="fas fa-user-tie"></i></div>
-    <div class="hr-icon"><i class="fas fa-briefcase"></i></div>
-    <div class="hr-icon"><i class="fas fa-id-card"></i></div>
-    <div class="hr-icon"><i class="fas fa-clock"></i></div>
-    <div class="hr-icon"><i class="fas fa-handshake"></i></div>
+<div class="auth-shell">
+  <div class="auth-decor" aria-hidden="true">
+    <!-- HR-themed floating icons (decor only) -->
+    <div class="auth-float c1 s1 d1" style="left: 6%; top: 12%;"><i class="fa-solid fa-user-tie"></i></div>
+    <div class="auth-float c2 s2 d2" style="left: 12%; top: 42%;"><i class="fa-solid fa-users-gear"></i></div>
+    <div class="auth-float c3 s3 d3" style="left: 6%; top: 62%;"><i class="fa-solid fa-id-card-clip"></i></div>
+    <div class="auth-float c4 s2 d4" style="left: 18%; top: 82%;"><i class="fa-solid fa-briefcase"></i></div>
+    <div class="auth-float c2 s3 d1" style="right: 12%; top: 18%;"><i class="fa-solid fa-building-user"></i></div>
+    <div class="auth-float c3 s2 d2" style="right: 18%; top: 38%;"><i class="fa-solid fa-calendar-check"></i></div>
+    <div class="auth-float c5 s3 d3" style="right: 12%; top: 62%;"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+    <div class="auth-float c1 s2 d4" style="right: 6%; top: 58%;"><i class="fa-solid fa-clipboard-check"></i></div>
+    <div class="auth-float c5 s2 d2" style="right: 14%; top: 82%;"><i class="fa-solid fa-sitemap"></i></div>
   </div>
 
-  <!-- Login Card -->
-  <div class="login-card">
-    <!-- Logo Section -->
-    <div class="login-logo-section">
-      <div class="login-logo-icon">
-        <i class="fas fa-users"></i>
-      </div>
-      <h1 class="login-title">mini HR 360</h1>
-      <p class="login-subtitle">Complete HR Management Solution</p>
-    </div>
-
-    <!-- Alert Container -->
-    <div id="alertContainer"></div>
-
-    <!-- Login Form -->
-    <form id="loginForm">
-      <div class="login-form-group">
-        <label for="email" class="login-form-label">
-          <i class="fas fa-envelope me-2" style="color: #4299e1;"></i>Email Address
-        </label>
-        <input 
-          type="email" 
-          class="login-form-input" 
-          id="email" 
-          name="email" 
-          placeholder="Enter your email"
-          required
-        >
-      </div>
-
-      <div class="login-form-group">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-          <label for="password" class="login-form-label" style="margin-bottom: 0;">
-            <i class="fas fa-lock me-2" style="color: #4299e1;"></i>Password
-          </label>
-          <a href="/forgot-password" class="login-footer-link" style="font-size: 0.875rem; text-decoration: none;">
-            <i class="fas fa-question-circle me-1"></i>Forgot Password?
-          </a>
+  <div class="auth-card">
+    <div class="auth-card-body">
+      <div class="text-center mb-3">
+        <div class="auth-mark mx-auto" style="border-radius: 999px; width: 56px; height: 56px;">HR</div>
+        <div class="mt-3">
+          <p class="auth-title" style="font-size: 22px;">mini-hr-360</p>
+          <p class="auth-subtitle">Professional HR management</p>
         </div>
-        <input 
-          type="password" 
-          class="login-form-input" 
-          id="password" 
-          name="password" 
-          placeholder="Enter your password"
-          required
-        >
       </div>
 
-      <button type="submit" class="login-btn" id="loginBtn">
-        <span id="loginText">
-          <i class="fas fa-sign-in-alt me-2"></i>Sign In
-        </span>
-        <span id="loadingText" class="d-none">
-          <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-          Signing in...
-        </span>
-      </button>
-    </form>
+      <div id="alertContainer"></div>
 
-    <!-- Footer -->
-    <div class="login-footer">
-      <p class="login-footer-text">
-        Don't have an account? 
-        <a href="/register" class="login-footer-link">Create Account</a>
-      </p>
-      <button type="button" class="login-clear-storage" onclick="clearStorage()">
-        <i class="fas fa-refresh me-1"></i>Clear Storage & Refresh
-      </button>
+      <form id="loginForm" class="auth-form">
+        <div class="mb-3">
+          <label for="email" class="form-label">Email Address</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="fa-solid fa-envelope"></i></span>
+            <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <div class="d-flex align-items-center justify-content-between">
+            <label for="password" class="form-label mb-0">Password</label>
+            <a class="auth-link" href="#" onclick="return false;" title="Coming soon">Forgot Password?</a>
+          </div>
+          <div class="input-group mt-2">
+            <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
+            <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
+          </div>
+        </div>
+
+        <button type="submit" class="btn auth-primary w-100 mb-2" id="loginBtn">
+          <span id="loginText">Login</span>
+          <span id="loadingText" class="d-none">
+            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+            Logging in...
+          </span>
+        </button>
+
+        <div class="auth-or">Or continue with</div>
+        <div class="auth-social" aria-label="Social login options (UI only)">
+          <a href="#" onclick="return false;" title="Google (UI only)"><i class="fa-brands fa-google"></i></a>
+          <a href="#" onclick="return false;" title="Instagram (UI only)"><i class="fa-brands fa-instagram"></i></a>
+          <a href="#" onclick="return false;" title="Facebook (UI only)"><i class="fa-brands fa-facebook-f"></i></a>
+          <a href="#" onclick="return false;" title="GitHub (UI only)"><i class="fa-brands fa-github"></i></a>
+          <a href="#" onclick="return false;" title="LinkedIn (UI only)"><i class="fa-brands fa-linkedin-in"></i></a>
+          <a href="#" onclick="return false;" title="X (UI only)"><i class="fa-brands fa-x-twitter"></i></a>
+        </div>
+      </form>
+    </div>
+    <div class="auth-footer">
+      <div>Don’t have an account? <a href="/register">Create Account</a></div>
     </div>
   </div>
 </div>
@@ -560,47 +111,19 @@
 
       if (!tokens || !tokens.accessToken) {
         showAlert('Login failed: no token received', 'danger');
-        loginBtn.disabled = false;
-        loginText.classList.remove('d-none');
-        loadingText.classList.add('d-none');
         return;
       }
 
       // Store user + token
       if (user) localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('accessToken', tokens.accessToken);
-      
-      console.log('Token stored successfully');
 
       // Success + redirect
       showAlert('Login successful! Redirecting...', 'success');
-      
-      // Set flags to prevent checkAuth from interfering
-      window.loginRedirected = true;
-      window.authChecked = true;
-      
-      // Determine redirect URL
       const url = new URL(location.href);
       const next = url.searchParams.get('next');
-      const redirectUrl = (next && next.startsWith('/')) ? next : '/dashboard';
-      
-      console.log('Login successful, redirecting to:', redirectUrl);
-      console.log('Current location:', window.location.href);
-      
-      // Use a shorter timeout and ensure redirect happens
       setTimeout(() => {
-        console.log('Executing redirect now...');
-        try {
-          // Stop any event propagation that might interfere
-          if (window.stop) window.stop();
-          
-          // Force redirect
-          window.location.href = redirectUrl;
-        } catch (error) {
-          console.error('Redirect error:', error);
-          // Fallback: try direct assignment
-          window.location = redirectUrl;
-        }
+        window.location.replace(next || '/dashboard');
       }, 500);
 
     } catch (error) {
@@ -624,16 +147,13 @@
     `;
   }
 
-  // Initialize login page
+  // This log is harmless; it does not block redirects
   document.addEventListener('DOMContentLoaded', function() {
-    // Prevent redirect loops - let user manually navigate or submit form
     window.loginRedirected = false;
+    console.log('Login page loaded - auto-redirect disabled to prevent loops');
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      // Intentionally not auto-redirecting here
+    }
   });
-  
-  function clearStorage() {
-    localStorage.clear();
-    sessionStorage.clear();
-    console.log('Storage cleared, refreshing page...');
-    window.location.reload();
-  }
 </script>

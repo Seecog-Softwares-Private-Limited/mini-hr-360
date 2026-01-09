@@ -14,6 +14,21 @@ import State from '../models/State.js';
 const toBool = (val) =>
     val === true || val === 'true' || val === '1' || val === 'on';
 
+const isAdminUser = (user) => String(user?.role || '').toLowerCase() === 'admin';
+
+// Legacy installs often have employees created without correct userId tenancy.
+// We only relax scoping when the employees table effectively has a single tenant.
+const isLegacySingleTenantEmployees = async () => {
+    try {
+        // DISTINCT userId count (null counts as a single distinct value)
+        const distinctUserIds = await Employee.count({ distinct: true, col: 'userId' });
+        return distinctUserIds <= 1;
+    } catch (e) {
+        // Be safe: if this check fails, do NOT relax scoping
+        return false;
+    }
+};
+
 /**
  * GET /employees (HTML page)
  */
@@ -21,9 +36,11 @@ export const renderEmployeesPage = async (req, res, next) => {
     try {
         const search = (req.query.search || '').trim();
         const userId = req.user?.id;
-
+        const isAdmin = isAdminUser(req.user);
         const where = {};
-        if (userId) {
+
+        // Non-admin users should only see their own employees
+        if (userId && !isAdmin) {
             where.userId = userId;
         }
 
@@ -35,11 +52,13 @@ export const renderEmployeesPage = async (req, res, next) => {
             ];
         }
 
-        const [employees, departments, designations, business_addresses,countries,states] = await Promise.all([
-            Employee.findAll({
-                where,
-                order: [['empId', 'ASC']],
-            }),
+        let employeesPromise = Employee.findAll({
+            where,
+            order: [['empId', 'ASC']],
+        });
+
+        const [employeesInitial, departments, designations, business_addresses,countries,states] = await Promise.all([
+            employeesPromise,
             Department.findAll({
                 where: { status: 'ACTIVE' },
                 order: [['name', 'ASC']],
@@ -62,19 +81,27 @@ export const renderEmployeesPage = async (req, res, next) => {
             }),
         ]);
 
+        // Legacy fallback: if scoped query returns nothing for a non-admin,
+        // and the system is effectively single-tenant, show employees without userId scope.
+        let employees = employeesInitial;
+        if (!isAdmin && userId && employees.length === 0) {
+            const legacy = await isLegacySingleTenantEmployees();
+            if (legacy) {
+                const legacyWhere = { ...where };
+                delete legacyWhere.userId;
+                employees = await Employee.findAll({
+                    where: legacyWhere,
+                    order: [['empId', 'ASC']],
+                });
+            }
+        }
+
         // const departments = await Department.findAll();
         console.log("departments data : ",departments)
 
         console.log("employees data : ",employees)
 
-        const employeesPlain = employees.map((e) => {
-            const plain = e.get({ plain: true });
-            // Ensure id is included
-            if (!plain.id && e.id) {
-                plain.id = e.id;
-            }
-            return plain;
-        });
+        const employeesPlain = employees.map((e) => e.get({ plain: true }));
         const departmentsPlain = departments.map((d) => d.get({ plain: true }));
         const designationsPlain = designations.map((d) => d.get({ plain: true }));
         const businessAddressesPlain = business_addresses.map((b) => b.get({ plain: true }));
@@ -82,12 +109,6 @@ export const renderEmployeesPage = async (req, res, next) => {
         const statesPlain = states.map((s) => s.get({ plain: true }));
 
         console.log('Employees fetched for page');
-        console.log('Sample employee data:', employeesPlain.length > 0 ? {
-            id: employeesPlain[0].id,
-            empId: employeesPlain[0].empId,
-            userId: employeesPlain[0].userId,
-            empName: employeesPlain[0].empName
-        } : 'No employees');
 
         const user = req.user
             ? { firstName: req.user.firstName, lastName: req.user.lastName }
@@ -97,6 +118,8 @@ export const renderEmployeesPage = async (req, res, next) => {
             layout: 'main',
             title: 'Employee Management',
             user,
+            active: 'employees',
+            activeGroup: 'workspace',
             employees: employeesPlain,
             departments: departmentsPlain,
             designations: designationsPlain,
@@ -118,9 +141,11 @@ export const listEmployees = async (req, res, next) => {
     try {
         const search = (req.query.search || '').trim();
         const userId = req.user?.id;
-
+        const isAdmin = isAdminUser(req.user);
         const where = {};
-        if (userId) {
+
+        // Non-admin users should only see their own employees
+        if (userId && !isAdmin) {
             where.userId = userId;
         }
 
@@ -132,10 +157,23 @@ export const listEmployees = async (req, res, next) => {
             ];
         }
 
-        const employees = await Employee.findAll({
+        let employees = await Employee.findAll({
             where,
             order: [['empId', 'ASC']],
         });
+
+        // Legacy fallback (same rules as HTML page)
+        if (!isAdmin && userId && employees.length === 0) {
+            const legacy = await isLegacySingleTenantEmployees();
+            if (legacy) {
+                const legacyWhere = { ...where };
+                delete legacyWhere.userId;
+                employees = await Employee.findAll({
+                    where: legacyWhere,
+                    order: [['empId', 'ASC']],
+                });
+            }
+        }
 
         console.log('Employees listed via API');
         res.json(employees);
@@ -152,21 +190,17 @@ export const listEmployees = async (req, res, next) => {
 export const getEmployeeById = async (req, res, next) => {
     try {
         const userId = req.user?.id;
-        const id = parseInt(req.params.id, 10);
+        const isAdmin = isAdminUser(req.user);
+        const rawId = String(req.params.id || '').trim();
 
-        if (isNaN(id)) {
-            return res.status(400).json({ error: 'Invalid employee ID' });
-        }
+        // Support numeric primary key id, and fallback to empId string (e.g. EMP0001)
+        const numericId = Number.parseInt(rawId, 10);
+        const isNumeric = !Number.isNaN(numericId);
 
-        console.log('🔍 Fetching employee:', { id, userId });
-
-        // Try to find employee with userId filter first, then without if not found
-        let where = { id };
-        if (userId) {
+        const where = isNumeric ? { id: numericId } : { empId: rawId };
+        if (userId && !isAdmin) {
             where.userId = userId;
         }
-
-        console.log('🔍 Query where clause (with userId):', where);
 
         let employee = await Employee.findOne({
             where,
@@ -177,33 +211,21 @@ export const getEmployeeById = async (req, res, next) => {
             ],
         });
 
-        // If not found with userId filter, try without it (for backward compatibility)
-        if (!employee && userId) {
-            console.log('🔍 Employee not found with userId filter, trying without userId...');
-            where = { id };
-            employee = await Employee.findOne({
-                where,
-                include: [
-                    { model: EmployeeEducation, as: 'educations' },
-                    { model: EmployeeExperience, as: 'experiences' },
-                    { model: EmployeeDocument, as: 'documents' },
-                ],
-            });
-        }
-
-        console.log('🔍 Employee found:', employee ? 'YES' : 'NO');
-        if (employee) {
-            console.log('🔍 Employee ID:', employee.id);
-            console.log('🔍 Employee userId:', employee.userId);
-            console.log('🔍 Request userId:', userId);
-        } else {
-            console.log('🔍 No employee found with id:', id);
-            // Log all employees to debug
-            const allEmployees = await Employee.findAll({ 
-                attributes: ['id', 'empId', 'userId', 'empName'],
-                limit: 10 
-            });
-            console.log('🔍 Sample employees in DB:', allEmployees.map(e => ({ id: e.id, empId: e.empId, userId: e.userId, name: e.empName })));
+        // Legacy fallback: if not found and non-admin, allow lookup without userId
+        if (!employee && userId && !isAdmin) {
+            const legacy = await isLegacySingleTenantEmployees();
+            if (legacy) {
+                const legacyWhere = { ...where };
+                delete legacyWhere.userId;
+                employee = await Employee.findOne({
+                    where: legacyWhere,
+                    include: [
+                        { model: EmployeeEducation, as: 'educations' },
+                        { model: EmployeeExperience, as: 'experiences' },
+                        { model: EmployeeDocument, as: 'documents' },
+                    ],
+                });
+            }
         }
 
         if (!employee) {
@@ -460,12 +482,26 @@ export const updateEmployee = async (req, res, next) => {
         console.log('Body:', JSON.stringify(req.body, null, 2));
         console.log('User:', req.user?.id);
         const userId = req.user?.id;
-        const id = req.params.id;
+        const isAdmin = isAdminUser(req.user);
+        const id = Number.parseInt(String(req.params.id || '').trim(), 10);
+
+        if (Number.isNaN(id)) {
+            await t.rollback();
+            return res.status(400).json({ error: 'Invalid employee ID' });
+        }
 
         const where = { id };
-        if (userId) where.userId = userId;
+        if (userId && !isAdmin) where.userId = userId;
 
-        const employee = await Employee.findOne({ where, transaction: t, lock: t.LOCK.UPDATE });
+        let employee = await Employee.findOne({ where, transaction: t, lock: t.LOCK.UPDATE });
+        // Legacy fallback: if not found and non-admin, allow update without userId scope only in single-tenant legacy mode
+        if (!employee && userId && !isAdmin) {
+            const legacy = await isLegacySingleTenantEmployees();
+            if (legacy) {
+                const legacyWhere = { id };
+                employee = await Employee.findOne({ where: legacyWhere, transaction: t, lock: t.LOCK.UPDATE });
+            }
+        }
         if (!employee) {
             await t.rollback();
             return res.status(404).json({ error: 'Employee not found' });
@@ -678,14 +714,28 @@ export const deleteEmployee = async (req, res, next) => {
     const t = await sequelize.transaction();
     try {
         const userId = req.user?.id;
-        const id = req.params.id;
+        const isAdmin = isAdminUser(req.user);
+        const id = Number.parseInt(String(req.params.id || '').trim(), 10);
+
+        if (Number.isNaN(id)) {
+            await t.rollback();
+            return res.status(400).json({ error: 'Invalid employee ID' });
+        }
 
         const where = { id };
-        if (userId) {
+        if (userId && !isAdmin) {
             where.userId = userId;
         }
 
-        const employee = await Employee.findOne({ where, transaction: t, lock: t.LOCK.UPDATE });
+        let employee = await Employee.findOne({ where, transaction: t, lock: t.LOCK.UPDATE });
+        // Legacy fallback: if not found and non-admin, allow delete without userId scope only in single-tenant legacy mode
+        if (!employee && userId && !isAdmin) {
+            const legacy = await isLegacySingleTenantEmployees();
+            if (legacy) {
+                const legacyWhere = { id };
+                employee = await Employee.findOne({ where: legacyWhere, transaction: t, lock: t.LOCK.UPDATE });
+            }
+        }
         if (!employee) {
             await t.rollback();
             return res.status(404).json({ error: 'Employee not found' });

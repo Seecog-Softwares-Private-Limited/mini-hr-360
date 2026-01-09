@@ -51,14 +51,6 @@ const User = sequelize.define('User', {
   refreshTokenExpiresAt: {
     type: DataTypes.DATE,
     allowNull: true
-  },
-  passwordResetToken: {
-    type: DataTypes.STRING,
-    allowNull: true
-  },
-  passwordResetExpires: {
-    type: DataTypes.DATE,
-    allowNull: true
   }
 }, {
   tableName: 'users',
