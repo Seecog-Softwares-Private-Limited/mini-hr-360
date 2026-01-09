@@ -4,7 +4,6 @@ node_modules/
 # Environment / secrets
 .env
 .env.*
-property.env
 
 # Logs
 logs/
