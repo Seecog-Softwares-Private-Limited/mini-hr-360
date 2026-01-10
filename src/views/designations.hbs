@@ -121,10 +121,7 @@
             <div class="col-md-6">
               <label class="form-label">Name *</label>
               <input id="formName" class="form-control" placeholder="e.g., Senior HR" required />
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">Code</label>
-              <input id="formCode" class="form-control" placeholder="e.g., HR_SR" />
+              <small class="text-muted">Code will be auto-generated from name.</small>
             </div>
 
             <div class="col-md-12">
@@ -384,12 +381,16 @@
     loadDesignations();
   }
 
+  // Helper function to generate code from name
+  function generateCodeFromName(name) {
+    return name.trim().toLowerCase().replace(/\s+/g, '_').replace(/^_+|_+$/g, '');
+  }
+
   // Create/Edit flows
   function openCreateDesignation() {
     document.getElementById('designationModalTitle').innerHTML = '<i class="fa-solid fa-id-badge me-2 text-primary"></i>Add Designation';
     document.getElementById('designationId').value = '';
     document.getElementById('formName').value = '';
-    document.getElementById('formCode').value = '';
     document.getElementById('formDescription').value = '';
     document.getElementById('formStatus').value = 'ACTIVE';
     document.getElementById('formSortOrder').value = '';
@@ -409,7 +410,6 @@
       document.getElementById('designationId').value = row.id;
       document.getElementById('formBusinessId').value = String(row.businessId || '');
       document.getElementById('formName').value = row.name || '';
-      document.getElementById('formCode').value = row.code || '';
       document.getElementById('formDescription').value = row.description || '';
       document.getElementById('formStatus').value = row.status || 'ACTIVE';
       document.getElementById('formSortOrder').value = row.sortOrder ?? '';
@@ -426,7 +426,6 @@
     const id = document.getElementById('designationId').value;
     const businessId = Number(document.getElementById('formBusinessId').value);
     const name = document.getElementById('formName').value.trim();
-    const code = document.getElementById('formCode').value.trim();
     const description = document.getElementById('formDescription').value.trim();
     const status = document.getElementById('formStatus').value;
     const sortOrderRaw = document.getElementById('formSortOrder').value;
@@ -434,6 +433,9 @@
 
     if (!businessId) return showModalAlert('Business is required', 'danger');
     if (!name) return showModalAlert('Name is required', 'danger');
+
+    // Auto-generate code from name
+    const code = generateCodeFromName(name);
 
     const payload = {
       businessId,
