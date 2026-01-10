@@ -25,9 +25,24 @@ export const loginUser = asyncHandler(async (req, res) => {
         user.refreshTokenExpiresAt = refreshExp ? new Date(refreshExp * 1000) : null;
         await user.save();
 
+        // Calculate maxAge in seconds (refresh token expires in 7d by default)
+        // Use refresh token expiry for cookie persistence, fallback to 7 days
+        // refreshExp is in seconds since epoch, convert to remaining seconds from now
+        let maxAgeSeconds;
+        if (refreshExp) {
+            const remainingMs = (refreshExp * 1000) - Date.now();
+            maxAgeSeconds = Math.max(0, Math.floor(remainingMs / 1000));
+        } else {
+            // Fallback: 7 days = 7 * 24 * 60 * 60 seconds
+            maxAgeSeconds = 7 * 24 * 60 * 60;
+        }
+
         const options = {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production"
+            secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            maxAge: maxAgeSeconds, // Persistent cookie that survives browser close
+            path: "/" // Ensure cookie is available for all paths
         }
 
         return res
@@ -58,6 +73,8 @@ export const logoutUser = asyncHandler(async (req, res) => {
         const options = {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+            path: "/", // Must match the path used when setting cookies
             expires: new Date(0) // Expire the cookie immediately
         };
 

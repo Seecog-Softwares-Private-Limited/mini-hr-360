@@ -145,6 +145,11 @@ app.get('/departments', verifyUser, (req, res) => {
     res.render('departments', { title: 'Departments', user, active: 'departments', activeGroup: 'workspace' });
 });
 
+app.get('/business-addresses', verifyUser, (req, res) => {
+    const user = { firstName: req.user.firstName, lastName: req.user.lastName };
+    res.render('business-addresses', { title: 'Business Addresses', user, active: 'businessAddresses', activeGroup: 'workspace' });
+});
+
 app.get('/clear-storage', (req, res) => {
     res.send(`
     <!DOCTYPE html>

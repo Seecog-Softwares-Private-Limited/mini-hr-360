@@ -147,13 +147,39 @@
     `;
   }
 
-  // This log is harmless; it does not block redirects
-  document.addEventListener('DOMContentLoaded', function() {
-    window.loginRedirected = false;
-    console.log('Login page loaded - auto-redirect disabled to prevent loops');
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      // Intentionally not auto-redirecting here
+  // Check if user is already authenticated via cookies and auto-redirect to dashboard
+  document.addEventListener('DOMContentLoaded', async function() {
+    // Check if user is already authenticated by trying to access a protected endpoint
+    // Cookies are httpOnly so we can't read them directly, but we can check via API call
+    try {
+      // Use the business list endpoint - works even if user has no businesses yet
+      // It will return 200 with empty array if authenticated but no businesses
+      const response = await fetch(`${window.location.origin.replace(/\/$/, '')}/api/v1/business`, {
+        method: 'GET',
+        credentials: 'include', // Important: sends cookies automatically
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      // If we get 200 (authenticated, even if no businesses) or any non-401 response, user is authenticated
+      // 404/500 would be server errors, not auth failures, so we only check for 401
+      if (response.status !== 401) {
+        console.log('User is already authenticated via cookies, redirecting to dashboard...');
+        // User is authenticated, redirect to dashboard
+        window.location.replace('/dashboard');
+        return;
+      }
+
+      // If 401, user is not authenticated, show login form (do nothing)
+      console.log('User is not authenticated, showing login form');
+      // Clear any stale localStorage tokens
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('user');
+    } catch (error) {
+      // Network error or other issue - show login form (do nothing)
+      // This could be a network issue, so don't clear localStorage unnecessarily
+      console.log('Auth check failed (network error), showing login form');
     }
   });
 </script>
