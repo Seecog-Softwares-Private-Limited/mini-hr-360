@@ -258,13 +258,46 @@
 
                 <div class="col-md-4">
                   <label class="form-label">Gender</label>
-                  <select name="gender" class="form-select">
-                    <option value="">Select</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Non-binary">Non-binary</option>
-                    <option value="Prefer not to say">Prefer not to say</option>
-                  </select>
+                  <div class="gender-select-wrapper">
+                    <select name="gender" id="genderSelect" class="form-select gender-select-original">
+                      <option value="">Select</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Non-binary">Non-binary</option>
+                      <option value="Prefer not to say">Prefer not to say</option>
+                    </select>
+                    <div class="gender-select-custom" id="genderSelectCustom">
+                      <div class="gender-select-trigger placeholder" id="genderSelectTrigger">
+                        <span class="gender-select-value">
+                          <i class="fas fa-circle-dot" style="color: #6b7280;"></i>
+                          <span class="gender-select-text">Select</span>
+                        </span>
+                        <i class="fas fa-chevron-down gender-select-arrow"></i>
+                      </div>
+                      <div class="gender-select-dropdown" id="genderSelectDropdown">
+                        <div class="gender-option" data-value="">
+                          <i class="fas fa-circle-dot gender-option-icon" style="color: #6b7280;"></i>
+                          <span class="gender-option-label">Select</span>
+                        </div>
+                        <div class="gender-option" data-value="Male">
+                          <i class="fas fa-mars gender-option-icon gender-icon-male"></i>
+                          <span class="gender-option-label">Male</span>
+                        </div>
+                        <div class="gender-option" data-value="Female">
+                          <i class="fas fa-venus gender-option-icon gender-icon-female"></i>
+                          <span class="gender-option-label">Female</span>
+                        </div>
+                        <div class="gender-option" data-value="Non-binary">
+                          <i class="fas fa-transgender gender-option-icon gender-icon-nonbinary"></i>
+                          <span class="gender-option-label">Non-binary</span>
+                        </div>
+                        <div class="gender-option" data-value="Prefer not to say">
+                          <i class="fas fa-circle-question gender-option-icon gender-icon-prefer-not"></i>
+                          <span class="gender-option-label">Prefer not to say</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div class="col-md-4">
@@ -1223,53 +1256,130 @@
 {{!-- View Employee Modal --}}
 <div class="modal fade" id="viewEmployeeModal" tabindex="-1">
   <div class="modal-dialog modal-xl">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Employee Details</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <div class="modal-content view-emp-modal-content">
+      <div class="modal-header view-emp-modal-header">
+        <div class="view-emp-header-content">
+          <div class="view-emp-avatar" id="viewEmpAvatar">
+            <span id="viewEmpInitials"></span>
+          </div>
+          <div class="view-emp-header-text">
+            <h5 class="modal-title view-emp-title" id="viewEmpNameTitle">Employee Details</h5>
+            <div class="view-emp-chips">
+              <span class="view-emp-chip" id="viewEmpIdChip">
+                <i class="fas fa-id-card"></i>
+                <span id="viewEmpId"></span>
+              </span>
+              <span class="view-emp-chip" id="viewEmpEmailChip">
+                <i class="fas fa-envelope"></i>
+                <span id="viewEmpEmail"></span>
+              </span>
+              <span class="view-emp-chip" id="viewEmpPhoneChip">
+                <i class="fas fa-phone"></i>
+                <span id="viewEmpPhone"></span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <button type="button" class="btn-close view-emp-close-btn" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="modal-body">
-        <h5 id="viewEmpName" class="mb-1"></h5>
-        <p class="text-muted mb-3">
-          <span id="viewEmpId"></span>
-          &middot;
-          <span id="viewEmpEmail"></span>
-          &middot;
-          <span id="viewEmpPhone"></span>
-        </p>
+      <div class="modal-body view-emp-modal-body">
+        <div class="view-emp-grid">
+          <!-- Personal Details Card -->
+          <div class="view-emp-section-card">
+            <div class="view-emp-card-header">
+              <i class="fas fa-user"></i>
+              <h6 class="view-emp-card-title">Personal Details</h6>
+            </div>
+            <div class="view-emp-card-body">
+              <dl class="row view-emp-dl" id="viewPersonalDetails"></dl>
+            </div>
+          </div>
 
-        <hr />
+          <!-- Emergency Contact Card -->
+          <div class="view-emp-section-card">
+            <div class="view-emp-card-header">
+              <i class="fas fa-phone-alt"></i>
+              <h6 class="view-emp-card-title">Emergency Contact</h6>
+            </div>
+            <div class="view-emp-card-body">
+              <dl class="row view-emp-dl" id="viewEmergencyContactDetails"></dl>
+            </div>
+          </div>
 
-        <h6>Personal Details</h6>
-        <dl class="row" id="viewPersonalDetails"></dl>
+          <!-- Present Address Card -->
+          <div class="view-emp-section-card">
+            <div class="view-emp-card-header">
+              <i class="fas fa-map-marker-alt"></i>
+              <h6 class="view-emp-card-title">Present Address</h6>
+            </div>
+            <div class="view-emp-card-body">
+              <dl class="row view-emp-dl" id="viewPresentAddressDetails"></dl>
+            </div>
+          </div>
 
-        <hr />
+          <!-- Permanent Address Card -->
+          <div class="view-emp-section-card">
+            <div class="view-emp-card-header">
+              <i class="fas fa-map-pin"></i>
+              <h6 class="view-emp-card-title">Permanent Address</h6>
+            </div>
+            <div class="view-emp-card-body">
+              <dl class="row view-emp-dl" id="viewPermanentAddressDetails"></dl>
+            </div>
+          </div>
 
-        <h6>Professional Details</h6>
-        <dl class="row" id="viewProfessionalDetails"></dl>
+          <!-- Professional Details Card -->
+          <div class="view-emp-section-card">
+            <div class="view-emp-card-header">
+              <i class="fas fa-briefcase"></i>
+              <h6 class="view-emp-card-title">Professional Details</h6>
+            </div>
+            <div class="view-emp-card-body">
+              <dl class="row view-emp-dl" id="viewProfessionalDetails"></dl>
+            </div>
+          </div>
 
-        <hr />
+          <!-- Compensation Card -->
+          <div class="view-emp-section-card">
+            <div class="view-emp-card-header">
+              <i class="fas fa-money-bill-wave"></i>
+              <h6 class="view-emp-card-title">Compensation</h6>
+            </div>
+            <div class="view-emp-card-body">
+              <dl class="row view-emp-dl" id="viewCompensationDetails"></dl>
+            </div>
+          </div>
 
-        <h6>Compensation</h6>
-        <dl class="row" id="viewCompensationDetails"></dl>
+          <!-- Education Card -->
+          <div class="view-emp-section-card view-emp-section-card-full">
+            <div class="view-emp-card-header">
+              <i class="fas fa-graduation-cap"></i>
+              <h6 class="view-emp-card-title">Education &amp; Qualification</h6>
+            </div>
+            <div class="view-emp-card-body" id="viewEducationList"></div>
+          </div>
 
-        <hr />
+          <!-- Experience Card -->
+          <div class="view-emp-section-card view-emp-section-card-full">
+            <div class="view-emp-card-header">
+              <i class="fas fa-briefcase"></i>
+              <h6 class="view-emp-card-title">Experience / Employment History</h6>
+            </div>
+            <div class="view-emp-card-body" id="viewExperienceList"></div>
+          </div>
 
-        <h6>Education &amp; Qualification</h6>
-        <div id="viewEducationList"></div>
-
-        <hr />
-
-        <h6>Experience / Employment History</h6>
-        <div id="viewExperienceList"></div>
-
-        <hr />
-
-        <h6>Documents &amp; KYC</h6>
-        <div id="viewDocumentList"></div>
+          <!-- Documents Card -->
+          <div class="view-emp-section-card view-emp-section-card-full">
+            <div class="view-emp-card-header">
+              <i class="fas fa-file-alt"></i>
+              <h6 class="view-emp-card-title">Documents &amp; KYC</h6>
+            </div>
+            <div class="view-emp-card-body" id="viewDocumentList"></div>
+          </div>
+        </div>
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">
+      <div class="modal-footer view-emp-modal-footer">
+        <button class="btn btn-secondary view-emp-close-btn" type="button" data-bs-dismiss="modal">
           Close
         </button>
       </div>
@@ -1741,6 +1851,9 @@
       resetDynamicSection(educationContainer, ".education-row");
       resetDynamicSection(experienceContainer, ".experience-row");
       resetDynamicSection(documentContainer, ".document-row");
+
+      // Reset gender dropdown display
+      updateGenderDropdownDisplay();
     }
 
     // =======================================
@@ -1756,6 +1869,129 @@
         el.checked = !!value;
       } else {
         el.value = value != null ? value : "";
+      }
+
+      // Special handling for gender field to update custom dropdown display
+      if (name === "gender") {
+        updateGenderDropdownDisplay();
+      }
+    }
+
+    // =======================================
+    // Gender Dropdown with Icons - Custom UI
+    // =======================================
+    function getGenderIcon(value) {
+      const icons = {
+        "": '<i class="fas fa-circle-dot" style="color: #6b7280;"></i>',
+        "Male": '<i class="fas fa-mars gender-icon-male"></i>',
+        "Female": '<i class="fas fa-venus gender-icon-female"></i>',
+        "Non-binary": '<i class="fas fa-transgender gender-icon-nonbinary"></i>',
+        "Prefer not to say": '<i class="fas fa-circle-question gender-icon-prefer-not"></i>'
+      };
+      return icons[value] || icons[""];
+    }
+
+    function getGenderLabel(value) {
+      return value || "Select";
+    }
+
+    function updateGenderDropdownDisplay() {
+      const genderSelect = document.getElementById("genderSelect");
+      const genderTrigger = document.getElementById("genderSelectTrigger");
+      const genderDropdown = document.getElementById("genderSelectDropdown");
+
+      if (!genderSelect || !genderTrigger || !genderDropdown) return;
+
+      const selectedValue = genderSelect.value;
+      const valueSpan = genderTrigger.querySelector(".gender-select-value");
+
+      if (valueSpan) {
+        // Rebuild the value span content with icon and text
+        valueSpan.innerHTML = getGenderIcon(selectedValue) + 
+          '<span class="gender-select-text">' + getGenderLabel(selectedValue) + '</span>';
+
+        if (selectedValue) {
+          genderTrigger.classList.remove("placeholder");
+        } else {
+          genderTrigger.classList.add("placeholder");
+        }
+      }
+
+      // Update selected state in dropdown options
+      const options = genderDropdown.querySelectorAll(".gender-option");
+      options.forEach(opt => {
+        if (opt.dataset.value === selectedValue) {
+          opt.classList.add("selected");
+        } else {
+          opt.classList.remove("selected");
+        }
+      });
+    }
+
+    function initGenderDropdown() {
+      const genderSelect = document.getElementById("genderSelect");
+      const genderTrigger = document.getElementById("genderSelectTrigger");
+      const genderDropdown = document.getElementById("genderSelectDropdown");
+      const genderCustom = document.getElementById("genderSelectCustom");
+
+      if (!genderSelect || !genderTrigger || !genderDropdown || !genderCustom) return;
+
+      // Initialize display
+      updateGenderDropdownDisplay();
+
+      // Close dropdown when clicking outside
+      document.addEventListener("click", function(e) {
+        if (!genderCustom.contains(e.target)) {
+          genderCustom.classList.remove("open");
+        }
+      });
+
+      // Toggle dropdown on trigger click
+      genderTrigger.addEventListener("click", function(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        genderCustom.classList.toggle("open");
+      });
+
+      // Handle option selection
+      const options = genderDropdown.querySelectorAll(".gender-option");
+      options.forEach(opt => {
+        opt.addEventListener("click", function(e) {
+          e.stopPropagation();
+          const value = this.dataset.value;
+          genderSelect.value = value;
+          
+          // Trigger change event on original select for form validation
+          genderSelect.dispatchEvent(new Event("change", { bubbles: true }));
+          
+          updateGenderDropdownDisplay();
+          genderCustom.classList.remove("open");
+        });
+      });
+
+      // Sync custom display when original select changes (programmatically)
+      genderSelect.addEventListener("change", function() {
+        updateGenderDropdownDisplay();
+      });
+    }
+
+    // Initialize gender dropdown when modal is shown
+    const addEmployeeModalEl = document.getElementById("addEmployeeModal");
+    if (addEmployeeModalEl) {
+      addEmployeeModalEl.addEventListener("shown.bs.modal", function() {
+        setTimeout(() => {
+          initGenderDropdown();
+        }, 100);
+      });
+
+      // Also initialize on tab switch (Personal Details tab)
+      const basicTab = document.getElementById("basic-tab");
+      if (basicTab) {
+        basicTab.addEventListener("shown.bs.tab", function() {
+          setTimeout(() => {
+            initGenderDropdown();
+          }, 100);
+        });
       }
     }
 
@@ -1983,6 +2219,10 @@
 
       container.innerHTML = "";
       entries.forEach(([label, value]) => {
+        // Skip empty values
+        if (!value || (typeof value === 'string' && value.trim() === '')) {
+          return;
+        }
         const val = value != null && value !== "" ? value : "-";
         container.insertAdjacentHTML(
           "beforeend",
@@ -2014,23 +2254,47 @@
       try {
         const emp = await fetchEmployee(id);
 
-        const viewEmpName = document.getElementById("viewEmpName");
+        const fullName = emp.empName || (emp.firstName + " " + (emp.lastName || ""));
+        const initials = (emp.firstName ? emp.firstName[0] : '') + (emp.lastName ? emp.lastName[0] : '');
+
+        const viewEmpInitials = document.getElementById("viewEmpInitials");
+        const viewEmpNameTitle = document.getElementById("viewEmpNameTitle");
         const viewEmpId = document.getElementById("viewEmpId");
         const viewEmpEmail = document.getElementById("viewEmpEmail");
         const viewEmpPhone = document.getElementById("viewEmpPhone");
 
-        if (viewEmpName) {
-          viewEmpName.textContent =
-            emp.empName || (emp.firstName + " " + (emp.lastName || ""));
+        if (viewEmpInitials) {
+          viewEmpInitials.textContent = initials;
+        }
+        if (viewEmpNameTitle) {
+          viewEmpNameTitle.textContent = fullName;
         }
         if (viewEmpId) {
-          viewEmpId.textContent = "Emp ID: " + (emp.empId || "-");
+          viewEmpId.textContent = emp.empId || "-";
         }
         if (viewEmpEmail) {
           viewEmpEmail.textContent = emp.empEmail || "-";
         }
         if (viewEmpPhone) {
           viewEmpPhone.textContent = emp.empPhone || "-";
+        }
+
+        // Show/hide chips based on data presence
+        const viewEmpIdChip = document.getElementById("viewEmpIdChip");
+        const viewEmpEmailChip = document.getElementById("viewEmpEmailChip");
+        const viewEmpPhoneChip = document.getElementById("viewEmpPhoneChip");
+
+        if (viewEmpIdChip) {
+          if (!emp.empId) viewEmpIdChip.style.display = "none";
+          else viewEmpIdChip.style.display = "inline-flex";
+        }
+        if (viewEmpEmailChip) {
+          if (!emp.empEmail) viewEmpEmailChip.style.display = "none";
+          else viewEmpEmailChip.style.display = "inline-flex";
+        }
+        if (viewEmpPhoneChip) {
+          if (!emp.empPhone) viewEmpPhoneChip.style.display = "none";
+          else viewEmpPhoneChip.style.display = "inline-flex";
         }
 
         renderKeyValueList("viewPersonalDetails", [
@@ -2042,25 +2306,31 @@
           ["Religion", emp.religion],
           ["Category / Caste", emp.casteCategory],
           ["Languages Known", emp.languagesKnown],
-          ["Emergency Contact Name", emp.emergencyContactName],
-          ["Emergency Contact Relation", emp.emergencyContactRelation],
-          ["Emergency Contact Number", emp.emergencyContactNumber],
-          ["Present Address Line 1", emp.presentAddressLine1],
-          ["Present Address Line 2", emp.presentAddressLine2],
-          ["Present City", emp.presentCity],
-          ["Present State", emp.presentState],
-          ["Present ZIP", emp.presentZip],
-          ["Present Country", emp.presentCountry],
-          [
-            "Permanent Same As Present",
-            emp.permanentSameAsPresent ? "Yes" : "No",
-          ],
-          ["Permanent Address Line 1", emp.permanentAddressLine1],
-          ["Permanent Address Line 2", emp.permanentAddressLine2],
-          ["Permanent City", emp.permanentCity],
-          ["Permanent State", emp.permanentState],
-          ["Permanent ZIP", emp.permanentZip],
-          ["Permanent Country", emp.permanentCountry],
+        ]);
+
+        renderKeyValueList("viewEmergencyContactDetails", [
+          ["Name", emp.emergencyContactName],
+          ["Relation", emp.emergencyContactRelation],
+          ["Number", emp.emergencyContactNumber],
+        ]);
+
+        renderKeyValueList("viewPresentAddressDetails", [
+          ["Line 1", emp.presentAddressLine1],
+          ["Line 2", emp.presentAddressLine2],
+          ["City", emp.presentCity],
+          ["State", emp.presentState],
+          ["ZIP", emp.presentZip],
+          ["Country", emp.presentCountry],
+        ]);
+
+        renderKeyValueList("viewPermanentAddressDetails", [
+          ["Same as Present", emp.permanentSameAsPresent ? "Yes" : "No"],
+          ["Line 1", emp.permanentAddressLine1],
+          ["Line 2", emp.permanentAddressLine2],
+          ["City", emp.permanentCity],
+          ["State", emp.permanentState],
+          ["ZIP", emp.permanentZip],
+          ["Country", emp.permanentCountry],
         ]);
 
         renderKeyValueList("viewProfessionalDetails", [
@@ -2098,6 +2368,40 @@
           ["Net Salary", emp.netSalary],
         ]);
 
+        const eduContainer = document.getElementById("viewEducationList");
+        if (eduContainer) {
+          eduContainer.innerHTML = "";
+          const edus = emp.educations || [];
+
+          if (edus.length === 0) {
+            eduContainer.innerHTML =
+              '<p class="text-muted mb-0">No education entries.</p>';
+          } else {
+            const list = document.createElement("div");
+            edus.forEach((e) => {
+              const card = document.createElement("div");
+              card.className = "view-emp-sub-card";
+              card.innerHTML = `
+                <strong>${escapeHtml(e.degree || "")}</strong> (${escapeHtml(
+                e.level || ""
+              )})<br/>
+                <small>${escapeHtml(e.institutionName || "")} (${
+                e.yearOfPassing || "-"
+              })</small>
+                ${
+                  e.certificateUrl
+                    ? `<br/><small><a href="${escapeHtml(
+                        e.certificateUrl
+                      )}" target="_blank" rel="noopener noreferrer">Certificate</a></small>`
+                    : ""
+                }
+              `;
+              list.appendChild(card);
+            });
+            eduContainer.appendChild(list);
+          }
+        }
+
         const expContainer = document.getElementById("viewExperienceList");
 if (expContainer) {
   expContainer.innerHTML = "";
@@ -2110,7 +2414,7 @@ if (expContainer) {
     const list = document.createElement("div");
     exps.forEach((e) => {
       const card = document.createElement("div");
-      card.className = "border rounded p-2 mb-2";
+      card.className = "view-emp-sub-card";
 
       const docs = [];
       if (e.relievingLetterUrl) {
@@ -2168,7 +2472,7 @@ if (expContainer) {
             const list = document.createElement("div");
             docs.forEach((d) => {
               const card = document.createElement("div");
-              card.className = "border rounded p-2 mb-2";
+              card.className = "view-emp-sub-card";
               card.innerHTML = `
                 <strong>${escapeHtml(d.category || "")}</strong> - ${escapeHtml(
                 d.documentType || ""
