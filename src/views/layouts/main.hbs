@@ -894,6 +894,459 @@
         #addEmployeeModal .modal-footer .btn-primary:hover {
             filter: brightness(0.98);
         }
+
+        /* ---------- Gender Dropdown with Icons (Personal Details) ---------- */
+        #addEmployeeModal .gender-select-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        /* Hide original select visually but keep it functional for form submission */
+        #addEmployeeModal .gender-select-wrapper .gender-select-original {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            z-index: 2;
+            cursor: pointer;
+            /* Keep all attributes, name, id, required, etc. */
+        }
+
+        #addEmployeeModal .gender-select-custom {
+            position: relative;
+            width: 100%;
+        }
+
+        #addEmployeeModal .gender-select-trigger {
+            position: relative;
+            width: 100%;
+            padding: 12px 16px;
+            padding-right: 40px;
+            background: #fff;
+            border: 1px solid rgba(15, 23, 42, 0.12);
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #0f172a;
+            cursor: pointer;
+            transition: all 140ms ease;
+            box-shadow: 0 1px 0 rgba(15, 23, 42, 0.02);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 42px;
+        }
+
+        #addEmployeeModal .gender-select-trigger:hover {
+            border-color: rgba(99, 102, 241, 0.35);
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.08);
+        }
+
+        #addEmployeeModal .gender-select-wrapper:has(.gender-select-original:focus) .gender-select-trigger,
+        #addEmployeeModal .gender-select-custom.open .gender-select-trigger {
+            outline: none;
+            border-color: rgba(99, 102, 241, 0.55);
+            box-shadow: 0 0 0 0.25rem rgba(99, 102, 241, 0.14);
+            background: #fff;
+        }
+
+        #addEmployeeModal .gender-select-value {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        #addEmployeeModal .gender-select-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        #addEmployeeModal .gender-select-placeholder-icon {
+            font-size: 14px;
+            color: rgba(99, 102, 241, 0.75);
+            flex-shrink: 0;
+        }
+
+        /* Icon colors for selected value */
+        #addEmployeeModal .gender-select-value .gender-icon-male {
+            color: #3b82f6;
+        }
+
+        #addEmployeeModal .gender-select-value .gender-icon-female {
+            color: #ec4899;
+        }
+
+        #addEmployeeModal .gender-select-value .gender-icon-nonbinary {
+            color: #8b5cf6;
+        }
+
+        #addEmployeeModal .gender-select-value .gender-icon-prefer-not {
+            color: #6b7280;
+        }
+
+        #addEmployeeModal .gender-select-trigger.placeholder .gender-select-text {
+            color: rgba(15, 23, 42, 0.55);
+        }
+
+        #addEmployeeModal .gender-select-arrow {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            color: rgba(15, 23, 42, 0.55);
+            transition: transform 140ms ease;
+            pointer-events: none;
+        }
+
+        #addEmployeeModal .gender-select-custom.open .gender-select-arrow {
+            transform: translateY(-50%) rotate(180deg);
+        }
+
+        #addEmployeeModal .gender-select-dropdown {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background: #fff;
+            border: 1px solid rgba(15, 23, 42, 0.12);
+            border-radius: 12px;
+            box-shadow: 0 12px 32px rgba(15, 23, 42, 0.15);
+            z-index: 1050;
+            max-height: 300px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            display: none;
+            animation: genderSelectFadeIn 140ms ease;
+        }
+
+        #addEmployeeModal .gender-select-custom.open .gender-select-dropdown {
+            display: block;
+        }
+
+        @keyframes genderSelectFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        #addEmployeeModal .gender-select-dropdown::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #addEmployeeModal .gender-select-dropdown::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.04);
+            border-radius: 4px;
+        }
+
+        #addEmployeeModal .gender-select-dropdown::-webkit-scrollbar-thumb {
+            background: rgba(15, 23, 42, 0.2);
+            border-radius: 4px;
+        }
+
+        #addEmployeeModal .gender-select-dropdown::-webkit-scrollbar-thumb:hover {
+            background: rgba(15, 23, 42, 0.3);
+        }
+
+        #addEmployeeModal .gender-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #0f172a;
+            cursor: pointer;
+            transition: background-color 120ms ease, color 120ms ease;
+            border-bottom: 1px solid rgba(15, 23, 42, 0.04);
+            position: relative;
+        }
+
+        #addEmployeeModal .gender-option:last-child {
+            border-bottom: none;
+        }
+
+        #addEmployeeModal .gender-option:hover {
+            background: rgba(99, 102, 241, 0.08);
+            color: #0f172a;
+        }
+
+        #addEmployeeModal .gender-option.selected {
+            background: rgba(99, 102, 241, 0.12);
+            color: #6366f1;
+            font-weight: 700;
+        }
+
+        #addEmployeeModal .gender-option-icon {
+            font-size: 16px;
+            width: 20px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        /* Icon colors for options */
+        #addEmployeeModal .gender-icon-male {
+            color: #3b82f6; /* Blue */
+        }
+
+        #addEmployeeModal .gender-icon-female {
+            color: #ec4899; /* Pink */
+        }
+
+        #addEmployeeModal .gender-icon-nonbinary {
+            color: #8b5cf6; /* Purple */
+        }
+
+        #addEmployeeModal .gender-icon-prefer-not {
+            color: #6b7280; /* Gray */
+        }
+
+        #addEmployeeModal .gender-option.selected .gender-icon-male {
+            color: #2563eb; /* Darker blue when selected */
+        }
+
+        #addEmployeeModal .gender-option.selected .gender-icon-female {
+            color: #db2777; /* Darker pink when selected */
+        }
+
+        #addEmployeeModal .gender-option.selected .gender-icon-nonbinary {
+            color: #7c3aed; /* Darker purple when selected */
+        }
+
+        #addEmployeeModal .gender-option.selected .gender-icon-prefer-not {
+            color: #4b5563; /* Darker gray when selected */
+        }
+
+        #addEmployeeModal .gender-option-label {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        #addEmployeeModal .gender-option .gender-option-check {
+            font-size: 12px;
+            color: #6366f1;
+            flex-shrink: 0;
+            opacity: 0;
+            transition: opacity 120ms ease;
+        }
+
+        #addEmployeeModal .gender-option.selected .gender-option-check {
+            opacity: 1;
+        }
+
+        /* Ensure dropdown doesn't overflow modal */
+        #addEmployeeModal .gender-select-dropdown {
+            max-height: min(300px, calc(100vh - 300px));
+        }
+
+        /* ---------- Premium View Employee Modal ---------- */
+        #viewEmployeeModal .modal-dialog {
+            max-width: 1000px;
+        }
+
+        #viewEmployeeModal .view-emp-modal-content {
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 30px 80px rgba(15, 23, 42, 0.18);
+            background: #fff;
+        }
+
+        #viewEmployeeModal .view-emp-modal-header {
+            border: 0;
+            padding: 18px 20px;
+            background:
+                radial-gradient(900px 260px at 10% 0%, rgba(99, 102, 241, 0.22), rgba(255,255,255,0)),
+                radial-gradient(700px 240px at 80% 20%, rgba(139, 92, 246, 0.18), rgba(255,255,255,0)),
+                linear-gradient(180deg, rgba(15, 23, 42, 0.02) 0%, rgba(15, 23, 42, 0.00) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        #viewEmployeeModal .view-emp-header-content {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        #viewEmployeeModal .view-emp-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            display: grid;
+            place-items: center;
+            color: #fff;
+            font-size: 24px;
+            font-weight: 700;
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.2);
+        }
+
+        #viewEmployeeModal .view-emp-title {
+            font-weight: 900;
+            letter-spacing: -0.02em;
+            color: #0f172a;
+            margin: 0;
+        }
+
+        #viewEmployeeModal .view-emp-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        #viewEmployeeModal .view-emp-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 10px;
+            border-radius: 999px;
+            background: rgba(99, 102, 241, 0.1);
+            color: #6366f1;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        #viewEmployeeModal .view-emp-chip i {
+            font-size: 10px;
+        }
+
+        #viewEmployeeModal .view-emp-close-btn {
+            opacity: 0.7;
+            transition: opacity 0.15s ease;
+        }
+        #viewEmployeeModal .view-emp-close-btn:hover {
+            opacity: 1;
+        }
+
+        #viewEmployeeModal .view-emp-modal-body {
+            padding: 20px;
+            background: #f8fafc;
+        }
+
+        #viewEmployeeModal .view-emp-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        #viewEmployeeModal .view-emp-section-card {
+            background: #fff;
+            border-radius: 14px;
+            border: 1px solid rgba(15, 23, 42, 0.06);
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+            overflow: hidden;
+        }
+
+        #viewEmployeeModal .view-emp-section-card-full {
+            grid-column: 1 / -1;
+        }
+
+        #viewEmployeeModal .view-emp-card-header {
+            padding: 12px 15px;
+            background: rgba(99, 102, 241, 0.05);
+            border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #viewEmployeeModal .view-emp-card-header i {
+            color: #6366f1;
+            font-size: 16px;
+        }
+
+        #viewEmployeeModal .view-emp-card-title {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        #viewEmployeeModal .view-emp-card-body {
+            padding: 15px;
+        }
+
+        #viewEmployeeModal .view-emp-dl {
+            margin-bottom: 0;
+        }
+
+        #viewEmployeeModal .view-emp-dl dt {
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(15, 23, 42, 0.65) !important;
+            padding-top: 4px;
+            padding-bottom: 4px;
+        }
+
+        #viewEmployeeModal .view-emp-dl dd {
+            font-size: 14px;
+            font-weight: 500;
+            color: #0f172a;
+            padding-top: 4px;
+            padding-bottom: 4px;
+            margin-bottom: 0;
+        }
+
+        #viewEmployeeModal .view-emp-sub-card {
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            border-radius: 10px;
+            padding: 10px 12px;
+            margin-bottom: 10px;
+            background: #fdfdff;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.03);
+        }
+        #viewEmployeeModal .view-emp-sub-card:last-child {
+            margin-bottom: 0;
+        }
+        #viewEmployeeModal .view-emp-sub-card strong {
+            color: #0f172a;
+            font-size: 14px;
+        }
+        #viewEmployeeModal .view-emp-sub-card small {
+            color: rgba(15, 23, 42, 0.6);
+            font-size: 11px;
+        }
+        #viewEmployeeModal .view-emp-sub-card a {
+            color: #6366f1;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        #viewEmployeeModal .view-emp-sub-card a:hover {
+            text-decoration: underline;
+        }
+
+        #viewEmployeeModal .view-emp-modal-footer {
+            border-top: 1px solid rgba(15, 23, 42, 0.08);
+            padding: 12px 20px;
+            background: rgba(15, 23, 42, 0.02);
+        }
+        #viewEmployeeModal .view-emp-modal-footer .btn-secondary {
+            border-radius: 12px;
+            font-weight: 800;
+            padding: 10px 14px;
+            background: rgba(15, 23, 42, 0.08);
+            border: 1px solid rgba(15, 23, 42, 0.10);
+            color: rgba(15, 23, 42, 0.82);
+        }
+        #viewEmployeeModal .view-emp-modal-footer .btn-secondary:hover {
+            background: rgba(15, 23, 42, 0.12);
+        }
     </style>
 </head>
 <body class="{{pageClass}}">
@@ -946,11 +1399,14 @@
                         ));
 
                     if (isAuthError) {
+                        // Clear stale tokens from localStorage
+                        localStorage.removeItem('accessToken');
+                        localStorage.removeItem('user');
+                        
                         // Only redirect to /login if we are NOT already on login/register
                         if (!isAuthPage()) {
-                            console.log('Authentication failed, redirecting to login...');
-                            localStorage.removeItem('accessToken');
-                            localStorage.removeItem('user');
+                            console.log('Authentication failed, clearing tokens and redirecting to login...');
+                            // Clear cookies by calling logout endpoint or letting server clear them
                             window.location.replace('/login');
                             return;
                         }
@@ -981,20 +1437,21 @@
         }
         
         // Check authentication
+        // Note: Server-side middleware (verifyUser) handles auth via cookies
+        // This client-side check is just a safety net and should not interfere with cookie-based auth
         function checkAuth() {
-            const token = localStorage.getItem('accessToken');
             const currentPath = window.location.pathname;
             
-            // Only redirect if we're not already on login/register pages and no token exists
-            if (!token && 
-                currentPath !== '/login' && 
-                currentPath !== '/register' && 
-                !currentPath.includes('/login') && 
-                !currentPath.includes('/register')) {
-                console.log('No token found, redirecting to login...');
-                // Use replace to prevent back button issues
-                window.location.replace('/login');
+            // Allow login/register pages without checking - server middleware will handle redirects
+            if (currentPath === '/login' || currentPath === '/register' || 
+                currentPath.includes('/login') || currentPath.includes('/register')) {
+                return;
             }
+
+            // Server-side verifyUser middleware checks cookies first, then Authorization header
+            // If cookies exist and are valid, user is authenticated even without localStorage token
+            // Don't auto-redirect here - let server middleware handle it
+            // This allows cookie-based auth to work properly across tabs
         }
         
         // Logout function
