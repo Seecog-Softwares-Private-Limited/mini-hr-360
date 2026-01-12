@@ -1,0 +1,16 @@
+{{!-- 
+  Leave Status Badge Partial
+  Usage: {{> leave/status-badge status=status}}
+--}}
+<span class="emp-badge 
+  {{#if (eq status 'PENDING')}}emp-badge-pending{{/if}}
+  {{#if (eq status 'APPROVED')}}emp-badge-approved{{/if}}
+  {{#if (eq status 'REJECTED')}}emp-badge-rejected{{/if}}
+  {{#if (eq status 'CANCELED')}}emp-badge-canceled{{/if}}
+">
+  {{#if (eq status 'PENDING')}}<i class="fa-solid fa-clock me-1"></i>{{/if}}
+  {{#if (eq status 'APPROVED')}}<i class="fa-solid fa-check me-1"></i>{{/if}}
+  {{#if (eq status 'REJECTED')}}<i class="fa-solid fa-times me-1"></i>{{/if}}
+  {{#if (eq status 'CANCELED')}}<i class="fa-solid fa-ban me-1"></i>{{/if}}
+  {{status}}
+</span>

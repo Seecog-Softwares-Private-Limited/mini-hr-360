@@ -1,5 +1,10 @@
 import { Op } from 'sequelize';
-import { LeaveRequest } from '../models/index.js';
+import { LeaveRequest, LeaveType, Employee, User } from '../models/index.js';
+import {
+    approveLeaveRequest as approveLeaveService,
+    rejectLeaveRequest as rejectLeaveService,
+    calculateLeaveDays,
+} from '../services/leave.service.js';
 
 function daysBetween(start, end) {
     const s = new Date(start);
@@ -54,8 +59,16 @@ export async function listLeaveRequests(req, res) {
         const paranoid = !(includeDeleted === 'true' || includeDeleted === true);
 
         const result = await LeaveRequest.findAndCountAll({
-            where, limit, offset, paranoid,
+            where, 
+            limit, 
+            offset, 
+            paranoid,
             order: [[orderBy, String(order).toUpperCase() === 'ASC' ? 'ASC' : 'DESC']],
+            include: [
+                { model: LeaveType, as: 'leaveType', attributes: ['id', 'name', 'code', 'color'] },
+                { model: Employee, as: 'employee', attributes: ['id', 'empId', 'empName', 'empDepartment'] },
+                { model: User, as: 'approver', attributes: ['id', 'firstName', 'lastName'] },
+            ],
         });
 
         return res.json({
@@ -126,13 +139,20 @@ export async function deleteLeaveRequest(req, res) {
 // POST /leave-requests/:id/approve
 export async function approveLeaveRequest(req, res) {
     try {
-        const row = await LeaveRequest.findByPk(req.params.id);
-        if (!row) return res.status(404).json({ message: 'Leave request not found' });
-        if (row.status !== 'PENDING') return res.status(400).json({ message: 'Only PENDING requests can be approved' });
+        const approverId = req.user?.id || req.body?.approverId || null;
+        const comments = req.body?.comments || req.body?.managerNote || null;
 
-        const approverId = req.user?.id || req.body?.approverId || null; // adapt to your auth
-        await row.update({ status: 'APPROVED', approverId, approvedAt: new Date() });
-        return res.json(row);
+        const result = await approveLeaveService(
+            parseInt(req.params.id),
+            approverId,
+            comments
+        );
+
+        if (!result.success) {
+            return res.status(400).json({ message: result.error });
+        }
+
+        return res.json(result.leaveRequest);
     } catch (e) {
         console.error('approveLeaveRequest', e);
         return res.status(500).json({ message: 'Server error' });
@@ -142,14 +162,20 @@ export async function approveLeaveRequest(req, res) {
 // POST /leave-requests/:id/reject
 export async function rejectLeaveRequest(req, res) {
     try {
-        const row = await LeaveRequest.findByPk(req.params.id);
-        if (!row) return res.status(404).json({ message: 'Leave request not found' });
-        if (row.status !== 'PENDING') return res.status(400).json({ message: 'Only PENDING requests can be rejected' });
-
         const approverId = req.user?.id || req.body?.approverId || null;
-        const managerNote = req.body?.managerNote || row.managerNote;
-        await row.update({ status: 'REJECTED', approverId, managerNote, rejectedAt: new Date() });
-        return res.json(row);
+        const comments = req.body?.comments || req.body?.managerNote || null;
+
+        const result = await rejectLeaveService(
+            parseInt(req.params.id),
+            approverId,
+            comments
+        );
+
+        if (!result.success) {
+            return res.status(400).json({ message: result.error });
+        }
+
+        return res.json(result.leaveRequest);
     } catch (e) {
         console.error('rejectLeaveRequest', e);
         return res.status(500).json({ message: 'Server error' });
