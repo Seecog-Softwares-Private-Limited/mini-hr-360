@@ -16,6 +16,10 @@ const app = express();
 
 // Ensure helpers exist on the exact Handlebars instance used by express-handlebars
 handlebars.registerHelper('eq', (a, b) => a === b);
+handlebars.registerHelper('or', (a, b) => a || b);
+handlebars.registerHelper('and', (a, b) => a && b);
+handlebars.registerHelper('not', (a) => !a);
+handlebars.registerHelper('dec', (n) => (typeof n === 'number' ? n - 1 : n));
 
 // Avoid favicon spam
 app.get('/favicon.ico', (req, res) => res.status(204).end());
@@ -28,7 +32,10 @@ app.engine(
         extname: '.hbs',
         defaultLayout: 'main',
         layoutsDir: path.join(__dirname, 'views/layouts'),
-        partialsDir: path.join(__dirname, 'views/partials'),
+        partialsDir: [
+            path.join(__dirname, 'views/partials'),
+            path.join(__dirname, 'views/partials/leave'),
+        ],
         helpers: {
             // used in tables
             inc(value) {
@@ -103,6 +110,9 @@ import countryRoutes from './routes/country.routes.js';
 import businessAddressRoutes from './routes/businessAddress.routes.js';
 import emailTemplateRoutes from './routes/emailTemplate.routes.js';
 import { renderEmailTemplatesPage } from './controllers/emailTemplate.controller.js';
+import { employeePortalRouter } from './routes/employeePortal.routes.js';
+import { adminLeaveRouter } from './routes/adminLeave.routes.js';
+import { billingRouter } from './routes/billing.routes.js';
 
 // ---------- Frontend pages ----------
 app.get('/', (req, res) => res.redirect('/login'));
@@ -213,5 +223,14 @@ app.get('/email-templates', verifyUser, renderEmailTemplatesPage);
 
 // API routes under /api/v1/email-templates
 app.use('/', emailTemplateRoutes);
+
+// Employee Portal Routes
+app.use('/employee', employeePortalRouter);
+
+// Admin Leave Management Routes
+app.use('/leave-requests', adminLeaveRouter);
+
+// Billing & Plans
+app.use('/billing', billingRouter);
 
 export { app };

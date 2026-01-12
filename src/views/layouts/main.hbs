@@ -69,6 +69,59 @@
             transform: rotate(-90deg);
         }
 
+        /* Nested Submenu (Leave Management) */
+        .sidebar .submenu-toggle {
+            cursor: pointer;
+        }
+        .sidebar .submenu-parent {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-right: 0.75rem;
+        }
+        .sidebar .submenu-arrow {
+            font-size: 0.7rem;
+            transition: transform 0.3s ease;
+            margin-left: auto;
+        }
+        .sidebar .submenu-arrow.open {
+            transform: rotate(180deg);
+        }
+        .sidebar .nested-submenu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 8px;
+            margin: 0.25rem 0.5rem;
+        }
+        .sidebar .nested-submenu.show {
+            max-height: 200px;
+            overflow: visible;
+            transition: max-height 0.3s ease-in;
+        }
+        .sidebar .nested-submenu .nav-link {
+            padding: 0.5rem 1rem 0.5rem 2rem;
+            font-size: 0.85rem;
+            border-left: 2px solid transparent;
+            margin: 0;
+            border-radius: 0;
+        }
+        .sidebar .nested-submenu .nav-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-left-color: rgba(255, 255, 255, 0.3);
+        }
+        .sidebar .nested-submenu .nav-link.active {
+            background: rgba(255, 255, 255, 0.15);
+            border-left-color: #10b981;
+            color: #10b981;
+        }
+        .sidebar .nested-submenu .nav-link i {
+            width: 18px;
+            margin-right: 8px;
+            font-size: 0.8rem;
+        }
+
         .sidebar-brand {
             display: flex;
             align-items: center;
@@ -1465,13 +1518,16 @@
         function toggleMenu(menuId) {
             const submenu = document.getElementById(menuId);
             const toggle = document.querySelector(`[onclick="toggleMenu('${menuId}')"]`);
+            const arrow = toggle ? toggle.querySelector('.submenu-arrow, .fa-chevron-down') : null;
             
             if (submenu.classList.contains('show')) {
                 submenu.classList.remove('show');
                 toggle.classList.add('collapsed');
+                if (arrow) arrow.classList.remove('open');
             } else {
                 submenu.classList.add('show');
                 toggle.classList.remove('collapsed');
+                if (arrow) arrow.classList.add('open');
             }
         }
         
