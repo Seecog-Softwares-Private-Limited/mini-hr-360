@@ -112,6 +112,7 @@ import emailTemplateRoutes from './routes/emailTemplate.routes.js';
 import { renderEmailTemplatesPage } from './controllers/emailTemplate.controller.js';
 import { employeePortalRouter } from './routes/employeePortal.routes.js';
 import { adminLeaveRouter } from './routes/adminLeave.routes.js';
+import { billingRouter } from './routes/billing.routes.js';
 
 // ---------- Frontend pages ----------
 app.get('/', (req, res) => res.redirect('/login'));
@@ -228,5 +229,8 @@ app.use('/employee', employeePortalRouter);
 
 // Admin Leave Management Routes
 app.use('/leave-requests', adminLeaveRouter);
+
+// Billing & Plans
+app.use('/billing', billingRouter);
 
 export { app };
