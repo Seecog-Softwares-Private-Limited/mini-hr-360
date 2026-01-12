@@ -1,0 +1,719 @@
+{{!-- views/admin/leave-requests.hbs --}}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3 col-lg-2 px-0">
+            {{> sidebar}}
+        </div>
+
+        <div class="col-md-9 col-lg-10">
+            <div class="main-content p-4">
+                <h2 class="mb-4">Leave Requests</h2>
+
+                <!-- Stats Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card text-center" style="border-left: 4px solid #f59e0b;">
+                            <div class="card-body py-3">
+                                <div style="font-size: 1.75rem; font-weight: 800; color: #f59e0b;">{{stats.pending}}</div>
+                                <div class="text-muted small">Pending</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center" style="border-left: 4px solid #22c55e;">
+                            <div class="card-body py-3">
+                                <div style="font-size: 1.75rem; font-weight: 800; color: #22c55e;">{{stats.approved}}</div>
+                                <div class="text-muted small">Approved</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center" style="border-left: 4px solid #ef4444;">
+                            <div class="card-body py-3">
+                                <div style="font-size: 1.75rem; font-weight: 800; color: #ef4444;">{{stats.rejected}}</div>
+                                <div class="text-muted small">Rejected</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center" style="border-left: 4px solid #64748b;">
+                            <div class="card-body py-3">
+                                <div style="font-size: 1.75rem; font-weight: 800; color: #64748b;">{{stats.canceled}}</div>
+                                <div class="text-muted small">Canceled</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <form method="GET" class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Status</label>
+                                <select name="status" class="form-select">
+                                    <option value="">All Statuses</option>
+                                    <option value="PENDING" {{#if (eq currentStatus 'PENDING')}}selected{{/if}}>Pending</option>
+                                    <option value="APPROVED" {{#if (eq currentStatus 'APPROVED')}}selected{{/if}}>Approved</option>
+                                    <option value="REJECTED" {{#if (eq currentStatus 'REJECTED')}}selected{{/if}}>Rejected</option>
+                                    <option value="CANCELED" {{#if (eq currentStatus 'CANCELED')}}selected{{/if}}>Canceled</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Business</label>
+                                <select name="businessId" class="form-select">
+                                    <option value="">All Businesses</option>
+                                    {{#each businesses}}
+                                    <option value="{{this.id}}" {{#if (eq ../currentBusinessId this.id)}}selected{{/if}}>{{this.businessName}}</option>
+                                    {{/each}}
+                                </select>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary me-2">
+                                    <i class="fa-solid fa-search me-1"></i> Filter
+                                </button>
+                                <a href="/leave-requests" class="btn btn-secondary">
+                                    <i class="fa-solid fa-times me-1"></i> Clear
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Leave Requests Table -->
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="fa-solid fa-list me-2"></i> Leave Requests</span>
+                        <span class="badge bg-secondary">{{pagination.total}} total</span>
+                    </div>
+                    <div class="card-body p-0">
+                        {{#if requests.length}}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Employee</th>
+                                        <th>Leave Type</th>
+                                        <th>Duration</th>
+                                        <th>Days</th>
+                                        <th>Reason</th>
+                                        <th>Status</th>
+                                        <th>Applied On</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {{#each requests}}
+                                    <tr>
+                                        <td>
+                                            <div style="font-weight: 600;">{{this.employee.empName}}</div>
+                                            <small class="text-muted">{{this.employee.empId}} • {{this.employee.empDepartment}}</small>
+                                        </td>
+                                        <td>
+                                            <span style="color: {{this.leaveType.color}}; font-weight: 600;">
+                                                {{this.leaveType.name}}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div>{{this.startDate}}</div>
+                                            <small class="text-muted">to {{this.endDate}}</small>
+                                        </td>
+                                        <td><strong>{{this.totalDays}}</strong></td>
+                                        <td>
+                                            <span class="text-truncate d-inline-block" style="max-width: 120px;" title="{{this.reason}}">
+                                                {{this.reason}}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {{#if (eq this.status 'PENDING')}}
+                                            <span class="badge bg-warning text-dark">PENDING</span>
+                                            {{/if}}
+                                            {{#if (eq this.status 'APPROVED')}}
+                                            <span class="badge bg-success">APPROVED</span>
+                                            {{/if}}
+                                            {{#if (eq this.status 'REJECTED')}}
+                                            <span class="badge bg-danger">REJECTED</span>
+                                            {{/if}}
+                                            {{#if (eq this.status 'CANCELED')}}
+                                            <span class="badge bg-secondary">CANCELED</span>
+                                            {{/if}}
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">{{this.createdAt}}</small>
+                                        </td>
+                                        <td>
+                                            {{#if (eq this.status 'PENDING')}}
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-success" onclick="approveLeave({{this.id}})" title="Approve">
+                                                    <i class="fa-solid fa-check"></i>
+                                                </button>
+                                                <button class="btn btn-danger" onclick="rejectLeave({{this.id}})" title="Reject">
+                                                    <i class="fa-solid fa-times"></i>
+                                                </button>
+                                            </div>
+                                            {{else}}
+                                            <span class="text-muted">-</span>
+                                            {{/if}}
+                                        </td>
+                                    </tr>
+                                    {{/each}}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {{#if (or pagination.hasNext pagination.hasPrev)}}
+                        <div class="card-footer d-flex justify-content-between align-items-center">
+                            <div class="text-muted small">
+                                Page {{pagination.page}} of {{pagination.totalPages}}
+                            </div>
+                            <nav>
+                                <ul class="pagination pagination-sm mb-0">
+                                    {{#if pagination.hasPrev}}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{dec pagination.page}}{{#if currentStatus}}&status={{currentStatus}}{{/if}}{{#if currentBusinessId}}&businessId={{currentBusinessId}}{{/if}}">
+                                            &laquo; Prev
+                                        </a>
+                                    </li>
+                                    {{/if}}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{pagination.page}}</span>
+                                    </li>
+                                    {{#if pagination.hasNext}}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{inc pagination.page}}{{#if currentStatus}}&status={{currentStatus}}{{/if}}{{#if currentBusinessId}}&businessId={{currentBusinessId}}{{/if}}">
+                                            Next &raquo;
+                                        </a>
+                                    </li>
+                                    {{/if}}
+                                </ul>
+                            </nav>
+                        </div>
+                        {{/if}}
+
+                        {{else}}
+                        <div class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-inbox fa-3x mb-3"></i>
+                            <h5>No leave requests found</h5>
+                            <p>No leave requests match your filters.</p>
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Premium Confirm Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content confirm-modal-premium">
+            <div class="confirm-modal-body">
+                <div class="confirm-icon-wrapper confirm-icon-approve">
+                    <div class="confirm-icon-pulse"></div>
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <h4 class="confirm-title">Approve Leave Request?</h4>
+                <p class="confirm-message">This action will approve the employee's leave request and update their leave balance accordingly.</p>
+                <div class="confirm-details" id="confirmDetails"></div>
+            </div>
+            <div class="confirm-modal-footer">
+                <button type="button" class="btn-confirm-cancel" data-bs-dismiss="modal">
+                    <i class="fa-solid fa-arrow-left me-2"></i>Go Back
+                </button>
+                <button type="button" class="btn-confirm-approve" id="confirmApproveBtn">
+                    <i class="fa-solid fa-check me-2"></i>Yes, Approve
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content confirm-modal-premium">
+            <div class="confirm-modal-body">
+                <div class="confirm-icon-wrapper confirm-icon-reject">
+                    <div class="confirm-icon-pulse reject-pulse"></div>
+                    <i class="fa-solid fa-times"></i>
+                </div>
+                <h4 class="confirm-title">Reject Leave Request?</h4>
+                <p class="confirm-message">Please provide a reason for rejecting this leave request.</p>
+                <input type="hidden" id="rejectLeaveId">
+                <div class="confirm-input-wrapper">
+                    <textarea class="confirm-textarea" id="rejectReason" rows="3" placeholder="Enter reason for rejection..."></textarea>
+                </div>
+            </div>
+            <div class="confirm-modal-footer">
+                <button type="button" class="btn-confirm-cancel" data-bs-dismiss="modal">
+                    <i class="fa-solid fa-arrow-left me-2"></i>Go Back
+                </button>
+                <button type="button" class="btn-confirm-reject" onclick="confirmReject()">
+                    <i class="fa-solid fa-times me-2"></i>Yes, Reject
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+    <div id="premiumToast" class="premium-toast" role="alert">
+        <div class="toast-icon-wrapper">
+            <i class="toast-icon fa-solid fa-check"></i>
+        </div>
+        <div class="toast-content">
+            <div class="toast-title">Success</div>
+            <div class="toast-message">Operation completed successfully</div>
+        </div>
+        <button class="toast-close" onclick="hideToast()">
+            <i class="fa-solid fa-times"></i>
+        </button>
+        <div class="toast-progress"></div>
+    </div>
+</div>
+
+<style>
+    /* Premium Confirm Modal Styles */
+    .confirm-modal-premium {
+        border: none;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+    }
+
+    .confirm-modal-body {
+        padding: 2.5rem 2rem 1.5rem;
+        text-align: center;
+    }
+
+    .confirm-icon-wrapper {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        position: relative;
+        font-size: 2rem;
+    }
+
+    .confirm-icon-approve {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        box-shadow: 0 10px 30px -5px rgba(16, 185, 129, 0.5);
+    }
+
+    .confirm-icon-reject {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+        box-shadow: 0 10px 30px -5px rgba(239, 68, 68, 0.5);
+    }
+
+    .confirm-icon-pulse {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: rgba(16, 185, 129, 0.3);
+        animation: pulse-ring 1.5s ease-out infinite;
+    }
+
+    .confirm-icon-pulse.reject-pulse {
+        background: rgba(239, 68, 68, 0.3);
+    }
+
+    @keyframes pulse-ring {
+        0% {
+            transform: scale(1);
+            opacity: 1;
+        }
+        100% {
+            transform: scale(1.5);
+            opacity: 0;
+        }
+    }
+
+    .confirm-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 0.75rem;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    .confirm-message {
+        color: #64748b;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        margin-bottom: 1rem;
+    }
+
+    .confirm-details {
+        background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+        border-radius: 12px;
+        padding: 1rem;
+        margin-top: 1rem;
+        text-align: left;
+    }
+
+    .confirm-details-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.4rem 0;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    .confirm-details-row:last-child {
+        border-bottom: none;
+    }
+
+    .confirm-details-label {
+        color: #64748b;
+        font-size: 0.85rem;
+    }
+
+    .confirm-details-value {
+        color: #1e293b;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+
+    .confirm-input-wrapper {
+        margin-top: 1rem;
+    }
+
+    .confirm-textarea {
+        width: 100%;
+        padding: 1rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        resize: none;
+        transition: all 0.3s ease;
+        background: #f8fafc;
+    }
+
+    .confirm-textarea:focus {
+        outline: none;
+        border-color: #ef4444;
+        background: white;
+        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+    }
+
+    .confirm-modal-footer {
+        display: flex;
+        gap: 1rem;
+        padding: 1rem 2rem 2rem;
+        justify-content: center;
+    }
+
+    .btn-confirm-cancel,
+    .btn-confirm-approve,
+    .btn-confirm-reject {
+        padding: 0.875rem 1.75rem;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .btn-confirm-cancel {
+        background: #f1f5f9;
+        color: #64748b;
+    }
+
+    .btn-confirm-cancel:hover {
+        background: #e2e8f0;
+        color: #475569;
+        transform: translateY(-2px);
+    }
+
+    .btn-confirm-approve {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        box-shadow: 0 4px 15px -3px rgba(16, 185, 129, 0.5);
+    }
+
+    .btn-confirm-approve:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px -5px rgba(16, 185, 129, 0.6);
+    }
+
+    .btn-confirm-reject {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+        box-shadow: 0 4px 15px -3px rgba(239, 68, 68, 0.5);
+    }
+
+    .btn-confirm-reject:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px -5px rgba(239, 68, 68, 0.6);
+    }
+
+    /* Premium Toast Styles */
+    .premium-toast {
+        display: none;
+        min-width: 320px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.2);
+        padding: 1rem 1.25rem;
+        position: relative;
+        overflow: hidden;
+        animation: slideIn 0.4s ease;
+    }
+
+    .premium-toast.show {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    .toast-icon-wrapper {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .premium-toast.success .toast-icon-wrapper {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+
+    .premium-toast.error .toast-icon-wrapper {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    }
+
+    .toast-icon {
+        color: white;
+        font-size: 1.1rem;
+    }
+
+    .toast-content {
+        flex: 1;
+    }
+
+    .toast-title {
+        font-weight: 700;
+        color: #1e293b;
+        font-size: 0.95rem;
+        margin-bottom: 0.15rem;
+    }
+
+    .toast-message {
+        color: #64748b;
+        font-size: 0.85rem;
+    }
+
+    .toast-close {
+        background: none;
+        border: none;
+        color: #94a3b8;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+    .toast-close:hover {
+        background: #f1f5f9;
+        color: #64748b;
+    }
+
+    .toast-progress {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+        animation: progress 3s linear forwards;
+    }
+
+    .premium-toast.error .toast-progress {
+        background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+    }
+
+    @keyframes progress {
+        from { width: 100%; }
+        to { width: 0%; }
+    }
+
+    /* Modal backdrop enhancement */
+    .modal.show .modal-dialog {
+        animation: modalSlideIn 0.3s ease;
+    }
+
+    @keyframes modalSlideIn {
+        from {
+            transform: scale(0.9) translateY(-20px);
+            opacity: 0;
+        }
+        to {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+    }
+</style>
+
+<script>
+    let confirmModal;
+    let rejectModalInstance;
+    let currentApproveId = null;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+        rejectModalInstance = new bootstrap.Modal(document.getElementById('rejectModal'));
+        
+        document.getElementById('confirmApproveBtn').addEventListener('click', executeApprove);
+    });
+
+    function showToast(type, title, message) {
+        const toast = document.getElementById('premiumToast');
+        toast.className = 'premium-toast show ' + type;
+        toast.querySelector('.toast-title').textContent = title;
+        toast.querySelector('.toast-message').textContent = message;
+        toast.querySelector('.toast-icon').className = 'toast-icon fa-solid ' + (type === 'success' ? 'fa-check' : 'fa-exclamation');
+        
+        // Reset and restart progress animation
+        const progress = toast.querySelector('.toast-progress');
+        progress.style.animation = 'none';
+        progress.offsetHeight; // Trigger reflow
+        progress.style.animation = 'progress 3s linear forwards';
+        
+        setTimeout(() => hideToast(), 3000);
+    }
+
+    function hideToast() {
+        document.getElementById('premiumToast').classList.remove('show');
+    }
+
+    function approveLeave(id) {
+        currentApproveId = id;
+        
+        // Find the row to get details
+        const row = document.querySelector(`button[onclick="approveLeave(${id})"]`).closest('tr');
+        const empName = row.querySelector('td:first-child div').textContent;
+        const leaveType = row.querySelector('td:nth-child(2) span').textContent;
+        const duration = row.querySelector('td:nth-child(3) div').textContent;
+        const days = row.querySelector('td:nth-child(4) strong').textContent;
+        
+        document.getElementById('confirmDetails').innerHTML = `
+            <div class="confirm-details-row">
+                <span class="confirm-details-label">Employee</span>
+                <span class="confirm-details-value">${empName}</span>
+            </div>
+            <div class="confirm-details-row">
+                <span class="confirm-details-label">Leave Type</span>
+                <span class="confirm-details-value">${leaveType}</span>
+            </div>
+            <div class="confirm-details-row">
+                <span class="confirm-details-label">Duration</span>
+                <span class="confirm-details-value">${duration}</span>
+            </div>
+            <div class="confirm-details-row">
+                <span class="confirm-details-label">Total Days</span>
+                <span class="confirm-details-value">${days} day(s)</span>
+            </div>
+        `;
+        
+        confirmModal.show();
+    }
+
+    async function executeApprove() {
+        const btn = document.getElementById('confirmApproveBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Processing...';
+        
+        try {
+            const response = await fetch(`/leave-requests/${currentApproveId}/approve`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            });
+            const data = await response.json();
+
+            confirmModal.hide();
+            
+            if (data.success) {
+                showToast('success', 'Approved!', 'Leave request has been approved successfully.');
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                showToast('error', 'Failed', data.message || 'Failed to approve leave request');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-check me-2"></i>Yes, Approve';
+            }
+        } catch (error) {
+            console.error('Approve error:', error);
+            confirmModal.hide();
+            showToast('error', 'Error', 'Something went wrong. Please try again.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-check me-2"></i>Yes, Approve';
+        }
+    }
+
+    function rejectLeave(id) {
+        document.getElementById('rejectLeaveId').value = id;
+        document.getElementById('rejectReason').value = '';
+        rejectModalInstance.show();
+    }
+
+    async function confirmReject() {
+        const id = document.getElementById('rejectLeaveId').value;
+        const reason = document.getElementById('rejectReason').value;
+        
+        const btn = document.querySelector('.btn-confirm-reject');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Processing...';
+
+        try {
+            const response = await fetch(`/leave-requests/${id}/reject`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ comments: reason })
+            });
+            const data = await response.json();
+
+            rejectModalInstance.hide();
+
+            if (data.success) {
+                showToast('success', 'Rejected', 'Leave request has been rejected.');
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                showToast('error', 'Failed', data.message || 'Failed to reject leave request');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-times me-2"></i>Yes, Reject';
+            }
+        } catch (error) {
+            console.error('Reject error:', error);
+            rejectModalInstance.hide();
+            showToast('error', 'Error', 'Something went wrong. Please try again.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-times me-2"></i>Yes, Reject';
+        }
+    }
+</script>
