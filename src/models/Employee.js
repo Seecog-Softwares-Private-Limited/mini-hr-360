@@ -1,6 +1,7 @@
 // src/models/Employee.js
 import { DataTypes } from 'sequelize';
 import { sequelize } from '../db/index.js';
+import bcrypt from 'bcrypt';
 
 const Employee = sequelize.define(
   'Employee',
@@ -440,6 +441,45 @@ const Employee = sequelize.define(
       type: DataTypes.STRING(100),
       allowNull: true,
     },
+    // Employee login credentials
+    password: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      comment: 'Hashed password for employee portal login',
+    },
+    role: {
+      type: DataTypes.ENUM('EMPLOYEE', 'MANAGER', 'HR'),
+      allowNull: false,
+      defaultValue: 'EMPLOYEE',
+      comment: 'Role within employee portal',
+    },
+    canLogin: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Whether employee can login to portal',
+    },
+    lastEmployeeLoginAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    employeeRefreshToken: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    employeeRefreshTokenExpiresAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    businessId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'businesses',
+        key: 'id',
+      },
+      comment: 'Business this employee belongs to (for multi-tenancy)',
+    },
     internship_start_date: {
       type: DataTypes.DATEONLY,
       allowNull: true,
@@ -563,5 +603,18 @@ Employee.prototype.getExperience = function () {
   }
   return years;
 };
+
+// Password comparison method for employee login
+Employee.prototype.isPasswordCorrect = async function(password) {
+  if (!this.password) return false;
+  return await bcrypt.compare(password, this.password);
+};
+
+// Hook to hash password before save
+Employee.beforeSave(async (employee) => {
+  if (employee.changed('password') && employee.password) {
+    employee.password = await bcrypt.hash(employee.password, 10);
+  }
+});
 
 export default Employee;

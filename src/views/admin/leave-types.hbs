@@ -1,0 +1,474 @@
+{{!-- views/admin/leave-types.hbs --}}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3 col-lg-2 px-0">
+            {{> sidebar}}
+        </div>
+
+        <div class="col-md-9 col-lg-10">
+            <div class="main-content p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="mb-0">Leave Types</h2>
+                    <button class="btn btn-primary" onclick="openAddModal()">
+                        <i class="fa-solid fa-plus me-2"></i> Add Leave Type
+                    </button>
+                </div>
+
+                <!-- Search, Filter & Sort -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <form method="GET" id="filterForm">
+                            <div class="row g-3">
+                                <!-- Search -->
+                                <div class="col-md-3">
+                                    <label class="form-label">Search</label>
+                                    <input type="text" name="search" class="form-control" placeholder="Name, code, description..." value="{{currentSearch}}">
+                                </div>
+                                <!-- Business Filter -->
+                                <div class="col-md-2">
+                                    <label class="form-label">Business</label>
+                                    <select name="businessId" class="form-select">
+                                        <option value="">All</option>
+                                        {{#each businesses}}
+                                        <option value="{{this.id}}" {{#if (eq ../currentBusinessId this.id)}}selected{{/if}}>{{this.businessName}}</option>
+                                        {{/each}}
+                                    </select>
+                                </div>
+                                <!-- Status Filter -->
+                                <div class="col-md-2">
+                                    <label class="form-label">Status</label>
+                                    <select name="status" class="form-select">
+                                        <option value="">All</option>
+                                        <option value="ACTIVE" {{#if (eq currentStatus 'ACTIVE')}}selected{{/if}}>Active</option>
+                                        <option value="INACTIVE" {{#if (eq currentStatus 'INACTIVE')}}selected{{/if}}>Inactive</option>
+                                    </select>
+                                </div>
+                                <!-- Sort By -->
+                                <div class="col-md-2">
+                                    <label class="form-label">Sort By</label>
+                                    <select name="sortBy" class="form-select">
+                                        <option value="name" {{#if (eq currentSortBy 'name')}}selected{{/if}}>Name</option>
+                                        <option value="code" {{#if (eq currentSortBy 'code')}}selected{{/if}}>Code</option>
+                                        <option value="maxPerYear" {{#if (eq currentSortBy 'maxPerYear')}}selected{{/if}}>Max/Year</option>
+                                        <option value="status" {{#if (eq currentSortBy 'status')}}selected{{/if}}>Status</option>
+                                        <option value="createdAt" {{#if (eq currentSortBy 'createdAt')}}selected{{/if}}>Created</option>
+                                    </select>
+                                </div>
+                                <!-- Sort Order -->
+                                <div class="col-md-1">
+                                    <label class="form-label">Order</label>
+                                    <select name="sortOrder" class="form-select">
+                                        <option value="ASC" {{#if (eq currentSortOrder 'ASC')}}selected{{/if}}>Asc</option>
+                                        <option value="DESC" {{#if (eq currentSortOrder 'DESC')}}selected{{/if}}>Desc</option>
+                                    </select>
+                                </div>
+                                <!-- Buttons -->
+                                <div class="col-md-2 d-flex align-items-end gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fa-solid fa-search"></i>
+                                    </button>
+                                    <a href="/leave-requests/leave-types" class="btn btn-secondary">
+                                        <i class="fa-solid fa-times"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Leave Types Table -->
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="fa-solid fa-list-alt me-2"></i> Leave Types</span>
+                        <div>
+                            <span class="badge bg-secondary me-2">{{pagination.total}} total</span>
+                            <select class="form-select form-select-sm d-inline-block" style="width: auto;" onchange="changePageSize(this.value)">
+                                <option value="10" {{#if (eq pagination.pageSize 10)}}selected{{/if}}>10 per page</option>
+                                <option value="25" {{#if (eq pagination.pageSize 25)}}selected{{/if}}>25 per page</option>
+                                <option value="50" {{#if (eq pagination.pageSize 50)}}selected{{/if}}>50 per page</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        {{#if leaveTypes.length}}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Name</th>
+                                        <th>Code</th>
+                                        <th>Business</th>
+                                        <th>Max/Year</th>
+                                        <th>Paid</th>
+                                        <th>Half Day</th>
+                                        <th>Carry Forward</th>
+                                        <th>Status</th>
+                                        <th style="width: 120px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {{#each leaveTypes}}
+                                    <tr {{#if this.deletedAt}}class="table-secondary"{{/if}}>
+                                        <td>{{inc @index}}</td>
+                                        <td>
+                                            <span style="color: {{this.color}}; font-weight: 600;">
+                                                <i class="fa-solid fa-circle me-1" style="font-size: 8px;"></i>
+                                                {{this.name}}
+                                            </span>
+                                            {{#if this.description}}
+                                            <small class="d-block text-muted text-truncate" style="max-width: 150px;" title="{{this.description}}">{{this.description}}</small>
+                                            {{/if}}
+                                        </td>
+                                        <td><code>{{this.code}}</code></td>
+                                        <td>{{this.business.businessName}}</td>
+                                        <td>
+                                            {{#if this.maxPerYear}}
+                                            <strong>{{this.maxPerYear}}</strong> days
+                                            {{else}}
+                                            <span class="text-muted">Unlimited</span>
+                                            {{/if}}
+                                        </td>
+                                        <td>
+                                            {{#if this.isPaid}}
+                                            <span class="badge bg-success">Yes</span>
+                                            {{else}}
+                                            <span class="badge bg-secondary">No</span>
+                                            {{/if}}
+                                        </td>
+                                        <td>
+                                            {{#if this.allowHalfDay}}
+                                            <span class="badge bg-info">Allowed</span>
+                                            {{else}}
+                                            <span class="badge bg-secondary">No</span>
+                                            {{/if}}
+                                        </td>
+                                        <td>
+                                            {{#if this.allowCarryForward}}
+                                            <span class="badge bg-warning text-dark">Yes</span>
+                                            {{else}}
+                                            <span class="badge bg-secondary">No</span>
+                                            {{/if}}
+                                        </td>
+                                        <td>
+                                            {{#if this.deletedAt}}
+                                            <span class="badge bg-danger">Deleted</span>
+                                            {{else if (eq this.status 'ACTIVE')}}
+                                            <span class="badge bg-success">Active</span>
+                                            {{else}}
+                                            <span class="badge bg-secondary">Inactive</span>
+                                            {{/if}}
+                                        </td>
+                                        <td>
+                                            {{#unless this.deletedAt}}
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary" onclick="editLeaveType({{this.id}})" title="Edit">
+                                                    <i class="fa-solid fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger" onclick="deleteLeaveType({{this.id}}, '{{this.name}}')" title="Delete">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </button>
+                                            </div>
+                                            {{else}}
+                                            <span class="text-muted">-</span>
+                                            {{/unless}}
+                                        </td>
+                                    </tr>
+                                    {{/each}}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        {{#if (or pagination.hasNext pagination.hasPrev)}}
+                        <div class="card-footer d-flex justify-content-between align-items-center">
+                            <div class="text-muted small">
+                                Page {{pagination.page}} of {{pagination.totalPages}} ({{pagination.total}} total)
+                            </div>
+                            <nav>
+                                <ul class="pagination pagination-sm mb-0">
+                                    <li class="page-item {{#unless pagination.hasPrev}}disabled{{/unless}}">
+                                        <a class="page-link" href="#" onclick="goToPage(1); return false;">First</a>
+                                    </li>
+                                    <li class="page-item {{#unless pagination.hasPrev}}disabled{{/unless}}">
+                                        <a class="page-link" href="#" onclick="goToPage({{dec pagination.page}}); return false;">Prev</a>
+                                    </li>
+                                    <li class="page-item active">
+                                        <span class="page-link">{{pagination.page}}</span>
+                                    </li>
+                                    <li class="page-item {{#unless pagination.hasNext}}disabled{{/unless}}">
+                                        <a class="page-link" href="#" onclick="goToPage({{inc pagination.page}}); return false;">Next</a>
+                                    </li>
+                                    <li class="page-item {{#unless pagination.hasNext}}disabled{{/unless}}">
+                                        <a class="page-link" href="#" onclick="goToPage({{pagination.totalPages}}); return false;">Last</a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                        {{/if}}
+
+                        {{else}}
+                        <div class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-list-alt fa-3x mb-3"></i>
+                            <h5>No leave types found</h5>
+                            <p>No leave types match your filters.</p>
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+
+                <!-- Legend -->
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h6><i class="fa-solid fa-info-circle me-2"></i> Legend</h6>
+                        <div class="row mt-2">
+                            <div class="col-md-4">
+                                <small><strong>Paid:</strong> Whether leave is paid or unpaid</small>
+                            </div>
+                            <div class="col-md-4">
+                                <small><strong>Half Day:</strong> Whether half-day leave is allowed</small>
+                            </div>
+                            <div class="col-md-4">
+                                <small><strong>Carry Forward:</strong> Whether unused leaves carry to next year</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal fade" id="leaveTypeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle"><i class="fa-solid fa-plus me-2"></i> Add Leave Type</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="leaveTypeForm">
+                    <input type="hidden" id="leaveTypeId">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Business <span class="text-danger">*</span></label>
+                            <select class="form-select" id="formBusinessId" required>
+                                <option value="">Select Business</option>
+                                {{#each businesses}}
+                                <option value="{{this.id}}">{{this.businessName}}</option>
+                                {{/each}}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" id="formStatus">
+                                <option value="ACTIVE">Active</option>
+                                <option value="INACTIVE">Inactive</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="formName" placeholder="e.g. Casual Leave" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Code <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="formCode" placeholder="e.g. CL" required style="text-transform: uppercase;">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" id="formDescription" rows="2" placeholder="Brief description of this leave type..."></textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Max Days Per Year</label>
+                            <input type="number" class="form-control" id="formMaxPerYear" min="0" placeholder="Leave empty for unlimited">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Min Days Notice</label>
+                            <input type="number" class="form-control" id="formMinDaysNotice" min="0" value="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Color</label>
+                            <input type="color" class="form-control form-control-color w-100" id="formColor" value="#6366f1">
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="formIsPaid" checked>
+                                <label class="form-check-label" for="formIsPaid">Paid Leave</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="formAllowHalfDay" checked>
+                                <label class="form-check-label" for="formAllowHalfDay">Allow Half Day</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="formAllowCarryForward">
+                                <label class="form-check-label" for="formAllowCarryForward">Carry Forward</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="formRequiresAttachment">
+                                <label class="form-check-label" for="formRequiresAttachment">Requires Attachment</label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveLeaveType()">
+                    <i class="fa-solid fa-save me-1"></i> Save
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let leaveTypeModal;
+    let isEditMode = false;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        leaveTypeModal = new bootstrap.Modal(document.getElementById('leaveTypeModal'));
+    });
+
+    function goToPage(page) {
+        if (page < 1) return;
+        const params = new URLSearchParams(window.location.search);
+        params.set('page', page);
+        window.location.href = '?' + params.toString();
+    }
+
+    function changePageSize(size) {
+        const params = new URLSearchParams(window.location.search);
+        params.set('page', '1');
+        params.set('pageSize', size);
+        window.location.href = '?' + params.toString();
+    }
+
+    function openAddModal() {
+        isEditMode = false;
+        document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-plus me-2"></i> Add Leave Type';
+        document.getElementById('leaveTypeId').value = '';
+        document.getElementById('formBusinessId').value = '';
+        document.getElementById('formBusinessId').disabled = false;
+        document.getElementById('formName').value = '';
+        document.getElementById('formCode').value = '';
+        document.getElementById('formDescription').value = '';
+        document.getElementById('formMaxPerYear').value = '';
+        document.getElementById('formMinDaysNotice').value = '0';
+        document.getElementById('formColor').value = '#6366f1';
+        document.getElementById('formStatus').value = 'ACTIVE';
+        document.getElementById('formIsPaid').checked = true;
+        document.getElementById('formAllowHalfDay').checked = true;
+        document.getElementById('formAllowCarryForward').checked = false;
+        document.getElementById('formRequiresAttachment').checked = false;
+        leaveTypeModal.show();
+    }
+
+    async function editLeaveType(id) {
+        isEditMode = true;
+        try {
+            const response = await fetch(`/leave-requests/leave-types/${id}`, { credentials: 'include' });
+            const result = await response.json();
+            
+            if (result.success) {
+                const data = result.data;
+                document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-edit me-2"></i> Edit Leave Type';
+                document.getElementById('leaveTypeId').value = data.id;
+                document.getElementById('formBusinessId').value = data.businessId;
+                document.getElementById('formBusinessId').disabled = true;
+                document.getElementById('formName').value = data.name;
+                document.getElementById('formCode').value = data.code;
+                document.getElementById('formDescription').value = data.description || '';
+                document.getElementById('formMaxPerYear').value = data.maxPerYear || '';
+                document.getElementById('formMinDaysNotice').value = data.minDaysNotice || 0;
+                document.getElementById('formColor').value = data.color || '#6366f1';
+                document.getElementById('formStatus').value = data.status;
+                document.getElementById('formIsPaid').checked = data.isPaid;
+                document.getElementById('formAllowHalfDay').checked = data.allowHalfDay;
+                document.getElementById('formAllowCarryForward').checked = data.allowCarryForward;
+                document.getElementById('formRequiresAttachment').checked = data.requiresAttachment;
+                leaveTypeModal.show();
+            } else {
+                alert(result.message || 'Failed to load leave type');
+            }
+        } catch (error) {
+            console.error('Load error:', error);
+            alert('Error loading leave type');
+        }
+    }
+
+    async function saveLeaveType() {
+        const id = document.getElementById('leaveTypeId').value;
+        const data = {
+            businessId: document.getElementById('formBusinessId').value,
+            name: document.getElementById('formName').value,
+            code: document.getElementById('formCode').value,
+            description: document.getElementById('formDescription').value,
+            maxPerYear: document.getElementById('formMaxPerYear').value || null,
+            minDaysNotice: document.getElementById('formMinDaysNotice').value || 0,
+            color: document.getElementById('formColor').value,
+            status: document.getElementById('formStatus').value,
+            isPaid: document.getElementById('formIsPaid').checked,
+            allowHalfDay: document.getElementById('formAllowHalfDay').checked,
+            allowCarryForward: document.getElementById('formAllowCarryForward').checked,
+            requiresAttachment: document.getElementById('formRequiresAttachment').checked,
+        };
+
+        if (!data.name || !data.code || (!isEditMode && !data.businessId)) {
+            alert('Please fill in all required fields');
+            return;
+        }
+
+        try {
+            const url = isEditMode ? `/leave-requests/leave-types/${id}` : '/leave-requests/leave-types/create';
+            const method = isEditMode ? 'PUT' : 'POST';
+            
+            const response = await fetch(url, {
+                method,
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                alert(isEditMode ? 'Leave type updated' : 'Leave type created');
+                window.location.reload();
+            } else {
+                alert(result.message || 'Failed to save leave type');
+            }
+        } catch (error) {
+            console.error('Save error:', error);
+            alert('Error saving leave type');
+        }
+    }
+
+    async function deleteLeaveType(id, name) {
+        if (!confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) return;
+
+        try {
+            const response = await fetch(`/leave-requests/leave-types/${id}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                alert('Leave type deleted');
+                window.location.reload();
+            } else {
+                alert(result.message || 'Failed to delete leave type');
+            }
+        } catch (error) {
+            console.error('Delete error:', error);
+            alert('Error deleting leave type');
+        }
+    }
+</script>

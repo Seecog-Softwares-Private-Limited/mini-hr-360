@@ -6,14 +6,16 @@ import { Template } from './Template.js';
 import { Campaign } from './Campaign.js';
 import { MessageLog } from './MessageLog.js';
 import Employee from './Employee.js';
-import { Department } from './Department.js'; // ✅ NEW
+import { Department } from './Department.js';
 import { Service } from './Service.js';
 import { Designation } from './Designation.js';
 import { LeaveType } from './LeaveType.js';
 import { LeaveRequest } from './LeaveRequest.js';
+import { LeaveBalance } from './LeaveBalance.js';
+import { LeaveApproval } from './LeaveApproval.js';
 import DocumentType from './DocumentType.js';
 import EmailTemplate from './EmailTemplate.js';
-// ✅ IMPORT CHILD TABLES FOR EMPLOYEE
+// Child tables for Employee
 import EmployeeEducation from './EmployeeEducation.js';
 import EmployeeExperience from './EmployeeExperience.js';
 import EmployeeDocument from './EmployeeDocument.js';
@@ -104,6 +106,34 @@ LeaveRequest.belongsTo(LeaveType, { foreignKey: 'leaveTypeId', as: 'leaveType' }
 User.hasMany(LeaveRequest, { foreignKey: 'approverId', as: 'approvedLeaves' });
 LeaveRequest.belongsTo(User, { foreignKey: 'approverId', as: 'approver' });
 
+// Business ⇄ LeaveBalance
+Business.hasMany(LeaveBalance, { foreignKey: 'businessId', as: 'leaveBalances' });
+LeaveBalance.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+
+// Employee ⇄ LeaveBalance
+Employee.hasMany(LeaveBalance, { foreignKey: 'employeeId', as: 'leaveBalances' });
+LeaveBalance.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
+
+// LeaveType ⇄ LeaveBalance
+LeaveType.hasMany(LeaveBalance, { foreignKey: 'leaveTypeId', as: 'balances' });
+LeaveBalance.belongsTo(LeaveType, { foreignKey: 'leaveTypeId', as: 'leaveType' });
+
+// Business ⇄ LeaveApproval
+Business.hasMany(LeaveApproval, { foreignKey: 'businessId', as: 'leaveApprovals' });
+LeaveApproval.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+
+// LeaveRequest ⇄ LeaveApproval
+LeaveRequest.hasMany(LeaveApproval, { foreignKey: 'leaveRequestId', as: 'approvals' });
+LeaveApproval.belongsTo(LeaveRequest, { foreignKey: 'leaveRequestId', as: 'leaveRequest' });
+
+// User (approver) ⇄ LeaveApproval
+User.hasMany(LeaveApproval, { foreignKey: 'approverId', as: 'leaveApprovalActions' });
+LeaveApproval.belongsTo(User, { foreignKey: 'approverId', as: 'approver' });
+
+// Employee ⇄ Business (multi-tenancy)
+Business.hasMany(Employee, { foreignKey: 'businessId', as: 'employees' });
+Employee.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+
 /* ✅ NEW: Employee ⇄ EmployeeEducation */
 Employee.hasMany(EmployeeEducation, {
   foreignKey: 'employeeId',
@@ -159,15 +189,15 @@ export {
   Template,
   Campaign,
   MessageLog,
-  Department, // ✅ export it
+  Department,
   Service,
   Designation,
   LeaveType,
   LeaveRequest,
+  LeaveBalance,
+  LeaveApproval,
   Employee,
   DocumentType,
-
-  // ✅ export child models too (optional but handy)
   EmployeeEducation,
   EmployeeExperience,
   EmployeeDocument,

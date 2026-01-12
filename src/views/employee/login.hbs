@@ -1,0 +1,185 @@
+<div class="emp-auth-shell">
+    <div class="emp-auth-card">
+        <div class="emp-auth-header">
+            <div class="emp-brand-mark mx-auto mb-3" style="width: 60px; height: 60px; font-size: 18px;">
+                <i class="fa-solid fa-user-tie"></i>
+            </div>
+            <h1 style="font-size: 1.5rem; font-weight: 800; color: #0f172a; margin-bottom: 4px;">Employee Portal</h1>
+            <p style="color: #64748b; font-size: 14px;">Sign in to access your dashboard</p>
+        </div>
+
+        <div class="emp-auth-body">
+            <div id="alertContainer">
+                {{#if errorMessage}}
+                <div class="emp-alert emp-alert-danger mb-3">
+                    <i class="fa-solid fa-circle-exclamation me-2"></i>
+                    {{errorMessage}}
+                </div>
+                {{/if}}
+            </div>
+
+            <form id="empLoginForm">
+                <div class="mb-3">
+                    <label for="identifier" class="emp-form-label">
+                        <i class="fa-solid fa-user me-1"></i> Email or Employee Code
+                    </label>
+                    <input 
+                        type="text" 
+                        class="form-control emp-form-control" 
+                        id="identifier" 
+                        name="identifier" 
+                        placeholder="Enter your email or employee code"
+                        required
+                        autocomplete="username"
+                    >
+                </div>
+
+                <div class="mb-4">
+                    <label for="password" class="emp-form-label">
+                        <i class="fa-solid fa-lock me-1"></i> Password
+                    </label>
+                    <div class="input-group">
+                        <input 
+                            type="password" 
+                            class="form-control emp-form-control" 
+                            id="password" 
+                            name="password" 
+                            placeholder="Enter your password"
+                            required
+                            autocomplete="current-password"
+                            style="border-radius: 10px 0 0 10px;"
+                        >
+                        <button 
+                            class="btn emp-btn-secondary" 
+                            type="button" 
+                            id="togglePassword"
+                            style="border-radius: 0 10px 10px 0; border-left: none;"
+                        >
+                            <i class="fa-solid fa-eye" id="toggleIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn emp-btn-primary w-100" id="loginBtn">
+                    <span id="loginText">
+                        <i class="fa-solid fa-right-to-bracket me-2"></i> Sign In
+                    </span>
+                    <span id="loadingText" class="d-none">
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                        Signing in...
+                    </span>
+                </button>
+            </form>
+        </div>
+
+        <div class="emp-auth-footer">
+            <i class="fa-solid fa-shield-halved me-1"></i>
+            Secure employee access portal
+        </div>
+    </div>
+</div>
+
+<script>
+    // Toggle password visibility
+    document.getElementById('togglePassword').addEventListener('click', function() {
+        const passwordInput = document.getElementById('password');
+        const toggleIcon = document.getElementById('toggleIcon');
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            toggleIcon.classList.remove('fa-eye');
+            toggleIcon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            toggleIcon.classList.remove('fa-eye-slash');
+            toggleIcon.classList.add('fa-eye');
+        }
+    });
+
+    // Handle form submission
+    document.getElementById('empLoginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const identifier = document.getElementById('identifier').value;
+        const password = document.getElementById('password').value;
+        const loginBtn = document.getElementById('loginBtn');
+        const loginText = document.getElementById('loginText');
+        const loadingText = document.getElementById('loadingText');
+        const alertContainer = document.getElementById('alertContainer');
+
+        // Clear previous alerts
+        alertContainer.innerHTML = '';
+
+        // Show loading
+        loginBtn.disabled = true;
+        loginText.classList.add('d-none');
+        loadingText.classList.remove('d-none');
+
+        try {
+            const response = await fetch('/employee/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({ identifier, password })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                showAlert(data.message || 'Login failed', 'danger');
+                return;
+            }
+
+            // Store employee data
+            if (data.data?.employee) {
+                localStorage.setItem('employee', JSON.stringify(data.data.employee));
+            }
+
+            showAlert('Login successful! Redirecting...', 'success');
+
+            // Redirect to dashboard
+            setTimeout(() => {
+                window.location.replace('/employee/dashboard');
+            }, 500);
+
+        } catch (error) {
+            console.error('Login error:', error);
+            showAlert('Network error. Please try again.', 'danger');
+        } finally {
+            loginBtn.disabled = false;
+            loginText.classList.remove('d-none');
+            loadingText.classList.add('d-none');
+        }
+    });
+
+    function showAlert(message, type) {
+        const alertContainer = document.getElementById('alertContainer');
+        const alertClass = type === 'success' ? 'emp-alert-success' : 'emp-alert-danger';
+        const icon = type === 'success' ? 'fa-check-circle' : 'fa-circle-exclamation';
+        
+        alertContainer.innerHTML = `
+            <div class="emp-alert ${alertClass} mb-3">
+                <i class="fa-solid ${icon} me-2"></i>
+                ${message}
+            </div>
+        `;
+    }
+
+    // Check if already logged in
+    document.addEventListener('DOMContentLoaded', async function() {
+        try {
+            const response = await fetch('/employee/api/profile', {
+                method: 'GET',
+                credentials: 'include'
+            });
+
+            if (response.ok) {
+                window.location.replace('/employee/dashboard');
+            }
+        } catch (error) {
+            // Not logged in, show login form
+        }
+    });
+</script>

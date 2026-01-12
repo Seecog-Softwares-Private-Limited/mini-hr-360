@@ -48,8 +48,30 @@
         <i class="fas fa-building"></i> My Businesses
       </a>
       <a class="nav-link {{#if (eq active 'employees')}}active{{/if}}" href="/employees">
-        <i class="fas fa-user-tie"></i> Manage Employees
+        <i class="fas fa-user-tie"></i> Employee Management
       </a>
+
+      
+
+      <!-- Leave Management Submenu -->
+      <div class="submenu-toggle" onclick="toggleMenu('leave-submenu')">
+        <div class="nav-link submenu-parent {{#if (or (eq active 'leaveRequests') (or (eq active 'leaveTypes') (eq active 'leaveBalances')))}}active{{/if}}">
+          <i class="fas fa-calendar-alt"></i>
+          Leave Management
+          <i class="fas fa-chevron-down submenu-arrow {{#if (or (eq active 'leaveRequests') (or (eq active 'leaveTypes') (eq active 'leaveBalances')))}}open{{/if}}"></i>
+        </div>
+      </div>
+      <div class="nested-submenu {{#if (or (eq active 'leaveRequests') (or (eq active 'leaveTypes') (eq active 'leaveBalances')))}}show{{/if}}" id="leave-submenu">
+        <a class="nav-link {{#if (eq active 'leaveRequests')}}active{{/if}}" href="/leave-requests">
+          <i class="fas fa-clipboard-list"></i> Leave Requests
+        </a>
+        <a class="nav-link {{#if (eq active 'leaveTypes')}}active{{/if}}" href="/leave-requests/leave-types">
+          <i class="fas fa-tags"></i> Leave Types
+        </a>
+        <a class="nav-link {{#if (eq active 'leaveBalances')}}active{{/if}}" href="/leave-requests/leave-balances">
+          <i class="fas fa-balance-scale"></i> Leave Balances
+        </a>
+      </div>
 
       <a class="nav-link {{#if (eq active 'documents')}}active{{/if}}" href="/documents">
         <i class="fas fa-file-signature"></i> Generate Documents

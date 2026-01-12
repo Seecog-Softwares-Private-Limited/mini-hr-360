@@ -1,0 +1,314 @@
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-2 emp-sidebar p-3">
+            <div class="emp-brand mb-4">
+                <div class="emp-brand-mark">
+                    <i class="fa-solid fa-user-tie"></i>
+                </div>
+                <div>
+                    <div class="emp-brand-title">mini-hr-360</div>
+                    <div class="emp-brand-subtitle">Employee Portal</div>
+                </div>
+            </div>
+
+            <div class="emp-profile mb-3">
+                <div class="emp-profile-avatar">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <div>
+                    <div class="emp-profile-name">{{employee.empName}}</div>
+                    <div class="emp-profile-role">{{employee.empId}}</div>
+                </div>
+            </div>
+
+            <div class="emp-divider"></div>
+
+            <nav class="nav flex-column">
+                <a class="nav-link" href="/employee/dashboard">
+                    <i class="fa-solid fa-house"></i> Dashboard
+                </a>
+                <a class="nav-link active" href="/employee/leaves">
+                    <i class="fa-solid fa-calendar-days"></i> My Leaves
+                </a>
+                <a class="nav-link" href="/employee/leaves/apply">
+                    <i class="fa-solid fa-plus-circle"></i> Apply Leave
+                </a>
+            </nav>
+
+            <div class="emp-divider"></div>
+
+            <nav class="nav flex-column">
+                <a class="nav-link text-danger" href="/employee/logout">
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout
+                </a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-10 emp-main">
+            <div class="emp-page-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="emp-page-title">My Leaves</h1>
+                    <p class="text-muted mt-1">View and manage your leave requests</p>
+                </div>
+                <a href="/employee/leaves/apply" class="btn emp-btn-primary">
+                    <i class="fa-solid fa-plus me-2"></i> Apply Leave
+                </a>
+            </div>
+
+            <!-- Leave Balances Summary -->
+            <div class="emp-card mb-4">
+                <div class="emp-card-header">
+                    <h5 class="emp-card-title">
+                        <i class="fa-solid fa-wallet" style="color: var(--emp-primary);"></i>
+                        Leave Balances ({{year}})
+                    </h5>
+                </div>
+                <div class="emp-card-body">
+                    <div class="row g-3">
+                        {{#each balances}}
+                        <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                            <div class="leave-balance-card">
+                                <div class="leave-balance-type" style="color: {{this.color}};">
+                                    {{this.leaveTypeName}}
+                                </div>
+                                <div class="leave-balance-value" style="color: {{this.color}};">
+                                    {{this.available}}
+                                </div>
+                                <div class="leave-balance-label">Available</div>
+                                <div class="mt-2" style="font-size: 11px; color: #94a3b8;">
+                                    <span>Used: {{this.used}}</span> |
+                                    <span>Pending: {{this.pending}}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {{/each}}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Tabs -->
+            <div class="emp-card mb-4">
+                <div class="emp-card-header">
+                    <div class="d-flex gap-2">
+                        <a href="/employee/leaves" class="btn btn-sm {{#unless currentStatus}}emp-btn-primary{{else}}emp-btn-secondary{{/unless}}">
+                            All
+                        </a>
+                        <a href="/employee/leaves?status=PENDING" class="btn btn-sm {{#if (eq currentStatus 'PENDING')}}emp-btn-primary{{else}}emp-btn-secondary{{/if}}">
+                            Pending
+                        </a>
+                        <a href="/employee/leaves?status=APPROVED" class="btn btn-sm {{#if (eq currentStatus 'APPROVED')}}emp-btn-primary{{else}}emp-btn-secondary{{/if}}">
+                            Approved
+                        </a>
+                        <a href="/employee/leaves?status=REJECTED" class="btn btn-sm {{#if (eq currentStatus 'REJECTED')}}emp-btn-primary{{else}}emp-btn-secondary{{/if}}">
+                            Rejected
+                        </a>
+                        <a href="/employee/leaves?status=CANCELED" class="btn btn-sm {{#if (eq currentStatus 'CANCELED')}}emp-btn-primary{{else}}emp-btn-secondary{{/if}}">
+                            Canceled
+                        </a>
+                    </div>
+                </div>
+
+                <div class="emp-card-body p-0">
+                    {{#if requests.length}}
+                    <div class="table-responsive">
+                        <table class="emp-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Leave Type</th>
+                                    <th>From</th>
+                                    <th>To</th>
+                                    <th>Days</th>
+                                    <th>Reason</th>
+                                    <th>Status</th>
+                                    <th>Applied On</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{#each requests}}
+                                <tr>
+                                    <td>
+                                        <span style="color: {{this.leaveTypeColor}}; font-weight: 600;">
+                                            <i class="fa-solid fa-circle me-1" style="font-size: 8px;"></i>
+                                            {{this.leaveType}}
+                                        </span>
+                                    </td>
+                                    <td>{{this.startDate}}</td>
+                                    <td>{{this.endDate}}</td>
+                                    <td><strong>{{this.totalDays}}</strong></td>
+                                    <td>
+                                        <span class="text-truncate d-inline-block" style="max-width: 150px;" title="{{this.reason}}">
+                                            {{this.reason}}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="emp-badge {{#if (eq this.status 'PENDING')}}emp-badge-pending{{/if}}{{#if (eq this.status 'APPROVED')}}emp-badge-approved{{/if}}{{#if (eq this.status 'REJECTED')}}emp-badge-rejected{{/if}}{{#if (eq this.status 'CANCELED')}}emp-badge-canceled{{/if}}">
+                                            {{this.status}}
+                                        </span>
+                                        {{#if this.approverName}}
+                                        <small class="d-block text-muted mt-1">by {{this.approverName}}</small>
+                                        {{/if}}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{this.createdAt}}</small>
+                                    </td>
+                                    <td>
+                                        {{#if (eq this.status 'PENDING')}}
+                                        <button 
+                                            class="btn btn-sm emp-btn-secondary" 
+                                            onclick="cancelLeave({{this.id}})"
+                                            title="Cancel Request"
+                                        >
+                                            <i class="fa-solid fa-times"></i>
+                                        </button>
+                                        {{else}}
+                                        <button 
+                                            class="btn btn-sm emp-btn-secondary" 
+                                            onclick="viewLeave({{this.id}})"
+                                            title="View Details"
+                                        >
+                                            <i class="fa-solid fa-eye"></i>
+                                        </button>
+                                        {{/if}}
+                                    </td>
+                                </tr>
+                                {{/each}}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    {{#if (or pagination.hasNext pagination.hasPrev)}}
+                    <div class="emp-card-body border-top d-flex justify-content-between align-items-center">
+                        <div class="text-muted">
+                            Showing {{pagination.page}} of {{pagination.totalPages}} pages ({{pagination.total}} total)
+                        </div>
+                        <nav>
+                            <ul class="pagination emp-pagination mb-0">
+                                {{#if pagination.hasPrev}}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{dec pagination.page}}{{#if currentStatus}}&status={{currentStatus}}{{/if}}">
+                                        <i class="fa-solid fa-chevron-left"></i>
+                                    </a>
+                                </li>
+                                {{/if}}
+                                <li class="page-item active">
+                                    <span class="page-link">{{pagination.page}}</span>
+                                </li>
+                                {{#if pagination.hasNext}}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{inc pagination.page}}{{#if currentStatus}}&status={{currentStatus}}{{/if}}">
+                                        <i class="fa-solid fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                                {{/if}}
+                            </ul>
+                        </nav>
+                    </div>
+                    {{/if}}
+
+                    {{else}}
+                    <div class="text-center py-5 text-muted">
+                        <i class="fa-solid fa-inbox fa-3x mb-3"></i>
+                        <h5>No leave requests found</h5>
+                        <p class="mb-3">You haven't submitted any leave requests yet.</p>
+                        <a href="/employee/leaves/apply" class="btn emp-btn-primary">
+                            <i class="fa-solid fa-plus me-2"></i> Apply Leave
+                        </a>
+                    </div>
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Leave Modal -->
+<div class="modal fade" id="viewLeaveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border-radius: 16px;">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fa-solid fa-calendar-check me-2"></i> Leave Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="leaveDetailsBody">
+                <div class="text-center py-4">
+                    <span class="spinner-border"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function cancelLeave(id) {
+        if (!confirm('Are you sure you want to cancel this leave request?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/employee/leaves/${id}/cancel`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert('Leave request canceled successfully');
+                window.location.reload();
+            } else {
+                alert(data.message || 'Failed to cancel leave request');
+            }
+        } catch (error) {
+            console.error('Cancel error:', error);
+            alert('Error canceling leave request');
+        }
+    }
+
+    async function viewLeave(id) {
+        const modal = new bootstrap.Modal(document.getElementById('viewLeaveModal'));
+        const body = document.getElementById('leaveDetailsBody');
+        
+        body.innerHTML = '<div class="text-center py-4"><span class="spinner-border"></span></div>';
+        modal.show();
+
+        try {
+            const response = await fetch(`/employee/leaves/${id}`, {
+                credentials: 'include'
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                const leave = data.data;
+                body.innerHTML = `
+                    <div class="mb-3">
+                        <strong>Leave Type:</strong> ${leave.leaveType?.name || '-'}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Duration:</strong> ${leave.startDate} to ${leave.endDate} (${leave.totalDays} days)
+                    </div>
+                    <div class="mb-3">
+                        <strong>Status:</strong> 
+                        <span class="emp-badge emp-badge-${leave.status.toLowerCase()}">${leave.status}</span>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Reason:</strong> ${leave.reason || '-'}
+                    </div>
+                    ${leave.managerNote ? `<div class="mb-3"><strong>Manager Note:</strong> ${leave.managerNote}</div>` : ''}
+                    ${leave.approver ? `<div class="mb-3"><strong>Reviewed By:</strong> ${leave.approver.firstName} ${leave.approver.lastName}</div>` : ''}
+                `;
+            } else {
+                body.innerHTML = '<div class="alert alert-danger">Failed to load leave details</div>';
+            }
+        } catch (error) {
+            body.innerHTML = '<div class="alert alert-danger">Error loading leave details</div>';
+        }
+    }
+
+    // Helper for pagination
+    function dec(n) { return n - 1; }
+</script>
