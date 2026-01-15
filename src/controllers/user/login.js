@@ -75,7 +75,8 @@ export const logoutUser = asyncHandler(async (req, res) => {
             secure: process.env.NODE_ENV === "production",
             sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
             path: "/", // Must match the path used when setting cookies
-            expires: new Date(0) // Expire the cookie immediately
+            expires: new Date(0), // Expire the cookie immediately
+            maxAge: 0 // Also set maxAge to 0 to ensure immediate expiration
         };
 
         return res
