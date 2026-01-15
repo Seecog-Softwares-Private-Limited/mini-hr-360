@@ -26,6 +26,7 @@
     "dev": "DOTENV_CONFIG_PATH=./property.env nodemon -r dotenv/config --experimental-json-modules src/index.js",
     "start": "DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules src/index.js",
     "reset-db": "DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules reset-database.js",
+    "sync-db": "DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules database/sync-database.js",
     "update-departments-business": "node scripts/update-departments-business.js"
   },
   "dependencies": {
