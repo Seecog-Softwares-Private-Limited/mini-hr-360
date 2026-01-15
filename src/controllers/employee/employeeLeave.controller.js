@@ -91,8 +91,13 @@ export const renderApplyLeave = asyncHandler(async (req, res) => {
   const year = new Date().getFullYear();
 
   // Get leave types for the business
+  // If businessId is null, get all active leave types (fallback for employees without business)
+  const leaveTypeWhere = businessId 
+    ? { businessId, status: 'ACTIVE' }
+    : { status: 'ACTIVE' };
+    
   const leaveTypes = await LeaveType.findAll({
-    where: { businessId, status: 'ACTIVE' },
+    where: leaveTypeWhere,
     order: [['sortOrder', 'ASC'], ['name', 'ASC']],
   });
 

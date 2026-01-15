@@ -311,9 +311,7 @@
                 </div>
 
                 <div class="col-md-4">
-                  <label class="form-label">
-                    Date of Birth <span class="text-danger">*</span>
-                  </label>
+                  <label class="form-label">Date of Birth <span class="text-danger">*</span></label>
                   <input type="date" name="empDob" class="form-control" required />
                 </div>
 
@@ -428,9 +426,9 @@
                   <input type="text" name="presentCity" class="form-control" />
                 </div>
                 <div class="col-md-4">
-                  <label class="form-label">State<span class="text-danger">*</span></label>
+                  <label class="form-label">State</label>
                   {{!-- <input type="text" name="presentState" class="form-control" /> --}}
-                  <select name="presentState" class="form-control" required>
+                  <select name="presentState" class="form-control">
                         <option value="">Select State</option>
                         {{#each states}}
                         <option value="{{name}}">{{name}}</option>
@@ -442,9 +440,9 @@
                   <input type="text" name="presentZip" class="form-control" />
                 </div>
                 <div class="col-md-2">
-                  <label class="form-label">Country<span class="text-danger">*</span></label>
+                  <label class="form-label">Country</label>
                   {{!-- <input type="text" name="presentCountry" class="form-control" /> --}}
-                  <select name="presentCountry" class="form-control" required>
+                  <select name="presentCountry" class="form-control">
                         <option value="">Select Country</option>
                         {{#each countries}}
                         <option value="{{name}}">{{name}}</option>
@@ -491,9 +489,9 @@
                   <input type="text" name="permanentCity" class="form-control" />
                 </div>
                 <div class="col-md-4">
-                  <label class="form-label">State<span class="text-danger">*</span></label>
+                  <label class="form-label">State</label>
                   {{!-- <input type="text" name="permanentState" class="form-control" /> --}}
-                  <select name="permanentState" class="form-control" required>
+                  <select name="permanentState" class="form-control">
                         <option value="">Select State</option>
                         {{#each states}}
                         <option value="{{name}}">{{name}}</option>
@@ -505,9 +503,9 @@
                   <input type="text" name="permanentZip" class="form-control" />
                 </div>
                 <div class="col-md-2">
-                  <label class="form-label">Country<span class="text-danger">*</span></label>
+                  <label class="form-label">Country</label>
                   {{!-- <input type="text" name="permanentCountry" class="form-control" /> --}}
-                  <select name="permanentCountry" class="form-control" required>
+                  <select name="permanentCountry" class="form-control">
                         <option value="">Select Country</option>
                         {{#each countries}}
                         <option value="{{name}}">{{name}}</option>
@@ -520,6 +518,19 @@
             {{!-- TAB 2: PROFESSIONAL DETAILS --}}
             <div class="tab-pane fade" id="tab-job" role="tabpanel">
               <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label">Business <span class="text-danger">*</span></label>
+                  <select name="businessId" class="form-select" required>
+                    <option value="">Select Business</option>
+                    {{#each businesses}}
+                    <option value="{{id}}">{{businessName}}</option>
+                    {{/each}}
+                  </select>
+                  <small class="text-muted">
+                    Select the business this employee belongs to
+                  </small>
+                </div>
+
                 <div class="col-md-4">
                   <label class="form-label">Employee Code / ID (optional)</label>
                   <input type="text" name="empId" class="form-control" />
@@ -591,7 +602,7 @@
 
                 <div class="col-md-4">
                   <label class="form-label">
-                    Reporting Manager (Employee ID / Ref)<span class="text-danger">*</span>
+                    Reporting Manager (Employee ID / Ref)
                   </label>
                   <select name="reportingManagerId" class="form-select">
                     <option value="">Select Manager</option>
@@ -624,13 +635,13 @@
                 </div>
                 <div class="col-md-4">
                   <label class="form-label">
-                    Joining Date 
+                    Joining Date <span class="text-danger">*</span>
                   </label>
                   <input
                     type="date"
                     name="empDateOfJoining"
                     class="form-control"
-                    
+                    required
                   />
                 </div>
                 <div class="col-md-4">
@@ -2554,6 +2565,7 @@ if (expContainer) {
         fillBaseField("permanentZip", emp.permanentZip);
         fillBaseField("permanentCountry", emp.permanentCountry);
 
+        fillBaseField("businessId", emp.businessId);
         fillBaseField("empId", emp.empId);
         fillBaseField("employeeType", emp.employeeType);
         fillBaseField("employmentStatus", emp.employmentStatus);

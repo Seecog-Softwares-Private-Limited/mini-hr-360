@@ -554,11 +554,46 @@ const Employee = sequelize.define(
 // Generate empId + normalize, BEFORE validation runs
 Employee.beforeValidate(async (employee) => {
   // Auto-generate empId per user (tenant) if blank
-  if (!employee.empId || employee.empId.trim() === '') {
-    const count = await Employee.count({
-      where: { userId: employee.userId },
+  if (!employee.empId || (typeof employee.empId === 'string' && employee.empId.trim() === '')) {
+    // Find the highest empId number globally (since empId must be unique)
+    const lastEmployee = await Employee.findOne({
+      order: [['id', 'DESC']],
+      attributes: ['empId']
     });
-    employee.empId = `EMP${String(count + 1).padStart(4, '0')}`;
+    
+    let nextNumber = 1;
+    if (lastEmployee && lastEmployee.empId) {
+      // Extract number from empId (e.g., "EMP0001" -> 1)
+      const match = lastEmployee.empId.match(/EMP(\d+)/);
+      if (match) {
+        nextNumber = parseInt(match[1], 10) + 1;
+      }
+    }
+    
+    // Ensure uniqueness by checking if the generated empId already exists
+    let empId = `EMP${String(nextNumber).padStart(4, '0')}`;
+    let attempts = 0;
+    const maxAttempts = 1000;
+    
+    while (attempts < maxAttempts) {
+      const existing = await Employee.findOne({
+        where: { empId: empId }
+      });
+      
+      if (!existing) {
+        break; // Found unique empId
+      }
+      
+      nextNumber++;
+      empId = `EMP${String(nextNumber).padStart(4, '0')}`;
+      attempts++;
+    }
+    
+    if (attempts >= maxAttempts) {
+      throw new Error('Unable to generate unique employee ID after multiple attempts');
+    }
+    
+    employee.empId = empId;
   }
 
   // Auto-build empName from first/middle/last if not set
