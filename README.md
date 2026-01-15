@@ -45,7 +45,13 @@ npm install
 CREATE DATABASE BulkWhatsappMessenger;
 ```
 
-4. Create `.env` file with the following variables:
+4. **Sync Database Schema** (IMPORTANT - Run this after pulling/cloning):
+```bash
+npm run sync-db
+```
+This command will automatically create all required tables and add any missing columns. See `README-DATABASE.md` for details.
+
+5. Create `.env` file with the following variables:
 ```env
 # Server Configuration
 PORT=3007
