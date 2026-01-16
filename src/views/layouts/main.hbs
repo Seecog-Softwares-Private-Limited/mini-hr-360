@@ -1508,10 +1508,32 @@
         }
         
         // Logout function
-        function logout() {
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('user');
-            window.location.replace('/login');
+        async function logout() {
+            try {
+                // Call logout API to clear server-side cookies
+                await fetch(`${API_BASE}/users/logout`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                }).catch(() => {
+                    // Continue even if API call fails
+                });
+
+                // Clear localStorage
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('user');
+                
+                // Redirect to login
+                window.location.replace('/login');
+            } catch (error) {
+                console.error('Logout error:', error);
+                // Still clear localStorage and redirect even if there's an error
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('user');
+                window.location.replace('/login');
+            }
         }
         
         // Menu toggle functionality
