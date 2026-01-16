@@ -181,6 +181,28 @@ EmailTemplate.belongsTo(DocumentType, {
   as: 'documentType',
 });
 
+// ========== BILLING MODELS ==========
+import { Plan } from './Plan.js';
+import { Subscription } from './Subscription.js';
+import { Invoice } from './Invoice.js';
+import { WebhookLog } from './WebhookLog.js';
+
+// Business ⇄ Subscription
+Business.hasMany(Subscription, { foreignKey: 'businessId', as: 'subscriptions' });
+Subscription.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+
+// Plan ⇄ Subscription
+Plan.hasMany(Subscription, { foreignKey: 'planId', as: 'subscriptions' });
+Subscription.belongsTo(Plan, { foreignKey: 'planId', as: 'plan' });
+
+// Subscription ⇄ Invoice
+Subscription.hasMany(Invoice, { foreignKey: 'subscriptionId', as: 'invoices' });
+Invoice.belongsTo(Subscription, { foreignKey: 'subscriptionId', as: 'subscription' });
+
+// Business ⇄ Invoice
+Business.hasMany(Invoice, { foreignKey: 'businessId', as: 'invoices' });
+Invoice.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+
 
 export {
   User,
@@ -202,4 +224,9 @@ export {
   EmployeeExperience,
   EmployeeDocument,
   EmailTemplate,
+  // Billing models
+  Plan,
+  Subscription,
+  Invoice,
+  WebhookLog,
 };

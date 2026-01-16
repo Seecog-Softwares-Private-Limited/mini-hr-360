@@ -9,5 +9,5 @@ const __dirname = path.dirname(__filename);
 // load env from property.env at repo root (if present)
 dotenv.config({ path: path.join(__dirname, 'property.env') });
 
-// hand off to real server
-import('./src/index.js');
+// hand off to real server - await to keep process alive
+await import('./src/index.js');

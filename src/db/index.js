@@ -64,8 +64,19 @@ const connectDB = async () => {
     await import('../models/index.js');
 
     if (SYNC_DB) {
-      await sequelize.sync({ alter: true });
-      console.log('🔄 Schema synced (alter).');
+      // Temporarily disable foreign key checks for safe schema sync
+      await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
+      try {
+        // Use force: false to only create missing tables, not alter existing ones
+        // For production, use migrations instead
+        await sequelize.sync({ alter: { drop: false } });
+      } catch (syncError) {
+        console.warn('⚠️ Schema alter had issues, trying basic sync...', syncError.message);
+        // Fallback: just ensure tables exist without altering
+        await sequelize.sync({ force: false });
+      }
+      await sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
+      console.log('🔄 Schema synced.');
     } else {
       console.log('ℹ️ Skipping schema sync (set SYNC_DB=true to enable).');
     }
