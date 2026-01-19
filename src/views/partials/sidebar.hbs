@@ -73,6 +73,49 @@
         </a>
       </div>
 
+      <!-- Attendance Submenu -->
+      <div class="submenu-toggle mt-2" onclick="toggleMenu('attendance-submenu')">
+        <div class="nav-link submenu-parent {{#if (or (eq active 'attendance-dashboard') (or (eq active 'attendance-policies') (or (eq active 'attendance-shifts') (or (eq active 'attendance-holidays') (or (eq active 'attendance-assignments') (or (eq active 'attendance-logs') (or (eq active 'attendance-regularizations') (or (eq active 'attendance-reports') (eq active 'attendance-lock')))))))))}}active{{/if}}">
+          <i class="fas fa-clock"></i>
+          Attendance
+          <i class="fas fa-chevron-down submenu-arrow {{#if (or (eq active 'attendance-dashboard') (or (eq active 'attendance-policies') (or (eq active 'attendance-shifts') (or (eq active 'attendance-holidays') (or (eq active 'attendance-assignments') (or (eq active 'attendance-logs') (or (eq active 'attendance-regularizations') (or (eq active 'attendance-reports') (eq active 'attendance-lock')))))))))}}open{{/if}}"></i>
+        </div>
+      </div>
+      <div class="nested-submenu {{#if (or (eq active 'attendance-dashboard') (or (eq active 'attendance-policies') (or (eq active 'attendance-shifts') (or (eq active 'attendance-holidays') (or (eq active 'attendance-assignments') (or (eq active 'attendance-logs') (or (eq active 'attendance-regularizations') (or (eq active 'attendance-reports') (eq active 'attendance-lock')))))))))}}show{{/if}}" id="attendance-submenu">
+        <div class="sidebar-group px-3 pt-2 pb-2 text-uppercase small text-muted">Overview</div>
+        <a class="nav-link {{#if (eq active 'attendance-dashboard')}}active{{/if}}" href="/admin/attendance">
+          <i class="fas fa-tachometer-alt"></i> Dashboard
+        </a>
+
+        <div class="sidebar-group px-3 pt-3 pb-2 text-uppercase small text-muted">Manage</div>
+        <a class="nav-link {{#if (eq active 'attendance-policies')}}active{{/if}}" href="/admin/attendance/policies">
+          <i class="fas fa-file-contract"></i> Policies
+        </a>
+        <a class="nav-link {{#if (eq active 'attendance-shifts')}}active{{/if}}" href="/admin/attendance/shifts">
+          <i class="fas fa-clock"></i> Shifts
+        </a>
+        <a class="nav-link {{#if (eq active 'attendance-holidays')}}active{{/if}}" href="/admin/attendance/holidays">
+          <i class="fas fa-calendar-day"></i> Holidays
+        </a>
+        <a class="nav-link {{#if (eq active 'attendance-assignments')}}active{{/if}}" href="/admin/attendance/assignments">
+          <i class="fas fa-user-tag"></i> Assignments
+        </a>
+
+        <div class="sidebar-group px-3 pt-3 pb-2 text-uppercase small text-muted">Operations</div>
+        <a class="nav-link {{#if (eq active 'attendance-logs')}}active{{/if}}" href="/admin/attendance/logs">
+          <i class="fas fa-book"></i> Logs
+        </a>
+        <a class="nav-link {{#if (eq active 'attendance-regularizations')}}active{{/if}}" href="/admin/attendance/regularizations">
+          <i class="fas fa-pen-ruler"></i> Regularizations
+        </a>
+        <a class="nav-link {{#if (eq active 'attendance-reports')}}active{{/if}}" href="/admin/attendance/reports">
+          <i class="fas fa-chart-line"></i> Reports
+        </a>
+        <a class="nav-link {{#if (eq active 'attendance-lock')}}active{{/if}}" href="/admin/attendance/lock">
+          <i class="fas fa-lock"></i> Lock
+        </a>
+      </div>
+
       <a class="nav-link {{#if (eq active 'documents')}}active{{/if}}" href="/documents">
         <i class="fas fa-file-signature"></i> Generate Documents
       </a>

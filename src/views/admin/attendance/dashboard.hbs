@@ -1,0 +1,159 @@
+{{!-- Admin Attendance Dashboard (Refined) --}}
+ 
+<div class="container-fluid">
+	<div class="row">
+		<div class="col-md-3 col-lg-2 px-0">
+			{{> sidebar active="attendance-dashboard" activeGroup="attendance"}}
+		</div>
+
+		<div class="col-md-9 col-lg-10">
+			<div class="main-content p-4">
+				<nav aria-label="breadcrumb">
+					<ol class="breadcrumb mb-3 bg-transparent p-0">
+						<li class="breadcrumb-item"><a href="/admin">Admin</a></li>
+						<li class="breadcrumb-item active" aria-current="page">Attendance</li>
+					</ol>
+				</nav>
+
+				<div class="d-flex align-items-center justify-content-between mb-4">
+					<h2 class="mb-0">Attendance Dashboard</h2>
+					<div class="d-flex gap-2">
+						<button class="btn btn-outline-secondary" onclick="exportAttendance()"><i class="fa-solid fa-file-export me-1"></i> Export</button>
+						<a href="/admin/attendance/reports" class="btn btn-primary">Reports</a>
+					</div>
+				</div>
+
+				<!-- KPI & Chart Row -->
+				<div class="row gy-3 mb-4">
+					<div class="col-md-8">
+						<div class="card h-100">
+							<div class="card-body">
+								<div class="d-flex justify-content-between align-items-start mb-3">
+									<h5 class="card-title mb-0">Today Overview</h5>
+									<small class="text-muted">Updated: {{lastUpdated}}</small>
+								</div>
+								<div class="row">
+									<div class="col-md-3">
+										<div class="kpi-card p-3 text-center">
+											<div class="h2 text-primary">{{stats.present}}</div>
+											<div class="text-muted small">Present</div>
+										</div>
+									</div>
+									<div class="col-md-3">
+										<div class="kpi-card p-3 text-center">
+											<div class="h2 text-danger">{{stats.absent}}</div>
+											<div class="text-muted small">Absent</div>
+										</div>
+									</div>
+									<div class="col-md-3">
+										<div class="kpi-card p-3 text-center">
+											<div class="h2 text-warning">{{stats.late}}</div>
+											<div class="text-muted small">Late</div>
+										</div>
+									</div>
+									<div class="col-md-3">
+										<div class="kpi-card p-3 text-center">
+											<div class="h2 text-success">{{stats.onLeave}}</div>
+											<div class="text-muted small">On Leave</div>
+										</div>
+									</div>
+								</div>
+
+								<hr />
+								<canvas id="attendanceTrendChart" height="120" aria-label="Attendance trend chart"></canvas>
+								<small class="text-muted">Trend for last 30 days</small>
+							</div>
+						</div>
+					</div>
+
+					<div class="col-md-4">
+						<div class="card h-100">
+							<div class="card-body">
+								<h5 class="card-title">Quick Actions</h5>
+								<div class="d-grid gap-2">
+									<button class="btn btn-outline-primary" onclick="openAssignModal()"><i class="fa-solid fa-user-tag me-2"></i> Assign Shift</button>
+									<button class="btn btn-outline-warning" onclick="openRegularizeModal()"><i class="fa-solid fa-pen me-2"></i> Regularize</button>
+									<button class="btn btn-outline-danger" onclick="openLockModal()"><i class="fa-solid fa-lock me-2"></i> Lock Day</button>
+								</div>
+							</div>
+						</div>
+						<div class="card mt-3">
+							<div class="card-body">
+								<h6 class="mb-2">Upcoming Holidays</h6>
+								<ul class="list-unstyled mb-0">
+									{{#each upcomingHolidays}}
+									<li><strong>{{this.date}}</strong> — {{this.name}}</li>
+									{{/each}}
+								</ul>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Attendance Table -->
+				<div class="card">
+					<div class="card-header d-flex justify-content-between align-items-center">
+						<div>
+							<i class="fa-solid fa-users me-2"></i>Today's Attendance
+							<span class="badge bg-secondary ms-2">{{attendanceToday.length}} records</span>
+						</div>
+						<div class="d-flex align-items-center gap-2">
+							<input type="text" id="attendanceSearch" class="form-control form-control-sm" placeholder="Search employee, dept..." oninput="filterAttendance()" style="width: 220px;">
+							<select id="statusFilter" class="form-select form-select-sm" onchange="filterAttendance()" style="width: 150px;">
+								<option value="">All Status</option>
+								<option value="PRESENT">Present</option>
+								<option value="ABSENT">Absent</option>
+								<option value="LATE">Late</option>
+							</select>
+						</div>
+					</div>
+					<div class="card-body p-0">
+						<div class="table-responsive">
+							<table class="table table-hover mb-0">
+								<thead class="table-light">
+									<tr>
+										<th>#</th>
+										<th>Employee</th>
+										<th>Department</th>
+										<th>Status</th>
+										<th>Check-in</th>
+										<th>Check-out</th>
+										<th>Shift</th>
+										<th style="width: 140px;">Actions</th>
+									</tr>
+								</thead>
+								<tbody id="attendanceTableBody">
+									{{#each attendanceToday}}
+									<tr>
+										<td>{{inc @index}}</td>
+										<td>{{this.employeeName}} <small class="text-muted d-block">{{this.empId}}</small></td>
+										<td>{{this.department}}</td>
+										<td>
+											{{#if (eq this.status 'PRESENT')}}<span class="badge bg-success">Present</span>{{/if}}
+											{{#if (eq this.status 'ABSENT')}}<span class="badge bg-danger">Absent</span>{{/if}}
+											{{#if (eq this.status 'LATE')}}<span class="badge bg-warning text-dark">Late</span>{{/if}}
+										</td>
+										<td>{{this.checkIn}}</td>
+										<td>{{this.checkOut}}</td>
+										<td>{{this.shiftName}}</td>
+										<td>
+											<div class="btn-group btn-group-sm">
+												<button class="btn btn-outline-primary" onclick="viewAttendanceLog({{this.id}})"><i class="fa-solid fa-eye"></i></button>
+												<button class="btn btn-outline-secondary" onclick="regularizeAttendance({{this.id}})"><i class="fa-solid fa-pen"></i></button>
+											</div>
+										</td>
+									</tr>
+									{{/each}}
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+
+				{{> attendance-modals }}
+				<script src="/assets/js/admin-attendance.js"></script>
+			</div>
+		</div>
+	</div>
+</div>
+ 
