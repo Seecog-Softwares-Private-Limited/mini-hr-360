@@ -1,0 +1,83 @@
+<div class="container-fluid">
+    <div class="row">
+        {{> employee-sidebar employee=employee active='attendance_today'}}
+
+        <!-- Main Content -->
+        <div class="col-md-10 emp-main">
+            <div class="emp-page-header">
+                <h1 class="emp-page-title">Today's Attendance</h1>
+                <p class="text-muted mt-1">Your attendance status for today</p>
+            </div>
+
+            <!-- Today's Summary Cards -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-4 col-sm-6">
+                    <div class="emp-card">
+                        <div class="emp-card-body text-center">
+                            <div style="font-size: 32px; color: var(--emp-primary); margin-bottom: 8px;">
+                                <i class="fa-solid fa-check-circle"></i>
+                            </div>
+                            <div style="font-size: 24px; font-weight: 700; color: #1e293b;">Present</div>
+                            <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Today's Status</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-6">
+                    <div class="emp-card">
+                        <div class="emp-card-body text-center">
+                            <div style="font-size: 32px; color: #f59e0b; margin-bottom: 8px;">
+                                <i class="fa-solid fa-clock"></i>
+                            </div>
+                            <div style="font-size: 24px; font-weight: 700; color: #1e293b;">09:15 AM</div>
+                            <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Check-in Time</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-sm-6">
+                    <div class="emp-card">
+                        <div class="emp-card-body text-center">
+                            <div style="font-size: 32px; color: #06b6d4; margin-bottom: 8px;">
+                                <i class="fa-solid fa-building"></i>
+                            </div>
+                            <div style="font-size: 24px; font-weight: 700; color: #1e293b;">Main Office</div>
+                            <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Location</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Attendance Details -->
+            <div class="emp-card mb-4">
+                <div class="emp-card-header">
+                    <h5 class="emp-card-title">
+                        <i class="fa-solid fa-list" style="color: var(--emp-primary);"></i>
+                        Attendance Log
+                    </h5>
+                    <a href="/employee/attendance/regularization_form" class="btn emp-btn-secondary btn-sm">
+                        <i class="fa-solid fa-pen me-1"></i> Request Regularization
+                    </a>
+                </div>
+                <div class="emp-card-body p-0">
+                    <table class="emp-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Event</th>
+                                <th>Location</th>
+                                <th class="text-end">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>09:15 AM</td>
+                                <td>Check-in</td>
+                                <td>Main Office</td>
+                                <td class="text-end"><span class="emp-badge emp-badge-approved">Verified</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -34,6 +34,21 @@
                 <a class="nav-link" href="/employee/leaves/apply">
                     <i class="fa-solid fa-plus-circle"></i> Apply Leave
                 </a>
+
+                <div class="emp-divider mt-3"></div>
+                <div class="emp-section-label text-muted small ps-2">Attendance</div>
+                <a class="nav-link {{#if (eq active 'attendance_today')}}active{{/if}}" href="/employee/attendance/today">
+                    <i class="fa-solid fa-calendar-day"></i> Today
+                </a>
+                <a class="nav-link {{#if (eq active 'attendance_calendar')}}active{{/if}}" href="/employee/attendance/calendar">
+                    <i class="fa-solid fa-calendar-alt"></i> Calendar
+                </a>
+                <a class="nav-link {{#if (eq active 'attendance_regularizations')}}active{{/if}}" href="/employee/attendance/regularizations">
+                    <i class="fa-solid fa-file-lines"></i> Regularizations
+                </a>
+                <a class="nav-link {{#if (eq active 'attendance_request')}}active{{/if}}" href="/employee/attendance/regularization_form">
+                    <i class="fa-solid fa-pen"></i> Request Regularization
+                </a>
             </nav>
 
             <div class="emp-divider"></div>
@@ -61,50 +76,6 @@
                                 {{employee.firstName.[0]}}{{employee.lastName.[0]}}
                             </div>
                         </div>
-                        <div class="col">
-                            <h4 class="mb-1" style="font-weight: 800;">{{employee.empName}}</h4>
-                            <p class="text-muted mb-0">
-                                <span class="me-3"><i class="fa-solid fa-id-badge me-1"></i> {{employee.empId}}</span>
-                                <span class="me-3"><i class="fa-solid fa-building me-1"></i> {{employee.empDepartment}}</span>
-                                <span><i class="fa-solid fa-briefcase me-1"></i> {{employee.empDesignation}}</span>
-                            </p>
-                        </div>
-                        <div class="col-auto">
-                            <span class="emp-badge emp-badge-approved">
-                                <i class="fa-solid fa-circle-check me-1"></i> Active
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Stats Row -->
-            <div class="row mb-4">
-                <div class="col-md-4">
-                    <div class="emp-stat-card">
-                        <div class="emp-stat-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);">
-                            <i class="fa-solid fa-clock"></i>
-                        </div>
-                        <div class="emp-stat-value">{{leaveStats.pendingCount}}</div>
-                        <div class="emp-stat-label">Pending Requests</div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="emp-stat-card">
-                        <div class="emp-stat-icon" style="background: linear-gradient(135deg, #22c55e 0%, #10b981 100%);">
-                            <i class="fa-solid fa-check-circle"></i>
-                        </div>
-                        <div class="emp-stat-value">{{leaveStats.approvedThisMonth}}</div>
-                        <div class="emp-stat-label">Approved This Month</div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="emp-stat-card">
-                        <div class="emp-stat-icon" style="background: linear-gradient(135deg, var(--emp-primary) 0%, #06b6d4 100%);">
-                            <i class="fa-solid fa-calendar-check"></i>
-                        </div>
-                        <div class="emp-stat-value">{{leaveStats.balances.length}}</div>
-                        <div class="emp-stat-label">Leave Types</div>
                     </div>
                 </div>
             </div>

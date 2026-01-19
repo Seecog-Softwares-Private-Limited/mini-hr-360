@@ -1,0 +1,133 @@
+<div class="container-fluid">
+    <div class="row">
+        {{> employee-sidebar employee=employee active='attendance_request'}}
+
+        <!-- Main Content -->
+        <div class="col-md-10 emp-main">
+            <div class="emp-page-header">
+                <h1 class="emp-page-title">Request Regularization</h1>
+                <p class="text-muted mt-1">Submit a request to regularize an attendance entry</p>
+            </div>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="emp-card">
+                        <div class="emp-card-header">
+                            <h5 class="emp-card-title">
+                                <i class="fa-solid fa-pen-fancy" style="color: var(--emp-primary);"></i>
+                                Regularization Form
+                            </h5>
+                        </div>
+                        <div class="emp-card-body">
+                            <form>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Date <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" placeholder="Select date" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Shift <span class="text-danger">*</span></label>
+                                        <select class="form-select">
+                                            <option>Select shift</option>
+                                            <option>Morning (9 AM - 5 PM)</option>
+                                            <option>Evening (2 PM - 10 PM)</option>
+                                            <option>Night (10 PM - 6 AM)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Issue Type <span class="text-danger">*</span></label>
+                                        <select class="form-select">
+                                            <option>Select issue type</option>
+                                            <option>Missed Check-in</option>
+                                            <option>Missed Check-out</option>
+                                            <option>Late Arrival</option>
+                                            <option>Early Departure</option>
+                                            <option>Other</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Duration <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" placeholder="e.g., 2 hours" />
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">Reason <span class="text-danger">*</span></label>
+                                        <textarea class="form-control" rows="5" placeholder="Please provide a detailed explanation..."></textarea>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">Supporting Documents (Optional)</label>
+                                        <div style="border: 2px dashed #cbd5e1; border-radius: 8px; padding: 20px; text-align: center; background: #f8fafc; cursor: pointer;">
+                                            <div style="font-size: 28px; color: var(--emp-primary); margin-bottom: 8px;">
+                                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                            </div>
+                                            <div style="color: #475569; font-weight: 500;">Drag & drop files here</div>
+                                            <div style="color: #94a3b8; font-size: 13px; margin-top: 4px;">or click to browse (Max 5MB)</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 pt-2">
+                                        <div style="display: flex; gap: 8px;">
+                                            <button type="submit" class="btn emp-btn-primary">
+                                                <i class="fa-solid fa-paper-plane me-2"></i>Submit Request
+                                            </button>
+                                            <a href="/employee/attendance/regularizations" class="btn emp-btn-secondary">
+                                                Back to Regularizations
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="emp-card mb-3">
+                        <div class="emp-card-header">
+                            <h5 class="emp-card-title">
+                                <i class="fa-solid fa-info-circle" style="color: var(--emp-primary);"></i>
+                                Need Help?
+                            </h5>
+                        </div>
+                        <div class="emp-card-body">
+                            <div style="font-size: 13px; color: #475569; line-height: 1.6;">
+                                <p><strong>How to regularize:</strong></p>
+                                <ul style="margin: 0; padding-left: 20px;">
+                                    <li>Select the date and shift</li>
+                                    <li>Specify the issue type</li>
+                                    <li>Explain the reason</li>
+                                    <li>Upload supporting documents if available</li>
+                                    <li>Submit for approval</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="emp-card">
+                        <div class="emp-card-header">
+                            <h5 class="emp-card-title">
+                                <i class="fa-solid fa-clock-history" style="color: var(--emp-primary);"></i>
+                                Recent Requests
+                            </h5>
+                        </div>
+                        <div class="emp-card-body">
+                            <div style="padding: 12px 0; border-bottom: 1px solid #e2e8f0;">
+                                <div style="font-size: 13px; font-weight: 600; color: #1e293b;">Jan 10, 2026</div>
+                                <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">Missed check-in</div>
+                                <span class="emp-badge emp-badge-pending" style="font-size: 11px; margin-top: 6px; display: inline-block;">Pending</span>
+                            </div>
+                            <div style="padding: 12px 0; border-bottom: 1px solid #e2e8f0;">
+                                <div style="font-size: 13px; font-weight: 600; color: #1e293b;">Jan 8, 2026</div>
+                                <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">System issue</div>
+                                <span class="emp-badge emp-badge-approved" style="font-size: 11px; margin-top: 6px; display: inline-block;">Approved</span>
+                            </div>
+                            <div style="padding: 12px 0;">
+                                <div style="font-size: 13px; font-weight: 600; color: #1e293b;">Jan 5, 2026</div>
+                                <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">Late arrival</div>
+                                <span class="emp-badge emp-badge-approved" style="font-size: 11px; margin-top: 6px; display: inline-block;">Approved</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

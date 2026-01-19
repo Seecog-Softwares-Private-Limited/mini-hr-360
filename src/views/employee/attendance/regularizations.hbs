@@ -1,0 +1,106 @@
+<div class="container-fluid">
+    <div class="row">
+        {{> employee-sidebar employee=employee active='attendance_regularizations'}}
+
+        <!-- Main Content -->
+        <div class="col-md-10 emp-main">
+            <div class="emp-page-header">
+                <h1 class="emp-page-title">Regularizations</h1>
+                <p class="text-muted mt-1">View and track your regularization requests</p>
+            </div>
+
+            <!-- Regularization Stats -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-3 col-sm-6">
+                    <div class="emp-card">
+                        <div class="emp-card-body text-center">
+                            <div style="font-size: 32px; color: #f59e0b; margin-bottom: 8px;">
+                                <i class="fa-solid fa-hourglass"></i>
+                            </div>
+                            <div style="font-size: 24px; font-weight: 700; color: #1e293b;">2</div>
+                            <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Pending</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="emp-card">
+                        <div class="emp-card-body text-center">
+                            <div style="font-size: 32px; color: #22c55e; margin-bottom: 8px;">
+                                <i class="fa-solid fa-check-circle"></i>
+                            </div>
+                            <div style="font-size: 24px; font-weight: 700; color: #1e293b;">5</div>
+                            <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Approved</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="emp-card">
+                        <div class="emp-card-body text-center">
+                            <div style="font-size: 32px; color: #ef4444; margin-bottom: 8px;">
+                                <i class="fa-solid fa-times-circle"></i>
+                            </div>
+                            <div style="font-size: 24px; font-weight: 700; color: #1e293b;">1</div>
+                            <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Rejected</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="emp-card">
+                        <div class="emp-card-body text-center">
+                            <div style="font-size: 32px; color: var(--emp-primary); margin-bottom: 8px;">
+                                <i class="fa-solid fa-file"></i>
+                            </div>
+                            <div style="font-size: 24px; font-weight: 700; color: #1e293b;">8</div>
+                            <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Total</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Regularization Requests -->
+            <div class="emp-card">
+                <div class="emp-card-header">
+                    <h5 class="emp-card-title">
+                        <i class="fa-solid fa-list-check" style="color: var(--emp-primary);"></i>
+                        Regularization Requests
+                    </h5>
+                    <a href="/employee/attendance/regularization_form" class="btn emp-btn-primary btn-sm">
+                        <i class="fa-solid fa-plus me-1"></i> New Request
+                    </a>
+                </div>
+                <div class="emp-card-body p-0">
+                    <table class="emp-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Shift</th>
+                                <th>Reason</th>
+                                <th class="text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>2026-01-10</td>
+                                <td>Morning</td>
+                                <td>Missed check-in due to travel</td>
+                                <td class="text-center"><span class="emp-badge emp-badge-pending">Pending</span></td>
+                            </tr>
+                            <tr>
+                                <td>2026-01-08</td>
+                                <td>Evening</td>
+                                <td>System issue during check-out</td>
+                                <td class="text-center"><span class="emp-badge emp-badge-approved">Approved</span></td>
+                            </tr>
+                            <tr>
+                                <td>2026-01-05</td>
+                                <td>Morning</td>
+                                <td>Late arrival due to traffic</td>
+                                <td class="text-center"><span class="emp-badge emp-badge-approved">Approved</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
