@@ -542,11 +542,7 @@ const Employee = sequelize.define(
     indexes: [
       { unique: true, fields: ['userId', 'empId'] },
       { unique: true, fields: ['userId', 'empEmail'] },
-      { unique: true, fields: ['userId', 'empPhone'] },
-      // Aadhaar/PAN unique indexes removed
       { fields: ['userId', 'isActive'] },
-      { fields: ['empDepartment'] },
-      { fields: ['empDesignation'] },
     ],
   }
 );

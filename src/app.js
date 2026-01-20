@@ -2,6 +2,7 @@
 import cors from 'cors';
 import express from 'express';
 import cookieParser from 'cookie-parser';
+import multer from 'multer';
 import { engine } from 'express-handlebars';
 import handlebars from 'handlebars';
 import path from 'path';
@@ -55,6 +56,17 @@ app.engine(
                     .replace(/\u2028/g, '\\u2028')
                     .replace(/\u2029/g, '\\u2029');
             },
+            timeFormat(dateString) {
+                if (!dateString) return '--:--';
+                const date = new Date(dateString);
+                return isNaN(date.getTime()) ? dateString : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            },
+            formatDuration(minutes) {
+                if (!minutes || isNaN(minutes)) return '0h 0m';
+                const h = Math.floor(minutes / 60);
+                const m = minutes % 60;
+                return `${h}h ${m}m`;
+            },
         },
         runtimeOptions: {
             allowProtoPropertiesByDefault: true,
@@ -81,6 +93,22 @@ app.use(
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
+
+// Configure multer for file uploads
+const upload = multer({
+    storage: multer.memoryStorage(), // Store files in memory
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    fileFilter: (req, file, cb) => {
+        const allowedMimes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/png'];
+        if (allowedMimes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Invalid file type'));
+        }
+    }
+});
+
+app.use(upload.single('file'));
 
 // Debug log
 app.use((req, res, next) => {
@@ -111,6 +139,7 @@ import businessAddressRoutes from './routes/businessAddress.routes.js';
 import emailTemplateRoutes from './routes/emailTemplate.routes.js';
 import { renderEmailTemplatesPage } from './controllers/emailTemplate.controller.js';
 import { employeePortalRouter } from './routes/employeePortal.routes.js';
+import { employeeAttendanceRouter } from './routes/employeeAttendance.routes.js';
 import { adminLeaveRouter } from './routes/adminLeave.routes.js';
 import { billingRouter } from './routes/billing.routes.js';
 
@@ -225,6 +254,7 @@ app.get('/email-templates', verifyUser, renderEmailTemplatesPage);
 app.use('/', emailTemplateRoutes);
 
 // Employee Portal Routes
+app.use('/employee/attendance', employeeAttendanceRouter);
 app.use('/employee', employeePortalRouter);
 
 // Admin Leave Management Routes

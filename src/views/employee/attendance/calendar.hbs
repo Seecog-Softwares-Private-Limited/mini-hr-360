@@ -9,6 +9,9 @@
                 <p class="text-muted mt-1">Your monthly attendance summary</p>
             </div>
 
+            <!-- Alert Messages -->
+            <div id="alertContainer"></div>
+
             <!-- Monthly Stats -->
             <div class="row g-3 mb-4">
                 <div class="col-md-3 col-sm-6">
@@ -17,7 +20,7 @@
                             <div style="font-size: 32px; color: #22c55e; margin-bottom: 8px;">
                                 <i class="fa-solid fa-check-circle"></i>
                             </div>
-                            <div style="font-size: 24px; font-weight: 700; color: #1e293b;">18</div>
+                            <div id="presentCount" style="font-size: 24px; font-weight: 700; color: #1e293b;">-</div>
                             <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Days Present</div>
                         </div>
                     </div>
@@ -28,7 +31,7 @@
                             <div style="font-size: 32px; color: #ef4444; margin-bottom: 8px;">
                                 <i class="fa-solid fa-times-circle"></i>
                             </div>
-                            <div style="font-size: 24px; font-weight: 700; color: #1e293b;">2</div>
+                            <div id="absentCount" style="font-size: 24px; font-weight: 700; color: #1e293b;">-</div>
                             <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Days Absent</div>
                         </div>
                     </div>
@@ -39,7 +42,7 @@
                             <div style="font-size: 32px; color: #f59e0b; margin-bottom: 8px;">
                                 <i class="fa-solid fa-hourglass"></i>
                             </div>
-                            <div style="font-size: 24px; font-weight: 700; color: #1e293b;">1</div>
+                            <div id="pendingCount" style="font-size: 24px; font-weight: 700; color: #1e293b;">-</div>
                             <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Pending</div>
                         </div>
                     </div>
@@ -50,7 +53,7 @@
                             <div style="font-size: 32px; color: var(--emp-primary); margin-bottom: 8px;">
                                 <i class="fa-solid fa-percent"></i>
                             </div>
-                            <div style="font-size: 24px; font-weight: 700; color: #1e293b;">90%</div>
+                            <div id="attendanceRate" style="font-size: 24px; font-weight: 700; color: #1e293b;">-</div>
                             <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Attendance Rate</div>
                         </div>
                     </div>
@@ -62,11 +65,14 @@
                 <div class="emp-card-header">
                     <h5 class="emp-card-title">
                         <i class="fa-solid fa-calendar" style="color: var(--emp-primary);"></i>
-                        January 2026
+                        <span id="monthDisplay">January 2026</span>
                     </h5>
-                    <a href="/employee/attendance/regularization_form" class="btn emp-btn-secondary btn-sm">
-                        <i class="fa-solid fa-pen me-1"></i> Request Regularization
-                    </a>
+                    <div class="d-flex gap-2">
+                        <input type="month" id="monthPicker" class="form-control form-control-sm" style="width: 150px;" />
+                        <a href="/employee/attendance/regularization_form" class="btn emp-btn-secondary btn-sm">
+                            <i class="fa-solid fa-pen me-1"></i> Request Regularization
+                        </a>
+                    </div>
                 </div>
                 <div class="emp-card-body">
                     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
@@ -79,30 +85,134 @@
 
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  const calendarEl = document.getElementById('calendar');
-  const calendar = new FullCalendar.Calendar(calendarEl, {
-    initialView: 'dayGridMonth',
-    headerToolbar: {
-      left: 'prev,next today',
-      center: 'title',
-      right: 'dayGridMonth,listMonth'
-    },
-    events: {{{json events}}} || [],
-    eventDisplay: 'block',
-    height: 'auto',
-    contentHeight: 'auto',
-    selectable: true,
-    selectConstraint: 'businessHours',
-    editable: false,
-    eventClick: function(info) {
-      alert('Attendance: ' + info.event.title + ' on ' + info.event.startStr);
-    },
-    dayCellDidMount: function(arg) {
-      arg.el.style.height = 'auto';
-      arg.el.style.minHeight = '100px';
+function showAlert(message, type = 'info') {
+    const alertContainer = document.getElementById('alertContainer');
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show`;
+    alert.role = 'alert';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    alertContainer.appendChild(alert);
+    setTimeout(() => alert.remove(), 5000);
+}
+
+let currentCalendar = null;
+
+async function loadMonthlyAttendance(monthStr) {
+    try {
+        const response = await fetch(`/employee/attendance/api/month-summary?month=${monthStr}`, {
+            method: 'GET',
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`API error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        if (data.success && Array.isArray(data.data)) {
+            const attendances = data.data;
+            
+            // Calculate stats
+            const present = attendances.filter(a => a.status?.toLowerCase() === 'present').length;
+            const absent = attendances.filter(a => a.status?.toLowerCase() === 'absent').length;
+            const pending = attendances.filter(a => a.status?.toLowerCase() === 'pending').length;
+            const total = present + absent + pending;
+            const rate = total > 0 ? Math.round((present / total) * 100) : 0;
+            
+            document.getElementById('presentCount').textContent = present;
+            document.getElementById('absentCount').textContent = absent;
+            document.getElementById('pendingCount').textContent = pending;
+            document.getElementById('attendanceRate').textContent = rate + '%';
+            
+            // Convert to FullCalendar events
+            const events = attendances.map(att => {
+                let color = '#cbd5e1'; // gray
+                if (att.status?.toLowerCase() === 'present') color = '#22c55e';
+                else if (att.status?.toLowerCase() === 'absent') color = '#ef4444';
+                else if (att.status?.toLowerCase() === 'pending') color = '#f59e0b';
+                
+                return {
+                    title: att.status || 'Unknown',
+                    start: att.date || att.attendanceDate,
+                    backgroundColor: color,
+                    borderColor: color,
+                    extendedProps: {
+                        status: att.status,
+                        date: att.date || att.attendanceDate,
+                        details: att.reason || ''
+                    }
+                };
+            });
+            
+            // Update calendar events
+            if (currentCalendar) {
+                currentCalendar.removeAllEvents();
+                events.forEach(e => currentCalendar.addEvent(e));
+            }
+        } else {
+            throw new Error('Invalid response format');
+        }
+    } catch (error) {
+        console.error('Error loading monthly attendance:', error);
+        showAlert('Error loading monthly attendance: ' + error.message, 'danger');
     }
-  });
-  calendar.render();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default month to current month
+    const today = new Date();
+    const currentMonth = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0');
+    document.getElementById('monthPicker').value = currentMonth;
+    
+    // Update month display
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+    const [year, month] = currentMonth.split('-');
+    document.getElementById('monthDisplay').textContent = monthNames[parseInt(month) - 1] + ' ' + year;
+    
+    // Initialize FullCalendar
+    const calendarEl = document.getElementById('calendar');
+    currentCalendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        initialDate: currentMonth + '-01',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,listMonth'
+        },
+        events: [],
+        eventDisplay: 'block',
+        height: 'auto',
+        contentHeight: 'auto',
+        selectable: true,
+        editable: false,
+        eventClick: function(info) {
+            const details = info.event.extendedProps.details || 'No additional details';
+            alert(`Status: ${info.event.title}\nDate: ${info.event.startStr}\n${details}`);
+        },
+        dayCellDidMount: function(arg) {
+            arg.el.style.height = 'auto';
+            arg.el.style.minHeight = '100px';
+        }
+    });
+    currentCalendar.render();
+    
+    // Load initial data
+    loadMonthlyAttendance(currentMonth);
+    
+    // Month picker change handler
+    document.getElementById('monthPicker').addEventListener('change', function(e) {
+        const selectedMonth = e.target.value;
+        const [year, month] = selectedMonth.split('-');
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                           'July', 'August', 'September', 'October', 'November', 'December'];
+        document.getElementById('monthDisplay').textContent = monthNames[parseInt(month) - 1] + ' ' + year;
+        
+        currentCalendar.gotoDate(selectedMonth + '-01');
+        loadMonthlyAttendance(selectedMonth);
+    });
 });
 </script>

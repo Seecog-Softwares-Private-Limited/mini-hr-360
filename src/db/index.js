@@ -12,7 +12,7 @@ import mysql from 'mysql2/promise';
 // };
 
 // --- env (already loaded in index.js) ---
-console.log("DB_HOST : ",process.env.DB_HOST);
+console.log("DB_HOST : ", process.env.DB_HOST);
 //Prod
 const DB_HOST = process.env.DB_HOST;  // GoDaddy: 'localhost'; local can be '127.0.0.1'
 const DB_PORT = Number(process.env.DB_PORT || 3306);
@@ -38,7 +38,11 @@ export const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
   dialect: 'mysql',
   logging: false,
   pool: { max: 10, min: 0, acquire: 30000, idle: 10000 },
-  dialectOptions: { charset: 'utf8mb4' },
+  dialectOptions: { 
+    charset: 'utf8mb4',
+    timezone: '+05:30' // IST (India Standard Time)
+  },
+  timezone: '+05:30', // IST
   define: { charset: 'utf8mb4', collate: 'utf8mb4_unicode_ci' },
 });
 
@@ -63,6 +67,51 @@ const connectDB = async () => {
 
     await import('../models/index.js');
 
+
+
+
+    // Explicitly sync new Attendance models to ensure tables exist
+    // We try to sync Business/Employee first to ensure FK targets exist, but suppress errors if they fail
+    console.log('🔄 Syncing Attendance models...');
+    const {
+      Business, Employee,
+      AttendancePolicy, Shift, Holiday, EmployeeShiftAssignment,
+      AttendancePunch, AttendanceDailySummary, AttendanceRegularization, AttendanceLock
+    } = await import('../models/index.js');
+
+    // Disable FK checks to avoid issues with existing tables or circular deps
+    await sequelize.query('SET FOREIGN_KEY_CHECKS = 0', { raw: true });
+
+    const safeSync = async (model, name, force = false) => {
+      try {
+        const options = force ? { force: true } : { alter: true };
+        await model.sync(options);
+        console.log(`   ✅ ${name} synced`);
+      } catch (e) {
+        console.error(`   ⚠️ Failed to sync ${name}: ${e.message}`);
+      }
+    };
+
+    // Ensure dependencies exist
+    await safeSync(Business, 'Business');
+    await safeSync(Employee, 'Employee');
+
+    // Sync new models independent of each other
+    await safeSync(AttendancePolicy, 'AttendancePolicy');
+    await safeSync(Shift, 'Shift');
+    await safeSync(Holiday, 'Holiday');
+    await safeSync(EmployeeShiftAssignment, 'EmployeeShiftAssignment');
+    await safeSync(AttendancePunch, 'AttendancePunch', true);
+    await safeSync(AttendanceDailySummary, 'AttendanceDailySummary', true);
+    await safeSync(AttendanceRegularization, 'AttendanceRegularization');
+    await safeSync(AttendanceLock, 'AttendanceLock');
+
+    // Re-enable FK checks
+    await sequelize.query('SET FOREIGN_KEY_CHECKS = 1', { raw: true });
+
+    console.log('🏁 Attendance structure sync attempt completed');
+
+
     if (SYNC_DB) {
       // Temporarily disable foreign key checks for safe schema sync
       await sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
@@ -78,7 +127,7 @@ const connectDB = async () => {
       await sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
       console.log('🔄 Schema synced.');
     } else {
-      console.log('ℹ️ Skipping schema sync (set SYNC_DB=true to enable).');
+      console.log('ℹ️ Skipping full schema sync.');
     }
   } catch (err) {
     console.error('❌ MySQL connection error:', err?.message || err);

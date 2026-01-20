@@ -28,6 +28,7 @@
     "reset-db": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules reset-database.js",
     "migrate": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config scripts/run_migrations.js",
     "test:e2e": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config scripts/e2e_subscription_test.js",
+    "sync-db": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules database/sync-database.js",
     "update-departments-business": "node scripts/update-departments-business.js"
   },
   "dependencies": {
@@ -35,6 +36,7 @@
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "cross-env": "^10.1.0",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
     "express-handlebars": "^8.0.3",
