@@ -17,6 +17,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -45,6 +46,15 @@ const {
   EmployeeExperience,
   EmployeeDocument,
   EmailTemplate,
+   AttendancePolicy,
+  Shift,
+  Holiday,
+  EmployeeShiftAssignment,
+  AttendancePunch,
+  AttendanceDailySummary,
+  AttendanceRegularization,
+  AttendanceLock,
+  
 } = await import('../src/models/index.js');
 
 /**
@@ -79,6 +89,22 @@ async function syncDatabase() {
       { model: EmployeeEducation, name: 'EmployeeEducation' },
       { model: EmployeeExperience, name: 'EmployeeExperience' },
       { model: EmployeeDocument, name: 'EmployeeDocument' },
+      { model: AttendancePolicy, name: 'AttendancePolicy' },
+
+{ model: Shift, name: 'Shift' },
+
+{ model: Holiday, name: 'Holiday' },
+
+{ model: EmployeeShiftAssignment, name: 'EmployeeShiftAssignment' },
+
+{ model: AttendancePunch, name: 'AttendancePunch' },
+
+{ model: AttendanceDailySummary, name: 'AttendanceDailySummary' },
+
+{ model: AttendanceRegularization, name: 'AttendanceRegularization' },
+
+{ model: AttendanceLock, name: 'AttendanceLock' }
+
     ];
     
     console.log(`📋 Syncing ${modelsToSync.length} models...\n`);

@@ -1,0 +1,26 @@
+import { DataTypes } from 'sequelize';
+import { sequelize } from '../db/index.js';
+
+const AttendanceLock = sequelize.define(
+  'AttendanceLock',
+  {
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    businessId: { type: DataTypes.INTEGER, allowNull: false },
+    period: { type: DataTypes.STRING(7), allowNull: false, comment: 'YYYY-MM' },
+    lockedByUserId: { type: DataTypes.INTEGER, allowNull: false },
+    lockedAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
+    unlockNote: { type: DataTypes.TEXT, allowNull: true },
+  },
+  {
+    tableName: 'attendance_locks',
+    timestamps: true,
+    paranoid: true,
+    indexes: [
+      { fields: ['businessId'] },
+      { fields: ['period'] },
+      { unique: true, fields: ['businessId', 'period'] },
+    ],
+  }
+);
+
+export default AttendanceLock;

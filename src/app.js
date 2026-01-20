@@ -8,6 +8,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { setupSwagger } from './swagger.js';
 import { verifyUser } from './middleware/authMiddleware.js';
+import { errorHandler } from "./middleware/errorMiddleware.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -88,6 +89,7 @@ app.use((req, res, next) => {
     console.log(`Received ${req.method} request with params:`, req.params);
     next();
 });
+app.use(errorHandler);
 
 // ---------- Route imports ----------
 import userRoutes from './routes/user.routes.js';
@@ -112,6 +114,7 @@ import emailTemplateRoutes from './routes/emailTemplate.routes.js';
 import { renderEmailTemplatesPage } from './controllers/emailTemplate.controller.js';
 import { employeePortalRouter } from './routes/employeePortal.routes.js';
 import { adminLeaveRouter } from './routes/adminLeave.routes.js';
+import { adminAttendanceRouter } from './routes/admin.attendance.routes.js';
 import { billingRouter } from './routes/billing.routes.js';
 
 // ---------- Frontend pages ----------
@@ -229,6 +232,7 @@ app.use('/employee', employeePortalRouter);
 
 // Admin Leave Management Routes
 app.use('/leave-requests', adminLeaveRouter);
+app.use('/attendance', adminAttendanceRouter);
 
 // Billing & Plans
 app.use('/billing', billingRouter);

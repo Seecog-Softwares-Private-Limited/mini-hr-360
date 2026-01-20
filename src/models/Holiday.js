@@ -1,0 +1,24 @@
+import { DataTypes } from 'sequelize';
+import { sequelize } from '../db/index.js';
+
+const Holiday = sequelize.define(
+  'Holiday',
+  {
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    businessId: { type: DataTypes.INTEGER, allowNull: false },
+    date: { type: DataTypes.DATEONLY, allowNull: false },
+    name: { type: DataTypes.STRING(200), allowNull: false },
+    region: { type: DataTypes.STRING(120), allowNull: true },
+  },
+  {
+    tableName: 'holidays',
+    timestamps: true,
+    paranoid: true,
+    indexes: [
+      { fields: ['businessId'] },
+      { unique: true, fields: ['businessId', 'date', 'name'] },
+    ],
+  }
+);
+
+export default Holiday;

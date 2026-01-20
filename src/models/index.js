@@ -15,6 +15,15 @@ import { LeaveBalance } from './LeaveBalance.js';
 import { LeaveApproval } from './LeaveApproval.js';
 import DocumentType from './DocumentType.js';
 import EmailTemplate from './EmailTemplate.js';
+import AttendanceDailySummary from './AttendanceDailySummary.js';
+import AttendanceLock from './AttendanceLock.js';
+import AttendancePolicy from './AttendancePolicy.js';
+import AttendancePunch from './AttendancePunch.js';
+import AttendanceRegularization from './AttendanceRegularization.js';
+import EmployeeShiftAssignment from './EmployeeShiftAssignment.js';
+import Holiday from './Holiday.js';
+import Shift from './Shift.js';
+
 // Child tables for Employee
 import EmployeeEducation from './EmployeeEducation.js';
 import EmployeeExperience from './EmployeeExperience.js';
@@ -134,6 +143,57 @@ LeaveApproval.belongsTo(User, { foreignKey: 'approverId', as: 'approver' });
 Business.hasMany(Employee, { foreignKey: 'businessId', as: 'employees' });
 Employee.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
 
+Employee.hasMany(EmployeeShiftAssignment, {
+  foreignKey: 'employeeId',
+  as: 'shiftAssignments',
+});
+
+EmployeeShiftAssignment.belongsTo(Employee, {
+  foreignKey: 'employeeId',
+  as: 'employee',
+});
+
+AttendancePolicy.hasMany(EmployeeShiftAssignment, {
+  foreignKey: 'policyId',
+  as: 'shiftAssignments',
+});
+
+
+EmployeeShiftAssignment.belongsTo(AttendancePolicy, {
+  foreignKey: 'policyId',
+  as: 'policy',
+});
+
+Shift.hasMany(EmployeeShiftAssignment, {
+  foreignKey: 'shiftId',
+  as: 'assignments',
+});
+
+EmployeeShiftAssignment.belongsTo(Shift, {
+  foreignKey: 'shiftId',
+  as: 'shift',
+});
+
+Employee.hasMany(AttendanceRegularization, {
+  foreignKey: 'employeeId',
+  as: 'regularizations',
+});
+AttendanceRegularization.belongsTo(Employee, {
+  foreignKey: 'employeeId',
+  as: 'employee',
+});
+
+Employee.hasMany(AttendanceDailySummary, {
+  foreignKey: 'employeeId',
+  as: 'dailySummaries',
+});
+AttendanceDailySummary.belongsTo(Employee, {
+  foreignKey: 'employeeId',
+  as: 'employee',
+});
+
+
+
 /* ✅ NEW: Employee ⇄ EmployeeEducation */
 Employee.hasMany(EmployeeEducation, {
   foreignKey: 'employeeId',
@@ -202,4 +262,13 @@ export {
   EmployeeExperience,
   EmployeeDocument,
   EmailTemplate,
+  AttendanceDailySummary,
+  AttendanceLock,
+  AttendancePolicy,
+  AttendancePunch,
+  AttendanceRegularization,
+  EmployeeShiftAssignment,
+  Holiday,
+  Shift
+
 };
