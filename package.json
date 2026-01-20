@@ -23,10 +23,10 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "dev": "DOTENV_CONFIG_PATH=./property.env nodemon -r dotenv/config --experimental-json-modules src/index.js",
-    "start": "DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules src/index.js",
-    "reset-db": "DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules reset-database.js",
-    "sync-db": "DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules database/sync-database.js",
+    "dev": "cross-env DOTENV_CONFIG_PATH=./property.env nodemon -r dotenv/config --experimental-json-modules src/index.js",
+    "start": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules src/index.js",
+    "reset-db": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules reset-database.js",
+    "sync-db": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules database/sync-database.js",
     "update-departments-business": "node scripts/update-departments-business.js"
   },
   "dependencies": {
@@ -34,6 +34,7 @@
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "cross-env": "^10.1.0",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
     "express-handlebars": "^8.0.3",

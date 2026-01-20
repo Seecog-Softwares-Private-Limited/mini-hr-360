@@ -55,6 +55,17 @@ app.engine(
                     .replace(/\u2028/g, '\\u2028')
                     .replace(/\u2029/g, '\\u2029');
             },
+            timeFormat(dateString) {
+                if (!dateString) return '--:--';
+                const date = new Date(dateString);
+                return isNaN(date.getTime()) ? dateString : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            },
+            formatDuration(minutes) {
+                if (!minutes || isNaN(minutes)) return '0h 0m';
+                const h = Math.floor(minutes / 60);
+                const m = minutes % 60;
+                return `${h}h ${m}m`;
+            },
         },
         runtimeOptions: {
             allowProtoPropertiesByDefault: true,
@@ -111,6 +122,7 @@ import businessAddressRoutes from './routes/businessAddress.routes.js';
 import emailTemplateRoutes from './routes/emailTemplate.routes.js';
 import { renderEmailTemplatesPage } from './controllers/emailTemplate.controller.js';
 import { employeePortalRouter } from './routes/employeePortal.routes.js';
+import { employeeAttendanceRouter } from './routes/employeeAttendance.routes.js';
 import { adminLeaveRouter } from './routes/adminLeave.routes.js';
 import { billingRouter } from './routes/billing.routes.js';
 
@@ -225,6 +237,7 @@ app.get('/email-templates', verifyUser, renderEmailTemplatesPage);
 app.use('/', emailTemplateRoutes);
 
 // Employee Portal Routes
+app.use('/employee/attendance', employeeAttendanceRouter);
 app.use('/employee', employeePortalRouter);
 
 // Admin Leave Management Routes

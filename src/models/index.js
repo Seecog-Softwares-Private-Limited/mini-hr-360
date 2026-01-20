@@ -19,6 +19,15 @@ import EmailTemplate from './EmailTemplate.js';
 import EmployeeEducation from './EmployeeEducation.js';
 import EmployeeExperience from './EmployeeExperience.js';
 import EmployeeDocument from './EmployeeDocument.js';
+// Attendance
+import AttendancePolicy from './AttendancePolicy.js';
+import Shift from './Shift.js';
+import Holiday from './Holiday.js';
+import EmployeeShiftAssignment from './EmployeeShiftAssignment.js';
+import AttendancePunch from './AttendancePunch.js';
+import AttendanceDailySummary from './AttendanceDailySummary.js';
+import AttendanceRegularization from './AttendanceRegularization.js';
+import AttendanceLock from './AttendanceLock.js';
 
 /**
  * IMPORTANT:
@@ -182,7 +191,49 @@ EmailTemplate.belongsTo(DocumentType, {
 });
 
 
+// --- Attendance Module Relationships ---
+Business.hasMany(AttendancePolicy, { foreignKey: 'businessId', as: 'attendancePolicies' });
+AttendancePolicy.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+
+Business.hasMany(Shift, { foreignKey: 'businessId', as: 'shifts' });
+Shift.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+
+Business.hasMany(Holiday, { foreignKey: 'businessId', as: 'holidays' });
+Holiday.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+
+Employee.hasMany(EmployeeShiftAssignment, { foreignKey: 'employeeId', as: 'shiftAssignments' });
+EmployeeShiftAssignment.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
+
+AttendancePolicy.hasMany(EmployeeShiftAssignment, { foreignKey: 'policyId', as: 'assignments' });
+EmployeeShiftAssignment.belongsTo(AttendancePolicy, { foreignKey: 'policyId', as: 'policy' });
+
+Shift.hasMany(EmployeeShiftAssignment, { foreignKey: 'shiftId', as: 'assignments' });
+EmployeeShiftAssignment.belongsTo(Shift, { foreignKey: 'shiftId', as: 'shift' });
+
+Employee.hasMany(AttendancePunch, { foreignKey: 'employeeId', as: 'punches' });
+AttendancePunch.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
+
+Employee.hasMany(AttendanceDailySummary, { foreignKey: 'employeeId', as: 'dailySummaries' });
+AttendanceDailySummary.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
+
+Employee.hasMany(AttendanceRegularization, { foreignKey: 'employeeId', as: 'regularizations' });
+AttendanceRegularization.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
+
+User.hasMany(AttendanceRegularization, { foreignKey: 'actionByUserId', as: 'actionedRegularizations' });
+AttendanceRegularization.belongsTo(User, { foreignKey: 'actionByUserId', as: 'actionBy' });
+
+Business.hasMany(AttendanceLock, { foreignKey: 'businessId', as: 'attendanceLocks' });
+AttendanceLock.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+
 export {
+  AttendancePolicy,
+  Shift,
+  Holiday,
+  EmployeeShiftAssignment,
+  AttendancePunch,
+  AttendanceDailySummary,
+  AttendanceRegularization,
+  AttendanceLock,
   User,
   Business,
   Customer,
