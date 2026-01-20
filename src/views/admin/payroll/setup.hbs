@@ -1,0 +1,526 @@
+{{!-- Admin Payroll Setup --}}
+<div class="container-fluid">
+	<div class="row">
+		<div class="col-md-3 col-lg-2 px-0">
+			{{> sidebar active="payroll-setup" activeGroup="workspace"}}
+		</div>
+
+		<div class="col-md-9 col-lg-10">
+			<div class="main-content p-4">
+				<nav aria-label="breadcrumb">
+					<ol class="breadcrumb mb-3 bg-transparent p-0">
+						<li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+						<li class="breadcrumb-item active" aria-current="page">Payroll Setup</li>
+					</ol>
+				</nav>
+
+				<div class="d-flex align-items-center justify-content-between mb-4">
+					<div>
+						<h2 class="mb-1">Payroll Setup</h2>
+						<p class="text-muted mb-0">Configure payroll rules and settings for your workspace</p>
+					</div>
+				</div>
+
+				<!-- Setup Completion Progress -->
+				<div class="card mb-4">
+					<div class="card-body">
+						<div class="d-flex justify-content-between align-items-center mb-3">
+							<h5 class="card-title mb-0">Setup Completion</h5>
+							<span class="badge bg-info">4 of 6 Complete</span>
+						</div>
+						<div class="progress mb-3" style="height: 8px;">
+							<div class="progress-bar" role="progressbar" style="width: 67%;" aria-valuenow="67" aria-valuemin="0" aria-valuemax="100"></div>
+						</div>
+						<div class="row g-2">
+							<div class="col-md-4">
+								<div class="d-flex align-items-center">
+									<i class="fa-solid fa-check-circle text-success me-2" style="font-size: 20px;"></i>
+									<div>
+										<div style="font-weight: 600;">Pay Calendar</div>
+										<small class="text-muted">Configured</small>
+									</div>
+								</div>
+							</div>
+							<div class="col-md-4">
+								<div class="d-flex align-items-center">
+									<i class="fa-solid fa-check-circle text-success me-2" style="font-size: 20px;"></i>
+									<div>
+										<div style="font-weight: 600;">Statutory Settings</div>
+										<small class="text-muted">Configured</small>
+									</div>
+								</div>
+							</div>
+							<div class="col-md-4">
+								<div class="d-flex align-items-center">
+									<i class="fa-solid fa-check-circle text-success me-2" style="font-size: 20px;"></i>
+									<div>
+										<div style="font-weight: 600;">Components Master</div>
+										<small class="text-muted">Configured</small>
+									</div>
+								</div>
+							</div>
+							<div class="col-md-4">
+								<div class="d-flex align-items-center">
+									<i class="fa-solid fa-check-circle text-success me-2" style="font-size: 20px;"></i>
+									<div>
+										<div style="font-weight: 600;">Company Bank</div>
+										<small class="text-muted">Configured</small>
+									</div>
+								</div>
+							</div>
+							<div class="col-md-4">
+								<div class="d-flex align-items-center">
+									<i class="fa-solid fa-circle-xmark text-secondary me-2" style="font-size: 20px;"></i>
+									<div>
+										<div style="font-weight: 600;">Payslip Template</div>
+										<small class="text-muted">Pending</small>
+									</div>
+								</div>
+							</div>
+							<div class="col-md-4">
+								<div class="d-flex align-items-center">
+									<i class="fa-solid fa-circle-xmark text-secondary me-2" style="font-size: 20px;"></i>
+									<div>
+										<div style="font-weight: 600;">Approval Workflow</div>
+										<small class="text-muted">Pending</small>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Setup Tabs -->
+				<div class="card">
+					<div class="card-header">
+						<ul class="nav nav-tabs card-header-tabs" role="tablist">
+							<li class="nav-item" role="presentation">
+								<button class="nav-link active" id="pay-calendar-tab" data-bs-toggle="tab" data-bs-target="#pay-calendar" type="button" role="tab" aria-controls="pay-calendar" aria-selected="true">
+									<i class="fa-solid fa-calendar-days me-2"></i>Pay Calendar
+								</button>
+							</li>
+							<li class="nav-item" role="presentation">
+								<button class="nav-link" id="statutory-tab" data-bs-toggle="tab" data-bs-target="#statutory" type="button" role="tab" aria-controls="statutory" aria-selected="false">
+									<i class="fa-solid fa-shield me-2"></i>Statutory Settings
+								</button>
+							</li>
+							<li class="nav-item" role="presentation">
+								<button class="nav-link" id="components-tab" data-bs-toggle="tab" data-bs-target="#components" type="button" role="tab" aria-controls="components" aria-selected="false">
+									<i class="fa-solid fa-cube me-2"></i>Components
+								</button>
+							</li>
+							<li class="nav-item" role="presentation">
+								<button class="nav-link" id="bank-tab" data-bs-toggle="tab" data-bs-target="#bank" type="button" role="tab" aria-controls="bank" aria-selected="false">
+									<i class="fa-solid fa-bank me-2"></i>Company Bank
+								</button>
+							</li>
+							<li class="nav-item" role="presentation">
+								<button class="nav-link" id="template-tab" data-bs-toggle="tab" data-bs-target="#template" type="button" role="tab" aria-controls="template" aria-selected="false">
+									<i class="fa-solid fa-file-lines me-2"></i>Payslip Template
+								</button>
+							</li>
+							<li class="nav-item" role="presentation">
+								<button class="nav-link" id="workflow-tab" data-bs-toggle="tab" data-bs-target="#workflow" type="button" role="tab" aria-controls="workflow" aria-selected="false">
+									<i class="fa-solid fa-code-branch me-2"></i>Approval Workflow
+								</button>
+							</li>
+						</ul>
+					</div>
+
+					<div class="card-body">
+						<div class="tab-content">
+							<!-- Pay Calendar Tab -->
+							<div class="tab-pane fade show active" id="pay-calendar" role="tabpanel" aria-labelledby="pay-calendar-tab">
+								<form>
+									<div class="row g-4">
+										<div class="col-md-6">
+											<label class="form-label fw-600">Payroll Frequency</label>
+											<select class="form-select" required>
+												<option selected>Monthly</option>
+												<option>Bi-weekly</option>
+												<option>Weekly</option>
+												<option>Half-yearly</option>
+												<option>Quarterly</option>
+												<option>Yearly</option>
+											</select>
+										</div>
+										<div class="col-md-6">
+											<label class="form-label fw-600">Pay Date (Day of Month)</label>
+											<input type="number" class="form-control" placeholder="e.g., 25" min="1" max="31" value="25">
+										</div>
+										<div class="col-md-6">
+											<label class="form-label fw-600">Cutoff Date (Day of Month)</label>
+											<input type="number" class="form-control" placeholder="e.g., 20" min="1" max="31" value="20">
+										</div>
+										<div class="col-md-6">
+											<label class="form-label fw-600">Financial Year Start (Month)</label>
+											<select class="form-select">
+												<option selected>April</option>
+												<option>January</option>
+												<option>July</option>
+											</select>
+										</div>
+										<div class="col-12">
+											<div class="form-check form-switch">
+												<input class="form-check-input" type="checkbox" id="proration" checked>
+												<label class="form-check-label" for="proration">
+													<strong>Enable Proration</strong> (Pro-rate salary for join/exit mid-month)
+												</label>
+											</div>
+										</div>
+									</div>
+								</form>
+							</div>
+
+							<!-- Statutory Settings Tab -->
+							<div class="tab-pane fade" id="statutory" role="tabpanel" aria-labelledby="statutory-tab">
+								<form>
+									<div class="row g-4">
+										<div class="col-12">
+											<h6 class="mb-3">Enable/Disable Statutory Components</h6>
+										</div>
+										<div class="col-md-3">
+											<div class="form-check form-switch">
+												<input class="form-check-input" type="checkbox" id="pf" checked>
+												<label class="form-check-label" for="pf">
+													<strong>Provident Fund (PF)</strong>
+												</label>
+											</div>
+										</div>
+										<div class="col-md-3">
+											<div class="form-check form-switch">
+												<input class="form-check-input" type="checkbox" id="esi" checked>
+												<label class="form-check-label" for="esi">
+													<strong>ESI</strong>
+												</label>
+											</div>
+										</div>
+										<div class="col-md-3">
+											<div class="form-check form-switch">
+												<input class="form-check-input" type="checkbox" id="pt" checked>
+												<label class="form-check-label" for="pt">
+													<strong>Professional Tax (PT)</strong>
+												</label>
+											</div>
+										</div>
+										<div class="col-md-3">
+											<div class="form-check form-switch">
+												<input class="form-check-input" type="checkbox" id="tds" checked>
+												<label class="form-check-label" for="tds">
+													<strong>TDS</strong>
+												</label>
+											</div>
+										</div>
+										<div class="col-12">
+											<hr>
+										</div>
+										<div class="col-md-6">
+											<label class="form-label fw-600">PF Ceiling (Monthly)</label>
+											<input type="number" class="form-control" placeholder="15000" value="15000">
+										</div>
+										<div class="col-md-6">
+											<label class="form-label fw-600">ESI Wage Limit (Monthly)</label>
+											<input type="number" class="form-control" placeholder="21000" value="21000">
+										</div>
+									</div>
+								</form>
+							</div>
+
+							<!-- Components Tab -->
+							<div class="tab-pane fade" id="components" role="tabpanel" aria-labelledby="components-tab">
+								<div class="mb-3">
+									<button type="button" class="btn btn-primary" onclick="openAddComponentModal()">
+										<i class="fa-solid fa-plus me-2"></i>Add Component
+									</button>
+								</div>
+								<div class="table-responsive">
+									<table class="table table-hover">
+										<thead class="table-light">
+											<tr>
+												<th>Name</th>
+												<th>Code</th>
+												<th>Type</th>
+												<th>Taxable</th>
+												<th>Default Formula</th>
+												<th>Actions</th>
+											</tr>
+										</thead>
+										<tbody>
+											<tr>
+												<td><strong>Basic Salary</strong></td>
+												<td><code>BASIC</code></td>
+												<td><span class="badge bg-success">Earning</span></td>
+												<td><span class="badge bg-info">Yes</span></td>
+												<td>Manual entry</td>
+												<td><button class="btn btn-sm btn-outline-secondary">Edit</button></td>
+											</tr>
+											<tr>
+												<td><strong>Dearness Allowance</strong></td>
+												<td><code>DA</code></td>
+												<td><span class="badge bg-success">Earning</span></td>
+												<td><span class="badge bg-info">Yes</span></td>
+												<td>% of Basic</td>
+												<td><button class="btn btn-sm btn-outline-secondary">Edit</button></td>
+											</tr>
+											<tr>
+												<td><strong>Provident Fund</strong></td>
+												<td><code>PF</code></td>
+												<td><span class="badge bg-danger">Deduction</span></td>
+												<td><span class="badge bg-secondary">No</span></td>
+												<td>12% of Basic</td>
+												<td><button class="btn btn-sm btn-outline-secondary">Edit</button></td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+								<small class="text-muted">More components available. Click "Edit" to configure formulas.</small>
+							</div>
+
+							<!-- Company Bank Tab -->
+							<div class="tab-pane fade" id="bank" role="tabpanel" aria-labelledby="bank-tab">
+								<form>
+									<div class="row g-4">
+										<div class="col-md-6">
+											<label class="form-label fw-600">Bank Name</label>
+											<input type="text" class="form-control" placeholder="ICICI Bank Limited">
+										</div>
+										<div class="col-md-6">
+											<label class="form-label fw-600">Account Holder Name</label>
+											<input type="text" class="form-control" placeholder="Company Name">
+										</div>
+										<div class="col-md-6">
+											<label class="form-label fw-600">Account Number</label>
+											<input type="text" class="form-control" placeholder="123456789012345">
+										</div>
+										<div class="col-md-6">
+											<label class="form-label fw-600">IFSC Code</label>
+											<input type="text" class="form-control" placeholder="ICIC0000001">
+										</div>
+										<div class="col-md-6">
+											<label class="form-label fw-600">Branch Name</label>
+											<input type="text" class="form-control" placeholder="Main Branch">
+										</div>
+										<div class="col-md-6">
+											<label class="form-label fw-600">UTR Prefix (Optional)</label>
+											<input type="text" class="form-control" placeholder="UTR-">
+										</div>
+									</div>
+								</form>
+							</div>
+
+							<!-- Payslip Template Tab -->
+							<div class="tab-pane fade" id="template" role="tabpanel" aria-labelledby="template-tab">
+								<div class="row">
+									<div class="col-md-6">
+										<h6 class="mb-3">Template Settings</h6>
+										<form>
+											<div class="mb-3">
+												<label class="form-label fw-600">Company Name</label>
+												<input type="text" class="form-control" placeholder="Acme Corporation">
+											</div>
+											<div class="mb-3">
+												<label class="form-label fw-600">Company Address</label>
+												<textarea class="form-control" rows="3" placeholder="Enter company address"></textarea>
+											</div>
+											<div class="mb-3">
+												<label class="form-label fw-600">Footer Note</label>
+												<textarea class="form-control" rows="2" placeholder="This is a system-generated payslip"></textarea>
+											</div>
+											<div class="mb-3">
+												<label class="form-label fw-600">Logo URL (Optional)</label>
+												<input type="url" class="form-control" placeholder="https://example.com/logo.png">
+											</div>
+										</form>
+									</div>
+									<div class="col-md-6">
+										<h6 class="mb-3">Payslip Preview</h6>
+										<div style="border: 2px dashed #dee2e6; border-radius: 8px; padding: 20px; background: #f8f9fa; min-height: 350px;">
+											<div style="text-align: center; padding: 20px; border-bottom: 2px solid #dee2e6;">
+												<div style="font-weight: 700; font-size: 16px;">Acme Corporation</div>
+												<small class="text-muted">Company Address Here</small>
+											</div>
+											<div style="padding: 15px; text-align: center;">
+												<p class="text-muted small">Payslip Preview</p>
+												<p style="font-weight: 600;">January 2026 | Employee: SAMPLE</p>
+											</div>
+											<div style="padding: 15px; text-align: center; color: #999; font-size: 12px;">
+												<p>This is a system-generated payslip</p>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<!-- Approval Workflow Tab -->
+							<div class="tab-pane fade" id="workflow" role="tabpanel" aria-labelledby="workflow-tab">
+								<div class="mb-4">
+									<h6 class="mb-3">Payroll Approval Workflow</h6>
+									<p class="text-muted small">Define the approval steps for payroll processing</p>
+								</div>
+
+								<!-- Workflow Steps -->
+								<div style="position: relative; padding: 30px 0;">
+									<div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
+										<!-- Step 1 -->
+										<div style="flex: 1; text-align: center; position: relative;">
+											<div style="width: 50px; height: 50px; background: #4f46e5; color: white; border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px;">1</div>
+											<div style="font-weight: 600; font-size: 14px;">HR Review</div>
+											<small class="text-muted">Data validation</small>
+										</div>
+
+										<div style="flex: 1; display: flex; align-items: center; justify-content: center; margin-top: 15px;">
+											<i class="fa-solid fa-arrow-right" style="color: #d1d5db; font-size: 24px;"></i>
+										</div>
+
+										<!-- Step 2 -->
+										<div style="flex: 1; text-align: center; position: relative;">
+											<div style="width: 50px; height: 50px; background: #4f46e5; color: white; border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px;">2</div>
+											<div style="font-weight: 600; font-size: 14px;">Finance Review</div>
+											<small class="text-muted">Budget check</small>
+										</div>
+
+										<div style="flex: 1; display: flex; align-items: center; justify-content: center; margin-top: 15px;">
+											<i class="fa-solid fa-arrow-right" style="color: #d1d5db; font-size: 24px;"></i>
+										</div>
+
+										<!-- Step 3 -->
+										<div style="flex: 1; text-align: center;">
+											<div style="width: 50px; height: 50px; background: #4f46e5; color: white; border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px;">3</div>
+											<div style="font-weight: 600; font-size: 14px;">Admin Approval</div>
+											<small class="text-muted">Final sign-off</small>
+										</div>
+									</div>
+								</div>
+
+								<hr>
+
+								<div class="row g-4 mt-3">
+									<div class="col-md-6">
+										<label class="form-label fw-600">Step 1: HR Reviewer</label>
+										<select class="form-select">
+											<option selected>Select user...</option>
+											<option>HR Manager</option>
+											<option>HR Lead</option>
+										</select>
+									</div>
+									<div class="col-md-6">
+										<label class="form-label fw-600">Step 2: Finance Reviewer</label>
+										<select class="form-select">
+											<option selected>Select user...</option>
+											<option>Finance Manager</option>
+											<option>CFO</option>
+										</select>
+									</div>
+									<div class="col-md-6">
+										<label class="form-label fw-600">Step 3: Admin Approver</label>
+										<select class="form-select">
+											<option selected>Select user...</option>
+											<option>Admin</option>
+											<option>Managing Director</option>
+										</select>
+									</div>
+									<div class="col-md-6">
+										<label class="form-label fw-600">Auto-Approve if No Objections After</label>
+										<div class="input-group">
+											<input type="number" class="form-control" placeholder="3" value="3">
+											<span class="input-group-text">days</span>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Sticky Bottom Bar -->
+					<div class="card-footer bg-light d-flex justify-content-between align-items-center" style="position: sticky; bottom: 0; z-index: 10; border-top: 1px solid #dee2e6;">
+						<div></div>
+						<div class="d-flex gap-2">
+							<button class="btn btn-secondary" onclick="resetForm()">
+								<i class="fa-solid fa-rotate-left me-2"></i>Reset
+							</button>
+							<button class="btn btn-primary" onclick="savePayrollSetup()">
+								<i class="fa-solid fa-check me-2"></i>Save Changes
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Add Component Modal -->
+<div class="modal fade" id="addComponentModal" tabindex="-1">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">Add Payroll Component</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+			</div>
+			<div class="modal-body">
+				<form>
+					<div class="mb-3">
+						<label class="form-label">Component Name</label>
+						<input type="text" class="form-control" placeholder="e.g., House Rent Allowance">
+					</div>
+					<div class="mb-3">
+						<label class="form-label">Component Code</label>
+						<input type="text" class="form-control" placeholder="e.g., HRA" maxlength="10">
+					</div>
+					<div class="mb-3">
+						<label class="form-label">Type</label>
+						<select class="form-select">
+							<option selected>Earning</option>
+							<option>Deduction</option>
+						</select>
+					</div>
+					<div class="mb-3">
+						<div class="form-check">
+							<input class="form-check-input" type="checkbox" id="taxable">
+							<label class="form-check-label" for="taxable">
+								Taxable Component
+							</label>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+				<button type="button" class="btn btn-primary" onclick="addComponent()">Add Component</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+function openAddComponentModal() {
+	new bootstrap.Modal(document.getElementById('addComponentModal')).show();
+}
+
+function addComponent() {
+	showToast('Component added successfully!', 'success');
+	new bootstrap.Modal(document.getElementById('addComponentModal')).hide();
+}
+
+function savePayrollSetup() {
+	showToast('Payroll setup saved successfully!', 'success');
+}
+
+function resetForm() {
+	if (confirm('Are you sure you want to reset all changes?')) {
+		location.reload();
+	}
+}
+
+function showToast(message, type = 'info') {
+	const alertDiv = document.createElement('div');
+	alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+	alertDiv.setAttribute('role', 'alert');
+	alertDiv.innerHTML = `
+		${message}
+		<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+	`;
+	document.querySelector('.main-content').insertAdjacentElement('afterbegin', alertDiv);
+	setTimeout(() => alertDiv.remove(), 4000);
+}
+</script>

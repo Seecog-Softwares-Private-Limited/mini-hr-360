@@ -1,0 +1,191 @@
+{{!-- Employee Bank & Tax Details --}}
+<div class="container-fluid">
+	<div class="row">
+		{{> employee-sidebar employee=employee active='payroll_bank_tax'}}
+
+		<!-- Main Content -->
+		<div class="col-md-10 emp-main">
+			<div class="emp-page-header">
+				<h1 class="emp-page-title">Bank & Tax Details</h1>
+				<p class="text-muted mt-1">Manage your banking and tax information</p>
+			</div>
+
+			<!-- Bank Details Section -->
+			<div class="emp-card mb-4">
+				<div class="emp-card-header">
+					<h5 class="emp-card-title">
+						<i class="fa-solid fa-building-columns" style="color: var(--emp-primary);"></i>
+						Bank Account Details
+					</h5>
+				</div>
+				<div class="emp-card-body">
+					<form {{#unless canEdit}}onsubmit="return false;"{{/unless}}>
+						<div class="row g-3 mb-3">
+							<div class="col-md-6">
+								<label class="form-label fw-600">Account Holder Name</label>
+								<input type="text" class="form-control" placeholder="Your Name" {{#unless canEdit}}readonly{{/unless}} value="{{bankTax.accountHolderName}}">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-600">Account Number</label>
+								<input type="text" class="form-control" placeholder="Account number" {{#unless canEdit}}readonly{{/unless}} value="{{bankTax.accountNumber}}">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-600">IFSC Code</label>
+								<input type="text" class="form-control" placeholder="e.g., ICIC0000001" {{#unless canEdit}}readonly{{/unless}} value="{{bankTax.ifscCode}}">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-600">Bank Name</label>
+								<input type="text" class="form-control" placeholder="Bank name" {{#unless canEdit}}readonly{{/unless}} value="{{bankTax.bankName}}">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-600">Branch Name</label>
+								<input type="text" class="form-control" placeholder="Branch name" {{#unless canEdit}}readonly{{/unless}} value="{{bankTax.branchName}}">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-600">Account Type</label>
+								<select class="form-select" {{#unless canEdit}}disabled{{/unless}}>
+									<option selected>Salary Account</option>
+									<option>Savings Account</option>
+									<option>Current Account</option>
+								</select>
+							</div>
+						</div>
+					</form>
+					{{#if bankTax.lastUpdated}}
+						<small class="text-muted">Last updated: {{bankTax.lastUpdated}}</small>
+					{{/if}}
+				</div>
+			</div>
+
+			<!-- Tax IDs Section -->
+			<div class="emp-card mb-4">
+				<div class="emp-card-header">
+					<h5 class="emp-card-title">
+						<i class="fa-solid fa-receipt" style="color: var(--emp-primary);"></i>
+						Tax & ID Details
+					</h5>
+				</div>
+				<div class="emp-card-body">
+					<form {{#unless canEdit}}onsubmit="return false;"{{/unless}}>
+						<div class="row g-3">
+							<div class="col-md-6">
+								<label class="form-label fw-600">PAN (Permanent Account Number)</label>
+								<input type="text" class="form-control" placeholder="XXXXX0000X" {{#unless canEdit}}readonly{{/unless}} value="{{bankTax.pan}}">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-600">Aadhaar Number</label>
+								<input type="text" class="form-control" placeholder="XXXX XXXX XXXX" {{#unless canEdit}}readonly{{/unless}} value="{{bankTax.aadhaar}}">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-600">UAN (Universal Account Number)</label>
+								<input type="text" class="form-control" placeholder="UAN number" {{#unless canEdit}}readonly{{/unless}} value="{{bankTax.uan}}">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-600">ESI Number</label>
+								<input type="text" class="form-control" placeholder="ESI number" {{#unless canEdit}}readonly{{/unless}} value="{{bankTax.esiNumber}}">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-600">Contact Number</label>
+								<input type="tel" class="form-control" placeholder="+91 XXXX XXXXXX" {{#unless canEdit}}readonly{{/unless}} value="{{bankTax.contactNumber}}">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-600">Email Address</label>
+								<input type="email" class="form-control" placeholder="email@example.com" {{#unless canEdit}}readonly{{/unless}} value="{{bankTax.email}}">
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+
+			<!-- Address & Declarations -->
+			<div class="emp-card mb-4">
+				<div class="emp-card-header">
+					<h5 class="emp-card-title">
+						<i class="fa-solid fa-map-location-dot" style="color: var(--emp-primary);"></i>
+						Address & Declarations
+					</h5>
+				</div>
+				<div class="emp-card-body">
+					<form {{#unless canEdit}}onsubmit="return false;"{{/unless}}>
+						<div class="mb-3">
+							<label class="form-label fw-600">Current Address</label>
+							<textarea class="form-control" rows="3" placeholder="Enter your residential address" {{#unless canEdit}}readonly{{/unless}}>{{bankTax.address}}</textarea>
+						</div>
+						<div class="row g-3">
+							<div class="col-md-6">
+								<label class="form-label fw-600">City</label>
+								<input type="text" class="form-control" placeholder="City" {{#unless canEdit}}readonly{{/unless}} value="{{bankTax.city}}">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-600">State</label>
+								<input type="text" class="form-control" placeholder="State" {{#unless canEdit}}readonly{{/unless}} value="{{bankTax.state}}">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-600">PIN Code</label>
+								<input type="text" class="form-control" placeholder="PIN code" {{#unless canEdit}}readonly{{/unless}} value="{{bankTax.pinCode}}">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-600">Country</label>
+								<input type="text" class="form-control" placeholder="Country" {{#unless canEdit}}readonly{{/unless}} value="{{bankTax.country}}">
+							</div>
+						</div>
+
+						<hr class="my-4">
+
+						<div class="mb-3">
+							<div class="form-check">
+								<input class="form-check-input" type="checkbox" id="form16" {{#unless canEdit}}disabled{{/unless}}>
+								<label class="form-check-label" for="form16">
+									<strong>Form 16 Acknowledgment</strong>
+									<small class="d-block text-muted">I acknowledge receipt of Form 16 for FY 2025-26</small>
+								</label>
+							</div>
+						</div>
+						<div class="mb-3">
+							<div class="form-check">
+								<input class="form-check-input" type="checkbox" id="dataPrivacy" {{#unless canEdit}}disabled{{/unless}}>
+								<label class="form-check-label" for="dataPrivacy">
+									<strong>Data Privacy Consent</strong>
+									<small class="d-block text-muted">I consent to the processing of my personal information for payroll purposes</small>
+								</label>
+							</div>
+						</div>
+					</form>
+				</div>
+			</div>
+
+			<!-- Action Buttons -->
+			<div class="d-flex gap-2 justify-content-between mb-4">
+				<div></div>
+				<div>
+					{{#if canEdit}}
+						<button class="btn btn-secondary me-2" onclick="resetForm()">
+							<i class="fa-solid fa-rotate-left me-2"></i>Reset
+						</button>
+						<button class="btn btn-primary" onclick="saveChanges()">
+							<i class="fa-solid fa-check me-2"></i>Save Changes
+						</button>
+					{{/if}}
+				</div>
+			</div>
+
+			<!-- Info Box -->
+			<div class="alert alert-info" role="alert">
+				<i class="fa-solid fa-info-circle me-2"></i>
+				<strong>Important:</strong> Keep your bank and tax details updated to ensure timely salary disbursement and accurate tax calculations.
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+function saveChanges() {
+	alert('Changes saved - will be wired to backend');
+}
+
+function resetForm() {
+	if (confirm('Reset all changes?')) {
+		location.reload();
+	}
+}
+</script>

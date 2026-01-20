@@ -1,0 +1,295 @@
+{{!-- Admin Payroll Register --}}
+<div class="container-fluid">
+	<div class="row">
+		<div class="col-md-3 col-lg-2 px-0">
+			{{> sidebar active="payroll-register" activeGroup="workspace"}}
+		</div>
+
+		<div class="col-md-9 col-lg-10">
+			<div class="main-content p-4">
+				<nav aria-label="breadcrumb">
+					<ol class="breadcrumb mb-3 bg-transparent p-0">
+						<li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+						<li class="breadcrumb-item"><a href="/admin/payroll/runs">Payroll Runs</a></li>
+						<li class="breadcrumb-item active" aria-current="page">Payroll Register</li>
+					</ol>
+				</nav>
+
+				<div class="d-flex align-items-center justify-content-between mb-4">
+					<div>
+						<h2 class="mb-1">Payroll Register</h2>
+						<small class="text-muted">January 2026 | Run ID: {{runId}} | <span class="badge bg-info">Under Review</span></small>
+					</div>
+					<div>
+						<button class="btn btn-outline-secondary me-2" onclick="exportRegister()">
+							<i class="fa-solid fa-file-export me-1"></i>Export
+						</button>
+					</div>
+				</div>
+
+				<!-- KPI Cards -->
+				<div class="row mb-4 gy-3">
+					<div class="col-md-3">
+						<div class="card text-center" style="border-left: 4px solid #4f46e5;">
+							<div class="card-body py-3">
+								<small class="text-muted">Total Employees</small>
+								<div style="font-size: 1.75rem; font-weight: 800; color: #4f46e5;">{{stats.employeeCount}}</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-3">
+						<div class="card text-center" style="border-left: 4px solid #22c55e;">
+							<div class="card-body py-3">
+								<small class="text-muted">Total Earnings</small>
+								<div style="font-size: 1.75rem; font-weight: 800; color: #22c55e;">₹{{stats.totalEarnings}}</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-3">
+						<div class="card text-center" style="border-left: 4px solid #f59e0b;">
+							<div class="card-body py-3">
+								<small class="text-muted">Total Deductions</small>
+								<div style="font-size: 1.75rem; font-weight: 800; color: #f59e0b;">₹{{stats.totalDeductions}}</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-3">
+						<div class="card text-center" style="border-left: 4px solid #06b6d4;">
+							<div class="card-body py-3">
+								<small class="text-muted">Net Pay (Total)</small>
+								<div style="font-size: 1.75rem; font-weight: 800; color: #06b6d4;">₹{{stats.netPay}}</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Payroll Table -->
+				<div class="card">
+					<div class="card-header d-flex justify-content-between align-items-center">
+						<h6 class="mb-0">Employee Payroll Details</h6>
+						<div class="btn-group btn-group-sm">
+							<input type="text" class="form-control form-control-sm" placeholder="Search employee..." style="width: 200px;" id="searchInput" onkeyup="filterTable()">
+						</div>
+					</div>
+					<div class="card-body p-0">
+						<div class="table-responsive">
+							<table class="table table-hover mb-0">
+								<thead class="table-light">
+									<tr>
+										<th>Employee</th>
+										<th>Dept</th>
+										<th>LOP Days</th>
+										<th>Earnings</th>
+										<th>Deductions</th>
+										<th>Net Pay</th>
+										<th>Exceptions</th>
+										<th>Actions</th>
+									</tr>
+								</thead>
+								<tbody>
+									{{#if employees.length}}
+										{{#each employees}}
+										<tr data-employee="{{this.empName}}">
+											<td>
+												<strong>{{this.empName}}</strong>
+												<small class="d-block text-muted">{{this.empId}}</small>
+											</td>
+											<td>{{this.department}}</td>
+											<td>{{this.lopDays}}</td>
+											<td class="text-success"><strong>₹{{this.earnings}}</strong></td>
+											<td class="text-danger"><strong>₹{{this.deductions}}</strong></td>
+											<td><strong>₹{{this.netPay}}</strong></td>
+											<td>
+												{{#if this.exceptions.length}}
+													{{#each this.exceptions}}
+														<span class="badge bg-warning text-dark me-1 mb-1" title="{{this}}">{{this}}</span>
+													{{/each}}
+												{{else}}
+													<small class="text-muted">—</small>
+												{{/if}}
+											</td>
+											<td>
+												<div class="btn-group btn-group-sm">
+													<button class="btn btn-outline-primary" onclick="viewBreakdown({{this.id}})" title="View breakdown">
+														<i class="fa-solid fa-eye"></i>
+													</button>
+													<button class="btn btn-outline-secondary" onclick="addAdjustment({{this.id}})" title="Add adjustment">
+														<i class="fa-solid fa-plus"></i>
+													</button>
+												</div>
+											</td>
+										</tr>
+										{{/each}}
+									{{else}}
+										<tr>
+											<td colspan="8" class="text-center text-muted py-4">
+												<i class="fa-solid fa-inbox" style="font-size: 24px; opacity: 0.3; display: block; margin-bottom: 10px;"></i>
+												No employees in this payroll run
+											</td>
+										</tr>
+									{{/if}}
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Breakdown Modal -->
+<div class="modal fade" id="breakdownModal" tabindex="-1">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">Payroll Breakdown</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+			</div>
+			<div class="modal-body" id="breakdownContent">
+				<!-- Populated dynamically -->
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Add Adjustment Modal -->
+<div class="modal fade" id="adjustmentModal" tabindex="-1">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">Add Adjustment</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+			</div>
+			<div class="modal-body">
+				<form>
+					<div class="mb-3">
+						<label class="form-label fw-600">Adjustment Type</label>
+						<select class="form-select" required>
+							<option selected>Select type...</option>
+							<option value="bonus">Bonus</option>
+							<option value="reimbursement">Reimbursement</option>
+							<option value="arrears">Arrears</option>
+							<option value="deduction">Additional Deduction</option>
+							<option value="recovery">Loan Recovery</option>
+						</select>
+					</div>
+					<div class="mb-3">
+						<label class="form-label fw-600">Amount</label>
+						<input type="number" class="form-control" placeholder="0.00" step="0.01" required>
+					</div>
+					<div class="mb-3">
+						<label class="form-label fw-600">Description</label>
+						<textarea class="form-control" rows="2" placeholder="Enter reason for adjustment"></textarea>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-primary" onclick="saveAdjustment()">Save Adjustment</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+function filterTable() {
+	const query = document.getElementById('searchInput').value.toLowerCase();
+	document.querySelectorAll('tbody tr').forEach(row => {
+		const employee = row.getAttribute('data-employee').toLowerCase();
+		row.style.display = employee.includes(query) ? '' : 'none';
+	});
+}
+
+function viewBreakdown(empId) {
+	const content = `
+		<div class="mb-4">
+			<h6 class="mb-3">Earnings</h6>
+			<div class="table-responsive">
+				<table class="table table-sm table-borderless">
+					<tr>
+						<td>Basic Salary</td>
+						<td class="text-end">₹50,000</td>
+					</tr>
+					<tr>
+						<td>Dearness Allowance</td>
+						<td class="text-end">₹10,000</td>
+					</tr>
+					<tr>
+						<td>House Rent Allowance</td>
+						<td class="text-end">₹15,000</td>
+					</tr>
+					<tr class="table-light fw-600">
+						<td>Total Earnings</td>
+						<td class="text-end">₹75,000</td>
+					</tr>
+				</table>
+			</div>
+		</div>
+
+		<div class="mb-4">
+			<h6 class="mb-3">Deductions</h6>
+			<div class="table-responsive">
+				<table class="table table-sm table-borderless">
+					<tr>
+						<td>Provident Fund (12%)</td>
+						<td class="text-end">₹6,000</td>
+					</tr>
+					<tr>
+						<td>Professional Tax</td>
+						<td class="text-end">₹500</td>
+					</tr>
+					<tr class="table-light fw-600">
+						<td>Total Deductions</td>
+						<td class="text-end">₹6,500</td>
+					</tr>
+				</table>
+			</div>
+		</div>
+
+		<div class="bg-light p-3 rounded border">
+			<div class="row">
+				<div class="col-md-6">
+					<small class="text-muted">Gross Pay</small>
+					<div class="h6">₹75,000</div>
+				</div>
+				<div class="col-md-6">
+					<small class="text-muted">Net Pay</small>
+					<div class="h6">₹68,500</div>
+				</div>
+			</div>
+		</div>
+
+		<hr>
+		<h6 class="mb-2">Notes</h6>
+		<p class="text-muted small">No notes added for this period.</p>
+	`;
+	document.getElementById('breakdownContent').innerHTML = content;
+	new bootstrap.Modal(document.getElementById('breakdownModal')).show();
+}
+
+function addAdjustment(empId) {
+	new bootstrap.Modal(document.getElementById('adjustmentModal')).show();
+}
+
+function saveAdjustment() {
+	showToast('Adjustment added successfully!', 'success');
+	new bootstrap.Modal(document.getElementById('adjustmentModal')).hide();
+}
+
+function exportRegister() {
+	showToast('Exporting payroll register...', 'info');
+}
+
+function showToast(message, type = 'info') {
+	const alertDiv = document.createElement('div');
+	alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+	alertDiv.setAttribute('role', 'alert');
+	alertDiv.innerHTML = `
+		${message}
+		<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+	`;
+	document.querySelector('.main-content').insertAdjacentElement('afterbegin', alertDiv);
+	setTimeout(() => alertDiv.remove(), 4000);
+}
+</script>

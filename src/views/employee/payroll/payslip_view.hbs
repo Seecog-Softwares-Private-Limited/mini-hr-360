@@ -1,0 +1,198 @@
+{{!-- Employee Payslip View --}}
+<div class="container-fluid">
+	<div class="row">
+		{{> employee-sidebar employee=employee active='payroll_payslip_view'}}
+
+		<!-- Main Content -->
+		<div class="col-md-10 emp-main">
+			<div class="emp-page-header">
+				<div class="d-flex align-items-center justify-content-between">
+					<div>
+						<h1 class="emp-page-title">Payslip - {{payslip.period}}</h1>
+						<p class="text-muted mt-1">January 1-31, 2026</p>
+					</div>
+					<div class="d-flex gap-2">
+						<button class="emp-btn-secondary" disabled title="Download PDF">
+							<i class="fa-solid fa-download me-2"></i>Download
+						</button>
+						<button class="emp-btn-secondary" onclick="raiseQuery()">
+							<i class="fa-solid fa-comment-dots me-2"></i>Raise Query
+						</button>
+					</div>
+				</div>
+			</div>
+
+			<!-- Payslip Container -->
+			<div class="emp-card">
+				<div style="padding: 40px; background: white; border-radius: 8px;">
+					<!-- Header -->
+					<div style="text-align: center; padding-bottom: 20px; border-bottom: 2px solid #e5e7eb;">
+						<div style="font-weight: 700; font-size: 20px; margin-bottom: 5px; color: #111827;">ACME CORPORATION</div>
+						<small style="color: #666;">123 Business Park, Tech City, TC 560001</small>
+						<div style="color: #999; font-size: 12px; margin-top: 5px;">Phone: +91-80-XXXX-XXXX | Email: payroll@acme.com</div>
+					</div>
+
+					<!-- Employee & Pay Info -->
+					<div style="padding: 20px 0; border-bottom: 1px solid #e5e7eb;">
+						<div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; font-size: 13px;">
+							<div>
+								<div style="color: #999; font-size: 11px; text-transform: uppercase; font-weight: 600;">Employee Name</div>
+								<div style="font-weight: 600; color: #111827;">{{employee.empName}}</div>
+							</div>
+							<div>
+								<div style="color: #999; font-size: 11px; text-transform: uppercase; font-weight: 600;">Employee ID</div>
+								<div style="font-weight: 600; color: #111827;">{{employee.empId}}</div>
+							</div>
+							<div>
+								<div style="color: #999; font-size: 11px; text-transform: uppercase; font-weight: 600;">Designation</div>
+								<div style="font-weight: 600; color: #111827;">Senior Developer</div>
+							</div>
+							<div>
+								<div style="color: #999; font-size: 11px; text-transform: uppercase; font-weight: 600;">Department</div>
+								<div style="font-weight: 600; color: #111827;">Engineering</div>
+							</div>
+							<div>
+								<div style="color: #999; font-size: 11px; text-transform: uppercase; font-weight: 600;">Date of Joining</div>
+								<div style="font-weight: 600; color: #111827;">01-Jan-2020</div>
+							</div>
+							<div>
+								<div style="color: #999; font-size: 11px; text-transform: uppercase; font-weight: 600;">Pay Period</div>
+								<div style="font-weight: 600; color: #111827;">Jan 1-31, 2026</div>
+							</div>
+							<div>
+								<div style="color: #999; font-size: 11px; text-transform: uppercase; font-weight: 600;">Pay Date</div>
+								<div style="font-weight: 600; color: #111827;">Feb 5, 2026</div>
+							</div>
+							<div>
+								<div style="color: #999; font-size: 11px; text-transform: uppercase; font-weight: 600;">Working Days</div>
+								<div style="font-weight: 600; color: #111827;">22</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Earnings -->
+					<div style="padding: 20px 0; border-bottom: 1px solid #e5e7eb;">
+						<div style="font-weight: 600; margin-bottom: 12px; color: #333; font-size: 14px;">EARNINGS</div>
+						<table style="width: 100%; font-size: 13px;">
+							<tr style="border-bottom: 1px solid #f0f0f0;">
+								<td style="padding: 8px 0; color: #555;">Basic Salary</td>
+								<td style="text-align: right; padding: 8px 0; font-weight: 600;">₹50,000.00</td>
+							</tr>
+							<tr style="border-bottom: 1px solid #f0f0f0;">
+								<td style="padding: 8px 0; color: #555;">Dearness Allowance (20%)</td>
+								<td style="text-align: right; padding: 8px 0; font-weight: 600;">₹10,000.00</td>
+							</tr>
+							<tr style="border-bottom: 1px solid #f0f0f0;">
+								<td style="padding: 8px 0; color: #555;">House Rent Allowance</td>
+								<td style="text-align: right; padding: 8px 0; font-weight: 600;">₹15,000.00</td>
+							</tr>
+							<tr style="background: #f9f9f9; font-weight: 600; border-top: 1px solid #ddd;">
+								<td style="padding: 10px 0; color: #111827;">Total Earnings</td>
+								<td style="text-align: right; padding: 10px 0; color: #111827;">₹75,000.00</td>
+							</tr>
+						</table>
+					</div>
+
+					<!-- Deductions -->
+					<div style="padding: 20px 0; border-bottom: 1px solid #e5e7eb;">
+						<div style="font-weight: 600; margin-bottom: 12px; color: #333; font-size: 14px;">DEDUCTIONS</div>
+						<table style="width: 100%; font-size: 13px;">
+							<tr style="border-bottom: 1px solid #f0f0f0;">
+								<td style="padding: 8px 0; color: #555;">Provident Fund (12%)</td>
+								<td style="text-align: right; padding: 8px 0; font-weight: 600;">₹6,000.00</td>
+							</tr>
+							<tr style="border-bottom: 1px solid #f0f0f0;">
+								<td style="padding: 8px 0; color: #555;">Professional Tax</td>
+								<td style="text-align: right; padding: 8px 0; font-weight: 600;">₹500.00</td>
+							</tr>
+							<tr style="background: #f9f9f9; font-weight: 600; border-top: 1px solid #ddd;">
+								<td style="padding: 10px 0; color: #111827;">Total Deductions</td>
+								<td style="text-align: right; padding: 10px 0; color: #111827;">₹6,500.00</td>
+							</tr>
+						</table>
+					</div>
+
+					<!-- NET PAY -->
+					<div style="padding: 20px 0; background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); color: white; border-radius: 8px; margin: 20px 0; text-align: center;">
+						<div style="font-size: 12px; opacity: 0.9; margin-bottom: 8px; text-transform: uppercase; font-weight: 600;">NET PAY</div>
+						<div style="font-size: 32px; font-weight: 700;">₹68,500.00</div>
+					</div>
+
+					<!-- Year-to-Date -->
+					<div style="padding: 15px 0; border-top: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb;">
+						<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; font-size: 13px;">
+							<div>
+								<div style="color: #999; font-size: 11px; text-transform: uppercase; font-weight: 600;">YTD Earnings</div>
+								<div style="font-weight: 600; color: #111827;">₹75,000.00</div>
+							</div>
+							<div>
+								<div style="color: #999; font-size: 11px; text-transform: uppercase; font-weight: 600;">YTD Deductions</div>
+								<div style="font-weight: 600; color: #111827;">₹6,500.00</div>
+							</div>
+							<div>
+								<div style="color: #999; font-size: 11px; text-transform: uppercase; font-weight: 600;">YTD Net</div>
+								<div style="font-weight: 600; color: #111827;">₹68,500.00</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Footer -->
+					<div style="padding: 15px 0; text-align: center; color: #999; font-size: 11px; border-top: 1px solid #e5e7eb; margin-top: 20px;">
+						This is a system-generated payslip. For queries or discrepancies, please contact HR department.
+					</div>
+				</div>
+			</div>
+
+			<!-- Action Buttons -->
+			<div class="d-flex gap-2 mt-4 justify-content-between">
+				<div>
+					<a href="/employee/payroll/payslips" class="emp-btn-secondary">
+						<i class="fa-solid fa-arrow-left me-2"></i>Back to Payslips
+					</a>
+				</div>
+				<div class="d-flex gap-2">
+					<button class="btn btn-outline-secondary" disabled>
+						<i class="fa-solid fa-download me-2"></i>Download PDF
+					</button>
+					<button class="btn btn-outline-primary" onclick="raiseQuery()">
+						<i class="fa-solid fa-comment-dots me-2"></i>Raise Query
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<style>
+.emp-btn-secondary {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 10px 16px;
+	background: white;
+	color: var(--emp-primary);
+	border: 1px solid var(--emp-primary);
+	border-radius: 6px;
+	font-weight: 600;
+	text-decoration: none;
+	transition: all 150ms ease;
+	font-size: 14px;
+}
+
+.emp-btn-secondary:hover {
+	background: var(--emp-primary);
+	color: white;
+	text-decoration: none;
+}
+
+.emp-btn-secondary:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+</style>
+
+<script>
+function raiseQuery() {
+	alert('Query interface - will open modal for raising new query');
+}
+</script>

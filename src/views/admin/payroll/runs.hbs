@@ -1,0 +1,359 @@
+{{!-- Admin Payroll Runs --}}
+<div class="container-fluid">
+	<div class="row">
+		<div class="col-md-3 col-lg-2 px-0">
+			{{> sidebar active="payroll-runs" activeGroup="workspace"}}
+		</div>
+
+		<div class="col-md-9 col-lg-10">
+			<div class="main-content p-4">
+				<nav aria-label="breadcrumb">
+					<ol class="breadcrumb mb-3 bg-transparent p-0">
+						<li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+						<li class="breadcrumb-item active" aria-current="page">Payroll Runs</li>
+					</ol>
+				</nav>
+
+				<div class="d-flex align-items-center justify-content-between mb-4">
+					<div>
+						<h2 class="mb-1">Payroll Runs</h2>
+						<p class="text-muted mb-0">Manage payroll processing cycles</p>
+					</div>
+					<button class="btn btn-primary" onclick="startNewRun()">
+						<i class="fa-solid fa-play me-2"></i>Start New Run
+					</button>
+				</div>
+
+				<!-- Month/Period Selector -->
+				<div class="card mb-4">
+					<div class="card-body">
+						<div class="row align-items-center">
+							<div class="col-md-6">
+								<label class="form-label mb-0 fw-600">Select Period</label>
+								<div class="input-group mt-2">
+									<input type="month" class="form-control" id="periodSelect" value="2026-01">
+									<button class="btn btn-outline-secondary" type="button" onclick="filterRuns()">Filter</button>
+								</div>
+							</div>
+							<div class="col-md-6">
+								<small class="text-muted">Currently viewing: <strong id="selectedPeriod">January 2026</strong></small>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Payroll Runs List -->
+				{{#if runs.length}}
+					<div class="row g-3">
+						{{#each runs}}
+						<div class="col-md-6">
+							<div class="card h-100">
+								<div class="card-header d-flex justify-content-between align-items-center">
+									<div>
+										<h6 class="mb-1">{{this.period}}</h6>
+										<small class="text-muted">{{this.startDate}} to {{this.endDate}}</small>
+									</div>
+									{{#if (eq this.status 'DRAFT')}}
+										<span class="badge bg-secondary">Draft</span>
+									{{else if (eq this.status 'REVIEW')}}
+										<span class="badge bg-warning text-dark">Under Review</span>
+									{{else if (eq this.status 'APPROVED')}}
+										<span class="badge bg-success">Approved</span>
+									{{else if (eq this.status 'LOCKED')}}
+										<span class="badge bg-danger">Locked</span>
+									{{else if (eq this.status 'PUBLISHED')}}
+										<span class="badge bg-info">Published</span>
+									{{/if}}
+								</div>
+
+								<div class="card-body">
+									<!-- KPI Cards -->
+									<div class="row g-2 mb-3">
+										<div class="col-6">
+											<div class="kpi-mini">
+												<small class="text-muted">Employees</small>
+												<div class="h6 mb-0">{{this.employeeCount}}</div>
+											</div>
+										</div>
+										<div class="col-6">
+											<div class="kpi-mini">
+												<small class="text-muted">Net Pay</small>
+												<div class="h6 mb-0">₹{{this.netPay}}</div>
+											</div>
+										</div>
+									</div>
+
+									<!-- Workflow Stepper -->
+									<div class="workflow-stepper mb-3">
+										{{#if (eq this.status 'DRAFT')}}
+											<div class="stepper-step active">
+												<div class="step-num">1</div>
+												<div class="step-label">Inputs</div>
+											</div>
+										{{else if (eq this.status 'REVIEW')}}
+											<div class="stepper-step done">
+												<i class="fa-solid fa-check"></i>
+												<div class="step-label">Inputs</div>
+											</div>
+											<div class="stepper-step active">
+												<div class="step-num">2</div>
+												<div class="step-label">Calculate</div>
+											</div>
+										{{else if (eq this.status 'APPROVED')}}
+											<div class="stepper-step done">
+												<i class="fa-solid fa-check"></i>
+												<div class="step-label">Inputs</div>
+											</div>
+											<div class="stepper-step done">
+												<i class="fa-solid fa-check"></i>
+												<div class="step-label">Calculate</div>
+											</div>
+											<div class="stepper-step active">
+												<div class="step-num">3</div>
+												<div class="step-label">Approve</div>
+											</div>
+										{{else if (eq this.status 'LOCKED')}}
+											<div class="stepper-step done">
+												<i class="fa-solid fa-check"></i>
+												<div class="step-label">Inputs</div>
+											</div>
+											<div class="stepper-step done">
+												<i class="fa-solid fa-check"></i>
+												<div class="step-label">Calculate</div>
+											</div>
+											<div class="stepper-step done">
+												<i class="fa-solid fa-check"></i>
+												<div class="step-label">Approve</div>
+											</div>
+											<div class="stepper-step active">
+												<div class="step-num">4</div>
+												<div class="step-label">Lock</div>
+											</div>
+										{{else if (eq this.status 'PUBLISHED')}}
+											<div class="stepper-step done">
+												<i class="fa-solid fa-check"></i>
+												<div class="step-label">Inputs</div>
+											</div>
+											<div class="stepper-step done">
+												<i class="fa-solid fa-check"></i>
+												<div class="step-label">Calculate</div>
+											</div>
+											<div class="stepper-step done">
+												<i class="fa-solid fa-check"></i>
+												<div class="step-label">Approve</div>
+											</div>
+											<div class="stepper-step done">
+												<i class="fa-solid fa-check"></i>
+												<div class="step-label">Lock</div>
+											</div>
+											<div class="stepper-step done">
+												<i class="fa-solid fa-check"></i>
+												<div class="step-label">Publish</div>
+											</div>
+										{{/if}}
+									</div>
+
+									<!-- Action Buttons -->
+									<div class="d-grid gap-2">
+										{{#if (eq this.status 'DRAFT')}}
+											<button class="btn btn-primary btn-sm" onclick="pullInputs()"><i class="fa-solid fa-arrow-down me-1"></i>Pull Inputs</button>
+											<button class="btn btn-primary btn-sm" onclick="calculatePayroll()"><i class="fa-solid fa-calculator me-1"></i>Calculate</button>
+										{{else if (eq this.status 'REVIEW')}}
+											<button class="btn btn-primary btn-sm" onclick="viewRegister()"><i class="fa-solid fa-table me-1"></i>Review Register</button>
+											<button class="btn btn-success btn-sm" onclick="sendForApproval()"><i class="fa-solid fa-paper-plane me-1"></i>Send for Approval</button>
+										{{else if (eq this.status 'APPROVED')}}
+											<button class="btn btn-primary btn-sm" onclick="lockPeriod()"><i class="fa-solid fa-lock me-1"></i>Lock Period</button>
+										{{else if (eq this.status 'LOCKED')}}
+											<button class="btn btn-primary btn-sm" onclick="generatePayslips()"><i class="fa-solid fa-file-pdf me-1"></i>Generate Payslips</button>
+										{{else if (eq this.status 'PUBLISHED')}}
+											<button class="btn btn-secondary btn-sm" disabled><i class="fa-solid fa-check-circle me-1"></i>Published</button>
+										{{/if}}
+									</div>
+
+									<hr class="my-2">
+									<small class="text-muted">Last updated: {{this.updatedAt}}</small>
+								</div>
+							</div>
+						</div>
+						{{/each}}
+					</div>
+				{{else}}
+					<div class="card">
+						<div class="card-body text-center py-5">
+							<i class="fa-solid fa-inbox" style="font-size: 48px; opacity: 0.3; display: block; margin-bottom: 15px;"></i>
+							<h6>No payroll runs yet</h6>
+							<p class="text-muted mb-3">Start your first payroll run for {{periodDisplayName}}</p>
+							<button class="btn btn-primary" onclick="startNewRun()">
+								<i class="fa-solid fa-play me-2"></i>Start New Run
+							</button>
+						</div>
+					</div>
+				{{/if}}
+
+				<!-- What Happens Next Card -->
+				<div class="card mt-4 border-info">
+					<div class="card-header bg-light border-info">
+						<h6 class="mb-0 text-info"><i class="fa-solid fa-info-circle me-2"></i>What Happens Next?</h6>
+					</div>
+					<div class="card-body">
+						<p class="text-muted small mb-2">The payroll process follows these steps:</p>
+						<ol class="text-muted small">
+							<li><strong>Pull Inputs</strong> — Fetch attendance, leave, and loan data</li>
+							<li><strong>Calculate</strong> — Compute earnings, deductions, and net pay</li>
+							<li><strong>Review</strong> — Check payroll register for exceptions</li>
+							<li><strong>Approve</strong> — Route for HR, Finance, and Admin approval</li>
+							<li><strong>Lock</strong> — Prevent further edits for compliance</li>
+							<li><strong>Publish</strong> — Generate payslips and initiate bank transfers</li>
+						</ol>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<style>
+.kpi-mini {
+	padding: 10px;
+	background: #f8f9fa;
+	border-radius: 6px;
+}
+
+.workflow-stepper {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 11px;
+	overflow-x: auto;
+}
+
+.stepper-step {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 4px;
+	min-width: 50px;
+	position: relative;
+}
+
+.stepper-step::after {
+	content: '';
+	position: absolute;
+	left: 100%;
+	top: 12px;
+	width: 8px;
+	height: 2px;
+	background: #e5e7eb;
+}
+
+.stepper-step:last-child::after {
+	display: none;
+}
+
+.stepper-step.done::after,
+.stepper-step.active::after {
+	background: #4f46e5;
+}
+
+.step-num {
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+	background: #e5e7eb;
+	color: #666;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 700;
+	font-size: 12px;
+}
+
+.stepper-step.active .step-num {
+	background: #4f46e5;
+	color: white;
+}
+
+.stepper-step.done .step-num {
+	background: #22c55e;
+	color: white;
+}
+
+.stepper-step.done i {
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+	background: #22c55e;
+	color: white;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 12px;
+}
+
+.step-label {
+	font-weight: 600;
+	text-align: center;
+	white-space: nowrap;
+}
+</style>
+
+<script>
+function filterRuns() {
+	const period = document.getElementById('periodSelect').value;
+	const date = new Date(period);
+	const monthName = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+	document.getElementById('selectedPeriod').textContent = monthName;
+	showToast(`Filtered to ${monthName}`, 'info');
+}
+
+function startNewRun() {
+	alert('This will initiate a new payroll run - wired to backend');
+	showToast('New payroll run started!', 'success');
+}
+
+function pullInputs() {
+	showToast('Pulling attendance and leave data...', 'info');
+}
+
+function calculatePayroll() {
+	showToast('Calculating payroll...', 'info');
+}
+
+function viewRegister() {
+	window.location.href = '/admin/payroll/register/1';
+}
+
+function sendForApproval() {
+	showToast('Payroll sent for approval!', 'success');
+}
+
+function lockPeriod() {
+	if (confirm('Lock this payroll period? This cannot be undone.')) {
+		showToast('Payroll period locked!', 'success');
+	}
+}
+
+function generatePayslips() {
+	window.location.href = '/admin/payroll/payslips/1';
+}
+
+function showToast(message, type = 'info') {
+	const alertDiv = document.createElement('div');
+	alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+	alertDiv.setAttribute('role', 'alert');
+	alertDiv.innerHTML = `
+		${message}
+		<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+	`;
+	document.querySelector('.main-content').insertAdjacentElement('afterbegin', alertDiv);
+	setTimeout(() => alertDiv.remove(), 4000);
+}
+
+// Initialize period display
+document.addEventListener('DOMContentLoaded', () => {
+	const period = document.getElementById('periodSelect').value;
+	const date = new Date(period);
+	const monthName = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+	document.getElementById('selectedPeriod').textContent = monthName;
+});
+</script>

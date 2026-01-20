@@ -54,6 +54,23 @@
             <div class="emp-divider"></div>
 
             <nav class="nav flex-column">
+                <a class="nav-link {{#if (eq active 'payroll_payslips')}}active{{/if}}" href="/employee/payroll/payslips">
+                    <i class="fa-solid fa-file-invoice-dollar"></i> My Payslips
+                </a>
+                <a class="nav-link {{#if (eq active 'payroll_bank_tax')}}active{{/if}}" href="/employee/payroll/bank-tax">
+                    <i class="fa-solid fa-bank"></i> Bank & Tax
+                </a>
+                <a class="nav-link {{#if (eq active 'payroll_salary_details')}}active{{/if}}" href="/employee/payroll/salary-details">
+                    <i class="fa-solid fa-chart-bar"></i> Salary Details
+                </a>
+                <a class="nav-link {{#if (eq active 'payroll_queries')}}active{{/if}}" href="/employee/payroll/queries">
+                    <i class="fa-solid fa-comments"></i> Payroll Queries
+                </a>
+            </nav>
+
+            <div class="emp-divider"></div>
+
+            <nav class="nav flex-column">
                 <a class="nav-link text-danger" href="/employee/logout">
                     <i class="fa-solid fa-right-from-bracket"></i> Logout
                 </a>

@@ -1,0 +1,328 @@
+{{!-- Admin Statutory Reports --}}
+<div class="container-fluid">
+	<div class="row">
+		<div class="col-md-3 col-lg-2 px-0">
+			{{> sidebar active="payroll-statutory" activeGroup="workspace"}}
+		</div>
+
+		<div class="col-md-9 col-lg-10">
+			<div class="main-content p-4">
+				<nav aria-label="breadcrumb">
+					<ol class="breadcrumb mb-3 bg-transparent p-0">
+						<li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+						<li class="breadcrumb-item active" aria-current="page">Statutory Reports</li>
+					</ol>
+				</nav>
+
+				<div class="d-flex align-items-center justify-content-between mb-4">
+					<div>
+						<h2 class="mb-1">Statutory Reports</h2>
+						<p class="text-muted mb-0">Generate compliance reports for statutory authorities</p>
+					</div>
+				</div>
+
+				<!-- Period Selector -->
+				<div class="card mb-4">
+					<div class="card-body">
+						<div class="row align-items-center g-3">
+							<div class="col-md-4">
+								<label class="form-label mb-2 fw-600">Select Period</label>
+								<input type="month" class="form-control" id="periodSelect" value="2026-01">
+							</div>
+							<div class="col-md-8 d-flex align-items-end gap-2">
+								<button class="btn btn-primary" onclick="filterReports()">
+									<i class="fa-solid fa-filter me-2"></i>Apply Filter
+								</button>
+								<button class="btn btn-outline-secondary" onclick="exportAllReports()">
+									<i class="fa-solid fa-file-export me-2"></i>Export All Reports
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Report Cards Grid -->
+				<div class="row g-3 mb-4">
+					<!-- PF Report -->
+					<div class="col-md-6">
+						<div class="card h-100">
+							<div class="card-header bg-light">
+								<div class="d-flex align-items-center justify-content-between">
+									<div>
+										<h6 class="mb-1"><i class="fa-solid fa-landmark me-2" style="color: #4f46e5;"></i>PF Summary</h6>
+										<small class="text-muted">Provident Fund Report</small>
+									</div>
+									<span class="badge bg-info">Jan 2026</span>
+								</div>
+							</div>
+							<div class="card-body">
+								<div class="row g-3 mb-3">
+									<div class="col-6">
+										<div class="stat-item">
+											<small class="text-muted">Employees Covered</small>
+											<div class="h5">85</div>
+										</div>
+									</div>
+									<div class="col-6">
+										<div class="stat-item">
+											<small class="text-muted">Total Contribution</small>
+											<div class="h5">₹5,10,000</div>
+										</div>
+									</div>
+									<div class="col-6">
+										<div class="stat-item">
+											<small class="text-muted">Employer Share</small>
+											<div class="h5">₹2,55,000</div>
+										</div>
+									</div>
+									<div class="col-6">
+										<div class="stat-item">
+											<small class="text-muted">Employee Share</small>
+											<div class="h5">₹2,55,000</div>
+										</div>
+									</div>
+								</div>
+								<button class="btn btn-outline-primary btn-sm w-100" onclick="viewReport('PF')">
+									<i class="fa-solid fa-eye me-2"></i>View Detailed Report
+								</button>
+								<button class="btn btn-outline-secondary btn-sm w-100 mt-2" onclick="exportReport('PF')">
+									<i class="fa-solid fa-download me-2"></i>Export CSV/PDF
+								</button>
+							</div>
+						</div>
+					</div>
+
+					<!-- ESI Report -->
+					<div class="col-md-6">
+						<div class="card h-100">
+							<div class="card-header bg-light">
+								<div class="d-flex align-items-center justify-content-between">
+									<div>
+										<h6 class="mb-1"><i class="fa-solid fa-heart me-2" style="color: #f59e0b;"></i>ESI Summary</h6>
+										<small class="text-muted">Employee State Insurance Report</small>
+									</div>
+									<span class="badge bg-warning text-dark">Jan 2026</span>
+								</div>
+							</div>
+							<div class="card-body">
+								<div class="row g-3 mb-3">
+									<div class="col-6">
+										<div class="stat-item">
+											<small class="text-muted">Employees Covered</small>
+											<div class="h5">42</div>
+										</div>
+									</div>
+									<div class="col-6">
+										<div class="stat-item">
+											<small class="text-muted">Total Contribution</small>
+											<div class="h5">₹1,68,000</div>
+										</div>
+									</div>
+									<div class="col-6">
+										<div class="stat-item">
+											<small class="text-muted">Employer Share</small>
+											<div class="h5">₹1,07,520</div>
+										</div>
+									</div>
+									<div class="col-6">
+										<div class="stat-item">
+											<small class="text-muted">Employee Share</small>
+											<div class="h5">₹60,480</div>
+										</div>
+									</div>
+								</div>
+								<button class="btn btn-outline-primary btn-sm w-100" onclick="viewReport('ESI')">
+									<i class="fa-solid fa-eye me-2"></i>View Detailed Report
+								</button>
+								<button class="btn btn-outline-secondary btn-sm w-100 mt-2" onclick="exportReport('ESI')">
+									<i class="fa-solid fa-download me-2"></i>Export CSV/PDF
+								</button>
+							</div>
+						</div>
+					</div>
+
+					<!-- PT Report -->
+					<div class="col-md-6">
+						<div class="card h-100">
+							<div class="card-header bg-light">
+								<div class="d-flex align-items-center justify-content-between">
+									<div>
+										<h6 class="mb-1"><i class="fa-solid fa-percent me-2" style="color: #06b6d4;"></i>PT Summary</h6>
+										<small class="text-muted">Professional Tax Report</small>
+									</div>
+									<span class="badge bg-info">Jan 2026</span>
+								</div>
+							</div>
+							<div class="card-body">
+								<div class="row g-3 mb-3">
+									<div class="col-6">
+										<div class="stat-item">
+											<small class="text-muted">Employees Taxed</small>
+											<div class="h5">125</div>
+										</div>
+									</div>
+									<div class="col-6">
+										<div class="stat-item">
+											<small class="text-muted">Total PT Deducted</small>
+											<div class="h5">₹62,500</div>
+										</div>
+									</div>
+									<div class="col-6">
+										<div class="stat-item">
+											<small class="text-muted">State</small>
+											<div class="h5">Tamil Nadu</div>
+										</div>
+									</div>
+									<div class="col-6">
+										<div class="stat-item">
+											<small class="text-muted">Avg. per Employee</small>
+											<div class="h5">₹500</div>
+										</div>
+									</div>
+								</div>
+								<button class="btn btn-outline-primary btn-sm w-100" onclick="viewReport('PT')">
+									<i class="fa-solid fa-eye me-2"></i>View Detailed Report
+								</button>
+								<button class="btn btn-outline-secondary btn-sm w-100 mt-2" onclick="exportReport('PT')">
+									<i class="fa-solid fa-download me-2"></i>Export CSV/PDF
+								</button>
+							</div>
+						</div>
+					</div>
+
+					<!-- TDS Report -->
+					<div class="col-md-6">
+						<div class="card h-100">
+							<div class="card-header bg-light">
+								<div class="d-flex align-items-center justify-content-between">
+									<div>
+										<h6 class="mb-1"><i class="fa-solid fa-receipt me-2" style="color: #22c55e;"></i>TDS Summary</h6>
+										<small class="text-muted">Tax Deducted at Source Report</small>
+									</div>
+									<span class="badge bg-success">Jan 2026</span>
+								</div>
+							</div>
+							<div class="card-body">
+								<div class="row g-3 mb-3">
+									<div class="col-6">
+										<div class="stat-item">
+											<small class="text-muted">Employees with TDS</small>
+											<div class="h5">95</div>
+										</div>
+									</div>
+									<div class="col-6">
+										<div class="stat-item">
+											<small class="text-muted">Total TDS Deducted</small>
+											<div class="h5">₹8,55,000</div>
+										</div>
+									</div>
+									<div class="col-6">
+										<div class="stat-item">
+											<small class="text-muted">Avg. Tax Rate</small>
+											<div class="h5">10%</div>
+										</div>
+									</div>
+									<div class="col-6">
+										<div class="stat-item">
+											<small class="text-muted">Deposited to IT</small>
+											<div class="h5">₹8,20,000</div>
+										</div>
+									</div>
+								</div>
+								<button class="btn btn-outline-primary btn-sm w-100" onclick="viewReport('TDS')">
+									<i class="fa-solid fa-eye me-2"></i>View Detailed Report
+								</button>
+								<button class="btn btn-outline-secondary btn-sm w-100 mt-2" onclick="exportReport('TDS')">
+									<i class="fa-solid fa-download me-2"></i>Export CSV/PDF
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Compliance Checklist -->
+				<div class="card">
+					<div class="card-header">
+						<h6 class="mb-0"><i class="fa-solid fa-clipboard-check me-2"></i>Compliance Checklist</h6>
+					</div>
+					<div class="card-body">
+						<div class="row">
+							<div class="col-md-6">
+								<div class="form-check mb-3">
+									<input class="form-check-input" type="checkbox" id="pf-filed" checked>
+									<label class="form-check-label" for="pf-filed">
+										<strong>PF Return Filed</strong>
+										<small class="d-block text-muted">Due by 15th of next month</small>
+									</label>
+								</div>
+								<div class="form-check mb-3">
+									<input class="form-check-input" type="checkbox" id="esi-filed" checked>
+									<label class="form-check-label" for="esi-filed">
+										<strong>ESI Return Filed</strong>
+										<small class="d-block text-muted">Due by 21st of next month</small>
+									</label>
+								</div>
+							</div>
+							<div class="col-md-6">
+								<div class="form-check mb-3">
+									<input class="form-check-input" type="checkbox" id="pt-filed" checked>
+									<label class="form-check-label" for="pt-filed">
+										<strong>PT Return Filed</strong>
+										<small class="d-block text-muted">Due by 15th of next month</small>
+									</label>
+								</div>
+								<div class="form-check mb-3">
+									<input class="form-check-input" type="checkbox" id="tds-filed">
+									<label class="form-check-label" for="tds-filed">
+										<strong>TDS Deposited</strong>
+										<small class="d-block text-muted">Due by 7th of next month</small>
+									</label>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<style>
+.stat-item {
+	padding: 10px;
+	background: #f9f9f9;
+	border-radius: 6px;
+	text-align: center;
+}
+</style>
+
+<script>
+function filterReports() {
+	const period = document.getElementById('periodSelect').value;
+	showToast(`Reports filtered to ${period}`, 'info');
+}
+
+function viewReport(type) {
+	showToast(`Loading ${type} detailed report...`, 'info');
+}
+
+function exportReport(type) {
+	showToast(`Exporting ${type} report...`, 'info');
+}
+
+function exportAllReports() {
+	showToast('Exporting all statutory reports...', 'info');
+}
+
+function showToast(message, type = 'info') {
+	const alertDiv = document.createElement('div');
+	alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+	alertDiv.setAttribute('role', 'alert');
+	alertDiv.innerHTML = `
+		${message}
+		<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+	`;
+	document.querySelector('.main-content').insertAdjacentElement('afterbegin', alertDiv);
+	setTimeout(() => alertDiv.remove(), 4000);
+}
+</script>

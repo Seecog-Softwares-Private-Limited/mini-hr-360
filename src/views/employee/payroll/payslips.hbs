@@ -1,0 +1,138 @@
+{{!-- Employee My Payslips --}}
+<div class="container-fluid">
+	<div class="row">
+		{{> employee-sidebar employee=employee active='payroll_payslips'}}
+
+		<!-- Main Content -->
+		<div class="col-md-10 emp-main">
+			<div class="emp-page-header">
+				<h1 class="emp-page-title">My Payslips</h1>
+				<p class="text-muted mt-1">View and download your payslips</p>
+			</div>
+
+			<!-- Year Filter -->
+			<div class="emp-card mb-4">
+				<div class="emp-card-body">
+					<div class="d-flex align-items-center gap-3">
+						<label class="form-label mb-0 fw-600">Filter by Year:</label>
+						<select class="form-select form-select-sm" style="width: 150px;" onchange="filterPayslips()">
+							<option value="2026">2026</option>
+							<option value="2025">2025</option>
+							<option value="2024">2024</option>
+						</select>
+					</div>
+				</div>
+			</div>
+
+			<!-- Payslips List -->
+			{{#if payslips.length}}
+				<div class="row g-3">
+					{{#each payslips}}
+					<div class="col-md-6">
+						<div class="emp-card">
+							<div class="emp-card-header d-flex justify-content-between align-items-start">
+								<div>
+									<h6 class="emp-card-title mb-1">{{this.period}}</h6>
+									<small class="text-muted">Pay Date: {{this.payDate}}</small>
+								</div>
+								{{#if (eq this.status 'PUBLISHED')}}
+									<span class="badge bg-success">Published</span>
+								{{else if (eq this.status 'HELD')}}
+									<span class="badge bg-danger">Held</span>
+								{{else}}
+									<span class="badge bg-warning text-dark">Pending</span>
+								{{/if}}
+							</div>
+
+							<div class="emp-card-body">
+								<div class="row g-3 mb-4">
+									<div class="col-6">
+										<div style="padding: 10px; background: #f0f7ff; border-radius: 6px;">
+											<small class="text-muted">Earnings</small>
+											<div style="font-size: 18px; font-weight: 700; color: #4f46e5;">₹{{this.earnings}}</div>
+										</div>
+									</div>
+									<div class="col-6">
+										<div style="padding: 10px; background: #f0f7ff; border-radius: 6px;">
+											<small class="text-muted">Deductions</small>
+											<div style="font-size: 18px; font-weight: 700; color: #ef4444;">₹{{this.deductions}}</div>
+										</div>
+									</div>
+									<div class="col-12">
+										<div style="padding: 15px; background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); border-radius: 8px; color: white; text-align: center;">
+											<small>NET PAY</small>
+											<div style="font-size: 24px; font-weight: 700;">₹{{this.netPay}}</div>
+										</div>
+									</div>
+								</div>
+
+								<div class="d-flex gap-2">
+									<a href="/employee/payroll/payslips/{{this.id}}" class="emp-btn-primary btn-sm flex-grow-1">
+										<i class="fa-solid fa-eye me-1"></i>View
+									</a>
+									<button class="btn btn-outline-secondary btn-sm" title="Download PDF" disabled>
+										<i class="fa-solid fa-download"></i>
+									</button>
+								</div>
+							</div>
+						</div>
+					</div>
+					{{/each}}
+				</div>
+			{{else}}
+				<div class="emp-card">
+					<div class="emp-card-body text-center py-5">
+						<i class="fa-solid fa-inbox" style="font-size: 48px; opacity: 0.3; display: block; margin-bottom: 15px;"></i>
+						<h6>No Payslips Yet</h6>
+						<p class="text-muted mb-0">Payslips will be available after the first payroll run</p>
+					</div>
+				</div>
+			{{/if}}
+		</div>
+	</div>
+</div>
+
+<style>
+.emp-btn-primary {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 8px 12px;
+	background: var(--emp-primary);
+	color: white;
+	border: none;
+	border-radius: 6px;
+	font-weight: 600;
+	text-decoration: none;
+	transition: all 150ms ease;
+	font-size: 13px;
+}
+
+.emp-btn-primary:hover {
+	background: var(--emp-primary-dark);
+	color: white;
+	text-decoration: none;
+}
+</style>
+
+<script>
+function filterPayslips() {
+	showToast('Payslips filtered', 'info');
+}
+
+function showToast(message, type = 'info') {
+	const alertDiv = document.createElement('div');
+	alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+	alertDiv.style.top = '20px';
+	alertDiv.style.right = '20px';
+	alertDiv.style.zIndex = '9999';
+	alertDiv.style.width = '300px';
+	alertDiv.setAttribute('role', 'alert');
+	alertDiv.innerHTML = `
+		${message}
+		<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+	`;
+	document.body.appendChild(alertDiv);
+	setTimeout(() => alertDiv.remove(), 4000);
+}
+</script>
