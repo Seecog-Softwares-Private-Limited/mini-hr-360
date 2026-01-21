@@ -125,6 +125,8 @@ import { employeePortalRouter } from './routes/employeePortal.routes.js';
 import { employeeAttendanceRouter } from './routes/employeeAttendance.routes.js';
 import { adminLeaveRouter } from './routes/adminLeave.routes.js';
 import { billingRouter } from './routes/billing.routes.js';
+import { employeePayrollRouter } from './routes/employeePayroll.routes.js';
+
 
 // ---------- Frontend pages ----------
 app.get('/', (req, res) => res.redirect('/login'));
@@ -238,7 +240,9 @@ app.use('/', emailTemplateRoutes);
 
 // Employee Portal Routes
 app.use('/employee/attendance', employeeAttendanceRouter);
+app.use('/employee/payroll', employeePayrollRouter);
 app.use('/employee', employeePortalRouter);
+
 
 // Admin Leave Management Routes
 app.use('/leave-requests', adminLeaveRouter);

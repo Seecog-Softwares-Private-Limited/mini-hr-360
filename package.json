@@ -27,6 +27,7 @@
     "start": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules src/index.js",
     "reset-db": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules reset-database.js",
     "sync-db": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules database/sync-database.js",
+    "screen": "cross-env DOTENV_CONFIG_PATH=./property.env SYNC_DB=true nodemon -r dotenv/config --experimental-json-modules src/index.js",
     "update-departments-business": "node scripts/update-departments-business.js"
   },
   "dependencies": {

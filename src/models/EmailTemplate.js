@@ -14,7 +14,6 @@ const EmailTemplate = sequelize.define(
             field: 'template_key',
             type: DataTypes.STRING(100),
             allowNull: false,
-            unique: true,
             comment: 'Unique code like OFFER_LETTER_DEFAULT',
         },
         templateName: {
@@ -65,6 +64,9 @@ const EmailTemplate = sequelize.define(
     {
         tableName: 'email_templates',
         timestamps: true,
+        indexes: [
+            { name: 'idx_email_templates_template_key', unique: true, fields: ['template_key'] },
+        ],
     }
 );
 

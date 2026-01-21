@@ -61,52 +61,59 @@ const connectDB = async () => {
     await sequelize.authenticate();
     console.log(`\n✅ MySQL connected → ${sequelize.getDatabaseName()} @ ${DB_HOST}:${DB_PORT}`);
 
-    await import('../models/index.js');
+    // --- models ---
+    if (SYNC_DB) {
+      console.log('🔄 Syncing Attendance models...');
+      const {
+        Business: BusinessModel, Employee: EmployeeModel,
+        AttendancePolicy, Shift, Holiday, EmployeeShiftAssignment,
+        AttendancePunch, AttendanceDailySummary, AttendanceRegularization, AttendanceLock,
+        PayrollSetup, SalaryStructure, EmployeeSalaryStructure, PayrollRun, PayrollRegister, Payslip, PayrollQuery, EmployeeBankDetail
+      } = await import('../models/index.js');
 
+      // Disable FK checks to avoid issues with existing tables or circular deps
+      await sequelize.query('SET FOREIGN_KEY_CHECKS = 0', { raw: true });
 
+      const safeSync = async (model, name, force = false) => {
+        try {
+          const options = force ? { force: true } : { alter: true };
+          await model.sync(options);
+          console.log(`   ✅ ${name} synced`);
+        } catch (e) {
+          console.error(`   ⚠️ Failed to sync ${name}: ${e.message}`);
+        }
+      };
 
+      // Ensure dependencies exist
+      await safeSync(BusinessModel, 'Business');
+      await safeSync(EmployeeModel, 'Employee');
 
-    // Explicitly sync new Attendance models to ensure tables exist
-    // We try to sync Business/Employee first to ensure FK targets exist, but suppress errors if they fail
-    console.log('🔄 Syncing Attendance models...');
-    const {
-      Business, Employee,
-      AttendancePolicy, Shift, Holiday, EmployeeShiftAssignment,
-      AttendancePunch, AttendanceDailySummary, AttendanceRegularization, AttendanceLock
-    } = await import('../models/index.js');
+      // Sync new models independent of each other
+      await safeSync(AttendancePolicy, 'AttendancePolicy');
+      await safeSync(Shift, 'Shift');
+      await safeSync(Holiday, 'Holiday');
+      await safeSync(EmployeeShiftAssignment, 'EmployeeShiftAssignment');
+      await safeSync(AttendancePunch, 'AttendancePunch', true);
+      await safeSync(AttendanceDailySummary, 'AttendanceDailySummary', true);
+      await safeSync(AttendanceRegularization, 'AttendanceRegularization');
+      await safeSync(AttendanceLock, 'AttendanceLock');
 
-    // Disable FK checks to avoid issues with existing tables or circular deps
-    await sequelize.query('SET FOREIGN_KEY_CHECKS = 0', { raw: true });
+      console.log('🔄 Syncing Payroll models...');
+      await safeSync(PayrollSetup, 'PayrollSetup');
+      await safeSync(SalaryStructure, 'SalaryStructure');
+      await safeSync(EmployeeSalaryStructure, 'EmployeeSalaryStructure');
+      await safeSync(PayrollRun, 'PayrollRun');
+      await safeSync(PayrollRegister, 'PayrollRegister');
+      await safeSync(Payslip, 'Payslip');
+      await safeSync(PayrollQuery, 'PayrollQuery');
+      await safeSync(EmployeeBankDetail, 'EmployeeBankDetail');
 
-    const safeSync = async (model, name, force = false) => {
-      try {
-        const options = force ? { force: true } : { alter: true };
-        await model.sync(options);
-        console.log(`   ✅ ${name} synced`);
-      } catch (e) {
-        console.error(`   ⚠️ Failed to sync ${name}: ${e.message}`);
-      }
-    };
-
-    // Ensure dependencies exist
-    await safeSync(Business, 'Business');
-    await safeSync(Employee, 'Employee');
-
-    // Sync new models independent of each other
-    await safeSync(AttendancePolicy, 'AttendancePolicy');
-    await safeSync(Shift, 'Shift');
-    await safeSync(Holiday, 'Holiday');
-    await safeSync(EmployeeShiftAssignment, 'EmployeeShiftAssignment');
-    await safeSync(AttendancePunch, 'AttendancePunch', true);
-    await safeSync(AttendanceDailySummary, 'AttendanceDailySummary', true);
-    await safeSync(AttendanceRegularization, 'AttendanceRegularization');
-    await safeSync(AttendanceLock, 'AttendanceLock');
-
-    // Re-enable FK checks
-    await sequelize.query('SET FOREIGN_KEY_CHECKS = 1', { raw: true });
-
-    console.log('🏁 Attendance structure sync attempt completed');
-
+      // Re-enable FK checks
+      await sequelize.query('SET FOREIGN_KEY_CHECKS = 1', { raw: true });
+      console.log('🏁 Attendance structure sync attempt completed');
+    } else {
+      console.log('ℹ️ Skipping explicit model sync (SYNC_DB=false)');
+    }
 
     if (SYNC_DB) {
       await sequelize.sync({ alter: true });

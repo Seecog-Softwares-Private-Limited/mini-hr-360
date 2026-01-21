@@ -27,7 +27,6 @@ const User = sequelize.define('User', {
   email: {
     type: DataTypes.STRING,
     allowNull: false,
-    unique: true,
     validate: {
       isEmail: true
     }
@@ -37,7 +36,7 @@ const User = sequelize.define('User', {
     allowNull: false
   },
   role: {
-    type: DataTypes.ENUM('admin', 'shop_owner', 'shop_manager', 'shop_worker'),
+    type: DataTypes.ENUM('admin', 'shop_owner', 'shop_manager', 'shop_worker', 'SUPER_ADMIN', 'HR_MANAGER', 'HR_EXECUTIVE', 'FINANCE', 'MANAGER', 'EMPLOYEE'),
     defaultValue: 'shop_owner'
   },
   status: {
@@ -55,6 +54,9 @@ const User = sequelize.define('User', {
 }, {
   tableName: 'users',
   timestamps: true,
+  indexes: [
+    { name: 'idx_users_email', unique: true, fields: ['email'] }
+  ],
   hooks: {
     beforeCreate: async (user) => {
       if (user.password) {
@@ -70,7 +72,7 @@ const User = sequelize.define('User', {
 });
 
 // Instance method
-User.prototype.isPasswordCorrect = async function(password) {
+User.prototype.isPasswordCorrect = async function (password) {
   return await bcrypt.compare(password, this.password);
 };
 
