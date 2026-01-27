@@ -12,6 +12,14 @@ import {
   getEmployeeProfile,
 } from '../controllers/employee/employeeDashboard.controller.js';
 import {
+  renderProfile,
+  renderChangePassword,
+  updatePassword,
+  forgotPassword,
+  renderResetPassword,
+  resetPassword,
+} from '../controllers/employee/employeeProfile.controller.js';
+import {
   renderLeaveList,
   renderApplyLeave,
   submitLeaveApplication,
@@ -32,6 +40,12 @@ const router = Router();
 router.get('/login', renderEmployeeLogin);
 router.post('/login', loginEmployee);
 
+// Forgot Password
+router.get('/forgot-password', (req, res) => res.render('employee/forgot-password', { layout: 'employee-main', pageClass: 'auth' }));
+router.post('/forgot-password', forgotPassword);
+router.get('/reset-password/:token', renderResetPassword);
+router.post('/reset-password/:token', resetPassword);
+
 // ===================================
 // PROTECTED ROUTES (Employee Auth Required)
 // ===================================
@@ -42,6 +56,11 @@ router.post('/logout', verifyEmployee, logoutEmployee);
 
 // Dashboard
 router.get('/dashboard', verifyEmployee, renderEmployeeDashboard);
+
+// Profile
+router.get('/profile', verifyEmployee, renderProfile);
+router.get('/change-password', verifyEmployee, renderChangePassword);
+router.post('/change-password', verifyEmployee, updatePassword);
 
 // Leave Management - Page Routes
 router.get('/leaves', verifyEmployee, renderLeaveList);

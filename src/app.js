@@ -14,13 +14,6 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// Ensure helpers exist on the exact Handlebars instance used by express-handlebars
-handlebars.registerHelper('eq', (a, b) => a === b);
-handlebars.registerHelper('or', (a, b) => a || b);
-handlebars.registerHelper('and', (a, b) => a && b);
-handlebars.registerHelper('not', (a) => !a);
-handlebars.registerHelper('dec', (n) => (typeof n === 'number' ? n - 1 : n));
-
 // Avoid favicon spam
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 
@@ -66,6 +59,20 @@ app.engine(
                 const m = minutes % 60;
                 return `${h}h ${m}m`;
             },
+            formatDate(date) {
+                if (!date) return '-';
+                const d = new Date(date);
+                return isNaN(d.getTime()) ? date : d.toLocaleDateString('en-GB', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                });
+            },
+            eq(a, b) { return a === b; },
+            or(a, b) { return a || b; },
+            and(a, b) { return a && b; },
+            not(a) { return !a; },
+            dec(n) { return (typeof n === 'number' ? n - 1 : n); }
         },
         runtimeOptions: {
             allowProtoPropertiesByDefault: true,
@@ -126,6 +133,7 @@ import { employeeAttendanceRouter } from './routes/employeeAttendance.routes.js'
 import { adminLeaveRouter } from './routes/adminLeave.routes.js';
 import { billingRouter } from './routes/billing.routes.js';
 import { employeePayrollRouter } from './routes/employeePayroll.routes.js';
+import { adminProfileRouter } from './routes/adminProfile.routes.js';
 
 
 // ---------- Frontend pages ----------
@@ -249,5 +257,8 @@ app.use('/leave-requests', adminLeaveRouter);
 
 // Billing & Plans
 app.use('/billing', billingRouter);
+
+// Admin Profile
+app.use('/admin', adminProfileRouter);
 
 export { app };

@@ -1,0 +1,326 @@
+<div class="row">
+    <!-- Sidebar -->
+    {{> employee-sidebar employee=employee active='profile'}}
+
+    <!-- Main Content -->
+    <div class="col-md-10 emp-main">
+        <div class="emp-page-header">
+            <h1 class="emp-page-title">My Profile</h1>
+            <p class="text-muted mt-1">Manage your personal and professional information</p>
+        </div>
+
+        <!-- Sticky Navigation for sections -->
+        <div class="emp-card mb-4 p-2 sticky-top"
+            style="top: 1rem; z-index: 100; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px);">
+            <div class="nav nav-pills nav-justified" id="profile-tabs">
+                <a class="nav-link active" href="#personal"><i class="fa-solid fa-user me-2"></i>Personal</a>
+                <a class="nav-link" href="#professional"><i class="fa-solid fa-briefcase me-2"></i>Professional</a>
+                <a class="nav-link" href="#compensation"><i
+                        class="fa-solid fa-money-bill-wave me-2"></i>Compensation</a>
+                <a class="nav-link" href="#education"><i class="fa-solid fa-graduation-cap me-2"></i>Education</a>
+                <a class="nav-link" href="#experience"><i class="fa-solid fa-history me-2"></i>Experience</a>
+                <a class="nav-link" href="#documents"><i class="fa-solid fa-file-shield me-2"></i>KYC</a>
+            </div>
+        </div>
+
+        <!-- Personal Details Section -->
+        <div id="personal" class="emp-card mb-4">
+            <div class="emp-card-header">
+                <h5 class="emp-card-title"><i class="fa-solid fa-user" style="color: var(--emp-primary);"></i> Personal
+                    Details</h5>
+                <a href="/employee/change-password" class="btn emp-btn-secondary btn-sm">Change Password</a>
+            </div>
+            <div class="emp-card-body">
+                <div class="row align-items-center mb-4">
+                    <div class="col-auto">
+                        <div class="emp-profile-avatar"
+                            style="width: 100px; height: 100px; font-size: 40px; background: linear-gradient(135deg, var(--emp-primary) 0%, #06b6d4 100%); color: #fff;">
+                            {{#if employee.profilePhoto}}
+                            <img src="{{employee.profilePhoto}}" alt="Profile"
+                                style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                            {{else}}
+                            {{employee.firstName.[0]}}{{employee.lastName.[0]}}
+                            {{/if}}
+                        </div>
+                    </div>
+                    <div class="col">
+                        <h3 class="mb-1" style="font-weight: 800;">{{employee.empName}}</h3>
+                        <p class="text-muted mb-0">{{employee.empDesignation}} | {{employee.empDepartment}}</p>
+                    </div>
+                </div>
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <label class="emp-form-label d-block text-muted">Date of Birth</label>
+                        <div class="fw-bold">{{#if employee.empDob}}{{formatDate employee.empDob}}{{else}}-{{/if}}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="emp-form-label d-block text-muted">Email Address</label>
+                        <div class="fw-bold">{{employee.empEmail}}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="emp-form-label d-block text-muted">Contact Number</label>
+                        <div class="fw-bold">{{employee.empPhone}}</div>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="emp-form-label d-block text-muted">Permanent Address</label>
+                        <div class="fw-bold">
+                            {{#if employee.permanentAddressLine1}}
+                            {{employee.permanentAddressLine1}}, {{employee.permanentCity}}, {{employee.permanentState}}
+                            - {{employee.permanentZip}}
+                            {{else}}
+                            -
+                            {{/if}}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="emp-form-label d-block text-muted">Gender</label>
+                        <div class="fw-bold">{{employee.gender}}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Professional Details Section -->
+        <div id="professional" class="emp-card mb-4">
+            <div class="emp-card-header">
+                <h5 class="emp-card-title"><i class="fa-solid fa-briefcase" style="color: var(--emp-primary);"></i>
+                    Professional Details</h5>
+            </div>
+            <div class="emp-card-body">
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <label class="emp-form-label d-block text-muted">Employee ID</label>
+                        <div class="fw-bold">{{employee.empId}}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="emp-form-label d-block text-muted">Employee Type</label>
+                        <div class="fw-bold">{{employee.employeeType}}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="emp-form-label d-block text-muted">Employment Status</label>
+                        <div class="fw-bold">
+                            <span class="emp-badge emp-badge-approved">{{employee.employmentStatus}}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="emp-form-label d-block text-muted">Department</label>
+                        <div class="fw-bold">{{employee.empDepartment}}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="emp-form-label d-block text-muted">Designation</label>
+                        <div class="fw-bold">{{employee.empDesignation}}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="emp-form-label d-block text-muted">Date of Joining</label>
+                        <div class="fw-bold">{{formatDate employee.empDateOfJoining}}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="emp-form-label d-block text-muted">Work Mode</label>
+                        <div class="fw-bold">{{employee.workMode}}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="emp-form-label d-block text-muted">Work Location</label>
+                        <div class="fw-bold">{{employee.empWorkLoc}}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Compensation Section -->
+        <div id="compensation" class="emp-card mb-4">
+            <div class="emp-card-header">
+                <h5 class="emp-card-title"><i class="fa-solid fa-money-bill-wave"
+                        style="color: var(--emp-primary);"></i> Compensation</h5>
+            </div>
+            <div class="emp-card-body">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="emp-form-label d-block text-muted">Annual CTC</label>
+                        <div class="fw-bold" style="font-size: 1.25rem;">₹ {{employee.empCtc}}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="emp-form-label d-block text-muted">Overtime Eligible</label>
+                        <div class="fw-bold">
+                            {{#if employee.overtimeEligible}}
+                            <span class="text-success"><i class="fa-solid fa-circle-check me-1"></i> Yes</span>
+                            {{else}}
+                            <span class="text-muted"><i class="fa-solid fa-circle-xmark me-1"></i> No</span>
+                            {{/if}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Education Section -->
+        <div id="education" class="emp-card mb-4">
+            <div class="emp-card-header">
+                <h5 class="emp-card-title"><i class="fa-solid fa-graduation-cap" style="color: var(--emp-primary);"></i>
+                    Education & Qualification</h5>
+            </div>
+            <div class="emp-card-body p-0">
+                <table class="emp-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Level/Degree</th>
+                            <th>Institution</th>
+                            <th>Passing Year</th>
+                            <th>Percentage/CGPA</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each employee.educations}}
+                        <tr>
+                            <td>
+                                <div class="fw-bold">{{this.degree}}</div>
+                                <small class="text-muted">{{this.level}}</small>
+                            </td>
+                            <td>{{this.institutionName}}</td>
+                            <td>{{this.yearOfPassing}}</td>
+                            <td>{{this.percentageOrCgpa}}</td>
+                        </tr>
+                        {{else}}
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-muted">No education details found</td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Experience Section -->
+        <div id="experience" class="emp-card mb-4">
+            <div class="emp-card-header">
+                <h5 class="emp-card-title"><i class="fa-solid fa-history" style="color: var(--emp-primary);"></i>
+                    Employment History</h5>
+            </div>
+            <div class="emp-card-body p-0">
+                <table class="emp-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Organization</th>
+                            <th>Designation</th>
+                            <th>Duration</th>
+                            <th>Reason for Leaving</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each employee.experiences}}
+                        <tr>
+                            <td>
+                                <div class="fw-bold">{{this.organizationName}}</div>
+                            </td>
+                            <td>{{this.jobTitle}}</td>
+                            <td>
+                                {{formatDate this.startDate}} - {{#if this.isCurrent}}Present{{else}}{{formatDate
+                                this.endDate}}{{/if}}
+                            </td>
+                            <td>{{this.reasonForLeaving}}</td>
+                        </tr>
+                        {{else}}
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-muted">No experience details found</td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Documents Section -->
+        <div id="documents" class="emp-card mb-4">
+            <div class="emp-card-header">
+                <h5 class="emp-card-title"><i class="fa-solid fa-file-shield" style="color: var(--emp-primary);"></i>
+                    Documents & KYC</h5>
+            </div>
+            <div class="emp-card-body p-0">
+                <table class="emp-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Document Type</th>
+                            <th>Number</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each employee.documents}}
+                        <tr>
+                            <td>
+                                <div class="fw-bold">{{this.documentType}}</div>
+                                <small class="text-muted">{{this.category}}</small>
+                            </td>
+                            <td>{{this.documentNumber}}</td>
+                            <td>
+                                <span
+                                    class="emp-badge {{#if (eq this.verificationStatus 'Verified')}}emp-badge-approved{{else}}emp-badge-pending{{/if}}">
+                                    {{this.verificationStatus}}
+                                </span>
+                            </td>
+                            <td>
+                                {{#if this.fileUrl}}
+                                <a href="{{this.fileUrl}}" target="_blank" class="btn btn-sm btn-outline-primary"><i
+                                        class="fa-solid fa-download"></i></a>
+                                {{else}}
+                                -
+                                {{/if}}
+                            </td>
+                        </tr>
+                        {{else}}
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-muted">No documents found</td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .sticky-top {
+        margin-top: -1.5rem;
+        margin-left: -12px;
+        margin-right: -12px;
+        border-radius: 0 0 16px 16px !important;
+    }
+
+    #profile-tabs .nav-link {
+        color: var(--emp-secondary);
+        font-weight: 600;
+        font-size: 13px;
+        border-radius: 8px;
+        padding: 8px 12px;
+        transition: all 0.2s;
+    }
+
+    #profile-tabs .nav-link:hover {
+        background: rgba(14, 165, 233, 0.05);
+        color: var(--emp-primary);
+    }
+
+    #profile-tabs .nav-link.active {
+        background: var(--emp-primary);
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+    }
+</style>
+
+<script>
+    document.querySelectorAll('#profile-tabs a').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href');
+            document.querySelector(targetId).scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+
+            // Update active state
+            document.querySelectorAll('#profile-tabs a').forEach(a => a.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+</script>

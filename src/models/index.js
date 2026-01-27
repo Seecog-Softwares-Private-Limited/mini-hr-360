@@ -37,6 +37,9 @@ import PayrollRegister from './PayrollRegister.js';
 import Payslip from './Payslip.js';
 import PayrollQuery from './PayrollQuery.js';
 import EmployeeBankDetail from './EmployeeBankDetail.js';
+import UserEducation from './UserEducation.js';
+import UserExperience from './UserExperience.js';
+import UserDocument from './UserDocument.js';
 
 
 /**
@@ -272,6 +275,18 @@ PayrollQuery.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
 Employee.hasOne(EmployeeBankDetail, { foreignKey: 'employeeId', as: 'bankDetails' });
 EmployeeBankDetail.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
 
+// User ⇄ UserEducation
+User.hasMany(UserEducation, { foreignKey: 'userId', as: 'educations', onDelete: 'CASCADE' });
+UserEducation.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+// User ⇄ UserExperience
+User.hasMany(UserExperience, { foreignKey: 'userId', as: 'experiences', onDelete: 'CASCADE' });
+UserExperience.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+// User ⇄ UserDocument
+User.hasMany(UserDocument, { foreignKey: 'userId', as: 'documents', onDelete: 'CASCADE' });
+UserDocument.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
 
 export {
   AttendancePolicy,
@@ -309,5 +324,8 @@ export {
   Payslip,
   PayrollQuery,
   EmployeeBankDetail,
+  UserEducation,
+  UserExperience,
+  UserDocument,
 };
 

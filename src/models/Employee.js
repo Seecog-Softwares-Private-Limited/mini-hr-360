@@ -436,6 +436,19 @@ const Employee = sequelize.define(
       type: DataTypes.ENUM('Compliant', 'Non-compliant'),
       allowNull: true,
     },
+    profilePhoto: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      comment: 'Path or URL to employee profile photo',
+    },
+    resetPasswordToken: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    resetPasswordExpires: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
     systemRole: {
       type: DataTypes.STRING(100),
       allowNull: true,

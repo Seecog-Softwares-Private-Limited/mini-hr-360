@@ -1,6 +1,6 @@
-{{!-- 
-  Employee Portal Sidebar Partial
-  Usage: {{> employee-sidebar employee=employee active=active}}
+{{!--
+Employee Portal Sidebar Partial
+Usage: {{> employee-sidebar employee=employee active=active}}
 --}}
 <div class="col-md-2 emp-sidebar p-3">
     <div class="emp-brand mb-4">
@@ -40,6 +40,10 @@
     <div class="emp-divider"></div>
 
     <nav class="nav flex-column">
+        <a class="nav-link {{#if (eq active 'profile')}}active{{/if}}" href="/employee/profile">
+            <i class="fa-solid fa-user-circle"></i> My Profile
+        </a>
+
         <a class="nav-link text-danger" href="/employee/logout">
             <i class="fa-solid fa-right-from-bracket"></i> Logout
         </a>
