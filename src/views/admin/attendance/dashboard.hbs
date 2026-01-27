@@ -30,30 +30,30 @@
 							<div class="card-body">
 								<div class="d-flex justify-content-between align-items-start mb-3">
 									<h5 class="card-title mb-0">Today Overview</h5>
-									<small class="text-muted">Updated: {{lastUpdated}}</small>
+									<small class="text-muted">Updated: <span id="lastUpdatedTime">just now</span></small>
 								</div>
 								<div class="row">
 									<div class="col-md-3">
 										<div class="kpi-card p-3 text-center">
-											<div class="h2 text-primary">{{stats.present}}</div>
+											<div class="h2 text-primary" data-kpi="present">-</div>
 											<div class="text-muted small">Present</div>
 										</div>
 									</div>
 									<div class="col-md-3">
 										<div class="kpi-card p-3 text-center">
-											<div class="h2 text-danger">{{stats.absent}}</div>
+											<div class="h2 text-danger" data-kpi="absent">-</div>
 											<div class="text-muted small">Absent</div>
 										</div>
 									</div>
 									<div class="col-md-3">
 										<div class="kpi-card p-3 text-center">
-											<div class="h2 text-warning">{{stats.late}}</div>
+											<div class="h2 text-warning" data-kpi="late">-</div>
 											<div class="text-muted small">Late</div>
 										</div>
 									</div>
 									<div class="col-md-3">
 										<div class="kpi-card p-3 text-center">
-											<div class="h2 text-success">{{stats.onLeave}}</div>
+											<div class="h2 text-success" data-kpi="onLeave">-</div>
 											<div class="text-muted small">On Leave</div>
 										</div>
 									</div>
@@ -90,63 +90,73 @@
 					</div>
 				</div>
 
-				<!-- Attendance Table -->
-				<div class="card">
-					<div class="card-header d-flex justify-content-between align-items-center">
-						<div>
-							<i class="fa-solid fa-users me-2"></i>Today's Attendance
-							<span class="badge bg-secondary ms-2">{{attendanceToday.length}} records</span>
-						</div>
-						<div class="d-flex align-items-center gap-2">
-							<input type="text" id="attendanceSearch" class="form-control form-control-sm" placeholder="Search employee, dept..." oninput="filterAttendance()" style="width: 220px;">
-							<select id="statusFilter" class="form-select form-select-sm" onchange="filterAttendance()" style="width: 150px;">
-								<option value="">All Status</option>
-								<option value="PRESENT">Present</option>
-								<option value="ABSENT">Absent</option>
-								<option value="LATE">Late</option>
-							</select>
+				<!-- Today's Attendance Details -->
+				<div class="card shadow-sm">
+					<div class="card-header bg-gradient pb-3 pt-3 border-0">
+						<div class="d-flex justify-content-between align-items-center">
+							<div>
+								<h5 class="mb-0"><i class="fa-solid fa-users-check me-2 text-primary"></i>Today's Attendance Details</h5>
+								<small class="text-muted d-block mt-1"><i class="fa-solid fa-calendar-day me-1"></i>Updated every 5 seconds</small>
+							</div>
+							<div class="d-flex align-items-center gap-2">
+								<input type="text" id="attendanceSearch" class="form-control form-control-sm" placeholder="Search name, ID, dept..." oninput="filterAttendance()" style="width: 250px;">
+								<select id="statusFilter" class="form-select form-select-sm" onchange="filterAttendance()" style="width: 140px;">
+									<option value="">All Status</option>
+									<option value="PRESENT">✓ Present</option>
+									<option value="ABSENT">✗ Absent</option>
+									<option value="LATE">⏰ Late</option>
+									<option value="LEAVE">🏖️ On Leave</option>
+									<option value="HALF_DAY">⏸️ Half Day</option>
+								</select>
+								<span class="badge bg-secondary" id="recordCount">0 records</span>
+							</div>
 						</div>
 					</div>
 					<div class="card-body p-0">
 						<div class="table-responsive">
-							<table class="table table-hover mb-0">
-								<thead class="table-light">
+							<table class="table table-hover table-striped mb-0" style="font-size: 0.95rem;">
+								<thead class="table-light sticky-top">
 									<tr>
-										<th>#</th>
-										<th>Employee</th>
-										<th>Department</th>
-										<th>Status</th>
-										<th>Check-in</th>
-										<th>Check-out</th>
-										<th>Shift</th>
-										<th style="width: 140px;">Actions</th>
+										<th style="width: 50px;">#</th>
+										<th style="width: 220px;">
+											<i class="fa-solid fa-user me-1 text-primary"></i>Employee
+										</th>
+										<th style="width: 140px;">
+											<i class="fa-solid fa-building me-1 text-info"></i>Department
+										</th>
+										<th style="width: 120px;">
+											<i class="fa-solid fa-briefcase me-1 text-secondary"></i>Designation
+										</th>
+										<th style="width: 90px;" class="text-center">
+											<i class="fa-solid fa-hourglass me-1 text-warning"></i>Status
+										</th>
+										<th style="width: 100px;" class="text-center">
+											<i class="fa-solid fa-arrow-right-to-bracket me-1 text-success"></i>Check-in
+										</th>
+										<th style="width: 100px;" class="text-center">
+											<i class="fa-solid fa-arrow-right-from-bracket me-1 text-danger"></i>Check-out
+										</th>
+										<th style="width: 80px;" class="text-center">
+											<i class="fa-solid fa-clock me-1 text-primary"></i>Hours
+										</th>
+										<th style="width: 110px;">
+											<i class="fa-solid fa-business-time me-1 text-muted"></i>Shift
+										</th>
+										<th style="width: 120px;" class="text-center">Actions</th>
 									</tr>
 								</thead>
 								<tbody id="attendanceTableBody">
-									{{#each attendanceToday}}
 									<tr>
-										<td>{{inc @index}}</td>
-										<td>{{this.employeeName}} <small class="text-muted d-block">{{this.empId}}</small></td>
-										<td>{{this.department}}</td>
-										<td>
-											{{#if (eq this.status 'PRESENT')}}<span class="badge bg-success">Present</span>{{/if}}
-											{{#if (eq this.status 'ABSENT')}}<span class="badge bg-danger">Absent</span>{{/if}}
-											{{#if (eq this.status 'LATE')}}<span class="badge bg-warning text-dark">Late</span>{{/if}}
-										</td>
-										<td>{{this.checkIn}}</td>
-										<td>{{this.checkOut}}</td>
-										<td>{{this.shiftName}}</td>
-										<td>
-											<div class="btn-group btn-group-sm">
-												<button class="btn btn-outline-primary" onclick="viewAttendanceLog({{this.id}})"><i class="fa-solid fa-eye"></i></button>
-												<button class="btn btn-outline-secondary" onclick="regularizeAttendance({{this.id}})"><i class="fa-solid fa-pen"></i></button>
-											</div>
+										<td colspan="10" class="text-center text-muted py-4">
+											<i class="fa-solid fa-spinner fa-spin me-2"></i>Loading attendance data...
 										</td>
 									</tr>
-									{{/each}}
 								</tbody>
 							</table>
 						</div>
+					</div>
+					<div class="card-footer bg-light text-muted small py-2">
+						<i class="fa-solid fa-info-circle me-1"></i>Last refreshed: <span id="refreshTime">now</span>
 					</div>
 				</div>
 

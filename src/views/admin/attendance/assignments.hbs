@@ -44,34 +44,19 @@
 
 						<div class="table-responsive">
 							<table class="table table-hover mb-0">
-								<thead>
+								<thead class="table-light">
 									<tr>
-										<th>#</th>
+										<th style="width: 50px;">#</th>
 										<th>Employee</th>
-										<th>Department</th>
 										<th>Shift</th>
 										<th>Effective From</th>
-										<th>Status</th>
-										<th style="width:120px;">Actions</th>
+										<th>Effective To</th>
+										<th class="text-center">Status</th>
+										<th style="width: 120px;" class="text-center">Actions</th>
 									</tr>
 								</thead>
 								<tbody id="assignmentsTableBody">
-									{{#each assignments}}
-									<tr>
-										<td>{{inc @index}}</td>
-										<td>{{this.employeeName}}</td>
-										<td>{{this.department}}</td>
-										<td>{{this.shiftName}}</td>
-										<td>{{this.effectiveFrom}}</td>
-										<td>{{#if (eq this.status 'ACTIVE')}}<span class="badge bg-success">Active</span>{{else}}<span class="badge bg-secondary">Inactive</span>{{/if}}</td>
-										<td>
-											<div class="btn-group btn-group-sm">
-												<button class="btn btn-outline-primary" onclick="editAssignment({{this.id}})"><i class="fa-solid fa-edit"></i></button>
-												<button class="btn btn-outline-danger" onclick="deleteAssignment({{this.id}})"><i class="fa-solid fa-trash"></i></button>
-											</div>
-										</td>
-									</tr>
-									{{/each}}
+									<tr><td colspan="7" class="text-center text-muted py-3"><i class="fa-solid fa-spinner fa-spin me-2"></i>Loading assignments...</td></tr>
 								</tbody>
 							</table>
 						</div>

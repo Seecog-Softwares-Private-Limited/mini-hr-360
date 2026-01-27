@@ -1,37 +1,16 @@
 
-import { Op, Sequelize } from 'sequelize';
+import { Op } from 'sequelize';
 import { asyncHandler } from '../../utils/asyncHandler.js';
+import { AttendancePunch, AttendanceRegularization, Shift, Holiday, AttendanceLock } from '../../models/index.js';
 import {
-    AttendanceDailySummary,
-    AttendancePunch,
-    AttendancePolicy,
-    Shift,
-    EmployeeShiftAssignment,
-    AttendanceRegularization,
-    Holiday,
-    Business
-} from '../../models/index.js';
+    recordPunch,
+    getToday as getTodayFromService,
+    getCalendar as getCalendarFromService,
+    getEffectiveAssignment,
+} from '../../services/attendance.service.js';
 
 // --- Helpers ---
-
 const getTodayDateString = () => new Date().toISOString().split('T')[0];
-
-const getActiveShift = async (employeeId, date) => {
-    // Find assignment active on this date
-    const assignment = await EmployeeShiftAssignment.findOne({
-        where: {
-            employeeId,
-            effectiveFrom: { [Op.lte]: date },
-            [Op.or]: [
-                { effectiveTo: { [Op.gte]: date } },
-                { effectiveTo: null }
-            ]
-        },
-        include: [{ model: Shift, as: 'shift' }, { model: AttendancePolicy, as: 'policy' }],
-        order: [['effectiveFrom', 'DESC']], // Get most recent assignment
-    });
-    return assignment;
-};
 
 // --- Controllers ---
 
@@ -42,20 +21,14 @@ export const renderAttendanceDashboard = asyncHandler(async (req, res) => {
     const employee = req.employee;
     const today = getTodayDateString();
 
-    // 1. Get Today's Summary
-    let summary = await AttendanceDailySummary.findOne({
-        where: { employeeId: employee.id, date: today }
+    // Source-of-truth: shared attendance.service.js calculation
+    const { summary, punches, assignment } = await getTodayFromService({
+        businessId: employee.businessId,
+        employeeId: employee.id,
+        date: today,
     });
 
-    // 2. Get Punches
-    const punches = await AttendancePunch.findAll({
-        where: { employeeId: employee.id, date: today },
-        order: [['punchAt', 'ASC']]
-    });
-
-    // 3. Get Shift Info
-    const assignment = await getActiveShift(employee.id, today);
-    const shift = assignment?.shift;
+    const shift = assignment?.shift || null;
 
     // 4. Determine UI State
     let status = 'Not Started';
@@ -102,124 +75,19 @@ export const punch = asyncHandler(async (req, res) => {
     const { type, latitude, longitude } = req.body;
     const employee = req.employee;
     const today = getTodayDateString();
-    const now = new Date();
 
     if (!['IN', 'OUT', 'BREAK_START', 'BREAK_END'].includes(type)) {
         return res.status(400).json({ success: false, message: 'Invalid punch type' });
     }
 
-    // Find or Create Daily Summary
-    let summary = await AttendanceDailySummary.findOne({
-        where: { employeeId: employee.id, date: today }
-    });
-
-    if (!summary) {
-        summary = await AttendanceDailySummary.create({
-            businessId: employee.businessId,
-            employeeId: employee.id,
-            date: today,
-            status: 'ABSENT', // Will update below
-            source: 'AUTO'
-        });
-    }
-
-    // Prevent double IN
-    if (type === 'IN' && summary.firstInAt) {
-        return res.status(400).json({ success: false, message: 'Already punched IN today' });
-    }
-
-    // Save Punch
-    await AttendancePunch.create({
+    const { summary } = await recordPunch({
         businessId: employee.businessId,
         employeeId: employee.id,
         date: today,
         punchType: type,
-        punchAt: now,
-        source: 'WEB', // Assuming web portal
-        metaJson: { latitude, longitude }
+        source: 'WEB',
+        metaJson: { latitude, longitude },
     });
-
-    // Update Summary
-    if (type === 'IN') {
-        if (!summary.firstInAt) {
-            summary.firstInAt = now;
-            summary.status = 'PRESENT';
-
-            // Calculate Late Minutes (if shift exists)
-            const assignment = await getActiveShift(employee.id, today);
-            const shift = assignment?.shift;
-            if (shift && shift.startTime) { // Format HH:mm:ss
-                // Construct Shift Start Date object
-                const [h, m] = shift.startTime.split(':');
-                const shiftStart = new Date(now);
-                shiftStart.setHours(h, m, 0, 0);
-
-                // Add grace period if any (from policy)
-                const policy = assignment.policy;
-                const graceMins = policy?.gracePeriodMinutes || 0;
-                shiftStart.setMinutes(shiftStart.getMinutes() + graceMins);
-
-                if (now > shiftStart) {
-                    const diffMs = now - shiftStart;
-                    summary.lateMinutes = Math.floor(diffMs / 60000);
-                }
-            }
-        }
-    } else if (type === 'OUT') {
-        summary.lastOutAt = now;
-
-        // Calculate Work Hours
-        if (summary.firstInAt) {
-            const diffMs = now - new Date(summary.firstInAt);
-            const diffMins = Math.floor(diffMs / 60000);
-            summary.workMinutes = diffMins - (summary.breakMinutes || 0);
-
-            // Calculate Overtime (if workMinutes > shift duration)
-            const assignment = await getActiveShift(employee.id, today);
-            const shift = assignment?.shift;
-            if (shift && shift.startTime && shift.endTime) {
-                const [sh, sm] = shift.startTime.split(':');
-                const [eh, em] = shift.endTime.split(':');
-
-                // Simple duration calc assuming same day shift for now
-                let startMin = parseInt(sh) * 60 + parseInt(sm);
-                let endMin = parseInt(eh) * 60 + parseInt(em);
-                let shiftDuration = endMin - startMin; // minutes
-                if (shiftDuration < 0) shiftDuration += 24 * 60; // Overnight shift
-
-                if (summary.workMinutes > shiftDuration) {
-                    summary.overtimeMinutes = summary.workMinutes - shiftDuration;
-                }
-            }
-        }
-    } else if (type === 'BREAK_START') {
-        // Store break start time - just record the punch
-        // The actual break duration will be calculated when BREAK_END is punched
-    } else if (type === 'BREAK_END') {
-        // Calculate break duration and add to breakMinutes
-        // Find the last BREAK_START punch for today
-        const breakStartPunch = await AttendancePunch.findOne({
-            where: {
-                employeeId: employee.id,
-                date: today,
-                punchType: 'BREAK_START'
-            },
-            order: [['punchAt', 'DESC']]
-        });
-
-        if (breakStartPunch) {
-            const breakDuration = Math.floor((now - new Date(breakStartPunch.punchAt)) / 60000);
-            summary.breakMinutes = (summary.breakMinutes || 0) + breakDuration;
-
-            // Recalculate work minutes excluding breaks if already clocked out
-            if (summary.firstInAt && summary.lastOutAt) {
-                const totalMinutes = Math.floor((new Date(summary.lastOutAt) - new Date(summary.firstInAt)) / 60000);
-                summary.workMinutes = totalMinutes - summary.breakMinutes;
-            }
-        }
-    }
-
-    await summary.save();
 
     return res.json({ success: true, message: 'Punch recorded', summary });
 });
@@ -247,15 +115,36 @@ export const getMonthlyAttendance = asyncHandler(async (req, res) => {
     let { month } = req.query;
     if (!month) month = getTodayDateString().substring(0, 7); // YYYY-MM
 
-    // Get all summaries for month
-    const summaries = await AttendanceDailySummary.findAll({
-        where: {
-            employeeId: employee.id,
-            date: { [Op.like]: `${month}%` }
-        }
+    const summaries = await getCalendarFromService({
+        businessId: employee.businessId,
+        employeeId: employee.id,
+        month,
     });
 
-    return res.json({ success: true, data: summaries });
+    // Fetch holidays for this month
+    const { startStr, endStr } = (() => {
+        const [y, m] = month.split('-').map(x => Number(x));
+        const start = new Date(Date.UTC(y, m - 1, 1));
+        const end = new Date(Date.UTC(y, m, 1));
+        const startStr = `${month}-01`;
+        const endY = end.getUTCFullYear();
+        const endM = String(end.getUTCMonth() + 1).padStart(2, '0');
+        const endD = String(end.getUTCDate()).padStart(2, '0');
+        const endStr = `${endY}-${endM}-${endD}`;
+        return { startStr, endStr };
+    })();
+
+    const holidays = await Holiday.findAll({
+        where: { businessId: employee.businessId, date: { [Op.gte]: startStr, [Op.lt]: endStr } },
+        attributes: ['id', 'date', 'name'],
+        order: [['date', 'ASC']]
+    });
+
+    return res.json({ 
+        success: true, 
+        data: summaries,
+        holidays: holidays.map(h => ({ date: h.date, name: h.name }))
+    });
 });
 
 /**
@@ -265,7 +154,7 @@ export const renderRegularizationList = asyncHandler(async (req, res) => {
     const employee = req.employee;
 
     const requests = await AttendanceRegularization.findAll({
-        where: { employeeId: employee.id },
+        where: { employeeId: employee.id, businessId: employee.businessId },
         order: [['createdAt', 'DESC']]
     });
 
@@ -283,12 +172,20 @@ export const renderRegularizationList = asyncHandler(async (req, res) => {
  */
 export const renderRegularizationForm = asyncHandler(async (req, res) => {
     const employee = req.employee;
+    
+    // Fetch all shifts for this business
+    const shifts = await Shift.findAll({
+        where: { businessId: employee.businessId, status: 'ACTIVE' },
+        attributes: ['id', 'name', 'startTime', 'endTime'],
+        order: [['name', 'ASC']]
+    });
 
     res.render('employee/attendance/regularization_form', {
         title: 'Request Regularization',
         layout: 'employee-main',
         active: 'attendance',
-        employee
+        employee,
+        shifts: shifts.map(s => ({ id: s.id, name: s.name, startTime: s.startTime, endTime: s.endTime }))
     });
 });
 
@@ -350,47 +247,77 @@ export const getTodaySummary = asyncHandler(async (req, res) => {
     const today = new Date().toISOString().split('T')[0];
 
     try {
-        const punches = await AttendancePunch.findAll({
+        // Check if attendance period is locked
+        const yearMonth = today.substring(0, 7); // YYYY-MM
+        const attendanceLock = await AttendanceLock.findOne({
             where: {
-                employeeId: employee.id,
                 businessId: employee.businessId,
-                date: today
-            },
-            order: [['punchAt', 'ASC']],
-            raw: true
+                period: yearMonth,
+            }
         });
 
-        const firstInAt = punches.find(p => p.punchType === 'IN')?.punchAt;
-        const lastOutAt = [...punches].reverse().find(p => p.punchType === 'OUT')?.punchAt;
+        const { summary, punches, assignment } = await getTodayFromService({
+            businessId: employee.businessId,
+            employeeId: employee.id,
+            date: today,
+        });
 
-        const status = punches.length === 0 ? 'Not Marked' : (lastOutAt ? 'Checked Out' : 'Checked In');
-        
-        // Extract location from first punch's latitude/longitude
+        // Extract location from first punch's latitude/longitude (if present)
         let location = 'Unknown';
-        const firstPunch = punches[0];
-        if (firstPunch && firstPunch.metaJson) {
+        let locationName = null;
+        let coords = null;
+        const firstPunch = punches?.[0];
+        if (firstPunch?.metaJson) {
             const meta = typeof firstPunch.metaJson === 'string' ? JSON.parse(firstPunch.metaJson) : firstPunch.metaJson;
-            if (meta.latitude && meta.longitude) {
-                location = `${meta.latitude.toFixed(4)}, ${meta.longitude.toFixed(4)}`;
+            if (meta?.latitude && meta?.longitude) {
+                coords = { latitude: Number(meta.latitude), longitude: Number(meta.longitude) };
+                location = `${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`;
+
+                // Best-effort reverse geocode (non-blocking style; failure falls back to coords)
+                try {
+                    const controller = new AbortController();
+                    const timeout = setTimeout(() => controller.abort(), 1200);
+                    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coords.latitude}&lon=${coords.longitude}`;
+                    const resp = await fetch(url, {
+                        signal: controller.signal,
+                        headers: { 'User-Agent': 'mini-hr-360/attendance' },
+                    });
+                    clearTimeout(timeout);
+                    if (resp.ok) {
+                        const json = await resp.json();
+                        locationName = json?.display_name || null;
+                    }
+                } catch (_) {
+                    // ignore
+                }
             }
         }
+
+        const shift = assignment?.shift ? {
+            name: assignment.shift.name,
+            startTime: assignment.shift.startTime,
+            endTime: assignment.shift.endTime
+        } : null;
 
         return res.json({
             success: true,
             summary: {
-                status,
-                firstInAt,
-                lastOutAt,
-                location,
+                status: summary?.status || 'NOT_MARKED',
+                firstInAt: summary?.firstInAt || null,
+                lastOutAt: summary?.lastOutAt || null,
+                location, // coords string fallback
+                locationName,
+                ip: req.ip,
                 date: today
             },
-            punches: punches.map(p => {
+            shift,
+            isLocked: !!attendanceLock,
+            lockMessage: attendanceLock ? `Attendance for ${yearMonth} is locked by admin` : null,
+            punches: (punches || []).map(p => {
                 let locStr = 'Unknown';
                 if (p.metaJson) {
                     const meta = typeof p.metaJson === 'string' ? JSON.parse(p.metaJson) : p.metaJson;
-                    if (meta.latitude && meta.longitude) {
-                        locStr = `${meta.latitude.toFixed(4)}, ${meta.longitude.toFixed(4)}`;
-                    }
+                    if (meta?.latitude && meta?.longitude) locStr = `${Number(meta.latitude).toFixed(4)}, ${Number(meta.longitude).toFixed(4)}`;
                 }
                 return {
                     punchAt: p.punchAt,
@@ -411,6 +338,7 @@ export const getTodaySummary = asyncHandler(async (req, res) => {
                 location: 'Unknown',
                 date: today
             },
+            isLocked: false,
             punches: []
         });
     }
@@ -430,21 +358,25 @@ export const getRegularizations = asyncHandler(async (req, res) => {
                 businessId: employee.businessId
             },
             order: [['date', 'DESC']],
-            raw: true
         });
 
-        return res.json({
-            success: true,
-            data: regularizations.map(reg => ({
+        const mapped = await Promise.all(regularizations.map(async (reg) => {
+            // find effective assignment for that date
+            const assignment = await getEffectiveAssignment({ businessId: employee.businessId, employeeId: employee.id, date: reg.date });
+            const shiftObj = assignment?.shift ? { name: assignment.shift.name, startTime: assignment.shift.startTime, endTime: assignment.shift.endTime } : null;
+            return {
                 id: reg.id,
                 date: reg.date,
                 attendanceDate: reg.date,
                 type: reg.type,
                 reason: reg.reason,
                 status: reg.status,
-                shift: reg.shift || 'Unknown'
-            }))
-        });
+                shift: shiftObj ? shiftObj.name : 'Unknown',
+                shiftObj
+            };
+        }));
+
+        return res.json({ success: true, data: mapped });
     } catch (error) {
         console.error('getRegularizations error:', error.message);
         return res.json({

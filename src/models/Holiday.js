@@ -1,4 +1,3 @@
-
 import { DataTypes } from 'sequelize';
 import { sequelize } from '../db/index.js';
 
@@ -19,7 +18,7 @@ const Holiday = sequelize.define(
             },
         },
         name: {
-            type: DataTypes.STRING(255),
+            type: DataTypes.STRING(200),
             allowNull: false,
         },
         date: {
@@ -27,22 +26,22 @@ const Holiday = sequelize.define(
             allowNull: false,
         },
         region: {
-            type: DataTypes.STRING(100),
+            type: DataTypes.STRING(120),
             allowNull: true, // Optional region/state
         },
-        description: {
-            type: DataTypes.TEXT,
-            allowNull: true,
-        },
-        isActive: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: true,
-        },
+    
     },
-    {
-        tableName: 'holidays',
-        timestamps: true,
-    }
+      
+  
+  {
+    tableName: 'holidays',
+    timestamps: true,
+    paranoid: true,
+    indexes: [
+      { fields: ['businessId'] },
+      { unique: true, fields: ['businessId', 'date', 'name'] },
+    ],
+  }
 );
 
 export default Holiday;

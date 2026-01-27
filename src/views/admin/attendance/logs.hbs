@@ -23,58 +23,61 @@
 					</div>
 				</div>
 
-				<div class="card">
-					<div class="card-body p-3">
-						<div class="row g-3 mb-3">
-							<div class="col-md-3">
-								<input type="date" id="logDate" class="form-control" onchange="filterLogs()">
+				<div class="card shadow-sm">
+					<div class="card-header bg-gradient pb-3 pt-3 border-0">
+						<div class="d-flex justify-content-between align-items-center">
+							<h5 class="mb-0"><i class="fa-solid fa-list me-2 text-primary"></i>Attendance Logs</h5>
+							<div class="d-flex gap-2">
+								<button class="btn btn-outline-secondary btn-sm" onclick="refreshLogs()" title="Refresh"><i class="fa-solid fa-rotate-right"></i></button>
+								<button class="btn btn-outline-success btn-sm" onclick="downloadLogs()"><i class="fa-solid fa-download me-1"></i> Export</button>
 							</div>
-							<div class="col-md-3">
-								<select id="logDevice" class="form-select" onchange="filterLogs()">
-									<option value="">All Devices</option>
-									<option value="WEB">Web</option>
-									<option value="MOBILE">Mobile</option>
+						</div>
+					</div>
+					<div class="card-body p-3">
+						<div class="row g-2 mb-3">
+							<div class="col-md-2">
+								<input type="date" id="logDate" class="form-control form-control-sm" onchange="loadLogs()">
+							</div>
+							<div class="col-md-2">
+								<select id="logStatus" class="form-select form-select-sm" onchange="filterLogs()">
+									<option value="">All Status</option>
+									<option value="PRESENT">Present</option>
+									<option value="ABSENT">Absent</option>
+									<option value="LATE">Late</option>
+									<option value="HALF_DAY">Half Day</option>
+									<option value="NOT_MARKED">Not Marked</option>
 								</select>
 							</div>
-							<div class="col-md-6 text-end">
-								<input type="text" id="logSearch" class="form-control d-inline-block" placeholder="Search employee or IP..." style="width: 320px;" oninput="filterLogs()">
+							<div class="col-md-4">
+								<input type="text" id="logSearch" class="form-control form-control-sm" placeholder="Search employee, ID, or IP..." oninput="filterLogs()">
+							</div>
+							<div class="col-md-4 text-end">
+								<span class="badge bg-secondary" id="logsCount">0 records</span>
 							</div>
 						</div>
 
 						<div class="table-responsive">
-							<table class="table table-hover mb-0">
-								<thead>
+							<table class="table table-hover table-striped mb-0">
+								<thead class="table-light sticky-top">
 									<tr>
-										<th>#</th>
+										<th style="width: 50px;">#</th>
 										<th>Employee</th>
 										<th>Date</th>
-										<th>Check-in</th>
-										<th>Check-out</th>
-										<th>Status</th>
-										<th>Device</th>
-										<th>IP</th>
-										<th style="width:120px;">Actions</th>
+										<th class="text-center">Check-in</th>
+										<th class="text-center">Check-out</th>
+										<th class="text-center">Status</th>
+										<th>IP Address</th>
+										<th style="width: 120px;" class="text-center">Actions</th>
 									</tr>
 								</thead>
 								<tbody id="logsTableBody">
-									{{#each logs}}
-									<tr>
-										<td>{{inc @index}}</td>
-										<td>{{this.employeeName}}</td>
-										<td>{{this.date}}</td>
-										<td>{{this.checkIn}}</td>
-										<td>{{this.checkOut}}</td>
-										<td>{{#if (eq this.status 'PRESENT')}}<span class="badge bg-success">Present</span>{{/if}}{{#if (eq this.status 'ABSENT')}}<span class="badge bg-danger">Absent</span>{{/if}}{{#if (eq this.status 'LATE')}}<span class="badge bg-warning text-dark">Late</span>{{/if}}</td>
-										<td>{{this.device}}</td>
-										<td>{{this.ip}}</td>
-										<td>
-											<button class="btn btn-outline-primary btn-sm" onclick="viewLogDetails({{this.id}})">Details</button>
-										</td>
-									</tr>
-									{{/each}}
+									<tr><td colspan="8" class="text-center text-muted py-3"><i class="fa-solid fa-spinner fa-spin me-2"></i>Loading...</td></tr>
 								</tbody>
 							</table>
 						</div>
+					</div>
+					<div class="card-footer bg-light text-muted small py-2">
+						<i class="fa-solid fa-info-circle me-1"></i>Last updated: <span id="logsLastUpdate">now</span>
 					</div>
 				</div>
 

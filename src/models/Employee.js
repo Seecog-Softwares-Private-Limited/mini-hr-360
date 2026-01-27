@@ -540,10 +540,10 @@ const Employee = sequelize.define(
     tableName: 'employees',
     timestamps: true,
     indexes: [
-      { unique: true, fields: ['userId', 'empId'] },
-      { unique: true, fields: ['userId', 'empEmail'] },
-      { fields: ['userId', 'isActive'] },
+      { unique: true, fields: ['empId'] },
+      { fields: ['userId'] },
     ],
+    freezeTableName: true,
   }
 );
 

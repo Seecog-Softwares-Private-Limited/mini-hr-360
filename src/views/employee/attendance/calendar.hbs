@@ -61,29 +61,176 @@
             </div>
 
             <!-- Calendar Card -->
-            <div class="emp-card">
-                <div class="emp-card-header">
-                    <h5 class="emp-card-title">
-                        <i class="fa-solid fa-calendar" style="color: var(--emp-primary);"></i>
-                        <span id="monthDisplay">January 2026</span>
-                    </h5>
-                    <div class="d-flex gap-2">
-                        <input type="month" id="monthPicker" class="form-control form-control-sm" style="width: 150px;" />
-                        <a href="/employee/attendance/regularization_form" class="btn emp-btn-secondary btn-sm">
-                            <i class="fa-solid fa-pen me-1"></i> Request Regularization
-                        </a>
+            <div class="emp-card shadow-sm">
+                <div class="emp-card-header" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); border-bottom: none; color: white; border-radius: 10px 10px 0 0;">
+                    <div class="d-flex justify-content-between align-items-center w-100">
+                        <div>
+                            <h5 class="emp-card-title mb-0" style="color: white;">
+                                <i class="fa-solid fa-calendar-days me-2"></i>
+                                <span id="monthDisplay">January 2026</span>
+                            </h5>
+                            <small style="color: rgba(255,255,255,0.9); display: block; margin-top: 4px;">
+                                <i class="fa-solid fa-sync-alt me-1" id="refreshIndicator" style="display: none; animation: spin 1s linear infinite;"></i>
+                                Last updated: <span id="lastUpdateTime">just now</span>
+                            </small>
+                        </div>
+                        <div class="d-flex gap-2 align-items-center">
+                            <input type="month" id="monthPicker" class="form-control form-control-sm" style="width: 150px; border-radius: 6px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;" />
+                            <button class="btn btn-light btn-sm" onclick="refreshCalendar()" title="Refresh calendar" style="border-radius: 6px;">
+                                <i class="fa-solid fa-rotate-right"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <div class="emp-card-body">
-                    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet" />
-                    <div id="calendar" style="margin: 0; padding: 0;"></div>
+                <div class="emp-card-body" style="padding: 20px;">
+                    <!-- Professional Calendar Grid -->
+                    <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                        <!-- Weekday Headers -->
+                        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; margin-bottom: 15px; background: #f0f0f0; border-radius: 6px; overflow: hidden;">
+                            <div style="background: #6366f1; color: white; padding: 12px; text-align: center; font-weight: 600; font-size: 14px;">Sun</div>
+                            <div style="background: #6366f1; color: white; padding: 12px; text-align: center; font-weight: 600; font-size: 14px;">Mon</div>
+                            <div style="background: #6366f1; color: white; padding: 12px; text-align: center; font-weight: 600; font-size: 14px;">Tue</div>
+                            <div style="background: #6366f1; color: white; padding: 12px; text-align: center; font-weight: 600; font-size: 14px;">Wed</div>
+                            <div style="background: #6366f1; color: white; padding: 12px; text-align: center; font-weight: 600; font-size: 14px;">Thu</div>
+                            <div style="background: #6366f1; color: white; padding: 12px; text-align: center; font-weight: 600; font-size: 14px;">Fri</div>
+                            <div style="background: #6366f1; color: white; padding: 12px; text-align: center; font-weight: 600; font-size: 14px;">Sat</div>
+                        </div>
+
+                        <!-- Calendar Days -->
+                        <div id="calendarGrid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; min-height: 400px;">
+                            <div style="padding: 40px; text-align: center; color: #ccc;">Loading calendar...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="emp-card-footer" style="background: #f8f9fa; border-top: 2px solid rgba(0,0,0,0.05); padding: 15px 20px; border-radius: 0 0 10px 10px;">
+                    <div class="d-flex gap-3 flex-wrap" style="flex-wrap: wrap;">
+                        <div class="d-flex align-items-center gap-2">
+                            <div style="width: 12px; height: 12px; background: #22c55e; border-radius: 3px;"></div>
+                            <small><strong>Present</strong></small>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div style="width: 12px; height: 12px; background: #ef4444; border-radius: 3px;"></div>
+                            <small><strong>Absent</strong></small>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div style="width: 12px; height: 12px; background: #f59e0b; border-radius: 3px;"></div>
+                            <small><strong>Late</strong></small>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div style="width: 12px; height: 12px; background: #8b5cf6; border-radius: 3px;"></div>
+                            <small><strong>Holiday</strong></small>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div style="width: 12px; height: 12px; background: #0ea5e9; border-radius: 3px;"></div>
+                            <small><strong>Leave</strong></small>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div style="width: 12px; height: 12px; background: #6b7280; border-radius: 3px;"></div>
+                            <small><strong>Not Marked</strong></small>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+<style>
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.calendar-day {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 8px;
+    min-height: 80px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.calendar-day:hover {
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.calendar-day.other-month {
+    background: #f9fafb;
+    opacity: 0.6;
+}
+
+.calendar-day.today {
+    border: 2px solid #6366f1;
+    background: #f0f4ff;
+}
+
+.calendar-day.holiday {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    color: white;
+    border-color: #7c3aed;
+}
+
+.calendar-day-date {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.calendar-day-status {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 6px;
+    border-radius: 3px;
+    text-align: center;
+    margin-top: auto;
+}
+
+.status-present {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-absent {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.status-late {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-leave {
+    background: #cffafe;
+    color: #164e63;
+}
+
+.status-holiday {
+    background: #f3e8ff;
+    color: #5b21b6;
+    color: white;
+}
+
+.status-notmarked {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.holiday-name {
+    font-size: 10px;
+    margin-top: 2px;
+    padding: 2px 4px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 2px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+</style>
+
 <script>
 function showAlert(message, type = 'info') {
     const alertContainer = document.getElementById('alertContainer');
@@ -98,10 +245,14 @@ function showAlert(message, type = 'info') {
     setTimeout(() => alert.remove(), 5000);
 }
 
-let currentCalendar = null;
+let attendanceData = {};
+let holidaysData = [];
+let currentMonthStr = null;
 
 async function loadMonthlyAttendance(monthStr) {
     try {
+        document.getElementById('refreshIndicator').style.display = 'inline-block';
+        
         const response = await fetch(`/employee/attendance/api/month-summary?month=${monthStr}`, {
             method: 'GET',
             credentials: 'include'
@@ -113,12 +264,21 @@ async function loadMonthlyAttendance(monthStr) {
         
         const data = await response.json();
         if (data.success && Array.isArray(data.data)) {
-            const attendances = data.data;
+            // Store attendance data by date
+            attendanceData = {};
+            data.data.forEach(att => {
+                attendanceData[att.date] = att;
+            });
+            
+            // Store holidays
+            if (data.holidays && Array.isArray(data.holidays)) {
+                holidaysData = data.holidays;
+            }
             
             // Calculate stats
-            const present = attendances.filter(a => a.status?.toLowerCase() === 'present').length;
-            const absent = attendances.filter(a => a.status?.toLowerCase() === 'absent').length;
-            const pending = attendances.filter(a => a.status?.toLowerCase() === 'pending').length;
+            const present = data.data.filter(a => a.status === 'PRESENT').length;
+            const absent = data.data.filter(a => a.status === 'ABSENT').length;
+            const pending = data.data.filter(a => a.status === 'NOT_MARKED' || a.status === null).length;
             const total = present + absent + pending;
             const rate = total > 0 ? Math.round((present / total) * 100) : 0;
             
@@ -127,37 +287,131 @@ async function loadMonthlyAttendance(monthStr) {
             document.getElementById('pendingCount').textContent = pending;
             document.getElementById('attendanceRate').textContent = rate + '%';
             
-            // Convert to FullCalendar events
-            const events = attendances.map(att => {
-                let color = '#cbd5e1'; // gray
-                if (att.status?.toLowerCase() === 'present') color = '#22c55e';
-                else if (att.status?.toLowerCase() === 'absent') color = '#ef4444';
-                else if (att.status?.toLowerCase() === 'pending') color = '#f59e0b';
-                
-                return {
-                    title: att.status || 'Unknown',
-                    start: att.date || att.attendanceDate,
-                    backgroundColor: color,
-                    borderColor: color,
-                    extendedProps: {
-                        status: att.status,
-                        date: att.date || att.attendanceDate,
-                        details: att.reason || ''
-                    }
-                };
-            });
+            // Render calendar
+            renderCalendarGrid(monthStr);
             
-            // Update calendar events
-            if (currentCalendar) {
-                currentCalendar.removeAllEvents();
-                events.forEach(e => currentCalendar.addEvent(e));
-            }
+            // Update last refresh time
+            const now = new Date();
+            document.getElementById('lastUpdateTime').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         } else {
             throw new Error('Invalid response format');
         }
     } catch (error) {
         console.error('Error loading monthly attendance:', error);
         showAlert('Error loading monthly attendance: ' + error.message, 'danger');
+    } finally {
+        document.getElementById('refreshIndicator').style.display = 'none';
+    }
+}
+
+function renderCalendarGrid(monthStr) {
+    const [year, month] = monthStr.split('-');
+    const date = new Date(year, parseInt(month) - 1, 1);
+    const firstDay = date.getDay();
+    const daysInMonth = new Date(year, parseInt(month), 0).getDate();
+    
+    const grid = document.getElementById('calendarGrid');
+    grid.innerHTML = '';
+    
+    // Add empty cells for days before month starts
+    for (let i = 0; i < firstDay; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'calendar-day other-month';
+        grid.appendChild(emptyCell);
+    }
+    
+    // Add days of month
+    const today = new Date().toISOString().split('T')[0];
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const cell = document.createElement('div');
+        cell.className = 'calendar-day';
+        
+        if (dateStr === today) {
+            cell.classList.add('today');
+        }
+        
+        // Check if holiday
+        const holiday = holidaysData.find(h => h.date === dateStr);
+        if (holiday) {
+            cell.classList.add('holiday');
+            cell.innerHTML = `
+                <div class="calendar-day-date">${day}</div>
+                <div class="holiday-name">${holiday.name}</div>
+                <div class="calendar-day-status status-holiday">🎉 Holiday</div>
+            `;
+        } else {
+            // Check attendance status
+            const attendance = attendanceData[dateStr];
+            const dateObj = new Date(dateStr);
+            const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+            
+            let status = attendance?.status || 'NOT_MARKED';
+            let statusDisplay = '-';
+            let statusClass = 'status-notmarked';
+            
+            if (status === 'PRESENT') {
+                statusDisplay = '✓ Present';
+                statusClass = 'status-present';
+            } else if (status === 'ABSENT') {
+                statusDisplay = '✗ Absent';
+                statusClass = 'status-absent';
+            } else if (status === 'LATE') {
+                statusDisplay = '⏰ Late';
+                statusClass = 'status-late';
+            } else if (status === 'LEAVE' || status === 'HALF_DAY') {
+                statusDisplay = '🏖 Leave';
+                statusClass = 'status-leave';
+            } else if (status === 'WEEKOFF') {
+                statusDisplay = 'Weekoff';
+                statusClass = 'status-notmarked';
+            } else if (status === 'HOLIDAY') {
+                statusDisplay = 'Holiday';
+                statusClass = 'status-holiday';
+            } else {
+                statusDisplay = '-';
+                statusClass = 'status-notmarked';
+            }
+            
+            const timeInfo = attendance?.firstInAt ? `<small style="font-size: 10px; color: #6b7280; margin-top: 2px;">IN: ${new Date(attendance.firstInAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}</small>` : '';
+            
+            cell.innerHTML = `
+                <div class="calendar-day-date">${day}</div>
+                ${timeInfo}
+                <div class="calendar-day-status ${statusClass}">${statusDisplay}</div>
+            `;
+            
+            // Add click handler for details
+            cell.style.cursor = 'pointer';
+            cell.addEventListener('click', () => {
+                if (attendance) {
+                    showAttendanceDetail(attendance, dateStr);
+                }
+            });
+        }
+        
+        grid.appendChild(cell);
+    }
+}
+
+function showAttendanceDetail(attendance, dateStr) {
+    const checkin = attendance.firstInAt ? new Date(attendance.firstInAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'}) : '-';
+    const checkout = attendance.lastOutAt ? new Date(attendance.lastOutAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'}) : '-';
+    
+    showAlert(`
+        <strong>Attendance Details - ${dateStr}</strong>
+        <div style="margin-top: 10px; text-align: left;">
+            <p><strong>Status:</strong> ${attendance.status || 'NOT_MARKED'}</p>
+            <p><strong>Check-in:</strong> ${checkin}</p>
+            <p><strong>Check-out:</strong> ${checkout}</p>
+            ${attendance.workMinutes ? `<p><strong>Work Hours:</strong> ${Math.floor(attendance.workMinutes / 60)}h ${attendance.workMinutes % 60}m</p>` : ''}
+        </div>
+    `, 'info');
+}
+
+function refreshCalendar() {
+    if (currentMonthStr) {
+        loadMonthlyAttendance(currentMonthStr);
     }
 }
 
@@ -165,6 +419,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Set default month to current month
     const today = new Date();
     const currentMonth = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0');
+    currentMonthStr = currentMonth;
     document.getElementById('monthPicker').value = currentMonth;
     
     // Update month display
@@ -173,46 +428,29 @@ document.addEventListener('DOMContentLoaded', function() {
     const [year, month] = currentMonth.split('-');
     document.getElementById('monthDisplay').textContent = monthNames[parseInt(month) - 1] + ' ' + year;
     
-    // Initialize FullCalendar
-    const calendarEl = document.getElementById('calendar');
-    currentCalendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
-        initialDate: currentMonth + '-01',
-        headerToolbar: {
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridMonth,listMonth'
-        },
-        events: [],
-        eventDisplay: 'block',
-        height: 'auto',
-        contentHeight: 'auto',
-        selectable: true,
-        editable: false,
-        eventClick: function(info) {
-            const details = info.event.extendedProps.details || 'No additional details';
-            alert(`Status: ${info.event.title}\nDate: ${info.event.startStr}\n${details}`);
-        },
-        dayCellDidMount: function(arg) {
-            arg.el.style.height = 'auto';
-            arg.el.style.minHeight = '100px';
-        }
-    });
-    currentCalendar.render();
-    
     // Load initial data
     loadMonthlyAttendance(currentMonth);
+    
+    // Auto-refresh attendance data every 5 seconds (real-time updates)
+    setInterval(() => {
+        if (currentMonthStr) {
+            loadMonthlyAttendance(currentMonthStr);
+        }
+    }, 5000);
     
     // Month picker change handler
     document.getElementById('monthPicker').addEventListener('change', function(e) {
         const selectedMonth = e.target.value;
+        currentMonthStr = selectedMonth;
         const [year, month] = selectedMonth.split('-');
         const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                            'July', 'August', 'September', 'October', 'November', 'December'];
         document.getElementById('monthDisplay').textContent = monthNames[parseInt(month) - 1] + ' ' + year;
         
-        currentCalendar.gotoDate(selectedMonth + '-01');
         loadMonthlyAttendance(selectedMonth);
     });
 });
 </script>
+
+<!-- Include Employee Dashboard Real-time Sync Script -->
+<script src="/assets/js/employee-dashboard.js"></script>

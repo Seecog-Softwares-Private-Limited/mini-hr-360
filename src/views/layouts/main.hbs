@@ -1400,6 +1400,193 @@
         #viewEmployeeModal .view-emp-modal-footer .btn-secondary:hover {
             background: rgba(15, 23, 42, 0.12);
         }
+
+        /* ========== Attendance Dashboard Enhancements ========== */
+        .kpi-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%);
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .kpi-card:hover {
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            transform: translateY(-2px);
+        }
+        .kpi-card .h2 {
+            font-weight: 800;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        /* Card header gradient */
+        .card-header.bg-gradient {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%) !important;
+            border-bottom: 2px solid rgba(0,0,0,0.05);
+        }
+
+        /* Table enhancements */
+        .table-responsive {
+            max-height: 65vh;
+            overflow-y: auto;
+        }
+
+        .table th {
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+            color: rgba(0,0,0,0.65);
+            background: linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.01) 100%);
+            border-bottom: 2px solid rgba(0,0,0,0.1);
+            padding: 12px 8px !important;
+            position: relative;
+        }
+
+        .table-hover tbody tr {
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: rgba(99, 102, 241, 0.04) !important;
+            border-left-color: #6366f1;
+        }
+
+        .table td {
+            padding: 14px 8px !important;
+            vertical-align: middle;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .table-danger {
+            background-color: rgba(220, 53, 69, 0.05) !important;
+        }
+        .table-danger:hover {
+            background-color: rgba(220, 53, 69, 0.08) !important;
+        }
+
+        .table-warning {
+            background-color: rgba(255, 193, 7, 0.05) !important;
+        }
+        .table-warning:hover {
+            background-color: rgba(255, 193, 7, 0.08) !important;
+        }
+
+        .table-info {
+            background-color: rgba(23, 162, 184, 0.05) !important;
+        }
+        .table-info:hover {
+            background-color: rgba(23, 162, 184, 0.08) !important;
+        }
+
+        /* Badge styles */
+        .badge {
+            font-weight: 700;
+            padding: 6px 12px;
+            font-size: 12px;
+            letter-spacing: 0.2px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Button group styling */
+        .btn-group-sm .btn {
+            padding: 6px 10px;
+            font-size: 12px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-outline-primary:hover {
+            transform: scale(1.1);
+        }
+
+        .btn-outline-warning:hover {
+            transform: scale(1.1);
+        }
+
+        .btn-outline-info:hover {
+            transform: scale(1.1);
+        }
+
+        /* Card shadow and styling */
+        .card {
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            transition: all 0.3s ease;
+        }
+
+        .card.shadow-sm {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important;
+        }
+
+        /* Table footer styling */
+        .card-footer {
+            border-top: 2px solid rgba(0,0,0,0.05);
+            border-radius: 0 0 12px 12px;
+        }
+
+        /* Search and filter inputs */
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 1px solid rgba(0,0,0,0.12);
+            padding: 8px 12px;
+            font-size: 13px;
+            transition: all 0.2s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.15);
+        }
+
+        /* Status badge animations */
+        .badge {
+            animation: fadeInScale 0.4s ease;
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Sticky header for table */
+        .table thead.sticky-top th {
+            position: relative;
+            background: linear-gradient(180deg, rgba(248, 249, 250, 0.95) 0%, rgba(248, 249, 250, 0.85) 100%) !important;
+            box-shadow: inset 0 -2px 0 rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+
+        /* Employee name styling */
+        .table td strong {
+            font-weight: 700;
+            color: rgba(0,0,0,0.85);
+        }
+
+        /* Time values styling */
+        .table td strong {
+            font-family: 'Courier New', monospace;
+            letter-spacing: 0.3px;
+        }
+
+        /* Loading state */
+        .table tbody tr td i.fa-spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="{{pageClass}}">

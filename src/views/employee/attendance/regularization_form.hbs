@@ -32,9 +32,9 @@
                                         <label class="form-label">Shift <span class="text-danger">*</span></label>
                                         <select id="shiftSelect" name="shift" class="form-select">
                                             <option value="">Select shift</option>
-                                            <option value="Morning">Morning (9 AM - 5 PM)</option>
-                                            <option value="Evening">Evening (2 PM - 10 PM)</option>
-                                            <option value="Night">Night (10 PM - 6 AM)</option>
+                                            {{#each shifts}}
+                                            <option value="{{this.id}}">{{this.name}} ({{this.startTime}} - {{this.endTime}})</option>
+                                            {{/each}}
                                         </select>
                                     </div>
                                     <div class="col-md-6">

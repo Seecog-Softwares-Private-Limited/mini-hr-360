@@ -12,16 +12,30 @@
             <!-- Alert Messages -->
             <div id="alertContainer"></div>
 
+            <!-- Attendance Lock Alert -->
+            <div id="lockAlert" style="display: none;">
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <i class="fa-solid fa-lock me-2"></i>
+                    <strong>Attendance Locked:</strong>
+                    <span id="lockMessage"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            </div>
+
             <!-- Today's Summary Cards -->
             <div class="row g-3 mb-4">
                 <div class="col-md-4 col-sm-6">
                     <div class="emp-card">
                         <div class="emp-card-body text-center">
-                            <div style="font-size: 32px; color: var(--emp-primary); margin-bottom: 8px;">
-                                <i class="fa-solid fa-check-circle"></i>
+                            <div id="statusCard" style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+                                <div id="statusBadge" style="width:86px;height:86px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#eef2ff,#ffffff);box-shadow:0 8px 18px rgba(2,6,23,0.06);">
+                                    <div id="statusIcon" style="width:66px;height:66px;border-radius:999px;display:flex;align-items:center;justify-content:center;background:#fff;box-shadow:inset 0 -6px 12px rgba(2,6,23,0.04);transition:transform .18s ease;">
+                                        <i id="statusIconInner" class="fa-solid fa-question" style="font-size:22px;color:#0f172a;"></i>
+                                    </div>
+                                </div>
+                                <div id="statusDisplay" style="font-size:22px;font-weight:800;color:#0f172a;letter-spacing:0.6px;">-</div>
+                                <div style="font-size:13px;color:#64748b;margin-top:2px;">Today's Status</div>
                             </div>
-                            <div id="statusDisplay" style="font-size: 24px; font-weight: 700; color: #1e293b;">-</div>
-                            <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Today's Status</div>
                         </div>
                     </div>
                 </div>
@@ -58,19 +72,37 @@
                     </h5>
                 </div>
                 <div class="emp-card-body">
-                    <div class="d-flex gap-2 flex-wrap">
-                        <button id="punchInBtn" class="btn emp-btn-primary" onclick="handlePunch('IN')">
-                            <i class="fa-solid fa-arrow-right-to-bracket me-1"></i> Punch In
-                        </button>
-                        <button id="punchOutBtn" class="btn emp-btn-secondary" onclick="handlePunch('OUT')" disabled>
-                            <i class="fa-solid fa-arrow-right-from-bracket me-1"></i> Punch Out
-                        </button>
-                        <button id="breakStartBtn" class="btn btn-outline-warning" onclick="handlePunch('BREAK_START')" disabled>
-                            <i class="fa-solid fa-pause me-1"></i> Break Start
-                        </button>
-                        <button id="breakEndBtn" class="btn btn-outline-warning" onclick="handlePunch('BREAK_END')" disabled>
-                            <i class="fa-solid fa-play me-1"></i> Break End
-                        </button>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button id="punchInBtn" class="btn emp-btn-primary" onclick="handlePunch('IN')">
+                                <i class="fa-solid fa-arrow-right-to-bracket me-1"></i> Punch In
+                            </button>
+                            <button id="punchOutBtn" class="btn emp-btn-secondary" onclick="handlePunch('OUT')" disabled>
+                                <i class="fa-solid fa-arrow-right-from-bracket me-1"></i> Punch Out
+                            </button>
+                            <button id="breakStartBtn" class="btn btn-outline-warning" onclick="handlePunch('BREAK_START')" disabled>
+                                <i class="fa-solid fa-pause me-1"></i> Break Start
+                            </button>
+                            <button id="breakEndBtn" class="btn btn-outline-warning" onclick="handlePunch('BREAK_END')" disabled>
+                                <i class="fa-solid fa-play me-1"></i> Break End
+                            </button>
+                        </div>
+
+                        <div id="currentShiftDisplay" style="min-width:260px; text-align:right;">
+                            <div style="display:inline-block;padding:10px 12px;border-radius:12px;background:#f1f5f9;border:1px solid rgba(2,6,23,0.04);box-shadow:0 2px 6px rgba(2,6,23,0.06);min-width:220px;transition:transform .12s ease;">
+                                <div style="display:flex;align-items:center;justify-content:flex-end;gap:12px;">
+                                    <div style="text-align:right;">
+                                        <div style="font-size:11px;color:#64748b;margin-bottom:4px;letter-spacing:0.2px;">Shift</div>
+                                        <div id="currentShiftName" style="font-size:15px;font-weight:700;color:#0f172a;">-</div>
+                                        <div id="currentShiftTime" style="font-size:12px;color:#64748b;margin-top:2px;">-</div>
+                                        <div id="localClock" style="font-size:12px;color:#475569;margin-top:6px;font-weight:600;"></div>
+                                    </div>
+                                    <div style="width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:#ffffff;border:1px solid rgba(2,6,23,0.03);color:#1f2937;">
+                                        <i id="currentShiftIcon" class="fa-solid fa-clock" style="font-size:16px;"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -194,19 +226,96 @@ async function loadAttendanceData() {
         if (data.success && data.summary) {
             const summary = data.summary;
             
-            // Update status cards
-            document.getElementById('statusDisplay').textContent = summary.status || 'Not Marked';
-            document.getElementById('checkInDisplay').textContent = summary.firstInAt ? formatTime(summary.firstInAt) : '-';
-            document.getElementById('locationDisplay').textContent = summary.location || '-';
+            // Handle attendance lock
+            const lockAlert = document.getElementById('lockAlert');
+            const lockMessage = document.getElementById('lockMessage');
+            if (data.isLocked) {
+                lockMessage.textContent = data.lockMessage || 'Attendance for this period is locked by admin. You cannot make punch entries.';
+                lockAlert.style.display = 'block';
+            } else {
+                lockAlert.style.display = 'none';
+            }
             
-            // Update button states based on punch history
+            // Update status cards with enhanced visuals
+            const statusDisplayVal = summary.status === 'NOT_MARKED' ? '-' : (summary.status || '-');
+            document.getElementById('statusDisplay').textContent = statusDisplayVal;
+
+            // Visual mapping
+            const statusIconInner = document.getElementById('statusIconInner');
+            const statusIcon = document.getElementById('statusIcon');
+            const statusBadge = document.getElementById('statusBadge');
+            const normalized = (summary.status || '').toUpperCase();
+            const mapping = {
+                PRESENT: { icon: 'fa-check', color: '#10b981', bg: ['#ecfdf5', '#ffffff'] },
+                LATE: { icon: 'fa-clock', color: '#f59e0b', bg: ['#fff7ed', '#ffffff'] },
+                ABSENT: { icon: 'fa-xmark', color: '#ef4444', bg: ['#fff1f2', '#ffffff'] },
+                HALF_DAY: { icon: 'fa-square-half-stroke', color: '#f97316', bg: ['#fffbeb', '#ffffff'] },
+                LEAVE: { icon: 'fa-umbrella-beach', color: '#6366f1', bg: ['#f5f3ff', '#ffffff'] },
+                HOLIDAY: { icon: 'fa-gift', color: '#06b6d4', bg: ['#ecfeff', '#ffffff'] },
+            };
+
+            const m = mapping[normalized] || { icon: 'fa-question', color: '#94a3b8', bg: ['#f1f5f9', '#ffffff'] };
+            statusIconInner.className = `fa-solid ${m.icon}`;
+            statusIconInner.style.color = m.color;
+            statusIcon.style.transform = 'scale(1)';
+            statusBadge.style.background = `linear-gradient(135deg, ${m.bg[0]}, ${m.bg[1]})`;
+            document.getElementById('checkInDisplay').textContent = summary.firstInAt ? formatTime(summary.firstInAt) : '-';
+            const locParts = [];
+            if (summary.locationName) locParts.push(summary.locationName);
+            else if (summary.location) locParts.push(summary.location);
+            if (summary.ip) locParts.push(`IP: ${summary.ip}`);
+            document.getElementById('locationDisplay').textContent = locParts.length ? locParts.join(' | ') : '-';
+            
+            // Update current shift display (if API returns shift)
+            try {
+                const shiftNameEl = document.getElementById('currentShiftName');
+                const shiftTimeEl = document.getElementById('currentShiftTime');
+                if (data.shift) {
+                    shiftNameEl.textContent = data.shift.name || '-';
+                    const st = data.shift.startTime || '-';
+                    const et = data.shift.endTime || '-';
+                    shiftTimeEl.textContent = st && et ? `${st} - ${et}` : '-';
+                } else {
+                    shiftNameEl.textContent = '-';
+                    shiftTimeEl.textContent = '-';
+                }
+            } catch (e) {
+                // ignore DOM update errors
+            }
+            
+            // Update button states based on punch history, lock status and shift window
             const hasCheckedIn = !!summary.firstInAt;
             const hasCheckedOut = !!summary.lastOutAt;
-            
-            document.getElementById('punchInBtn').disabled = hasCheckedIn;
-            document.getElementById('punchOutBtn').disabled = !hasCheckedIn || hasCheckedOut;
-            document.getElementById('breakStartBtn').disabled = !hasCheckedIn || hasCheckedOut;
-            document.getElementById('breakEndBtn').disabled = !hasCheckedIn || hasCheckedOut;
+            const isLocked = data.isLocked;
+
+            const punchInBtn = document.getElementById('punchInBtn');
+            // default for other buttons (no change in behavior)
+            document.getElementById('punchOutBtn').disabled = !hasCheckedIn || hasCheckedOut || isLocked;
+            document.getElementById('breakStartBtn').disabled = !hasCheckedIn || hasCheckedOut || isLocked;
+            document.getElementById('breakEndBtn').disabled = !hasCheckedIn || hasCheckedOut || isLocked;
+
+            // If shift info available, enable Punch In only within ±30 minutes of shift start
+            let allowPunchIn = false;
+            try {
+                if (data.shift && data.shift.startTime) {
+                    const start = (data.shift.startTime || '').split(':');
+                    const sh = Number(start[0] || 0);
+                    const sm = Number(start[1] || 0);
+                    const todayDate = summary.date || new Date().toISOString().split('T')[0];
+                    const shiftStart = new Date(todayDate + 'T' + String(sh).padStart(2,'0') + ':' + String(sm).padStart(2,'0') + ':00');
+                    const windowStart = new Date(shiftStart.getTime() - 30 * 60000);
+                    const windowEnd = new Date(shiftStart.getTime() + 30 * 60000);
+                    const now = new Date();
+                    allowPunchIn = (now >= windowStart && now <= windowEnd) && !hasCheckedIn && !isLocked;
+                } else {
+                    // no shift: fallback to original behavior
+                    allowPunchIn = !hasCheckedIn && !isLocked;
+                }
+            } catch (e) {
+                allowPunchIn = !hasCheckedIn && !isLocked;
+            }
+
+            punchInBtn.disabled = !allowPunchIn;
             
             // Update punch log table
             const tbody = document.getElementById('punchTableBody');
@@ -245,7 +354,21 @@ async function loadAttendanceData() {
 // Load data on page load and refresh periodically
 document.addEventListener('DOMContentLoaded', () => {
     loadAttendanceData();
-    // Refresh every 30 seconds
-    setInterval(loadAttendanceData, 30000);
+    // Refresh every 3 seconds for real-time updates
+    setInterval(loadAttendanceData, 3000);
+    // Start local clock updater
+    const clockEl = document.getElementById('localClock');
+    function updateLocalClock() {
+        try {
+            if (!clockEl) return;
+            const now = new Date();
+            clockEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        } catch (e) {}
+    }
+    updateLocalClock();
+    setInterval(updateLocalClock, 1000);
 });
 </script>
+
+<!-- Include Employee Dashboard Real-time Sync Script -->
+<script src="/assets/js/employee-dashboard.js"></script>

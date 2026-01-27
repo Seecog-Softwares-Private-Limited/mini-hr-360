@@ -17,33 +17,61 @@
 
 				<div class="card">
 					<div class="card-header d-flex justify-content-between align-items-center">
-						<span><i class="fa-solid fa-lock me-2"></i> Lock Attendance</span>
+						<span><i class="fa-solid fa-lock me-2"></i> Lock Attendance Period</span>
 					</div>
 					<div class="card-body">
-						<form method="POST" class="row g-3" onsubmit="return confirmLock()">
+						<form onsubmit="lockAttendance(event)" class="row g-3">
 							<div class="col-md-4">
-								<label class="form-label">Department</label>
-								<select name="department" class="form-select">
-									<option value="">All</option>
-									{{#each departments}}
-									<option value="{{this.id}}">{{this.name}}</option>
-									{{/each}}
-								</select>
-							</div>
-							<div class="col-md-4">
-								<label class="form-label">Date</label>
-								<input type="date" name="date" class="form-control" required>
+								<label class="form-label">Period (YYYY-MM)</label>
+								<input type="month" name="period" class="form-control" required>
 							</div>
 							<div class="col-md-4 d-flex align-items-end">
-								<button type="submit" class="btn btn-danger">
-									<i class="fa-solid fa-lock"></i> Lock Attendance
+								<button type="submit" class="btn btn-danger w-100">
+									<i class="fa-solid fa-lock"></i> Lock Period
 								</button>
 							</div>
 						</form>
 						<div class="alert alert-warning mt-4" role="alert">
 							<i class="fa-solid fa-triangle-exclamation me-2"></i>
-							Once locked, attendance for the selected date and department cannot be modified.
+							<strong>Warning:</strong> Once locked, attendance for the selected period cannot be modified. Make sure all corrections are completed before locking.
 						</div>
+					</div>
+				</div>
+
+				<div class="card mt-4">
+					<div class="card-header">
+						<span><i class="fa-solid fa-unlock me-2"></i> Unlock Period</span>
+					</div>
+					<div class="card-body">
+						<p class="text-muted mb-3">Use this to unlock a previously locked attendance period. This action requires a reason and will be logged.</p>
+						<button class="btn btn-warning" onclick="unlockAttendance()">
+							<i class="fa-solid fa-unlock"></i> Unlock Period
+						</button>
+					</div>
+				</div>
+
+				<div class="card mt-4">
+					<div class="card-header d-flex justify-content-between align-items-center">
+						<span><i class="fa-solid fa-list me-2"></i> Locked Periods</span>
+						<button class="btn btn-sm btn-outline-primary" onclick="loadLockedPeriods()">
+							<i class="fa-solid fa-rotate-right"></i> Refresh
+						</button>
+					</div>
+					<div class="card-body">
+						<table class="table table-hover">
+							<thead class="table-light">
+								<tr>
+									<th>#</th>
+									<th>Period</th>
+									<th>Locked By</th>
+									<th>Locked At</th>
+									<th>Actions</th>
+								</tr>
+							</thead>
+							<tbody id="lockedPeriodsTableBody">
+								<tr><td colspan="5" class="text-center text-muted">Loading...</td></tr>
+							</tbody>
+						</table>
 					</div>
 				</div>
 

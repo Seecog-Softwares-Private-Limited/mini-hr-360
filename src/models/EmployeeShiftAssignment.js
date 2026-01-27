@@ -1,4 +1,3 @@
-
 import { DataTypes } from 'sequelize';
 import { sequelize } from '../db/index.js';
 
@@ -34,7 +33,7 @@ const EmployeeShiftAssignment = sequelize.define(
                 model: 'attendance_policies',
                 key: 'id',
             },
-            onDelete: 'SET NULL',
+            
         },
         shiftId: {
             type: DataTypes.INTEGER,
@@ -43,7 +42,7 @@ const EmployeeShiftAssignment = sequelize.define(
                 model: 'shifts',
                 key: 'id',
             },
-            onDelete: 'SET NULL',
+            
         },
         effectiveFrom: {
             type: DataTypes.DATEONLY,
@@ -56,18 +55,32 @@ const EmployeeShiftAssignment = sequelize.define(
         // weekoffPatternJson: e.g. { "Monday": false, "Saturday": "alternate" } or simply array of days [0, 6]
         weekoffPatternJson: {
             type: DataTypes.JSON,
-            allowNull: true,
+            allowNull: false,
             defaultValue: {},
         },
-        isActive: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: true,
-        },
+       
+    
+    status: {
+      type: DataTypes.ENUM('ACTIVE', 'INACTIVE'),
+      allowNull: false,
+      defaultValue: 'ACTIVE',
     },
-    {
-        tableName: 'employee_shift_assignments',
-        timestamps: true,
-    }
+  },
+  {
+    tableName: 'employee_shift_assignments',
+    timestamps: true,
+    paranoid: true,
+   indexes: [
+  {  fields: ['businessId'] },
+  {  fields: ['employeeId'] },
+  {  fields: ['policyId'] },
+  {  fields: ['shiftId'] },
+
+  // ✅ this is the one causing the crash (too long auto-name)
+  { name: 'idx_esa_emp_eff', fields: ['employeeId', 'effectiveFrom', 'effectiveTo'] },
+],
+
+  }
 );
 
 export default EmployeeShiftAssignment;

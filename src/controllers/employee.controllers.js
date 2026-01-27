@@ -11,6 +11,7 @@ import { Business } from '../models/Business.js';
 import BusinessAddress from '../models/BusinessAddress.js';
 import Country from '../models/Country.js';
 import State from '../models/State.js';
+import { getEffectiveAssignment } from '../services/attendance.service.js';
 import { generatePassword } from '../utils/passwordGenerator.js';
 import { sendDocumentEmail } from '../utils/emailService.js';
 
@@ -282,6 +283,28 @@ export const renderEmployeesPage = async (req, res, next) => {
         const statesPlain = states.map((s) => s.get({ plain: true }));
 
         console.log('Employees fetched for page');
+
+        // Attach current effective shift (if any) for each employee (for today's date)
+        const todayStr = new Date().toISOString().split('T')[0];
+        await Promise.all(employeesPlain.map(async (emp) => {
+            try {
+                emp.initial = emp.empName ? String(emp.empName).charAt(0).toUpperCase() : '';
+                const assignment = await getEffectiveAssignment({ businessId: emp.businessId, employeeId: emp.id, date: todayStr });
+                if (assignment && assignment.shift) {
+                    emp.shiftName = assignment.shift.name;
+                    emp.shiftStartTime = assignment.shift.startTime;
+                    emp.shiftEndTime = assignment.shift.endTime;
+                } else {
+                    emp.shiftName = null;
+                    emp.shiftStartTime = null;
+                    emp.shiftEndTime = null;
+                }
+            } catch (e) {
+                emp.shiftName = null;
+                emp.shiftStartTime = null;
+                emp.shiftEndTime = null;
+            }
+        }));
 
         const user = req.user
             ? { firstName: req.user.firstName, lastName: req.user.lastName }

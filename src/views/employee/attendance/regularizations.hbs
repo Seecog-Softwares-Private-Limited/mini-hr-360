@@ -79,10 +79,11 @@
                                 <th>Shift</th>
                                 <th>Reason</th>
                                 <th class="text-center">Status</th>
+                                <th style="width: 50px; text-align: center;">Action</th>
                             </tr>
                         </thead>
                         <tbody id="regularizationTableBody">
-                            <tr><td colspan="4" class="text-center text-muted">Loading regularization requests...</td></tr>
+                            <tr><td colspan="5" class="text-center text-muted">Loading regularization requests...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -92,6 +93,8 @@
 </div>
 
 <script>
+let allRegularizations = [];
+
 function showAlert(message, type = 'info') {
     const alertContainer = document.getElementById('alertContainer');
     const alert = document.createElement('div');
@@ -125,6 +128,45 @@ function formatDate(dateString) {
     }
 }
 
+function viewRegularizationDetails(id) {
+    const reg = allRegularizations.find(r => r.id === id);
+    
+    if (!reg) {
+        showAlert('Regularization record not found', 'danger');
+        return;
+    }
+    
+    let details = `
+        <div style="text-align: left; max-height: 400px; overflow-y: auto;">
+            <p><strong>Date:</strong> ${formatDate(reg.date || reg.attendanceDate)}</p>
+            <p><strong>Shift:</strong> ${reg.shift ? `<span style="display:inline-block;padding:6px 10px;border-radius:999px;background:#eef2ff;color:#075985;font-weight:600;">${reg.shift}</span>` : '-'}</p>
+            <p><strong>Reason:</strong> ${reg.reason || reg.type || '-'}</p>
+            <p><strong>Status:</strong> ${getStatusBadge(reg.status)}</p>
+    `;
+    
+    if (reg.status && reg.status.toLowerCase() === 'rejected' && reg.message) {
+        details += `<p><strong>Rejection Reason:</strong></p>
+            <div style="background-color: #fee2e2; border-left: 3px solid #ef4444; padding: 10px; border-radius: 4px; margin: 10px 0;">
+                ${reg.message}
+            </div>`;
+    }
+    
+    details += `</div>`;
+    
+    // Create a modal-like alert with the details
+    const alertContainer = document.getElementById('alertContainer');
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-info alert-dismissible fade show';
+    alert.role = 'alert';
+    alert.innerHTML = `
+        <strong>Regularization Details:</strong>
+        ${details}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    alertContainer.appendChild(alert);
+    setTimeout(() => alert.remove(), 10000);
+}
+
 async function loadRegularizations() {
     try {
         const response = await fetch('/employee/attendance/api/regularizations', {
@@ -139,6 +181,7 @@ async function loadRegularizations() {
         const data = await response.json();
         if (data.success && Array.isArray(data.data)) {
             const requests = data.data;
+            allRegularizations = requests;
             
             // Calculate stats
             const pending = requests.filter(r => r.status?.toLowerCase() === 'pending').length;
@@ -157,17 +200,25 @@ async function loadRegularizations() {
             
             if (requests.length === 0) {
                 const row = document.createElement('tr');
-                row.innerHTML = '<td colspan="4" class="text-center text-muted">No regularization requests yet. <a href="/employee/attendance/regularization_form">Create one</a></td>';
+                row.innerHTML = '<td colspan="5" class="text-center text-muted">No regularization requests yet. <a href="/employee/attendance/regularization_form">Create one</a></td>';
                 tbody.appendChild(row);
             } else {
                 requests.forEach(req => {
                     const row = document.createElement('tr');
                     const dateVal = formatDate(req.date || req.attendanceDate);
+                    const hasMessage = req.status?.toLowerCase() === 'rejected' && req.message;
+                    const shiftName = req.shift || '-';
+                    const shiftHtml = req.shift ? `<span style="display:inline-block;padding:6px 10px;border-radius:999px;background:#eef2ff;color:#075985;font-weight:600;">${shiftName}</span>` : '-';
                     row.innerHTML = `
                         <td>${dateVal}</td>
-                        <td>${req.shift || '-'}</td>
+                        <td>${shiftHtml}</td>
                         <td>${req.reason || req.type || '-'}</td>
                         <td class="text-center">${getStatusBadge(req.status)}</td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-link" onclick="viewRegularizationDetails(${req.id})" title="View details">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                        </td>
                     `;
                     tbody.appendChild(row);
                 });
@@ -179,13 +230,16 @@ async function loadRegularizations() {
         console.error('Error loading regularizations:', error);
         showAlert('Error loading regularizations: ' + error.message, 'danger');
         const tbody = document.getElementById('regularizationTableBody');
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Failed to load regularization requests</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Failed to load regularization requests</td></tr>';
     }
 }
 
-// Load data on page load and refresh every 30 seconds
+// Load data on page load and refresh every 6 seconds for real-time sync
 document.addEventListener('DOMContentLoaded', () => {
     loadRegularizations();
-    setInterval(loadRegularizations, 30000);
+    setInterval(loadRegularizations, 6000);
 });
 </script>
+
+<!-- Include Employee Dashboard Real-time Sync Script -->
+<script src="/assets/js/employee-dashboard.js"></script>

@@ -1,4 +1,3 @@
-
 import { DataTypes } from 'sequelize';
 import { sequelize } from '../db/index.js';
 
@@ -36,20 +35,19 @@ const Shift = sequelize.define(
             allowNull: true,
             defaultValue: {},
         },
-        lateGraceMinutes: {
-            type: DataTypes.INTEGER,
-            allowNull: true,
-            defaultValue: 0,
-        },
-        isActive: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: true,
-        },
+         
+    status: {
+      type: DataTypes.ENUM('ACTIVE', 'INACTIVE'),
+      allowNull: false,
+      defaultValue: 'ACTIVE',
     },
-    {
-        tableName: 'shifts',
-        timestamps: true,
-    }
+  },
+  {
+    tableName: 'shifts',
+    timestamps: true,
+    paranoid: true,
+    indexes: [{ fields: ['businessId'] }],
+  }
 );
 
 export default Shift;
