@@ -54,8 +54,16 @@ const {
   AttendanceDailySummary,
   AttendanceRegularization,
   AttendanceLock,
+   PayrollRun,
+  PayrollRunItem,
+  Payslip,
+  SalaryStructure,
+  EmployeeSalaryAssignment,
+  PayrollSetting
   
 } = await import('../src/models/index.js');
+
+
 
 /**
  * Main sync function
@@ -103,7 +111,14 @@ async function syncDatabase() {
 
 { model: AttendanceRegularization, name: 'AttendanceRegularization' },
 
-{ model: AttendanceLock, name: 'AttendanceLock' }
+{ model: AttendanceLock, name: 'AttendanceLock' },
+
+ { model: SalaryStructure, name: 'SalaryStructure' },
+      { model: EmployeeSalaryAssignment, name: 'EmployeeSalaryAssignment' },
+      { model: PayrollRun, name: 'PayrollRun' },
+      { model: PayrollRunItem, name: 'PayrollRunItem' },
+      { model: Payslip, name: 'Payslip' },
+      { model: PayrollSetting, name: 'PayrollSetting'}
 
     ];
     

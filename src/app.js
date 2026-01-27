@@ -116,6 +116,7 @@ import { employeePortalRouter } from './routes/employeePortal.routes.js';
 import { adminLeaveRouter } from './routes/adminLeave.routes.js';
 import { adminAttendanceRouter } from './routes/admin.attendance.routes.js';
 import { billingRouter } from './routes/billing.routes.js';
+import payrollRoutes from './routes/admin.payroll.routes.js';
 
 // ---------- Frontend pages ----------
 app.get('/', (req, res) => res.redirect('/login'));
@@ -214,6 +215,8 @@ app.use('/api/v1/designations', designationsRoutes);
 
 app.use('/api/leave-types', leaveTypesRoutes);
 app.use('/api/leave-requests', leaveRequestsRoutes);
+app.use('/api/admin/payroll', payrollRoutes);
+
 
 // HR & Docs
 app.use(employeeRoutes);

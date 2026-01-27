@@ -1,3 +1,6 @@
+import { DataTypes } from "sequelize";
+import { sequelize } from "../db/index.js";
+
 // src/models/index.js
 import { User } from './User.js';
 import { Business } from './Business.js';
@@ -28,6 +31,15 @@ import Shift from './Shift.js';
 import EmployeeEducation from './EmployeeEducation.js';
 import EmployeeExperience from './EmployeeExperience.js';
 import EmployeeDocument from './EmployeeDocument.js';
+
+import PayrollRun from "./payroll.PayrollRun.js";
+import PayrollRunItem from "./PayrollRunItem.js";
+import Payslip from "./payroll.Payslip.js";
+
+import SalaryStructure from "./payroll.SalaryStructure.js";
+import EmployeeSalaryAssignment from "./payroll.EmployeeSalaryAssignment.js";
+import PayrollSetting from "./payrollSetting.js";
+
 
 /**
  * IMPORTANT:
@@ -143,6 +155,20 @@ LeaveApproval.belongsTo(User, { foreignKey: 'approverId', as: 'approver' });
 Business.hasMany(Employee, { foreignKey: 'businessId', as: 'employees' });
 Employee.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
 
+/* ✅ PayrollSetting ⇄ Business (IMPORTANT) */
+Business.hasOne(PayrollSetting, {
+  foreignKey: 'businessId',
+  as: 'payrollSetting',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE',
+});
+PayrollSetting.belongsTo(Business, {
+  foreignKey: 'businessId',
+  as: 'business',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE',
+});
+
 Employee.hasMany(EmployeeShiftAssignment, {
   foreignKey: 'employeeId',
   as: 'shiftAssignments',
@@ -191,6 +217,28 @@ AttendanceDailySummary.belongsTo(Employee, {
   foreignKey: 'employeeId',
   as: 'employee',
 });
+
+/* admin payroll */
+PayrollRun.hasMany(PayrollRunItem, { foreignKey: 'payrollRunId' });
+PayrollRunItem.belongsTo(PayrollRun, { foreignKey: "payrollRunId" });
+
+PayrollRun.hasMany(Payslip, { foreignKey: 'payrollRunId' });
+
+
+
+
+SalaryStructure.hasMany(EmployeeSalaryAssignment, {
+  foreignKey: 'salaryStructureId',
+  as: 'employeeSalaryAssignments',
+});
+
+EmployeeSalaryAssignment.belongsTo(SalaryStructure, {
+  foreignKey: 'salaryStructureId',
+  as: 'salaryStructure',
+});
+
+
+
 
 
 
@@ -269,6 +317,12 @@ export {
   AttendanceRegularization,
   EmployeeShiftAssignment,
   Holiday,
-  Shift
+  Shift,
+  PayrollRun,
+  PayrollRunItem,
+  Payslip,
+  SalaryStructure,
+  EmployeeSalaryAssignment,
+  PayrollSetting
 
 };

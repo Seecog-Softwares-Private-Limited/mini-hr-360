@@ -26,7 +26,14 @@ const mailTransporter = nodemailer.createTransport({
         pass: process.env.SMTP_PASS,
     },
 });
-console.log('Mailer configured:', mailTransporter.options);
+// console.log('Mailer configured:', mailTransporter.options);
+console.log('[Mailer] configured', {
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT || 587),
+  user: process.env.SMTP_USER,
+  secure: process.env.SMTP_SECURE === 'true',
+});
+
 
 /**
  * Send a simple notification email that a document has been generated.
@@ -40,7 +47,7 @@ async function sendSimpleDocumentEmail({ to, cc, subject, html }) {
 
     try {
         const info = await mailTransporter.sendMail({
-            from: process.env.MAIL_FROM || process.env.SMTP_USER,
+            from: process.env.SMTP_FROM  || process.env.SMTP_USER,
             to,
             cc,
             subject,

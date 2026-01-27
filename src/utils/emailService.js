@@ -34,7 +34,7 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-console.log('transporter', transporter.options);
+console.log('[EmailService] transporter ready');
 
 // Optional: verify connection at startup
 transporter
