@@ -1,13 +1,42 @@
-// index.js — safety shim for platforms that try `node index.js`
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import dotenv from 'dotenv';
+import express from 'express';
+import { sequelize } from './db/index.js'; // adjust path if needed
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-// load env from property.env at repo root (if present)
-dotenv.config({ path: path.join(__dirname, 'property.env') });
+// middlewares
+app.use(express.json());
 
-// hand off to real server
-import('./src/index.js');
+// health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
+// 🔐 SAFE STARTUP WRAPPER
+(async function startServer() {
+  try {
+    console.log('⏳ Connecting to database...');
+
+    await sequelize.authenticate();
+    console.log('✅ Database authenticated');
+
+    await sequelize.sync(); // or { alter: true } / { force: false }
+    console.log('✅ Database synced');
+
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+    });
+
+  } catch (err) {
+    console.error('❌ Startup failed');
+    console.error('Reason:', err.message);
+
+    // Optional: log full error in dev
+    if (process.env.NODE_ENV !== 'production') {
+      console.error(err);
+    }
+
+    // 🔴 IMPORTANT: clean exit (prevents nodemon crash loop)
+    process.exit(1);
+  }
+})();
