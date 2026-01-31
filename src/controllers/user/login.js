@@ -1,7 +1,11 @@
 import { User } from "../../models/User.js";
+import { OTP } from "../../models/OTP.js";
 import { ApiResponse } from "../../utils/ApiResponse.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { buildTokenPair, hashToken } from "../../utils/token.util.js";
+import { sendDocumentEmail } from "../../utils/emailService.js";
+import bcrypt from 'bcrypt';
+import { sendSMS } from "../../../smsService.js";
 
 export const loginUser = asyncHandler(async (req, res) => {
     try {
@@ -17,39 +21,46 @@ export const loginUser = asyncHandler(async (req, res) => {
             return res.status(401).json({ message: "Invalid email or password" });
         }
 
+        // MFA Step: Generate OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const hashedOtp = await bcrypt.hash(otp, 10);
+        const expiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+
+        // Store OTP
+        await OTP.create({
+            identifier: email,
+            otp: hashedOtp,
+            expiresAt: expiry,
+            type: 'login'
+        });
+
+        // Send OTP via Email
+        await sendDocumentEmail({
+            to: email,
+            subject: "Your Login OTP",
+            html: `<p>Your login OTP is <strong>${otp}</strong>. It expires in 5 minutes.</p>`
+        });
+
+        // Send OTP via SMS if phone exists
+        if (user.phoneNo) {
+            try {
+                await sendSMS(
+                    user.phoneNo,
+                    `Your OTP is ${otp}. It expires in 5 minutes.`
+                );
+            } catch (smsError) {
+                console.error("Failed to send SMS OTP:", smsError);
+            }
+        }
+
+        return res.status(200).json(new ApiResponse(200, { mfaRequired: true, identifier: email }, "OTP sent to your email and phone"));
+
+        /* Original logic removed for MFA flow
         const { accessToken, refreshToken, accessExp, refreshExp } = buildTokenPair(
             user.id
         );
-
-        user.refreshTokens = hashToken(refreshToken);
-        user.refreshTokenExpiresAt = refreshExp ? new Date(refreshExp * 1000) : null;
-        await user.save();
-
-        // Calculate maxAge in seconds (refresh token expires in 7d by default)
-        // Use refresh token expiry for cookie persistence, fallback to 7 days
-        // refreshExp is in seconds since epoch, convert to remaining seconds from now
-        let maxAgeSeconds;
-        if (refreshExp) {
-            const remainingMs = (refreshExp * 1000) - Date.now();
-            maxAgeSeconds = Math.max(0, Math.floor(remainingMs / 1000));
-        } else {
-            // Fallback: 7 days = 7 * 24 * 60 * 60 seconds
-            maxAgeSeconds = 7 * 24 * 60 * 60;
-        }
-
-        const options = {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-            maxAge: maxAgeSeconds, // Persistent cookie that survives browser close
-            path: "/" // Ensure cookie is available for all paths
-        }
-
-        return res
-            .status(200)
-            .cookie("accessToken", accessToken, options)
-            .cookie("refreshToken", refreshToken, options)
-            .json(new ApiResponse(200, { tokens: { accessToken, refreshToken }, user }, "Login Successful"))
+        ...
+        */
 
     } catch (err) {
         res.status(500).json({ message: "Server error", error: err.message });

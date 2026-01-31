@@ -17,14 +17,16 @@
                         <label for="firstName" class="form-label">First Name</label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fa-solid fa-user"></i></span>
-                            <input type="text" class="form-control" id="firstName" name="firstName" placeholder="Enter first name" required>
+                            <input type="text" class="form-control" id="firstName" name="firstName"
+                                placeholder="Enter first name" required>
                         </div>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="lastName" class="form-label">Last Name</label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fa-solid fa-user"></i></span>
-                            <input type="text" class="form-control" id="lastName" name="lastName" placeholder="Enter last name" required>
+                            <input type="text" class="form-control" id="lastName" name="lastName"
+                                placeholder="Enter last name" required>
                         </div>
                     </div>
                 </div>
@@ -34,7 +36,8 @@
                     <div class="input-group">
                         <span class="input-group-text"><i class="fa-solid fa-phone"></i></span>
                         <span class="input-group-text">+91</span>
-                        <input type="tel" class="form-control" id="phoneNo" name="phoneNo" placeholder="9999999999" maxlength="10" pattern="[0-9]{10}" required>
+                        <input type="tel" class="form-control" id="phoneNo" name="phoneNo" placeholder="9999999999"
+                            maxlength="10" pattern="[0-9]{10}" required>
                     </div>
                 </div>
 
@@ -42,7 +45,8 @@
                     <label for="email" class="form-label">Email Address</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="fa-solid fa-envelope"></i></span>
-                        <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
+                        <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email"
+                            required>
                     </div>
                     <div class="d-flex align-items-center gap-2 mt-2">
                         <small id="emailChecking" class="text-muted d-none">
@@ -61,7 +65,8 @@
                     <label for="password" class="form-label">Password</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
-                        <input type="password" class="form-control" id="password" name="password" placeholder="Create a strong password" required>
+                        <input type="password" class="form-control" id="password" name="password"
+                            placeholder="Create a strong password" required>
                     </div>
                     <div class="pw-row">
                         <div class="pw-meter" aria-hidden="true"><span id="pwMeter"></span></div>
@@ -74,7 +79,8 @@
                     <label for="confirmPassword" class="form-label">Re-Type Password</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
-                        <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" placeholder="Re-enter your password" required>
+                        <input type="password" class="form-control" id="confirmPassword" name="confirmPassword"
+                            placeholder="Re-enter your password" required>
                     </div>
                     <div class="pw-row">
                         <div class="pw-meter" aria-hidden="true"><span id="cpwMeter"></span></div>
@@ -91,6 +97,36 @@
                     </span>
                 </button>
             </form>
+
+            <!-- OTP Form (Initially Hidden) -->
+            <form id="otpForm" class="auth-form d-none">
+                <div class="text-center mb-4">
+                    <i class="fa-solid fa-shield-halved fa-3x text-primary mb-3"></i>
+                    <h5 class="fw-bold">Two-Step Verification</h5>
+                    <p class="text-muted small">Enter the 6-digit code sent to your email and phone to complete
+                        registration.</p>
+                </div>
+
+                <div class="mb-4">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fa-solid fa-key"></i></span>
+                        <input type="text" class="form-control form-control-lg text-center fw-bold letter-spacing-2"
+                            id="otp" name="otp" placeholder="0 0 0 0 0 0" maxlength="6" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn auth-primary w-100 mb-3" id="verifyBtn">
+                    <span id="verifyText">Verify & Register</span>
+                    <span id="verifyLoadingText" class="d-none">
+                        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        Verifying...
+                    </span>
+                </button>
+
+                <button type="button" class="btn btn-link w-100 text-decoration-none" id="backToRegister">
+                    <i class="fa-solid fa-arrow-left me-2"></i>Back to Registration
+                </button>
+            </form>
         </div>
         <div class="auth-footer">
             <div>Already have an account? <a href="/login">Log in</a></div>
@@ -99,6 +135,7 @@
 </div>
 
 <script>
+    let mfaIdentifier = '';
     // Show alert helper
     function showAlert(message, type) {
         const alertContainer = document.getElementById('alertContainer');
@@ -179,29 +216,25 @@
                 skipAuth: true
             });
 
+            // Handle MFA required
+            if (data.success && data.data && data.data.mfaRequired) {
+                mfaIdentifier = data.data.identifier;
+                document.getElementById('registerForm').classList.add('d-none');
+                document.getElementById('otpForm').classList.remove('d-none');
+                showAlert('OTP has been sent to your email and phone.', 'success');
+                return;
+            }
+
             // Determine success based on common patterns (adjust if needed)
             const isSuccess =
                 data &&
                 (data.success === true ||
-                 data.status === 'success' ||
-                 data.statusCode === 200 ||
-                 data.statusCode === 201);
+                    data.status === 'success' ||
+                    data.statusCode === 200 ||
+                    data.statusCode === 201);
 
             if (isSuccess) {
-                // Store user data if present
-                if (data.data && data.data.user) {
-                    localStorage.setItem('user', JSON.stringify(data.data.user));
-                }
-                if (data.data && data.data.tokens && data.data.tokens.accessToken) {
-                    localStorage.setItem('accessToken', data.data.tokens.accessToken);
-                }
-
-                // Show success and redirect to login
-                showAlert('Registration successful! Redirecting to login...', 'success');
-
-                setTimeout(() => {
-                    window.location.replace('/login');
-                }, 1500); // small delay so user can see the alert
+                handleSuccess(data.data?.user, data.data?.tokens);
             } else {
                 showAlert(data?.message || 'Registration failed', 'danger');
             }
@@ -215,6 +248,61 @@
             loadingText.classList.add('d-none');
         }
     });
+
+    document.getElementById('otpForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const otp = document.getElementById('otp').value;
+        const verifyBtn = document.getElementById('verifyBtn');
+        const verifyText = document.getElementById('verifyText');
+        const verifyLoadingText = document.getElementById('verifyLoadingText');
+        const alertContainer = document.getElementById('alertContainer');
+
+        alertContainer.innerHTML = '';
+        verifyBtn.disabled = true;
+        verifyText.classList.add('d-none');
+        verifyLoadingText.classList.remove('d-none');
+
+        try {
+            const data = await apiCall('/users/verify-otp', {
+                method: 'POST',
+                body: JSON.stringify({
+                    identifier: mfaIdentifier,
+                    otp,
+                    type: 'register'
+                }),
+                skipAuth: true
+            });
+
+            if (data.success && data.data && data.data.tokens) {
+                handleSuccess(data.data.user, data.data.tokens);
+            } else {
+                showAlert(data.message || 'Verification failed', 'danger');
+            }
+        } catch (error) {
+            console.error('OTP verification error:', error);
+            showAlert('Network error. Please try again.', 'danger');
+        } finally {
+            verifyBtn.disabled = false;
+            verifyText.classList.remove('d-none');
+            verifyLoadingText.classList.add('d-none');
+        }
+    });
+
+    document.getElementById('backToRegister').addEventListener('click', () => {
+        document.getElementById('otpForm').classList.add('d-none');
+        document.getElementById('registerForm').classList.remove('d-none');
+    });
+
+    function handleSuccess(user, tokens) {
+        if (user) localStorage.setItem('user', JSON.stringify(user));
+        if (tokens && tokens.accessToken) localStorage.setItem('accessToken', tokens.accessToken);
+
+        showAlert('Registration successful! Redirecting to dashboard...', 'success');
+        setTimeout(() => {
+            window.location.replace('/dashboard');
+        }, 1500);
+    }
 
     // ---------- Real-time email uniqueness check ----------
     const emailInput = document.getElementById('email');
@@ -519,7 +607,7 @@
 
     // Check if user is already authenticated via cookies and auto-redirect to dashboard
     // This allows logged-in users to be automatically redirected when opening register page in new tab
-    document.addEventListener('DOMContentLoaded', async function() {
+    document.addEventListener('DOMContentLoaded', async function () {
         try {
             // Use the business list endpoint - works even if user has no businesses yet
             // It will return 200 with empty array if authenticated but no businesses

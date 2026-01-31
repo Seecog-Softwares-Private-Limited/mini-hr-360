@@ -1,9 +1,12 @@
-// src/controllers/user/register.js
 import { asyncHandler } from "../../utils/asyncHandler.js"
 import { ApiError } from "../../utils/ApiError.js"
 import { ApiResponse } from "../../utils/ApiResponse.js"
 import { User } from '../../models/User.js';
+import { OTP } from "../../models/OTP.js";
 import { buildTokenPair, hashToken } from '../../utils/token.util.js';
+import { sendDocumentEmail } from "../../utils/emailService.js";
+import bcrypt from 'bcrypt';
+import { sendSMS } from "../../../smsService.js";
 
 export default async function register(req, res) {
     try {
@@ -22,6 +25,46 @@ export default async function register(req, res) {
             return res.status(409).json(new ApiResponse(409, null, 'User already exists'));
         }
 
+        // MFA Step: Generate OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const hashedOtp = await bcrypt.hash(otp, 10);
+        const expiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+
+        // Store Registration data + OTP in metadata
+        await OTP.create({
+            identifier: normalizedEmail,
+            otp: hashedOtp,
+            expiresAt: expiry,
+            type: 'register',
+            metadata: JSON.stringify({
+                firstName,
+                lastName,
+                phoneNo: '+91' + phoneNo.replace('+91', ''),
+                email: normalizedEmail,
+                password // User.js will hash it on creation
+            })
+        });
+
+        // Send OTP via Email
+        await sendDocumentEmail({
+            to: normalizedEmail,
+            subject: "Your Registration OTP",
+            html: `<p>Thank you for registering. Your OTP is <strong>${otp}</strong>. It expires in 5 minutes.</p>`
+        });
+
+        // Send OTP via SMS
+        try {
+            await sendSMS(
+                phoneNo.startsWith('+91') ? phoneNo : '+91' + phoneNo,
+                `Your registration OTP is ${otp}. It expires in 5 minutes.`
+            );
+        } catch (smsError) {
+            console.error("Failed to send SMS OTP:", smsError);
+        }
+
+        return res.status(200).json(new ApiResponse(200, { mfaRequired: true, identifier: normalizedEmail }, "OTP sent to your email and phone"));
+
+        /* Original logic removed for MFA flow
         const user = await User.create({
             avatarUrl: null,
             firstName, 
@@ -30,49 +73,8 @@ export default async function register(req, res) {
             email: normalizedEmail,
             password,
         });
-
-        const createdUser = await User.findByPk(user.id, {
-            attributes: { exclude: ['password'] }
-        });
-        if (!createdUser) {
-            throw new ApiError(500, "Something went wrong while creating user");
-        }
-
-        // build tokens correctly
-        const { accessToken, refreshToken, accessExp, refreshExp } = buildTokenPair(createdUser.id);
-
-        // persist hashed refresh + expiry on user doc
-        createdUser.refreshTokens = hashToken(refreshToken);
-        createdUser.refreshTokenExpiresAt = refreshExp ? new Date(refreshExp * 1000) : null;
-        await createdUser.save();
-
-        // Calculate maxAge in seconds (refresh token expires in 7d by default)
-        // Use refresh token expiry for cookie persistence, fallback to 7 days
-        // refreshExp is in seconds since epoch, convert to remaining seconds from now
-        let maxAgeSeconds;
-        if (refreshExp) {
-            const remainingMs = (refreshExp * 1000) - Date.now();
-            maxAgeSeconds = Math.max(0, Math.floor(remainingMs / 1000));
-        } else {
-            // Fallback: 7 days = 7 * 24 * 60 * 60 seconds
-            maxAgeSeconds = 7 * 24 * 60 * 60;
-        }
-
-        const options = {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-            maxAge: maxAgeSeconds, // Persistent cookie that survives browser close
-            path: "/" // Ensure cookie is available for all paths
-        }
-
-        return res
-            .status(200)
-            .cookie("accessToken", accessToken, options)
-            .cookie("refreshToken", refreshToken, options)
-            .json(
-                new ApiResponse(200, { tokens: { accessToken, refreshToken }, user: createdUser }, "User registered Successfully")
-            )
+        ...
+        */
     } catch (e) {
         console.error('register error', e);
         // Race condition safety: if two requests register same email concurrently,

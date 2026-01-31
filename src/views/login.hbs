@@ -62,6 +62,35 @@
           <a href="#" onclick="return false;" title="X (UI only)"><i class="fa-brands fa-x-twitter"></i></a>
         </div>
       </form>
+
+      <!-- OTP Form (Initially Hidden) -->
+      <form id="otpForm" class="auth-form d-none">
+        <div class="text-center mb-4">
+          <i class="fa-solid fa-shield-halved fa-3x text-primary mb-3"></i>
+          <h5 class="fw-bold">Two-Step Verification</h5>
+          <p class="text-muted small">Enter the 6-digit code sent to your email and phone.</p>
+        </div>
+        
+        <div class="mb-4">
+          <div class="input-group">
+            <span class="input-group-text"><i class="fa-solid fa-key"></i></span>
+            <input type="text" class="form-control form-control-lg text-center fw-bold letter-spacing-2" 
+                   id="otp" name="otp" placeholder="0 0 0 0 0 0" maxlength="6" required>
+          </div>
+        </div>
+
+        <button type="submit" class="btn auth-primary w-100 mb-2" id="verifyBtn">
+          <span id="verifyText">Verify OTP</span>
+          <span id="verifyLoadingText" class="d-none">
+            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+            Verifying...
+          </span>
+        </button>
+
+        <button type="button" class="btn btn-link w-100 text-decoration-none" id="backToLogin">
+          <i class="fa-solid fa-arrow-left me-2"></i>Back to Login
+        </button>
+      </form>
     </div>
     <div class="auth-footer">
       <div>Don’t have an account? <a href="/register">Create Account</a></div>
@@ -70,6 +99,8 @@
 </div>
 
 <script>
+  let mfaIdentifier = '';
+
   document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -96,12 +127,21 @@
         skipAuth: true
       });
 
-      // resObj is already JSON (from main.hbs apiCall)
       const data = resObj || {};
-      const payload = data.data || data; // handle ApiResponse or plain
+      
+      // Handle MFA required
+      if (data.success && data.data && data.data.mfaRequired) {
+        mfaIdentifier = data.data.identifier;
+        document.getElementById('loginForm').classList.add('d-none');
+        document.getElementById('otpForm').classList.remove('d-none');
+        showAlert('OTP has been sent to your email and phone.', 'success');
+        return;
+      }
+
+      const payload = data.data || data;
 
       // If API returned an error shape
-      if (data.error || data.message && !payload.tokens) {
+      if (data.error || (data.message && !payload.tokens)) {
         showAlert(data.message || data.error || 'Login failed', 'danger');
         return;
       }
@@ -114,17 +154,7 @@
         return;
       }
 
-      // Store user + token
-      if (user) localStorage.setItem('user', JSON.stringify(user));
-      localStorage.setItem('accessToken', tokens.accessToken);
-
-      // Success + redirect
-      showAlert('Login successful! Redirecting...', 'success');
-      const url = new URL(location.href);
-      const next = url.searchParams.get('next');
-      setTimeout(() => {
-        window.location.replace(next || '/dashboard');
-      }, 500);
+      handleSuccess(user, tokens);
 
     } catch (error) {
       console.error('Login error:', error);
@@ -136,6 +166,63 @@
       loadingText.classList.add('d-none');
     }
   });
+
+  document.getElementById('otpForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const otp = document.getElementById('otp').value;
+    const verifyBtn = document.getElementById('verifyBtn');
+    const verifyText = document.getElementById('verifyText');
+    const verifyLoadingText = document.getElementById('verifyLoadingText');
+    const alertContainer = document.getElementById('alertContainer');
+
+    alertContainer.innerHTML = '';
+    verifyBtn.disabled = true;
+    verifyText.classList.add('d-none');
+    verifyLoadingText.classList.remove('d-none');
+
+    try {
+      const data = await apiCall('/users/verify-otp', {
+        method: 'POST',
+        body: JSON.stringify({ 
+          identifier: mfaIdentifier, 
+          otp, 
+          type: 'login' 
+        }),
+        skipAuth: true
+      });
+
+      if (data.success && data.data && data.data.tokens) {
+        handleSuccess(data.data.user, data.data.tokens);
+      } else {
+        showAlert(data.message || 'Verification failed', 'danger');
+      }
+    } catch (error) {
+      console.error('OTP verification error:', error);
+      showAlert('Network error. Please try again.', 'danger');
+    } finally {
+      verifyBtn.disabled = false;
+      verifyText.classList.remove('d-none');
+      verifyLoadingText.classList.add('d-none');
+    }
+  });
+
+  document.getElementById('backToLogin').addEventListener('click', () => {
+    document.getElementById('otpForm').classList.add('d-none');
+    document.getElementById('loginForm').classList.remove('d-none');
+  });
+
+  function handleSuccess(user, tokens) {
+    if (user) localStorage.setItem('user', JSON.stringify(user));
+    localStorage.setItem('accessToken', tokens.accessToken);
+
+    showAlert('Login successful! Redirecting...', 'success');
+    const url = new URL(location.href);
+    const next = url.searchParams.get('next');
+    setTimeout(() => {
+      window.location.replace(next || '/dashboard');
+    }, 500);
+  }
 
   function showAlert(message, type) {
     const alertContainer = document.getElementById('alertContainer');

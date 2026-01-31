@@ -19,6 +19,7 @@ import EmailTemplate from './EmailTemplate.js';
 import EmployeeEducation from './EmployeeEducation.js';
 import EmployeeExperience from './EmployeeExperience.js';
 import EmployeeDocument from './EmployeeDocument.js';
+import { OTP } from './OTP.js';
 
 /**
  * IMPORTANT:
@@ -202,4 +203,5 @@ export {
   EmployeeExperience,
   EmployeeDocument,
   EmailTemplate,
+  OTP,
 };
