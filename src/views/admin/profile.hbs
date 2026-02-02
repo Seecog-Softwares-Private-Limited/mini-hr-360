@@ -1,0 +1,151 @@
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2 px-0">
+            {{> sidebar user=user active='profile'}}
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9 col-lg-10 px-0">
+            <div class="main-content p-4">
+                <div class="page-header mb-4">
+                    <div class="page-title" style="font-size: 28px;">My Profile</div>
+                    <div class="page-subtitle">Manage your personal and administrative information</div>
+                </div>
+
+                <!-- Personal Details Section -->
+                <div id="personal" class="card mb-4 border-0 shadow-sm" style="border-radius: 16px;">
+                    <div
+                        class="card-header bg-transparent border-0 p-4 pb-0 d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0" style="font-weight: 700; color: #1e293b;"><i
+                                class="fa-solid fa-user me-2 text-primary"></i> Personal Details</h5>
+                        <a href="/admin/change-password" class="btn btn-outline-primary btn-sm"
+                            style="border-radius: 8px;">Change Password</a>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row align-items-center mb-4">
+                            <div class="col-auto">
+                                <div class="profile-avatar"
+                                    style="width: 100px; height: 100px; font-size: 40px; background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);">
+                                    {{#if user.avatarUrl}}
+                                    <img src="{{user.avatarUrl}}" alt="Profile"
+                                        style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                                    {{else}}
+                                    {{user.firstName.[0]}}{{user.lastName.[0]}}
+                                    {{/if}}
+                                </div>
+                            </div>
+                            <div class="col">
+                                <h3 class="mb-1" style="font-weight: 800; color: #1e293b;">{{user.firstName}}
+                                    {{user.lastName}}</h3>
+                                <p class="text-muted mb-0">{{user.role}}</p>
+                            </div>
+                        </div>
+
+                        <div class="row g-4">
+                            <div class="col-md-4">
+                                <label class="text-muted small d-block mb-1">First Name</label>
+                                <div class="fw-bold">{{user.firstName}}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="text-muted small d-block mb-1">Last Name</label>
+                                <div class="fw-bold">{{user.lastName}}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="text-muted small d-block mb-1">Email Address</label>
+                                <div class="fw-bold">{{user.email}}</div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="text-muted small d-block mb-1">Contact Number</label>
+                                <div class="fw-bold">{{#if user.phoneNo}}{{user.phoneNo}}{{else}}-{{/if}}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="text-muted small d-block mb-1">Gender</label>
+                                <div class="fw-bold">{{#if user.gender}}{{user.gender}}{{else}}-{{/if}}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="text-muted small d-block mb-1">Date of Birth</label>
+                                <div class="fw-bold">{{#if user.dob}}{{formatDate user.dob}}{{else}}-{{/if}}</div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="text-muted small d-block mb-1">Account Type</label>
+                                <div class="fw-bold text-capitalize">{{user.role}}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="text-muted small d-block mb-1">Account Status</label>
+                                <div class="fw-bold">
+                                    <span
+                                        class="badge {{#if (eq user.status 'active')}}bg-success{{else}}bg-warning{{/if}} text-capitalize"
+                                        style="border-radius: 6px;">{{user.status}}</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="text-muted small d-block mb-1">Date of Joining</label>
+                                <div class="fw-bold">{{#if user.dateOfJoining}}{{formatDate
+                                    user.dateOfJoining}}{{else}}{{formatDate user.createdAt}}{{/if}}</div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="text-muted small d-block mb-1">Work Mode</label>
+                                <div class="fw-bold">{{#if user.workMode}}{{user.workMode}}{{else}}-{{/if}}</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="text-muted small d-block mb-1">Work Location</label>
+                                <div class="fw-bold">{{#if user.workLoc}}{{user.workLoc}}{{else}}-{{/if}}</div>
+                            </div>
+
+                            <div class="col-md-8">
+                                <label class="text-muted small d-block mb-1">Permanent Address</label>
+                                <div class="fw-bold">
+                                    {{#if user.permanentAddressLine1}}
+                                    {{user.permanentAddressLine1}}, {{user.permanentCity}}, {{user.permanentState}} -
+                                    {{user.permanentZip}}
+                                    {{else}}-{{/if}}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .main-content {
+        background-color: #f1f5f9;
+        min-height: 100vh;
+    }
+
+    .bg-light {
+        background-color: #f8fafc !important;
+    }
+
+    .fw-600 {
+        font-weight: 600;
+    }
+
+    .card-title i {
+        width: 20px;
+        text-align: center;
+    }
+
+    .page-title {
+        font-weight: 800;
+        color: #1e293b;
+        letter-spacing: -0.5px;
+    }
+
+    .page-title::before {
+        content: "";
+        width: 4px;
+        height: 26px;
+        border-radius: 999px;
+        background: linear-gradient(180deg, #6366f1 0%, #8b5cf6 100%);
+        display: inline-block;
+        margin-right: 10px;
+        vertical-align: middle;
+    }
+</style>

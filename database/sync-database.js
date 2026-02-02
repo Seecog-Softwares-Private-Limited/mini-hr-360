@@ -71,11 +71,11 @@ const {
 async function syncDatabase() {
   try {
     console.log('🔄 Starting Database Sync...\n');
-    
+
     // Test database connection
     await sequelize.authenticate();
     console.log('✅ Database connected\n');
-    
+
     // Define models to sync in order (respecting foreign key dependencies)
     const modelsToSync = [
       { model: User, name: 'User' },
@@ -121,20 +121,20 @@ async function syncDatabase() {
       { model: PayrollSetting, name: 'PayrollSetting'}
 
     ];
-    
+
     console.log(`📋 Syncing ${modelsToSync.length} models...\n`);
-    
+
     let successCount = 0;
     let errorCount = 0;
-    
+
     // Sync all models with alter: true to add missing columns
     for (const { model, name } of modelsToSync) {
       try {
         console.log(`🔄 Syncing ${name}...`);
-        
+
         // First, ensure table exists (create if doesn't exist)
         await model.sync({ alter: false });
-        
+
         // Then try to alter to add missing columns
         // Use a more gentle approach: only add columns, don't modify existing ones
         try {
@@ -143,30 +143,30 @@ async function syncDatabase() {
           // If alter fails due to foreign key constraints or data issues,
           // it's often because of existing data. This is usually okay.
           const errorMsg = alterError.parent?.sqlMessage || alterError.message || '';
-          
+
           // Check if it's a foreign key constraint error (usually safe to ignore)
-          if (errorMsg.includes('foreign key constraint') || 
-              errorMsg.includes('Cannot add or update a child row')) {
+          if (errorMsg.includes('foreign key constraint') ||
+            errorMsg.includes('Cannot add or update a child row')) {
             console.log(`   ⚠️  ${name} has foreign key constraint issues (likely due to existing data)`);
             console.log(`   ✅ Table exists, but some constraints may need manual fixing\n`);
             successCount++;
             continue;
           }
-          
+
           // Check if it's a data truncation or date error (existing bad data)
-          if (errorMsg.includes('Data truncated') || 
-              errorMsg.includes('Incorrect date value') ||
-              errorMsg.includes('Invalid date')) {
+          if (errorMsg.includes('Data truncated') ||
+            errorMsg.includes('Incorrect date value') ||
+            errorMsg.includes('Invalid date')) {
             console.log(`   ⚠️  ${name} has data issues (existing invalid data detected)`);
             console.log(`   ✅ Table exists, but some data may need cleanup\n`);
             successCount++;
             continue;
           }
-          
+
           // For other errors, re-throw
           throw alterError;
         }
-        
+
         console.log(`   ✅ ${name} synced successfully\n`);
         successCount++;
       } catch (error) {
@@ -178,7 +178,7 @@ async function syncDatabase() {
         console.log('');
       }
     }
-    
+
     console.log('='.repeat(60));
     console.log('📊 Sync Summary:');
     console.log(`   ✅ Successfully synced: ${successCount} models`);
@@ -186,7 +186,7 @@ async function syncDatabase() {
       console.log(`   ❌ Failed to sync: ${errorCount} models`);
     }
     console.log('='.repeat(60));
-    
+
     if (errorCount === 0) {
       console.log('\n✅ Database sync completed successfully!');
       console.log('   Your database is now up to date with the latest models.');
@@ -202,7 +202,7 @@ async function syncDatabase() {
         process.exit(1);
       }
     }
-    
+
   } catch (error) {
     console.error('\n❌ Database sync failed:', error.message);
     if (error.parent) {

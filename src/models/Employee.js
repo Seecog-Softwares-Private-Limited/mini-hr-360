@@ -168,7 +168,6 @@ const Employee = sequelize.define(
     empId: {
       type: DataTypes.STRING(50),
       allowNull: false,
-      unique: true,
     },
     employeeType: {
       type: DataTypes.ENUM('Permanent', 'Contract', 'Intern', 'Consultant', 'Trainee'),
@@ -437,6 +436,19 @@ const Employee = sequelize.define(
       type: DataTypes.ENUM('Compliant', 'Non-compliant'),
       allowNull: true,
     },
+    profilePhoto: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      comment: 'Path or URL to employee profile photo',
+    },
+    resetPasswordToken: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    resetPasswordExpires: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
     systemRole: {
       type: DataTypes.STRING(100),
       allowNull: true,
@@ -540,13 +552,13 @@ const Employee = sequelize.define(
     tableName: 'employees',
     timestamps: true,
     indexes: [
-      { unique: true, fields: ['userId', 'empId'] },
-      { unique: true, fields: ['userId', 'empEmail'] },
-      { unique: true, fields: ['userId', 'empPhone'] },
-      // Aadhaar/PAN unique indexes removed
-      { fields: ['userId', 'isActive'] },
-      { fields: ['empDepartment'] },
-      { fields: ['empDesignation'] },
+      { name: 'idx_employees_userId_empId', unique: true, fields: ['userId', 'empId'] },
+      { name: 'idx_employees_userId_empEmail', unique: true, fields: ['userId', 'empEmail'] },
+      { name: 'idx_employees_userId_empPhone', unique: true, fields: ['userId', 'empPhone'] },
+      { name: 'idx_employees_userId_isActive', fields: ['userId', 'isActive'] },
+      { name: 'idx_employees_empDepartment', fields: ['empDepartment'] },
+      { name: 'idx_employees_empDesignation', fields: ['empDesignation'] },
+      { name: 'idx_employees_businessId', fields: ['businessId'] },
     ],
   }
 );
@@ -560,7 +572,7 @@ Employee.beforeValidate(async (employee) => {
       order: [['id', 'DESC']],
       attributes: ['empId']
     });
-    
+
     let nextNumber = 1;
     if (lastEmployee && lastEmployee.empId) {
       // Extract number from empId (e.g., "EMP0001" -> 1)
@@ -569,30 +581,30 @@ Employee.beforeValidate(async (employee) => {
         nextNumber = parseInt(match[1], 10) + 1;
       }
     }
-    
+
     // Ensure uniqueness by checking if the generated empId already exists
     let empId = `EMP${String(nextNumber).padStart(4, '0')}`;
     let attempts = 0;
     const maxAttempts = 1000;
-    
+
     while (attempts < maxAttempts) {
       const existing = await Employee.findOne({
         where: { empId: empId }
       });
-      
+
       if (!existing) {
         break; // Found unique empId
       }
-      
+
       nextNumber++;
       empId = `EMP${String(nextNumber).padStart(4, '0')}`;
       attempts++;
     }
-    
+
     if (attempts >= maxAttempts) {
       throw new Error('Unable to generate unique employee ID after multiple attempts');
     }
-    
+
     employee.empId = empId;
   }
 
@@ -640,7 +652,7 @@ Employee.prototype.getExperience = function () {
 };
 
 // Password comparison method for employee login
-Employee.prototype.isPasswordCorrect = async function(password) {
+Employee.prototype.isPasswordCorrect = async function (password) {
   if (!this.password) return false;
   return await bcrypt.compare(password, this.password);
 };

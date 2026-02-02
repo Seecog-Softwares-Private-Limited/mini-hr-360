@@ -1,0 +1,697 @@
+{{!-- views/states-countries.hbs --}}
+<div class="container-fluid">
+  <div class="row">
+    {{!-- Sidebar --}}
+    <div class="col-md-3 col-lg-2 px-0">
+      {{> sidebar}}
+    </div>
+
+    {{!-- Main content --}}
+    <div class="col-md-9 col-lg-10">
+      <div class="main-content p-4">
+
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+  <div>
+    <h2 class="mb-0">Manage States &amp; Countries</h2>
+    <small class="text-muted">Master data used across the whole project (Admin + Employee).</small>
+  </div>
+
+  <div class="d-flex gap-2">
+    <!-- ✅ Show when Countries tab is active -->
+    <button
+      type="button"
+      id="btnAddCountryTop"
+      class="btn btn-primary d-flex align-items-center gap-2 px-3"
+      data-bs-toggle="modal"
+      data-bs-target="#countryModal"
+      
+    >
+      <i class="fa-solid fa-plus"></i>
+      Add Country
+    </button>
+
+    <!-- ✅ Show when States tab is active -->
+    <button
+      type="button"
+      id="btnAddStateTop"
+      class="btn btn-primary d-none d-flex align-items-center gap-2 px-3"
+      data-bs-toggle="modal"
+      data-bs-target="#stateModal"
+    >
+      <i class="fa-solid fa-plus"></i>
+      Add State
+    </button>
+  </div>
+</div>
+ 
+
+
+        <ul class="nav nav-tabs mb-3" id="geoTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="countries-tab" data-bs-toggle="tab" data-bs-target="#countriesPane" type="button" role="tab">
+              Countries <span class="badge bg-secondary ms-1" id="countriesCount">0</span>
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="states-tab" data-bs-toggle="tab" data-bs-target="#statesPane" type="button" role="tab">
+              States <span class="badge bg-secondary ms-1" id="statesCount">0</span>
+            </button>
+          </li>
+        </ul>
+
+        <div class="tab-content">
+          <!-- ===================== COUNTRIES ===================== -->
+<div class="tab-pane fade show active" id="countriesPane" role="tabpanel" aria-labelledby="countries-tab">
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-6">
+          <label class="form-label">Search</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+            <input type="text" class="form-control" id="countrySearch" placeholder="Search by name / ISO..." />
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Status</label>
+          <select class="form-select" id="countryStatus">
+            <option value="">All Status</option>
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="INACTIVE">INACTIVE</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-striped mb-0">
+          <thead class="table-light">
+            <tr>
+              <th style="width:60px;">#</th>
+              <th>Country</th>
+              <th style="width:120px;">ISO</th>
+              <th style="width:140px;">Phone</th>
+              <th style="width:110px;">Status</th>
+              <th style="width:180px;">Created</th>
+              <th style="width:140px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="countriesTbody">
+            <tr>
+              <td colspan="7" class="text-center py-4">
+                <div class="spinner-border text-primary" role="status"></div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+
+          <!-- ===================== STATES ===================== -->
+          <div class="tab-pane fade" id="statesPane" role="tabpanel" aria-labelledby="states-tab">
+           <div class="card mb-3">
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-5">
+        
+                <label class="form-label">Search</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                  <input type="text" class="form-control" id="stateSearch" placeholder="Search state by name / code..." />
+                  </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Country</label>
+                  <select class="form-select" id="stateCountryFilter">
+                    <option value="">All Countries</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                  <select class="form-select" id="stateStatus">
+                    <option value="">All Status</option>
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="INACTIVE">INACTIVE</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            
+
+            <div class="card">
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-striped mb-0">
+                    <thead class="table-light">
+                      <tr>
+                        <th style="width:60px;">#</th>
+                        <th>State</th>
+                        <th style="width:120px;">Code</th>
+                        <th>Country</th>
+                        <th style="width:110px;">Status</th>
+                        <th style="width:180px;">Created</th>
+                        <th style="width:140px;">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="statesTbody">
+                      <tr>
+                        <td colspan="7" class="text-center py-4">
+                          <div class="spinner-border text-primary" role="status"></div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+{{!-- COUNTRY MODAL --}}
+<div class="modal fade" id="countryModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="countryModalTitle">
+          <i class="fas fa-plus me-2 text-primary"></i>Add Country
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="countryModalAlert"></div>
+        <input type="hidden" id="countryId" />
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Country Name <span class="text-danger">*</span></label>
+            <input class="form-control" id="countryName" placeholder="e.g., India" />
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">ISO Code <span class="text-danger">*</span></label>
+            <input class="form-control" id="countryIso" placeholder="e.g., IN" />
+            <small class="text-muted">India = IN</small>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Phone Code</label>
+            <input class="form-control" id="countryPhone" placeholder="e.g., +91" />
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Status</label>
+            <select class="form-select" id="countryModalStatus">
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="INACTIVE">INACTIVE</option>
+            </select>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="btnSaveCountry">
+          <i class="fas fa-save me-2"></i>Save
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{!-- STATE MODAL --}}
+<div class="modal fade" id="stateModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="stateModalTitle">
+          <i class="fas fa-plus me-2 text-primary"></i>Add State
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div id="stateModalAlert"></div>
+        <input type="hidden" id="stateId" />
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">State Name <span class="text-danger">*</span></label>
+            <input class="form-control" id="stateName" placeholder="e.g., Madhya Pradesh" />
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Code</label>
+            <input class="form-control" id="stateCode" placeholder="e.g., MP" />
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Status</label>
+            <select class="form-select" id="stateModalStatus">
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="INACTIVE">INACTIVE</option>
+            </select>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Country <span class="text-danger">*</span></label>
+            <select class="form-select" id="stateCountryId">
+              <option value="">Select country...</option>
+            </select>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="btnSaveState">
+          <i class="fas fa-save me-2"></i>Save
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+
+  document.addEventListener('DOMContentLoaded', function () {
+    setTimeout(function () {
+      if (typeof apiCall === 'undefined') {
+        console.error('apiCall is not defined. Please refresh the page.');
+        return;
+      }
+
+      (function () {
+        let countries = [];
+        let states = [];
+        let currentCountryId = null;
+        let currentStateId = null;
+
+        const els = {
+          // Countries
+          countrySearch: document.getElementById('countrySearch'),
+          countryStatus: document.getElementById('countryStatus'),
+          countriesTbody: document.getElementById('countriesTbody'),
+          countriesCount: document.getElementById('countriesCount'),
+
+          // States
+          stateSearch: document.getElementById('stateSearch'),
+          stateCountryFilter: document.getElementById('stateCountryFilter'),
+          stateStatus: document.getElementById('stateStatus'),
+          statesTbody: document.getElementById('statesTbody'),
+          statesCount: document.getElementById('statesCount'),
+
+          // Country modal fields
+          countryModalTitle: document.getElementById('countryModalTitle'),
+          countryModalAlert: document.getElementById('countryModalAlert'),
+          countryId: document.getElementById('countryId'),
+          countryName: document.getElementById('countryName'),
+          countryIso: document.getElementById('countryIso'),
+          countryPhone: document.getElementById('countryPhone'),
+          countryModalStatus: document.getElementById('countryModalStatus'),
+
+          // State modal fields
+          stateModalTitle: document.getElementById('stateModalTitle'),
+          stateModalAlert: document.getElementById('stateModalAlert'),
+          stateId: document.getElementById('stateId'),
+          stateName: document.getElementById('stateName'),
+          stateCode: document.getElementById('stateCode'),
+          stateModalStatus: document.getElementById('stateModalStatus'),
+          stateCountryId: document.getElementById('stateCountryId'),
+        };
+
+        function escapeHtml(str) {
+          if (str == null) return '';
+          return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+        }
+
+        function showAlert(message, type = 'info') {
+          const alertDiv = document.createElement('div');
+          alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3`;
+          alertDiv.style.zIndex = '9999';
+          alertDiv.innerHTML = `
+            ${escapeHtml(message)}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          `;
+          document.body.appendChild(alertDiv);
+          setTimeout(() => alertDiv.remove(), 4500);
+        }
+
+        function debounce(fn, wait) {
+          let t;
+          return function (...args) {
+            clearTimeout(t);
+            t = setTimeout(() => fn.apply(this, args), wait);
+          };
+        }
+
+        function fmtDate(iso) {
+          if (!iso) return '-';
+          const d = new Date(iso);
+          return isNaN(d.getTime()) ? '-' : d.toLocaleString();
+        }
+
+        function fillCountryDropdowns() {
+          const opts = countries
+            .slice()
+            .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
+            .map(c => `<option value="${c.id}">${escapeHtml(c.name)} (${escapeHtml(c.isoCode)})</option>`)
+            .join('');
+
+          els.stateCountryFilter.innerHTML = '<option value="">All Countries</option>' + opts;
+          els.stateCountryId.innerHTML = '<option value="">Select country...</option>' + opts;
+        }
+
+        // ---------- LOAD COUNTRIES ----------
+        async function loadCountries() {
+          try {
+            const qs = new URLSearchParams();
+            const search = els.countrySearch.value.trim();
+            const status = els.countryStatus.value.trim();
+            if (search) qs.set('search', search);
+            if (status) qs.set('status', status);
+
+            const res = await apiCall(`/countries?${qs.toString()}`, { method: 'GET' });
+            countries = res?.data || [];
+            els.countriesCount.textContent = String(countries.length);
+
+            fillCountryDropdowns();
+            renderCountries();
+          } catch (e) {
+            console.error(e);
+            showAlert(e.message || 'Failed to load countries', 'danger');
+            els.countriesTbody.innerHTML = `
+              <tr><td colspan="7" class="text-center py-4 text-danger">Failed to load countries</td></tr>
+            `;
+          }
+        }
+
+        function renderCountries() {
+          if (!countries.length) {
+            els.countriesTbody.innerHTML = `
+              <tr><td colspan="7" class="text-center py-4 text-muted">No countries found</td></tr>
+            `;
+            return;
+          }
+
+          els.countriesTbody.innerHTML = countries.map((c, i) => `
+            <tr>
+              <td>${i + 1}</td>
+              <td class="fw-semibold">${escapeHtml(c.name)}</td>
+              <td>${escapeHtml(c.isoCode)}</td>
+              <td>${escapeHtml(c.phoneCode || '-')}</td>
+              <td>
+                <span class="badge ${c.status === 'ACTIVE' ? 'bg-success' : 'bg-secondary'}">${escapeHtml(c.status)}</span>
+              </td>
+              <td>${escapeHtml(fmtDate(c.createdAt))}</td>
+              <td>
+                <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditCountry(${c.id})">
+                  <i class="fas fa-pen"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteCountry(${c.id})">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+          `).join('');
+        }
+
+        // ---------- LOAD STATES ----------
+        async function loadStates() {
+          try {
+            const qs = new URLSearchParams();
+            const search = els.stateSearch.value.trim();
+            const status = els.stateStatus.value.trim();
+            const countryId = els.stateCountryFilter.value.trim();
+
+            if (search) qs.set('search', search);
+            if (status) qs.set('status', status);
+            if (countryId) qs.set('countryId', countryId);
+
+            const res = await apiCall(`/states?${qs.toString()}`, { method: 'GET' });
+            states = res?.data || [];
+            els.statesCount.textContent = String(states.length);
+
+            renderStates();
+          } catch (e) {
+            console.error(e);
+            showAlert(e.message || 'Failed to load states', 'danger');
+            els.statesTbody.innerHTML = `
+              <tr><td colspan="7" class="text-center py-4 text-danger">Failed to load states</td></tr>
+            `;
+          }
+        }
+
+        function renderStates() {
+          if (!states.length) {
+            els.statesTbody.innerHTML = `
+              <tr><td colspan="7" class="text-center py-4 text-muted">No states found</td></tr>
+            `;
+            return;
+          }
+
+          els.statesTbody.innerHTML = states.map((s, i) => `
+            <tr>
+              <td>${i + 1}</td>
+              <td class="fw-semibold">${escapeHtml(s.name)}</td>
+              <td>${escapeHtml(s.code || '-')}</td>
+              <td>${escapeHtml(s.country?.name || '-') }</td>
+              <td>
+                <span class="badge ${s.status === 'ACTIVE' ? 'bg-success' : 'bg-secondary'}">${escapeHtml(s.status)}</span>
+              </td>
+              <td>${escapeHtml(fmtDate(s.createdAt))}</td>
+              <td>
+                <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditState(${s.id})">
+                  <i class="fas fa-pen"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteState(${s.id})">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+          `).join('');
+        }
+
+        // ---------- Country modal actions ----------
+        window.openCreateCountry = function () {
+          currentCountryId = null;
+          els.countryId.value = '';
+          els.countryName.value = '';
+          els.countryIso.value = '';
+          els.countryPhone.value = '';
+          els.countryModalStatus.value = 'ACTIVE';
+          els.countryModalAlert.innerHTML = '';
+          els.countryModalTitle.innerHTML = '<i class="fas fa-plus me-2 text-primary"></i>Add Country';
+        };
+
+        window.openEditCountry = async function (id) {
+          try {
+            const res = await apiCall(`/countries/${id}`, { method: 'GET' });
+            const c = res?.data;
+            if (!c) return showAlert('Country not found', 'danger');
+
+            currentCountryId = id;
+            els.countryId.value = c.id || '';
+            els.countryName.value = c.name || '';
+            els.countryIso.value = c.isoCode || '';
+            els.countryPhone.value = c.phoneCode || '';
+            els.countryModalStatus.value = c.status || 'ACTIVE';
+            els.countryModalAlert.innerHTML = '';
+            els.countryModalTitle.innerHTML = '<i class="fas fa-edit me-2 text-primary"></i>Edit Country';
+
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('countryModal')).show();
+          } catch (e) {
+            showAlert(e.message || 'Failed to load country', 'danger');
+          }
+        };
+
+        window.submitCountry = async function () {
+          const name = els.countryName.value.trim();
+          const isoCode = els.countryIso.value.trim().toUpperCase();
+          const phoneCode = els.countryPhone.value.trim() || null;
+          const status = els.countryModalStatus.value;
+
+          if (!name) return showAlert('Country name is required', 'warning');
+          if (!isoCode) return showAlert('ISO code is required (India = IN)', 'warning');
+
+          const payload = { name, isoCode, phoneCode, status };
+
+          try {
+            if (currentCountryId) {
+              await apiCall(`/countries/${currentCountryId}`, {
+                method: 'PUT',
+                body: JSON.stringify(payload)
+              });
+              showAlert('Country updated', 'success');
+            } else {
+              await apiCall('/countries', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+              });
+              showAlert('Country created', 'success');
+            }
+
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('countryModal')).hide();
+            await loadCountries();
+            await loadStates();
+          } catch (e) {
+            showAlert(e.message || 'Failed to save country', 'danger');
+          }
+        };
+
+        window.deleteCountry = async function (id) {
+          if (!confirm('Delete this country? (It will fail if states exist)')) return;
+          try {
+            await apiCall(`/countries/${id}`, { method: 'DELETE' });
+            showAlert('Country deleted', 'success');
+            await loadCountries();
+            await loadStates();
+          } catch (e) {
+            showAlert(e.message || 'Failed to delete country', 'danger');
+          }
+        };
+
+        // ---------- State modal actions ----------
+        window.openCreateState = function () {
+          currentStateId = null;
+          els.stateId.value = '';
+          els.stateName.value = '';
+          els.stateCode.value = '';
+          els.stateModalStatus.value = 'ACTIVE';
+          els.stateCountryId.value = '';
+          els.stateModalAlert.innerHTML = '';
+          els.stateModalTitle.innerHTML = '<i class="fas fa-plus me-2 text-primary"></i>Add State';
+        };
+
+        window.openEditState = async function (id) {
+          try {
+            const res = await apiCall(`/states/${id}`, { method: 'GET' });
+            const s = res?.data;
+            if (!s) return showAlert('State not found', 'danger');
+
+            currentStateId = id;
+            els.stateId.value = s.id || '';
+            els.stateName.value = s.name || '';
+            els.stateCode.value = s.code || '';
+            els.stateModalStatus.value = s.status || 'ACTIVE';
+            els.stateCountryId.value = String(s.countryId || '');
+            els.stateModalAlert.innerHTML = '';
+            els.stateModalTitle.innerHTML = '<i class="fas fa-edit me-2 text-primary"></i>Edit State';
+
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('stateModal')).show();
+          } catch (e) {
+            showAlert(e.message || 'Failed to load state', 'danger');
+          }
+        };
+
+        window.submitState = async function () {
+          const name = els.stateName.value.trim();
+          const code = els.stateCode.value.trim() || null;
+          const status = els.stateModalStatus.value;
+          const countryId = els.stateCountryId.value.trim();
+
+          if (!name) return showAlert('State name is required', 'warning');
+          if (!countryId) return showAlert('Please select a country', 'warning');
+
+          const payload = { name, code, status, countryId: Number(countryId) };
+
+          try {
+            if (currentStateId) {
+              await apiCall(`/states/${currentStateId}`, {
+                method: 'PUT',
+                body: JSON.stringify(payload)
+              });
+              showAlert('State updated', 'success');
+            } else {
+              await apiCall('/states', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+              });
+              showAlert('State created', 'success');
+            }
+
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('stateModal')).hide();
+            await loadStates();
+          } catch (e) {
+            showAlert(e.message || 'Failed to save state', 'danger');
+          }
+        };
+
+        window.deleteState = async function (id) {
+          if (!confirm('Delete this state?')) return;
+          try {
+            await apiCall(`/states/${id}`, { method: 'DELETE' });
+            showAlert('State deleted', 'success');
+            await loadStates();
+          } catch (e) {
+            showAlert(e.message || 'Failed to delete state', 'danger');
+          }
+        };
+
+// Fix Save buttons (in case inline onclick fails)
+document.getElementById('btnSaveCountry')?.addEventListener('click', () => window.submitCountry());
+document.getElementById('btnSaveState')?.addEventListener('click', () => window.submitState());
+
+        // Events
+        els.countrySearch.addEventListener('input', debounce(loadCountries, 300));
+        els.countryStatus.addEventListener('change', loadCountries);
+
+        els.stateSearch.addEventListener('input', debounce(loadStates, 300));
+        els.stateCountryFilter.addEventListener('change', loadStates);
+        els.stateStatus.addEventListener('change', loadStates);
+
+        // Init
+        (async function init() {
+          await loadCountries();
+          await loadStates();
+        })();
+
+      })();
+    }, 50);
+  });
+
+  function syncTopAddButtons() {
+    const activeTabBtn = document.querySelector('#geoTabs .nav-link.active');
+    const btnAddCountry = document.getElementById('btnAddCountryTop');
+    const btnAddState = document.getElementById('btnAddStateTop');
+
+    if (!activeTabBtn || !btnAddCountry || !btnAddState) return;
+
+    const target = activeTabBtn.getAttribute('data-bs-target') || activeTabBtn.getAttribute('href') || '';
+
+    // Adjust these checks based on your tab ids (countries/states)
+    const isCountriesTab = target.includes('country') || target.includes('countries');
+
+    btnAddCountry.classList.toggle('d-none', !isCountriesTab);
+    btnAddState.classList.toggle('d-none', isCountriesTab);
+  }
+
+  // On load
+  document.addEventListener('DOMContentLoaded', () => {
+    syncTopAddButtons();
+
+    // On tab switch (Bootstrap tabs)
+    document.querySelectorAll('#geoTabs [data-bs-toggle="tab"]').forEach((el) => {
+      el.addEventListener('shown.bs.tab', syncTopAddButtons);
+    });
+  });
+</script>

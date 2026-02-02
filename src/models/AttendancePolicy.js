@@ -4,10 +4,33 @@ import { sequelize } from '../db/index.js';
 const AttendancePolicy = sequelize.define(
   'AttendancePolicy',
   {
-    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    businessId: { type: DataTypes.INTEGER, allowNull: false },
-    name: { type: DataTypes.STRING(120), allowNull: false },
-    rulesJson: { type: DataTypes.JSON, allowNull: false, defaultValue: {} },
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+
+    businessId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: 'businesses',
+        key: 'id',
+      },
+    },
+
+    name: {
+      type: DataTypes.STRING(120),
+      allowNull: false,
+    },
+
+    // rulesJson: graceMinutes, fullDayMins, halfDayMins, otEnabled, autoAbsent, etc.
+    rulesJson: {
+      type: DataTypes.JSON,
+      allowNull: false,
+      defaultValue: {},
+    },
+
     status: {
       type: DataTypes.ENUM('ACTIVE', 'INACTIVE'),
       allowNull: false,

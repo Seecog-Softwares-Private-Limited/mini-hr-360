@@ -1,0 +1,985 @@
+<div class="row">
+    <!-- Sidebar -->
+    {{> employee-sidebar employee=employee active='profile'}}
+
+    <!-- Main Content -->
+    <div class="col-md-10 emp-main">
+        <div class="emp-page-header">
+            <h1 class="emp-page-title">My Profile</h1>
+            <p class="text-muted mt-1">Manage your personal and professional information</p>
+        </div>
+
+        <!-- Sticky Navigation for sections -->
+        <div class="emp-card mb-4 p-2 sticky-top"
+            style="top: 1rem; z-index: 100; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px);">
+            <div class="nav nav-pills nav-justified" id="profile-tabs">
+                <a class="nav-link active" href="#personal"><i class="fa-solid fa-user me-2"></i>Personal</a>
+                <a class="nav-link" href="#professional"><i class="fa-solid fa-briefcase me-2"></i>Professional</a>
+                <a class="nav-link" href="#compensation"><i
+                        class="fa-solid fa-money-bill-wave me-2"></i>Compensation</a>
+                <a class="nav-link" href="#education"><i class="fa-solid fa-graduation-cap me-2"></i>Education</a>
+                <a class="nav-link" href="#experience"><i class="fa-solid fa-history me-2"></i>Experience</a>
+                <a class="nav-link" href="#documents"><i class="fa-solid fa-file-shield me-2"></i>KYC</a>
+            </div>
+        </div>
+
+        <!-- Personal Details Section -->
+        <div id="personal" class="emp-card mb-4">
+            <div class="emp-card-header">
+                <h5 class="emp-card-title"><i class="fa-solid fa-user" style="color: var(--emp-primary);"></i> Personal
+                    Details</h5>
+                    <div>
+                <a href="/employee/change-password" class="btn emp-btn-primary btn-sm">Change Password</a>
+                <button type="button" class="btn emp-btn-primary btn-sm" data-bs-toggle="modal"
+  data-bs-target="#personalEditModal">
+  <i class="fa-solid fa-pen-to-square me-1"></i> Edit
+</button>
+</div>
+            </div>
+            <div class="emp-card-body">
+                <div class="row align-items-center mb-4">
+                    <div class="col-auto">
+                        <div class="emp-profile-avatar"
+                            style="width: 100px; height: 100px; font-size: 40px; background: linear-gradient(135deg, var(--emp-primary) 0%, #06b6d4 100%); color: #fff;">
+                            {{#if employee.profilePhoto}}
+                            <img src="{{employee.profilePhoto}}" alt="Profile"
+                                style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+                            {{else}}
+                            {{employee.firstName.[0]}}{{employee.lastName.[0]}}
+                            {{/if}}
+                        </div>
+                    </div>
+                    <div class="col">
+                        <h3 class="mb-1" style="font-weight: 800;">{{employee.empName}}</h3>
+                        <p class="text-muted mb-0">{{employee.empDesignation}} | {{employee.empDepartment}}</p>
+                    </div>
+                </div>
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <label class="emp-form-label d-block text-muted">Date of Birth</label>
+                        <div class="fw-bold">{{#if employee.empDob}}{{formatDate employee.empDob}}{{else}}-{{/if}}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="emp-form-label d-block text-muted">Email Address</label>
+                        <div class="fw-bold">{{employee.empEmail}}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="emp-form-label d-block text-muted">Contact Number</label>
+                        <div class="fw-bold">{{employee.empPhone}}</div>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="emp-form-label d-block text-muted">Permanent Address</label>
+                        <div class="fw-bold">
+                            {{#if employee.permanentAddressLine1}}
+                            {{employee.permanentAddressLine1}}, {{employee.permanentCity}}, {{employee.permanentState}}
+                            - {{employee.permanentZip}}
+                            {{else}}
+                            -
+                            {{/if}}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="emp-form-label d-block text-muted">Gender</label>
+                        <div class="fw-bold">{{employee.gender}}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Professional Details Section -->
+        <div id="professional" class="emp-card mb-4">
+            <div class="emp-card-header">
+                <h5 class="emp-card-title"><i class="fa-solid fa-briefcase" style="color: var(--emp-primary);"></i>
+                    Professional Details</h5>
+
+            </div>
+            <div class="emp-card-body">
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <label class="emp-form-label d-block text-muted">Employee ID</label>
+                        <div class="fw-bold">{{employee.empId}}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="emp-form-label d-block text-muted">Employee Type</label>
+                        <div class="fw-bold">{{employee.employeeType}}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="emp-form-label d-block text-muted">Employment Status</label>
+                        <div class="fw-bold">
+                            <span class="emp-badge emp-badge-approved">{{employee.employmentStatus}}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="emp-form-label d-block text-muted">Department</label>
+                        <div class="fw-bold">{{employee.empDepartment}}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="emp-form-label d-block text-muted">Designation</label>
+                        <div class="fw-bold">{{employee.empDesignation}}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="emp-form-label d-block text-muted">Date of Joining</label>
+                        <div class="fw-bold">{{formatDate employee.empDateOfJoining}}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="emp-form-label d-block text-muted">Work Mode</label>
+                        <div class="fw-bold">{{employee.workMode}}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="emp-form-label d-block text-muted">Work Location</label>
+                        <div class="fw-bold">{{employee.empWorkLoc}}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Compensation Section -->
+        <div id="compensation" class="emp-card mb-4">
+            <div class="emp-card-header">
+                <h5 class="emp-card-title"><i class="fa-solid fa-money-bill-wave"
+                        style="color: var(--emp-primary);"></i> Compensation</h5>
+            </div>
+            <div class="emp-card-body">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="emp-form-label d-block text-muted">Annual CTC</label>
+                        <div class="fw-bold" style="font-size: 1.25rem;">₹ {{employee.empCtc}}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="emp-form-label d-block text-muted">Overtime Eligible</label>
+                        <div class="fw-bold">
+                            {{#if employee.overtimeEligible}}
+                            <span class="text-success"><i class="fa-solid fa-circle-check me-1"></i> Yes</span>
+                            {{else}}
+                            <span class="text-muted"><i class="fa-solid fa-circle-xmark me-1"></i> No</span>
+                            {{/if}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Education Section -->
+        <div id="education" class="emp-card mb-4">
+            <div class="emp-card-header">
+                <h5 class="emp-card-title"><i class="fa-solid fa-graduation-cap" style="color: var(--emp-primary);"></i>
+                    Education & Qualification</h5>
+                    <button type="button" class="btn emp-btn-primary btn-sm" data-bs-toggle="modal"
+  data-bs-target="#educationEditModal">
+  <i class="fa-solid fa-pen-to-square me-1"></i> Edit
+</button>
+            </div>
+            <div class="emp-card-body p-0">
+                <table class="emp-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Level/Degree</th>
+                            <th>Institution</th>
+                            <th>Passing Year</th>
+                            <th>Percentage/CGPA</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each employee.educations}}
+                        <tr>
+                            <td>
+                                <div class="fw-bold">{{this.degree}}</div>
+                                <small class="text-muted">{{this.level}}</small>
+                            </td>
+                            <td>{{this.institutionName}}</td>
+                            <td>{{this.yearOfPassing}}</td>
+                            <td>{{this.percentageOrCgpa}}</td>
+                        </tr>
+                        {{else}}
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-muted">No education details found</td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Experience Section -->
+        <div id="experience" class="emp-card mb-4">
+            <div class="emp-card-header">
+                <h5 class="emp-card-title"><i class="fa-solid fa-history" style="color: var(--emp-primary);"></i>
+                    Employment History</h5>
+                    <button type="button" class="btn emp-btn-primary btn-sm" data-bs-toggle="modal"
+  data-bs-target="#experienceEditModal">
+  <i class="fa-solid fa-pen-to-square me-1"></i> Edit
+</button>
+            </div>
+            <div class="emp-card-body p-0">
+                <table class="emp-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Organization</th>
+                            <th>Designation</th>
+                            <th>Duration</th>
+                            <th>Reason for Leaving</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each employee.experiences}}
+                        <tr>
+                            <td>
+                                <div class="fw-bold">{{this.organizationName}}</div>
+                            </td>
+                            <td>{{this.jobTitle}}</td>
+                            <td>
+                                {{formatDate this.startDate}} - {{#if this.isCurrent}}Present{{else}}{{formatDate
+                                this.endDate}}{{/if}}
+                            </td>
+                            <td>{{this.reasonForLeaving}}</td>
+                        </tr>
+                        {{else}}
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-muted">No experience details found</td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Documents Section -->
+        <div id="documents" class="emp-card mb-4">
+            <div class="emp-card-header">
+                <h5 class="emp-card-title"><i class="fa-solid fa-file-shield" style="color: var(--emp-primary);"></i>
+                    Documents & KYC</h5>
+                    <button type="button" class="btn emp-btn-primary btn-sm" data-bs-toggle="modal"
+  data-bs-target="#documentsEditModal">
+  <i class="fa-solid fa-pen-to-square me-1"></i> Edit
+</button>
+            </div>
+            <div class="emp-card-body p-0">
+                <table class="emp-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Document Type</th>
+                            <th>Number</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each employee.documents}}
+                        <tr>
+                            <td>
+                                <div class="fw-bold">{{this.documentType}}</div>
+                                <small class="text-muted">{{this.category}}</small>
+                            </td>
+                            <td>{{this.documentNumber}}</td>
+                            <td>
+                                <span
+                                    class="emp-badge {{#if (eq this.verificationStatus 'Verified')}}emp-badge-approved{{else}}emp-badge-pending{{/if}}">
+                                    {{this.verificationStatus}}
+                                </span>
+                            </td>
+                            <td>
+                                {{#if this.fileUrl}}
+                                <a href="{{this.fileUrl}}" target="_blank" class="btn btn-sm btn-outline-primary"><i
+                                        class="fa-solid fa-download"></i></a>
+                                {{else}}
+                                -
+                                {{/if}}
+                            </td>
+                        </tr>
+                        {{else}}
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-muted">No documents found</td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- =========================
+     EDIT MODALS (Employee)
+     - Personal / Education / Experience / Documents
+     - Professional & Compensation are intentionally NOT editable
+========================= -->
+
+<!-- Personal Edit Modal -->
+<div class="modal fade" id="personalEditModal" tabindex="-1" aria-labelledby="personalEditModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content" style="border-radius: 16px; overflow: hidden;">
+      <div class="modal-header" style="background: rgba(15, 23, 42, 0.02);">
+        <h5 class="modal-title" id="personalEditModalLabel">
+          <i class="fa-solid fa-user-pen me-2" style="color: var(--emp-primary);"></i> Edit Personal Details
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+        <div id="personalMsg" class="emp-alert emp-alert-success d-none mb-3"></div>
+
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Date of Birth</label>
+            <input type="date" class="form-control" id="p_empDob" value="{{employee.empDob}}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" id="p_empEmail" value="{{employee.empEmail}}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Phone</label>
+            <input type="text" class="form-control" id="p_empPhone" value="{{employee.empPhone}}" maxlength="10">
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Gender</label>
+            <select class="form-select" id="p_gender">
+              <option value="">Select</option>
+              <option value="Male" {{#if (eq employee.gender 'Male')}}selected{{/if}}>Male</option>
+              <option value="Female" {{#if (eq employee.gender 'Female')}}selected{{/if}}>Female</option>
+              <option value="Non-binary" {{#if (eq employee.gender 'Non-binary')}}selected{{/if}}>Non-binary</option>
+              <option value="Prefer not to say" {{#if (eq employee.gender 'Prefer not to say')}}selected{{/if}}>Prefer not to say</option>
+            </select>
+          </div>
+
+          <div class="col-md-8">
+            <label class="form-label">Permanent Address Line 1</label>
+            <input type="text" class="form-control" id="p_permanentAddressLine1" value="{{employee.permanentAddressLine1}}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">City</label>
+            <input type="text" class="form-control" id="p_permanentCity" value="{{employee.permanentCity}}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">State</label>
+            <input type="text" class="form-control" id="p_permanentState" value="{{employee.permanentState}}">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">PIN / ZIP</label>
+            <input type="text" class="form-control" id="p_permanentZip" value="{{employee.permanentZip}}">
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn emp-btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn emp-btn-primary" id="btnSavePersonal">
+          <i class="fa-solid fa-floppy-disk me-1"></i> Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Education Edit Modal -->
+<div class="modal fade" id="educationEditModal" tabindex="-1" aria-labelledby="educationEditModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content" style="border-radius: 16px; overflow: hidden;">
+      <div class="modal-header" style="background: rgba(15, 23, 42, 0.02);">
+        <h5 class="modal-title" id="educationEditModalLabel">
+          <i class="fa-solid fa-graduation-cap me-2" style="color: var(--emp-primary);"></i> Manage Education
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+        <div id="educationMsg" class="emp-alert emp-alert-success d-none mb-3"></div>
+
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead>
+              <tr>
+                <th>Level</th>
+                <th>Degree</th>
+                <th>Institution</th>
+                <th>Passing Year</th>
+                <th>CGPA/%</th>
+                <th class="text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each employee.educations}}
+              <tr>
+                <td>{{this.level}}</td>
+                <td>{{this.degree}}</td>
+                <td>{{this.institutionName}}</td>
+                <td>{{this.yearOfPassing}}</td>
+                <td>{{this.percentageOrCgpa}}</td>
+                <td class="text-end">
+                  <button type="button" class="btn btn-sm btn-outline-primary me-1 edu-edit"
+                    data-id="{{this.id}}"
+                    data-level="{{this.level}}"
+                    data-degree="{{this.degree}}"
+                    data-institution="{{this.institutionName}}"
+                    data-year="{{this.yearOfPassing}}"
+                    data-cgpa="{{this.percentageOrCgpa}}"
+                    data-cert="{{this.certificateUrl}}">
+                    <i class="fa-solid fa-pen"></i>
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-danger edu-delete" data-id="{{this.id}}">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </td>
+              </tr>
+              {{else}}
+              <tr><td colspan="6" class="text-center text-muted py-3">No education records</td></tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+
+        <hr class="my-4" />
+
+        <h6 class="fw-bold mb-2">
+          <i class="fa-solid fa-circle-plus me-2" style="color: var(--emp-primary);"></i> Add / Edit Education
+        </h6>
+
+        <input type="hidden" id="edu_id" value="">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Level <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="edu_level" placeholder="e.g. Bachelors / 12th" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Degree</label>
+            <input type="text" class="form-control" id="edu_degree" placeholder="e.g. B.Tech">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Institution</label>
+            <input type="text" class="form-control" id="edu_institution" placeholder="College / School">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Passing Year</label>
+            <input type="number" class="form-control" id="edu_year" placeholder="2023">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">CGPA / %</label>
+            <input type="text" class="form-control" id="edu_cgpa" placeholder="8.2 / 82%">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Certificate URL</label>
+            <input type="text" class="form-control" id="edu_cert" placeholder="https://...">
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn emp-btn-secondary" id="btnEduClear">Clear</button>
+        <button type="button" class="btn emp-btn-primary" id="btnEduSave">
+          <i class="fa-solid fa-floppy-disk me-1"></i> Save
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Experience Edit Modal -->
+<div class="modal fade" id="experienceEditModal" tabindex="-1" aria-labelledby="experienceEditModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content" style="border-radius: 16px; overflow: hidden;">
+      <div class="modal-header" style="background: rgba(15, 23, 42, 0.02);">
+        <h5 class="modal-title" id="experienceEditModalLabel">
+          <i class="fa-solid fa-history me-2" style="color: var(--emp-primary);"></i> Manage Experience
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+        <div id="experienceMsg" class="emp-alert emp-alert-success d-none mb-3"></div>
+
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead>
+              <tr>
+                <th>Organization</th>
+                <th>Designation</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Current</th>
+                <th>Reason</th>
+                <th class="text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each employee.experiences}}
+              <tr>
+                <td>{{this.organizationName}}</td>
+                <td>{{this.jobTitle}}</td>
+                <td>{{this.startDate}}</td>
+                <td>{{#if this.isCurrent}}-{{else}}{{this.endDate}}{{/if}}</td>
+                <td>{{#if this.isCurrent}}Yes{{else}}No{{/if}}</td>
+                <td>{{this.reasonForLeaving}}</td>
+                <td class="text-end">
+                  <button type="button" class="btn btn-sm btn-outline-primary me-1 exp-edit"
+                    data-id="{{this.id}}"
+                    data-org="{{this.organizationName}}"
+                    data-title="{{this.jobTitle}}"
+                    data-start="{{this.startDate}}"
+                    data-end="{{this.endDate}}"
+                    data-current="{{this.isCurrent}}"
+                    data-reason="{{this.reasonForLeaving}}">
+                    <i class="fa-solid fa-pen"></i>
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-danger exp-delete" data-id="{{this.id}}">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </td>
+              </tr>
+              {{else}}
+              <tr><td colspan="7" class="text-center text-muted py-3">No experience records</td></tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+
+        <hr class="my-4" />
+
+        <h6 class="fw-bold mb-2">
+          <i class="fa-solid fa-circle-plus me-2" style="color: var(--emp-primary);"></i> Add / Edit Experience
+        </h6>
+
+        <input type="hidden" id="exp_id" value="">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Organization <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="exp_org" placeholder="Company name">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Designation <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="exp_title" placeholder="Job title">
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label">Start Date</label>
+            <input type="date" class="form-control" id="exp_start">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">End Date</label>
+            <input type="date" class="form-control" id="exp_end">
+          </div>
+          <div class="col-md-3 d-flex align-items-end">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="exp_current">
+              <label class="form-check-label" for="exp_current">Currently Working</label>
+            </div>
+          </div>
+
+          <div class="col-md-12">
+            <label class="form-label">Reason for Leaving</label>
+            <input type="text" class="form-control" id="exp_reason" placeholder="Optional">
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn emp-btn-secondary" id="btnExpClear">Clear</button>
+        <button type="button" class="btn emp-btn-primary" id="btnExpSave">
+          <i class="fa-solid fa-floppy-disk me-1"></i> Save
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Documents / KYC Edit Modal -->
+<div class="modal fade" id="documentsEditModal" tabindex="-1" aria-labelledby="documentsEditModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content" style="border-radius: 16px; overflow: hidden;">
+      <div class="modal-header" style="background: rgba(15, 23, 42, 0.02);">
+        <h5 class="modal-title" id="documentsEditModalLabel">
+          <i class="fa-solid fa-file-shield me-2" style="color: var(--emp-primary);"></i> Manage Documents / KYC
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="text-muted small mb-2">
+          Note: If you edit a document, its verification can go back to <b>Pending</b> for admin re-check.
+        </div>
+
+        <div id="documentsMsg" class="emp-alert emp-alert-success d-none mb-3"></div>
+
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Category</th>
+                <th>Number</th>
+                <th>Status</th>
+                <th>File</th>
+                <th class="text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each employee.documents}}
+              <tr>
+                <td>{{this.documentType}}</td>
+                <td>{{this.category}}</td>
+                <td>{{this.documentNumber}}</td>
+                <td>{{this.verificationStatus}}</td>
+                <td>
+                  {{#if this.fileUrl}}
+                    <a href="{{this.fileUrl}}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-link"></i></a>
+                  {{else}}-{{/if}}
+                </td>
+                <td class="text-end">
+                  <button type="button" class="btn btn-sm btn-outline-primary me-1 doc-edit"
+                    data-id="{{this.id}}"
+                    data-type="{{this.documentType}}"
+                    data-category="{{this.category}}"
+                    data-number="{{this.documentNumber}}"
+                    data-file="{{this.fileUrl}}">
+                    <i class="fa-solid fa-pen"></i>
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-danger doc-delete" data-id="{{this.id}}">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </td>
+              </tr>
+              {{else}}
+              <tr><td colspan="6" class="text-center text-muted py-3">No documents found</td></tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+
+        <hr class="my-4" />
+
+        <h6 class="fw-bold mb-2">
+          <i class="fa-solid fa-circle-plus me-2" style="color: var(--emp-primary);"></i> Add / Edit Document
+        </h6>
+
+        <input type="hidden" id="doc_id" value="">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label">Document Type <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="doc_type" placeholder="PAN / Aadhar / Bank Passbook">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Category</label>
+            <input type="text" class="form-control" id="doc_category" placeholder="KYC" value="KYC">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Document Number</label>
+            <input type="text" class="form-control" id="doc_number" placeholder="ABCDE1234F">
+          </div>
+          <div class="col-md-12">
+            <label class="form-label">File URL</label>
+            <input type="text" class="form-control" id="doc_file" placeholder="https://...">
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn emp-btn-secondary" id="btnDocClear">Clear</button>
+        <button type="button" class="btn emp-btn-primary" id="btnDocSave">
+          <i class="fa-solid fa-floppy-disk me-1"></i> Save
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+<style>
+    .sticky-top {
+        margin-top: -1.5rem;
+        margin-left: -12px;
+        margin-right: -12px;
+        border-radius: 0 0 16px 16px !important;
+    }
+
+    #profile-tabs .nav-link {
+        color: var(--emp-secondary);
+        font-weight: 600;
+        font-size: 13px;
+        border-radius: 8px;
+        padding: 8px 12px;
+        transition: all 0.2s;
+    }
+
+    #profile-tabs .nav-link:hover {
+        background: rgba(14, 165, 233, 0.05);
+        color: var(--emp-primary);
+    }
+
+    #profile-tabs .nav-link.active {
+        background: var(--emp-primary);
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+    }
+</style>
+
+<script>
+  document.querySelectorAll('#profile-tabs a').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+      e.preventDefault();
+      const targetId = this.getAttribute('href');
+      document.querySelector(targetId).scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      document.querySelectorAll('#profile-tabs a').forEach(a => a.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+
+  function showInlineMsg(id, text, type = 'success') {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('d-none', 'emp-alert-success', 'emp-alert-danger', 'emp-alert-warning');
+    el.classList.add(type === 'success' ? 'emp-alert-success' : (type === 'warning' ? 'emp-alert-warning' : 'emp-alert-danger'));
+    el.textContent = text;
+  }
+
+  // PERSONAL
+  document.getElementById('btnSavePersonal')?.addEventListener('click', async () => {
+    const payload = {
+      empDob: document.getElementById('p_empDob')?.value || null,
+      empEmail: document.getElementById('p_empEmail')?.value || null,
+      empPhone: document.getElementById('p_empPhone')?.value || null,
+      gender: document.getElementById('p_gender')?.value || null,
+      permanentAddressLine1: document.getElementById('p_permanentAddressLine1')?.value || null,
+      permanentCity: document.getElementById('p_permanentCity')?.value || null,
+      permanentState: document.getElementById('p_permanentState')?.value || null,
+      permanentZip: document.getElementById('p_permanentZip')?.value || null,
+    };
+
+    const resp = await empApiCall('/api/profile/personal', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    });
+
+    if (resp?.success) {
+      showInlineMsg('personalMsg', resp.message || 'Updated');
+      setTimeout(() => window.location.reload(), 700);
+    } else {
+      showInlineMsg('personalMsg', resp?.message || 'Update failed', 'danger');
+    }
+  });
+
+  // EDUCATION
+  function clearEduForm() {
+    document.getElementById('edu_id').value = '';
+    document.getElementById('edu_level').value = '';
+    document.getElementById('edu_degree').value = '';
+    document.getElementById('edu_institution').value = '';
+    document.getElementById('edu_year').value = '';
+    document.getElementById('edu_cgpa').value = '';
+    document.getElementById('edu_cert').value = '';
+  }
+
+  document.getElementById('btnEduClear')?.addEventListener('click', clearEduForm);
+
+  document.querySelectorAll('.edu-edit').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('edu_id').value = btn.dataset.id || '';
+      document.getElementById('edu_level').value = btn.dataset.level || '';
+      document.getElementById('edu_degree').value = btn.dataset.degree || '';
+      document.getElementById('edu_institution').value = btn.dataset.institution || '';
+      document.getElementById('edu_year').value = btn.dataset.year || '';
+      document.getElementById('edu_cgpa').value = btn.dataset.cgpa || '';
+      document.getElementById('edu_cert').value = btn.dataset.cert || '';
+    });
+  });
+
+  document.querySelectorAll('.edu-delete').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      if (!id) return;
+      if (!confirm('Delete this education record?')) return;
+
+      const resp = await empApiCall(`/api/profile/educations/${id}`, { method: 'DELETE' });
+      if (resp?.success) {
+        showInlineMsg('educationMsg', 'Education deleted');
+        setTimeout(() => window.location.reload(), 600);
+      } else {
+        showInlineMsg('educationMsg', resp?.message || 'Delete failed', 'danger');
+      }
+    });
+  });
+
+  document.getElementById('btnEduSave')?.addEventListener('click', async () => {
+    const id = document.getElementById('edu_id').value;
+
+    const payload = {
+      level: document.getElementById('edu_level').value,
+      degree: document.getElementById('edu_degree').value,
+      institutionName: document.getElementById('edu_institution').value,
+      yearOfPassing: document.getElementById('edu_year').value || null,
+      percentageOrCgpa: document.getElementById('edu_cgpa').value,
+      certificateUrl: document.getElementById('edu_cert').value,
+    };
+
+    const resp = await empApiCall(id ? `/api/profile/educations/${id}` : '/api/profile/educations', {
+      method: id ? 'PUT' : 'POST',
+      body: JSON.stringify(payload),
+    });
+
+    if (resp?.success) {
+      showInlineMsg('educationMsg', resp.message || 'Saved');
+      setTimeout(() => window.location.reload(), 700);
+    } else {
+      showInlineMsg('educationMsg', resp?.message || 'Save failed', 'danger');
+    }
+  });
+
+    // ===========================
+  // EXPERIENCE
+  // ===========================
+  function clearExpForm() {
+    document.getElementById('exp_id').value = '';
+    document.getElementById('exp_org').value = '';
+    document.getElementById('exp_title').value = '';
+    document.getElementById('exp_start').value = '';
+    document.getElementById('exp_end').value = '';
+    document.getElementById('exp_current').checked = false;
+    document.getElementById('exp_reason').value = '';
+  }
+
+  document.getElementById('btnExpClear')?.addEventListener('click', clearExpForm);
+
+  document.getElementById('exp_current')?.addEventListener('change', (e) => {
+    const isCurrent = e.target.checked;
+    const endEl = document.getElementById('exp_end');
+    if (isCurrent) {
+      endEl.value = '';
+      endEl.setAttribute('disabled', 'disabled');
+    } else {
+      endEl.removeAttribute('disabled');
+    }
+  });
+
+  document.querySelectorAll('.exp-edit').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('exp_id').value = btn.dataset.id || '';
+      document.getElementById('exp_org').value = btn.dataset.org || '';
+      document.getElementById('exp_title').value = btn.dataset.title || '';
+      document.getElementById('exp_start').value = btn.dataset.start || '';
+      document.getElementById('exp_end').value = btn.dataset.end || '';
+
+      const isCurrent = (btn.dataset.current === 'true' || btn.dataset.current === '1');
+      document.getElementById('exp_current').checked = isCurrent;
+
+      const endEl = document.getElementById('exp_end');
+      if (isCurrent) {
+        endEl.value = '';
+        endEl.setAttribute('disabled', 'disabled');
+      } else {
+        endEl.removeAttribute('disabled');
+      }
+
+      document.getElementById('exp_reason').value = btn.dataset.reason || '';
+    });
+  });
+
+  document.querySelectorAll('.exp-delete').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      if (!id) return;
+      if (!confirm('Delete this experience record?')) return;
+
+      const resp = await empApiCall(`/api/profile/experiences/${id}`, { method: 'DELETE' });
+      if (resp?.success) {
+        showInlineMsg('experienceMsg', 'Experience deleted');
+        setTimeout(() => window.location.reload(), 600);
+      } else {
+        showInlineMsg('experienceMsg', resp?.message || 'Delete failed', 'danger');
+      }
+    });
+  });
+
+  document.getElementById('btnExpSave')?.addEventListener('click', async () => {
+    const id = document.getElementById('exp_id').value;
+
+    const payload = {
+      organizationName: document.getElementById('exp_org').value,
+      jobTitle: document.getElementById('exp_title').value,
+      startDate: document.getElementById('exp_start').value || null,
+      endDate: document.getElementById('exp_end').value || null,
+      isCurrent: document.getElementById('exp_current').checked,
+      reasonForLeaving: document.getElementById('exp_reason').value || null,
+    };
+
+    const resp = await empApiCall(id ? `/api/profile/experiences/${id}` : '/api/profile/experiences', {
+      method: id ? 'PUT' : 'POST',
+      body: JSON.stringify(payload),
+    });
+
+    if (resp?.success) {
+      showInlineMsg('experienceMsg', resp.message || 'Saved');
+      setTimeout(() => window.location.reload(), 700);
+    } else {
+      showInlineMsg('experienceMsg', resp?.message || 'Save failed', 'danger');
+    }
+  });
+
+
+  // ===========================
+  // DOCUMENTS / KYC
+  // ===========================
+  function clearDocForm() {
+    document.getElementById('doc_id').value = '';
+    document.getElementById('doc_type').value = '';
+    document.getElementById('doc_category').value = 'KYC';
+    document.getElementById('doc_number').value = '';
+    document.getElementById('doc_file').value = '';
+  }
+
+  document.getElementById('btnDocClear')?.addEventListener('click', clearDocForm);
+
+  document.querySelectorAll('.doc-edit').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('doc_id').value = btn.dataset.id || '';
+      document.getElementById('doc_type').value = btn.dataset.type || '';
+      document.getElementById('doc_category').value = btn.dataset.category || 'KYC';
+      document.getElementById('doc_number').value = btn.dataset.number || '';
+      document.getElementById('doc_file').value = btn.dataset.file || '';
+    });
+  });
+
+  document.querySelectorAll('.doc-delete').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      if (!id) return;
+      if (!confirm('Delete this document?')) return;
+
+      const resp = await empApiCall(`/api/profile/documents/${id}`, { method: 'DELETE' });
+      if (resp?.success) {
+        showInlineMsg('documentsMsg', 'Document deleted');
+        setTimeout(() => window.location.reload(), 600);
+      } else {
+        showInlineMsg('documentsMsg', resp?.message || 'Delete failed', 'danger');
+      }
+    });
+  });
+
+  document.getElementById('btnDocSave')?.addEventListener('click', async () => {
+    const id = document.getElementById('doc_id').value;
+
+    const payload = {
+      documentType: document.getElementById('doc_type').value,
+      category: document.getElementById('doc_category').value || 'KYC',
+      documentNumber: document.getElementById('doc_number').value || null,
+      fileUrl: document.getElementById('doc_file').value || null,
+    };
+
+    const resp = await empApiCall(id ? `/api/profile/documents/${id}` : '/api/profile/documents', {
+      method: id ? 'PUT' : 'POST',
+      body: JSON.stringify(payload),
+    });
+
+    if (resp?.success) {
+      showInlineMsg('documentsMsg', resp.message || 'Saved');
+      setTimeout(() => window.location.reload(), 700);
+    } else {
+      showInlineMsg('documentsMsg', resp?.message || 'Save failed', 'danger');
+    }
+  });
+
+
+  
+</script>

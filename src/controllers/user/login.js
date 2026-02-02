@@ -3,6 +3,7 @@ import { ApiResponse } from "../../utils/ApiResponse.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { buildTokenPair, hashToken } from "../../utils/token.util.js";
 
+
 export const loginUser = asyncHandler(async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -28,20 +29,20 @@ export const loginUser = asyncHandler(async (req, res) => {
         // Calculate maxAge in seconds (refresh token expires in 7d by default)
         // Use refresh token expiry for cookie persistence, fallback to 7 days
         // refreshExp is in seconds since epoch, convert to remaining seconds from now
-        let maxAgeSeconds;
+        let maxAgeMs;
         if (refreshExp) {
             const remainingMs = (refreshExp * 1000) - Date.now();
-            maxAgeSeconds = Math.max(0, Math.floor(remainingMs / 1000));
+            maxAgeMs = Math.max(0, remainingMs);
         } else {
             // Fallback: 7 days = 7 * 24 * 60 * 60 seconds
-            maxAgeSeconds = 7 * 24 * 60 * 60;
+            maxAgeMs = 7 * 24 * 60 * 60 * 1000;
         }
 
         const options = {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-            maxAge: maxAgeSeconds, // Persistent cookie that survives browser close
+            maxAge: maxAgeMs, // Persistent cookie that survives browser close
             path: "/" // Ensure cookie is available for all paths
         }
 

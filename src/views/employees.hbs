@@ -1279,16 +1279,16 @@
               <span class="view-emp-chip" id="viewEmpIdChip">
                 <i class="fas fa-id-card"></i>
                 <span id="viewEmpId"></span>
-              </span>
-              <span class="view-emp-chip" id="viewEmpEmailChip">
+              </span> 
+              {{!-- <span class="view-emp-chip" id="viewEmpEmailChip">
                 <i class="fas fa-envelope"></i>
                 <span id="viewEmpEmail"></span>
               </span>
               <span class="view-emp-chip" id="viewEmpPhoneChip">
                 <i class="fas fa-phone"></i>
                 <span id="viewEmpPhone"></span>
-              </span>
-            </div>
+              </span> --}}
+            </div> 
           </div>
         </div>
         <button type="button" class="btn-close view-emp-close-btn" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -2309,6 +2309,9 @@
         }
 
         renderKeyValueList("viewPersonalDetails", [
+          ["Employee Id", emp.empId],
+          ["Mail", emp.empEmail],
+          ["Phone", emp.empPhone],
           ["Gender", emp.gender],
           ["Marital Status", emp.maritalStatus],
           ["Date of Birth", emp.empDob],

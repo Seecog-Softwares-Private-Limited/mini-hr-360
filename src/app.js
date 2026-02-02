@@ -15,13 +15,6 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// Ensure helpers exist on the exact Handlebars instance used by express-handlebars
-handlebars.registerHelper('eq', (a, b) => a === b);
-handlebars.registerHelper('or', (a, b) => a || b);
-handlebars.registerHelper('and', (a, b) => a && b);
-handlebars.registerHelper('not', (a) => !a);
-handlebars.registerHelper('dec', (n) => (typeof n === 'number' ? n - 1 : n));
-
 // Avoid favicon spam
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 
@@ -56,6 +49,31 @@ app.engine(
                     .replace(/\u2028/g, '\\u2028')
                     .replace(/\u2029/g, '\\u2029');
             },
+            timeFormat(dateString) {
+                if (!dateString) return '--:--';
+                const date = new Date(dateString);
+                return isNaN(date.getTime()) ? dateString : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            },
+            formatDuration(minutes) {
+                if (!minutes || isNaN(minutes)) return '0h 0m';
+                const h = Math.floor(minutes / 60);
+                const m = minutes % 60;
+                return `${h}h ${m}m`;
+            },
+            formatDate(date) {
+                if (!date) return '-';
+                const d = new Date(date);
+                return isNaN(d.getTime()) ? date : d.toLocaleDateString('en-GB', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                });
+            },
+            eq(a, b) { return a === b; },
+            or(a, b) { return a || b; },
+            and(a, b) { return a && b; },
+            not(a) { return !a; },
+            dec(n) { return (typeof n === 'number' ? n - 1 : n); }
         },
         runtimeOptions: {
             allowProtoPropertiesByDefault: true,
@@ -113,10 +131,14 @@ import businessAddressRoutes from './routes/businessAddress.routes.js';
 import emailTemplateRoutes from './routes/emailTemplate.routes.js';
 import { renderEmailTemplatesPage } from './controllers/emailTemplate.controller.js';
 import { employeePortalRouter } from './routes/employeePortal.routes.js';
+import { employeeAttendanceRouter } from './routes/employeeAttendance.routes.js';
 import { adminLeaveRouter } from './routes/adminLeave.routes.js';
 import { adminAttendanceRouter } from './routes/admin.attendance.routes.js';
 import { billingRouter } from './routes/billing.routes.js';
 import payrollRoutes from './routes/admin.payroll.routes.js';
+import { employeePayrollRouter } from './routes/employeePayroll.routes.js';
+import { adminProfileRouter } from './routes/adminProfile.routes.js';
+
 
 // ---------- Frontend pages ----------
 app.get('/', (req, res) => res.redirect('/login'));
@@ -162,6 +184,20 @@ app.get('/departments', verifyUser, (req, res) => {
 app.get('/business-addresses', verifyUser, (req, res) => {
     const user = { firstName: req.user.firstName, lastName: req.user.lastName };
     res.render('business-addresses', { title: 'Business Addresses', user, active: 'businessAddresses', activeGroup: 'workspace' });
+});
+
+app.get('/states-countries', verifyUser, (req, res) => {
+  const user = {
+    firstName: req.user.firstName,
+    lastName: req.user.lastName,
+  };
+
+  res.render('states-countries', {
+    title: 'States & Countries',
+    user,
+    active: 'statesCountries',
+    activeGroup: 'workspace',
+  });
 });
 
 app.get('/clear-storage', (req, res) => {
@@ -231,7 +267,10 @@ app.get('/email-templates', verifyUser, renderEmailTemplatesPage);
 app.use('/', emailTemplateRoutes);
 
 // Employee Portal Routes
+app.use('/employee/attendance', employeeAttendanceRouter);
+app.use('/employee/payroll', employeePayrollRouter);
 app.use('/employee', employeePortalRouter);
+
 
 // Admin Leave Management Routes
 app.use('/leave-requests', adminLeaveRouter);
@@ -239,5 +278,8 @@ app.use('/attendance', adminAttendanceRouter);
 
 // Billing & Plans
 app.use('/billing', billingRouter);
+
+// Admin Profile
+app.use('/admin', adminProfileRouter);
 
 export { app };

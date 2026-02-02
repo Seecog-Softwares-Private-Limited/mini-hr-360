@@ -14,6 +14,9 @@ import State from '../models/State.js';
 import { generatePassword } from '../utils/passwordGenerator.js';
 import { sendDocumentEmail } from '../utils/emailService.js';
 
+
+
+
 const toBool = (val) =>
     val === true || val === 'true' || val === '1' || val === 'on';
 
@@ -225,33 +228,47 @@ export const renderEmployeesPage = async (req, res, next) => {
             order: [['empId', 'ASC']],
         });
 
-        const [employeesInitial, departments, designations, businesses, business_addresses, countries, states] = await Promise.all([
-            employeesPromise,
-            Department.findAll({
-                where: { status: 'ACTIVE' },
-                order: [['name', 'ASC']],
-            }),
-            Designation.findAll({
-                where: { status: 'ACTIVE' },
-                order: [['name', 'ASC']],
-            }),
-            Business.findAll({
-                where: userId && !isAdmin ? { ownerId: userId } : {},
-                order: [['businessName', 'ASC']],
-            }),
-            BusinessAddress.findAll({
-                where: { status: 'ACTIVE' },
-                order: [['addressName', 'ASC']],
-            }),
-            Country.findAll({
-                where: { status: 'ACTIVE' },
-                order: [['name', 'ASC']],
-            }),
-            State.findAll({
-                where: { status: 'ACTIVE' },
-                order: [['name', 'ASC']],
-            }),
-        ]);
+        const [
+  employeesInitial,
+  departments,
+  designations,
+  businesses,
+  business_addresses,
+  countries,
+  states
+] = await Promise.all([
+  employeesPromise,
+  Department.findAll({
+  where: { status: { [Op.in]: ['ACTIVE', 'Active', 'active'] } },
+  order: [['name', 'ASC']],
+}),
+Designation.findAll({
+  where: { status: { [Op.in]: ['ACTIVE', 'Active', 'active'] } },
+  order: [['name', 'ASC']],
+}),
+
+  Business.findAll({ where: userId && !isAdmin ? { ownerId: userId } : {}, order: [['businessName', 'ASC']] }),
+  BusinessAddress.findAll({ where: { status: 'ACTIVE' }, order: [['addressName', 'ASC']] }),
+  Country.findAll({ where: { status: 'ACTIVE' }, order: [['name', 'ASC']] }),
+  State.findAll({ where: { status: 'ACTIVE' }, order: [['name', 'ASC']] }),
+]);
+
+let finalDepartments = departments;
+let finalDesignations = designations;
+
+if (!finalDepartments || finalDepartments.length === 0) {
+  finalDepartments = await Department.findAll({
+    order: [['name', 'ASC']],
+  });
+}
+
+if (!finalDesignations || finalDesignations.length === 0) {
+  finalDesignations = await Designation.findAll({
+    order: [['name', 'ASC']],
+  });
+}
+
+
 
         // Legacy fallback: if scoped query returns nothing for a non-admin,
         // and the system is effectively single-tenant, show employees without userId scope.
@@ -274,12 +291,14 @@ export const renderEmployeesPage = async (req, res, next) => {
         console.log("employees data : ", employees)
 
         const employeesPlain = employees.map((e) => e.get({ plain: true }));
-        const departmentsPlain = departments.map((d) => d.get({ plain: true }));
-        const designationsPlain = designations.map((d) => d.get({ plain: true }));
+        const departmentsPlain = finalDepartments.map((d) => d.get({ plain: true }));
+        const designationsPlain = finalDesignations.map((d) => d.get({ plain: true }));
         const businessesPlain = businesses.map((b) => b.get({ plain: true }));
         const businessAddressesPlain = business_addresses.map((b) => b.get({ plain: true }));
         const countriesPlain = countries.map((c) => c.get({ plain: true }));
         const statesPlain = states.map((s) => s.get({ plain: true }));
+        
+
 
         console.log('Employees fetched for page');
 
@@ -287,21 +306,26 @@ export const renderEmployeesPage = async (req, res, next) => {
             ? { firstName: req.user.firstName, lastName: req.user.lastName }
             : {};
 
-        res.render('employees', {//loading the employees.hbs
-            layout: 'main',
-            title: 'Employee Management',
-            user,
-            active: 'employees',
-            activeGroup: 'workspace',
-            employees: employeesPlain,
-            departments: departmentsPlain,
-            designations: designationsPlain,
-            businesses: businessesPlain,
-            businessAddresses: businessAddressesPlain,
-            countries: countriesPlain,
-            states: statesPlain,
-            search,
-        });
+        res.render('employees', {
+  layout: 'main',
+  title: 'Employee Management',
+  user,
+  active: 'employees',
+  activeGroup: 'workspace',
+
+  employees: employeesPlain,
+  departments: departmentsPlain,
+  designations: designationsPlain,
+  businesses: businessesPlain,
+  businessAddresses: businessAddressesPlain,
+
+ countries: countriesPlain, 
+ states: statesPlain,
+
+  search,
+});
+
+
     } catch (err) {
         console.error('Error rendering employees page:', err);
         next(err);
@@ -803,7 +827,10 @@ export const updateEmployee = async (req, res, next) => {
 
             empPhone: req.body.empPhone,
             altPhone: req.body.altPhone || null,
-            empEmail: req.body.empEmail,
+            empEmail: (typeof req.body.empEmail === "string"
+  ? req.body.empEmail.trim().toLowerCase()
+  : req.body.empEmail),
+
 
             emergencyContactName: req.body.emergencyContactName || null,
             emergencyContactRelation: req.body.emergencyContactRelation || null,

@@ -1,49 +1,7 @@
 <div class="container-fluid">
     <div class="row">
         <!-- Sidebar -->
-        <div class="col-md-2 emp-sidebar p-3">
-            <div class="emp-brand mb-4">
-                <div class="emp-brand-mark">
-                    <i class="fa-solid fa-user-tie"></i>
-                </div>
-                <div>
-                    <div class="emp-brand-title">mini-hr-360</div>
-                    <div class="emp-brand-subtitle">Employee Portal</div>
-                </div>
-            </div>
-
-            <div class="emp-profile mb-3">
-                <div class="emp-profile-avatar">
-                    <i class="fa-solid fa-user"></i>
-                </div>
-                <div>
-                    <div class="emp-profile-name">{{employee.empName}}</div>
-                    <div class="emp-profile-role">{{employee.empId}}</div>
-                </div>
-            </div>
-
-            <div class="emp-divider"></div>
-
-            <nav class="nav flex-column">
-                <a class="nav-link {{#if (eq active 'dashboard')}}active{{/if}}" href="/employee/dashboard">
-                    <i class="fa-solid fa-house"></i> Dashboard
-                </a>
-                <a class="nav-link {{#if (eq active 'leaves')}}active{{/if}}" href="/employee/leaves">
-                    <i class="fa-solid fa-calendar-days"></i> My Leaves
-                </a>
-                <a class="nav-link" href="/employee/leaves/apply">
-                    <i class="fa-solid fa-plus-circle"></i> Apply Leave
-                </a>
-            </nav>
-
-            <div class="emp-divider"></div>
-
-            <nav class="nav flex-column">
-                <a class="nav-link text-danger" href="/employee/logout">
-                    <i class="fa-solid fa-right-from-bracket"></i> Logout
-                </a>
-            </nav>
-        </div>
+        {{> employee-sidebar employee=employee active='dashboard'}}
 
         <!-- Main Content -->
         <div class="col-md-10 emp-main">
@@ -57,7 +15,8 @@
                 <div class="emp-card-body">
                     <div class="row align-items-center">
                         <div class="col-auto">
-                            <div class="emp-profile-avatar" style="width: 70px; height: 70px; font-size: 28px; background: linear-gradient(135deg, var(--emp-primary) 0%, #06b6d4 100%); color: #fff;">
+                            <div class="emp-profile-avatar"
+                                style="width: 70px; height: 70px; font-size: 28px; background: linear-gradient(135deg, var(--emp-primary) 0%, #06b6d4 100%); color: #fff;">
                                 {{employee.firstName.[0]}}{{employee.lastName.[0]}}
                             </div>
                         </div>
@@ -65,7 +24,8 @@
                             <h4 class="mb-1" style="font-weight: 800;">{{employee.empName}}</h4>
                             <p class="text-muted mb-0">
                                 <span class="me-3"><i class="fa-solid fa-id-badge me-1"></i> {{employee.empId}}</span>
-                                <span class="me-3"><i class="fa-solid fa-building me-1"></i> {{employee.empDepartment}}</span>
+                                <span class="me-3"><i class="fa-solid fa-building me-1"></i>
+                                    {{employee.empDepartment}}</span>
                                 <span><i class="fa-solid fa-briefcase me-1"></i> {{employee.empDesignation}}</span>
                             </p>
                         </div>
@@ -82,7 +42,8 @@
             <div class="row mb-4">
                 <div class="col-md-4">
                     <div class="emp-stat-card">
-                        <div class="emp-stat-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);">
+                        <div class="emp-stat-icon"
+                            style="background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);">
                             <i class="fa-solid fa-clock"></i>
                         </div>
                         <div class="emp-stat-value">{{leaveStats.pendingCount}}</div>
@@ -91,7 +52,8 @@
                 </div>
                 <div class="col-md-4">
                     <div class="emp-stat-card">
-                        <div class="emp-stat-icon" style="background: linear-gradient(135deg, #22c55e 0%, #10b981 100%);">
+                        <div class="emp-stat-icon"
+                            style="background: linear-gradient(135deg, #22c55e 0%, #10b981 100%);">
                             <i class="fa-solid fa-check-circle"></i>
                         </div>
                         <div class="emp-stat-value">{{leaveStats.approvedThisMonth}}</div>
@@ -100,7 +62,8 @@
                 </div>
                 <div class="col-md-4">
                     <div class="emp-stat-card">
-                        <div class="emp-stat-icon" style="background: linear-gradient(135deg, var(--emp-primary) 0%, #06b6d4 100%);">
+                        <div class="emp-stat-icon"
+                            style="background: linear-gradient(135deg, var(--emp-primary) 0%, #06b6d4 100%);">
                             <i class="fa-solid fa-calendar-check"></i>
                         </div>
                         <div class="emp-stat-value">{{leaveStats.balances.length}}</div>
@@ -167,7 +130,8 @@
                                             <small class="text-muted d-block">days</small>
                                         </td>
                                         <td class="text-end">
-                                            <span class="emp-badge {{#if (eq this.status 'PENDING')}}emp-badge-pending{{/if}}{{#if (eq this.status 'APPROVED')}}emp-badge-approved{{/if}}{{#if (eq this.status 'REJECTED')}}emp-badge-rejected{{/if}}{{#if (eq this.status 'CANCELED')}}emp-badge-canceled{{/if}}">
+                                            <span
+                                                class="emp-badge {{#if (eq this.status 'PENDING')}}emp-badge-pending{{/if}}{{#if (eq this.status 'APPROVED')}}emp-badge-approved{{/if}}{{#if (eq this.status 'REJECTED')}}emp-badge-rejected{{/if}}{{#if (eq this.status 'CANCELED')}}emp-badge-canceled{{/if}}">
                                                 {{this.status}}
                                             </span>
                                         </td>
@@ -198,7 +162,8 @@
                             <div class="row g-3">
                                 <div class="col-12">
                                     <a href="/employee/leaves/apply" class="quick-action">
-                                        <div class="quick-action-icon" style="background: linear-gradient(135deg, #22c55e 0%, #10b981 100%);">
+                                        <div class="quick-action-icon"
+                                            style="background: linear-gradient(135deg, #22c55e 0%, #10b981 100%);">
                                             <i class="fa-solid fa-plus"></i>
                                         </div>
                                         <div>
@@ -209,7 +174,8 @@
                                 </div>
                                 <div class="col-12">
                                     <a href="/employee/leaves" class="quick-action">
-                                        <div class="quick-action-icon" style="background: linear-gradient(135deg, var(--emp-primary) 0%, #06b6d4 100%);">
+                                        <div class="quick-action-icon"
+                                            style="background: linear-gradient(135deg, var(--emp-primary) 0%, #06b6d4 100%);">
                                             <i class="fa-solid fa-list"></i>
                                         </div>
                                         <div>
@@ -220,7 +186,8 @@
                                 </div>
                                 <div class="col-12">
                                     <a href="/employee/leaves?status=PENDING" class="quick-action">
-                                        <div class="quick-action-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);">
+                                        <div class="quick-action-icon"
+                                            style="background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);">
                                             <i class="fa-solid fa-clock"></i>
                                         </div>
                                         <div>
