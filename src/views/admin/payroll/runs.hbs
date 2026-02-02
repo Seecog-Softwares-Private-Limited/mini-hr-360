@@ -32,11 +32,13 @@
 								<label class="form-label mb-0 fw-600">Select Period</label>
 								<div class="input-group mt-2">
 									<input type="month" class="form-control" id="periodSelect" value="2026-01">
-									<button class="btn btn-outline-secondary" type="button" onclick="filterRuns()">Filter</button>
+									<button class="btn btn-outline-secondary" type="button"
+										onclick="filterRuns()">Filter</button>
 								</div>
 							</div>
 							<div class="col-md-6">
-								<small class="text-muted">Currently viewing: <strong id="selectedPeriod">January 2026</strong></small>
+								<small class="text-muted">Currently viewing: <strong id="selectedPeriod">January
+										2026</strong></small>
 							</div>
 						</div>
 					</div>
@@ -44,150 +46,176 @@
 
 				<!-- Payroll Runs List -->
 				{{#if runs.length}}
-					<div class="row g-3">
-						{{#each runs}}
-						<div class="col-md-6">
-							<div class="card h-100">
-								<div class="card-header d-flex justify-content-between align-items-center">
-									<div>
-										<h6 class="mb-1">{{this.period}}</h6>
-										<small class="text-muted">{{this.startDate}} to {{this.endDate}}</small>
+				<div class="row g-3">
+					{{#each runs}}
+					<div class="col-md-6">
+						<div class="card h-100">
+							<div class="card-header d-flex justify-content-between align-items-center">
+								<div>
+									<h6 class="mb-1">{{this.period}}</h6>
+									<small class="text-muted">{{this.startDate}} to {{this.endDate}}</small>
+								</div>
+								{{#if (eq this.status 'Draft')}}
+								<span class="badge bg-secondary">Draft</span>
+								{{else if (eq this.status 'Processing')}}
+								<span class="badge bg-warning text-dark">Processing</span>
+								{{else if (eq this.status 'Pending Approval')}}
+								<span class="badge bg-info">Pending Approval</span>
+								{{else if (eq this.status 'Approved')}}
+								<span class="badge bg-success">Approved</span>
+								{{else if (eq this.status 'Locked')}}
+								<span class="badge bg-danger">Locked</span>
+								{{else if (eq this.status 'Paid')}}
+								<span class="badge bg-primary">Paid</span>
+								{{/if}}
+							</div>
+
+							<div class="card-body">
+								<!-- KPI Cards -->
+								<div class="row g-2 mb-3">
+									<div class="col-6">
+										<div class="kpi-mini">
+											<small class="text-muted">Employees</small>
+											<div class="h6 mb-0">{{this.employeeCount}}</div>
+										</div>
 									</div>
-									{{#if (eq this.status 'DRAFT')}}
-										<span class="badge bg-secondary">Draft</span>
-									{{else if (eq this.status 'REVIEW')}}
-										<span class="badge bg-warning text-dark">Under Review</span>
-									{{else if (eq this.status 'APPROVED')}}
-										<span class="badge bg-success">Approved</span>
-									{{else if (eq this.status 'LOCKED')}}
-										<span class="badge bg-danger">Locked</span>
-									{{else if (eq this.status 'PUBLISHED')}}
-										<span class="badge bg-info">Published</span>
+									<div class="col-6">
+										<div class="kpi-mini">
+											<small class="text-muted">Net Pay</small>
+											<div class="h6 mb-0">₹{{this.netPay}}</div>
+										</div>
+									</div>
+								</div>
+
+								<!-- Workflow Stepper -->
+								<div class="workflow-stepper mb-3">
+									{{#if (eq this.status 'Draft')}}
+									<div class="stepper-step active">
+										<div class="step-num">1</div>
+										<div class="step-label">Inputs</div>
+									</div>
+									{{else if (eq this.status 'Processing')}}
+									<div class="stepper-step done">
+										<i class="fa-solid fa-check"></i>
+										<div class="step-label">Inputs</div>
+									</div>
+									<div class="stepper-step active">
+										<div class="step-num">2</div>
+										<div class="step-label">Calculate</div>
+									</div>
+									{{else if (eq this.status 'Approved')}}
+									<div class="stepper-step done">
+										<i class="fa-solid fa-check"></i>
+										<div class="step-label">Inputs</div>
+									</div>
+									<div class="stepper-step done">
+										<i class="fa-solid fa-check"></i>
+										<div class="step-label">Calculate</div>
+									</div>
+									<div class="stepper-step active">
+										<div class="step-num">3</div>
+										<div class="step-label">Approve</div>
+									</div>
+									{{else if (eq this.status 'Locked')}}
+									<div class="stepper-step done">
+										<i class="fa-solid fa-check"></i>
+										<div class="step-label">Inputs</div>
+									</div>
+									<div class="stepper-step done">
+										<i class="fa-solid fa-check"></i>
+										<div class="step-label">Calculate</div>
+									</div>
+									<div class="stepper-step done">
+										<i class="fa-solid fa-check"></i>
+										<div class="step-label">Approve</div>
+									</div>
+									<div class="stepper-step active">
+										<div class="step-num">4</div>
+										<div class="step-label">Lock</div>
+									</div>
+									{{else if (eq this.status 'Paid')}}
+									<div class="stepper-step done">
+										<i class="fa-solid fa-check"></i>
+										<div class="step-label">Inputs</div>
+									</div>
+									<div class="stepper-step done">
+										<i class="fa-solid fa-check"></i>
+										<div class="step-label">Calculate</div>
+									</div>
+									<div class="stepper-step done">
+										<i class="fa-solid fa-check"></i>
+										<div class="step-label">Approve</div>
+									</div>
+									<div class="stepper-step done">
+										<i class="fa-solid fa-check"></i>
+										<div class="step-label">Lock</div>
+									</div>
+									<div class="stepper-step done">
+										<i class="fa-solid fa-check"></i>
+										<div class="step-label">Publish</div>
+									</div>
 									{{/if}}
 								</div>
 
-								<div class="card-body">
-									<!-- KPI Cards -->
-									<div class="row g-2 mb-3">
-										<div class="col-6">
-											<div class="kpi-mini">
-												<small class="text-muted">Employees</small>
-												<div class="h6 mb-0">{{this.employeeCount}}</div>
-											</div>
-										</div>
-										<div class="col-6">
-											<div class="kpi-mini">
-												<small class="text-muted">Net Pay</small>
-												<div class="h6 mb-0">₹{{this.netPay}}</div>
-											</div>
-										</div>
-									</div>
-
-									<!-- Workflow Stepper -->
-									<div class="workflow-stepper mb-3">
-										{{#if (eq this.status 'DRAFT')}}
-											<div class="stepper-step active">
-												<div class="step-num">1</div>
-												<div class="step-label">Inputs</div>
-											</div>
-										{{else if (eq this.status 'REVIEW')}}
-											<div class="stepper-step done">
-												<i class="fa-solid fa-check"></i>
-												<div class="step-label">Inputs</div>
-											</div>
-											<div class="stepper-step active">
-												<div class="step-num">2</div>
-												<div class="step-label">Calculate</div>
-											</div>
-										{{else if (eq this.status 'APPROVED')}}
-											<div class="stepper-step done">
-												<i class="fa-solid fa-check"></i>
-												<div class="step-label">Inputs</div>
-											</div>
-											<div class="stepper-step done">
-												<i class="fa-solid fa-check"></i>
-												<div class="step-label">Calculate</div>
-											</div>
-											<div class="stepper-step active">
-												<div class="step-num">3</div>
-												<div class="step-label">Approve</div>
-											</div>
-										{{else if (eq this.status 'LOCKED')}}
-											<div class="stepper-step done">
-												<i class="fa-solid fa-check"></i>
-												<div class="step-label">Inputs</div>
-											</div>
-											<div class="stepper-step done">
-												<i class="fa-solid fa-check"></i>
-												<div class="step-label">Calculate</div>
-											</div>
-											<div class="stepper-step done">
-												<i class="fa-solid fa-check"></i>
-												<div class="step-label">Approve</div>
-											</div>
-											<div class="stepper-step active">
-												<div class="step-num">4</div>
-												<div class="step-label">Lock</div>
-											</div>
-										{{else if (eq this.status 'PUBLISHED')}}
-											<div class="stepper-step done">
-												<i class="fa-solid fa-check"></i>
-												<div class="step-label">Inputs</div>
-											</div>
-											<div class="stepper-step done">
-												<i class="fa-solid fa-check"></i>
-												<div class="step-label">Calculate</div>
-											</div>
-											<div class="stepper-step done">
-												<i class="fa-solid fa-check"></i>
-												<div class="step-label">Approve</div>
-											</div>
-											<div class="stepper-step done">
-												<i class="fa-solid fa-check"></i>
-												<div class="step-label">Lock</div>
-											</div>
-											<div class="stepper-step done">
-												<i class="fa-solid fa-check"></i>
-												<div class="step-label">Publish</div>
-											</div>
-										{{/if}}
-									</div>
-
-									<!-- Action Buttons -->
-									<div class="d-grid gap-2">
-										{{#if (eq this.status 'DRAFT')}}
-											<button class="btn btn-primary btn-sm" onclick="pullInputs()"><i class="fa-solid fa-arrow-down me-1"></i>Pull Inputs</button>
-											<button class="btn btn-primary btn-sm" onclick="calculatePayroll()"><i class="fa-solid fa-calculator me-1"></i>Calculate</button>
-										{{else if (eq this.status 'REVIEW')}}
-											<button class="btn btn-primary btn-sm" onclick="viewRegister()"><i class="fa-solid fa-table me-1"></i>Review Register</button>
-											<button class="btn btn-success btn-sm" onclick="sendForApproval()"><i class="fa-solid fa-paper-plane me-1"></i>Send for Approval</button>
-										{{else if (eq this.status 'APPROVED')}}
-											<button class="btn btn-primary btn-sm" onclick="lockPeriod()"><i class="fa-solid fa-lock me-1"></i>Lock Period</button>
-										{{else if (eq this.status 'LOCKED')}}
-											<button class="btn btn-primary btn-sm" onclick="generatePayslips()"><i class="fa-solid fa-file-pdf me-1"></i>Generate Payslips</button>
-										{{else if (eq this.status 'PUBLISHED')}}
-											<button class="btn btn-secondary btn-sm" disabled><i class="fa-solid fa-check-circle me-1"></i>Published</button>
-										{{/if}}
-									</div>
-
-									<hr class="my-2">
-									<small class="text-muted">Last updated: {{this.updatedAt}}</small>
+								<!-- Action Buttons -->
+								<div class="d-grid gap-2">
+									{{#if (eq this.status 'Draft')}}
+									<button class="btn btn-warning btn-sm" onclick="startNewRun()"><i
+											class="fa-solid fa-calculator me-1"></i>Calculate Payroll</button>
+									{{else if (eq this.status 'Processing')}}
+									<button class="btn btn-primary btn-sm" onclick="viewRegister({{this.id}})"><i
+											class="fa-solid fa-table me-1"></i>Review Register</button>
+									<button class="btn btn-success btn-sm" onclick="sendForApproval({{this.id}})"><i
+											class="fa-solid fa-paper-plane me-1"></i>Approve</button>
+									{{else if (eq this.status 'Pending Approval')}}
+									<button class="btn btn-primary btn-sm" onclick="viewRegister({{this.id}})"><i
+											class="fa-solid fa-table me-1"></i>Review Register</button>
+									<button class="btn btn-success btn-sm" onclick="sendForApproval({{this.id}})"><i
+											class="fa-solid fa-paper-plane me-1"></i>Approve</button>
+									{{else if (eq this.status 'Approved')}}
+									<button class="btn btn-primary btn-sm" onclick="viewRegister({{this.id}})"><i
+											class="fa-solid fa-table me-1"></i>View Register</button>
+									<button class="btn btn-danger btn-sm" onclick="lockPeriod({{this.id}})"><i
+											class="fa-solid fa-lock me-1"></i>Lock Period</button>
+									{{else if (eq this.status 'Locked')}}
+									<button class="btn btn-primary btn-sm" onclick="viewRegister({{this.id}})"><i class="fa-solid fa-table me-1"></i>View Register</button>
+									<button class="btn btn-success btn-sm" onclick="generatePayslips({{this.id}})"><i class="fa-solid fa-file-pdf me-1"></i>Generate Payslips</button>
+									<button class="btn btn-outline-warning btn-sm" onclick="unlockRun({{this.id}})"><i class="fa-solid fa-lock-open me-1"></i>Unlock</button>
+									{{else if (eq this.status 'Paid')}}
+									<button class="btn btn-secondary btn-sm" disabled><i
+											class="fa-solid fa-check-circle me-1"></i>Completed</button>
+									{{/if}}
 								</div>
+
+								<!-- Edit / Delete / Recalculate - Admin has full access -->
+								<div class="mt-2 d-flex gap-2 flex-wrap">
+									{{#if (eq this.status 'Locked')}}
+									<button class="btn btn-outline-warning btn-sm" onclick="unlockRun({{this.id}})"><i class="fa-solid fa-lock-open me-1"></i>Unlock</button>
+									{{/if}}
+									<button class="btn btn-outline-info btn-sm" onclick="recalculateRun({{this.id}}, '{{this.status}}')"><i class="fa-solid fa-calculator me-1"></i>Recalculate</button>
+									<button class="btn btn-outline-secondary btn-sm" onclick="openEditModal({{this.id}})"><i class="fa-solid fa-pen me-1"></i>Edit</button>
+									<button class="btn btn-outline-danger btn-sm" onclick="confirmDeleteRun({{this.id}}, '{{this.status}}')"><i class="fa-solid fa-trash me-1"></i>Delete</button>
+								</div>
+
+								<hr class="my-2">
+								<small class="text-muted">Last updated: {{this.updatedAt}}</small>
 							</div>
 						</div>
-						{{/each}}
 					</div>
+					{{/each}}
+				</div>
 				{{else}}
-					<div class="card">
-						<div class="card-body text-center py-5">
-							<i class="fa-solid fa-inbox" style="font-size: 48px; opacity: 0.3; display: block; margin-bottom: 15px;"></i>
-							<h6>No payroll runs yet</h6>
-							<p class="text-muted mb-3">Start your first payroll run for {{periodDisplayName}}</p>
-							<button class="btn btn-primary" onclick="startNewRun()">
-								<i class="fa-solid fa-play me-2"></i>Start New Run
-							</button>
-						</div>
+				<div class="card">
+					<div class="card-body text-center py-5">
+						<i class="fa-solid fa-inbox"
+							style="font-size: 48px; opacity: 0.3; display: block; margin-bottom: 15px;"></i>
+						<h6>No payroll runs yet</h6>
+						<p class="text-muted mb-3">Start your first payroll run for {{periodDisplayName}}</p>
+						<button class="btn btn-primary" onclick="startNewRun()">
+							<i class="fa-solid fa-play me-2"></i>Start New Run
+						</button>
 					</div>
+				</div>
 				{{/if}}
 
 				<!-- What Happens Next Card -->
@@ -213,147 +241,1570 @@
 </div>
 
 <style>
-.kpi-mini {
-	padding: 10px;
-	background: #f8f9fa;
-	border-radius: 6px;
-}
+	.kpi-mini {
+		padding: 10px;
+		background: #f8f9fa;
+		border-radius: 6px;
+	}
 
-.workflow-stepper {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	font-size: 11px;
-	overflow-x: auto;
-}
+	.workflow-stepper {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		font-size: 11px;
+		overflow-x: auto;
+	}
 
-.stepper-step {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 4px;
-	min-width: 50px;
-	position: relative;
-}
+	.stepper-step {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 4px;
+		min-width: 50px;
+		position: relative;
+	}
 
-.stepper-step::after {
-	content: '';
-	position: absolute;
-	left: 100%;
-	top: 12px;
-	width: 8px;
-	height: 2px;
-	background: #e5e7eb;
-}
+	.stepper-step::after {
+		content: '';
+		position: absolute;
+		left: 100%;
+		top: 12px;
+		width: 8px;
+		height: 2px;
+		background: #e5e7eb;
+	}
 
-.stepper-step:last-child::after {
-	display: none;
-}
+	.stepper-step:last-child::after {
+		display: none;
+	}
 
-.stepper-step.done::after,
-.stepper-step.active::after {
-	background: #4f46e5;
-}
+	.stepper-step.done::after,
+	.stepper-step.active::after {
+		background: #4f46e5;
+	}
 
-.step-num {
-	width: 24px;
-	height: 24px;
-	border-radius: 50%;
-	background: #e5e7eb;
-	color: #666;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-weight: 700;
-	font-size: 12px;
-}
+	.step-num {
+		width: 24px;
+		height: 24px;
+		border-radius: 50%;
+		background: #e5e7eb;
+		color: #666;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-weight: 700;
+		font-size: 12px;
+	}
 
-.stepper-step.active .step-num {
-	background: #4f46e5;
-	color: white;
-}
+	.stepper-step.active .step-num {
+		background: #4f46e5;
+		color: white;
+	}
 
-.stepper-step.done .step-num {
-	background: #22c55e;
-	color: white;
-}
+	.stepper-step.done .step-num {
+		background: #22c55e;
+		color: white;
+	}
 
-.stepper-step.done i {
-	width: 24px;
-	height: 24px;
-	border-radius: 50%;
-	background: #22c55e;
-	color: white;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-size: 12px;
-}
+	.stepper-step.done i {
+		width: 24px;
+		height: 24px;
+		border-radius: 50%;
+		background: #22c55e;
+		color: white;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 12px;
+	}
 
-.step-label {
-	font-weight: 600;
-	text-align: center;
-	white-space: nowrap;
-}
+	.step-label {
+		font-weight: 600;
+		text-align: center;
+		white-space: nowrap;
+	}
+
+	/* Wizard Modal Styles */
+	.wizard-progress-bar {
+		background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+	}
+
+	.wizard-step {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 6px;
+		opacity: 0.5;
+		transition: all 0.3s ease;
+	}
+
+	.wizard-step.active {
+		opacity: 1;
+	}
+
+	.wizard-step.completed {
+		opacity: 1;
+	}
+
+	.wizard-step .step-icon {
+		width: 48px;
+		height: 48px;
+		border-radius: 50%;
+		background: #e5e7eb;
+		color: #666;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 18px;
+		transition: all 0.3s ease;
+		border: 3px solid transparent;
+	}
+
+	.wizard-step.active .step-icon {
+		background: #4f46e5;
+		color: white;
+		border-color: #4f46e5;
+		box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+	}
+
+	.wizard-step.completed .step-icon {
+		background: #22c55e;
+		color: white;
+		border-color: #22c55e;
+	}
+
+	.wizard-step.error .step-icon {
+		background: #ef4444;
+		color: white;
+		border-color: #ef4444;
+	}
+
+	.wizard-step .step-label {
+		font-size: 12px;
+		font-weight: 600;
+		color: #6b7280;
+	}
+
+	.wizard-step.active .step-label,
+	.wizard-step.completed .step-label {
+		color: #1f2937;
+	}
+
+	.wizard-connector {
+		flex: 1;
+		height: 3px;
+		background: #e5e7eb;
+		margin: 0 -10px;
+		margin-top: -20px;
+		transition: background 0.3s ease;
+	}
+
+	.wizard-connector.completed {
+		background: linear-gradient(90deg, #22c55e, #22c55e);
+	}
+
+	.wizard-connector.active {
+		background: linear-gradient(90deg, #22c55e, #4f46e5);
+	}
+
+	.stat-card {
+		padding: 20px;
+		border-radius: 12px;
+		text-align: center;
+	}
+
+	.stat-card .stat-value {
+		font-size: 28px;
+		font-weight: 700;
+		line-height: 1;
+	}
+
+	.stat-card .stat-label {
+		font-size: 12px;
+		opacity: 0.9;
+		margin-top: 6px;
+	}
+
+	.wizard-content {
+		min-height: 400px;
+	}
+
+	#reviewTable thead th {
+		background: #f8f9fa;
+		position: sticky;
+		top: 0;
+		z-index: 1;
+	}
+
+	.modal-xl {
+		max-width: 1100px;
+	}
+</style>
+		color: white;
+	}
+
+	.stepper-step.done .step-num {
+		background: #22c55e;
+		color: white;
+	}
+
+	.stepper-step.done i {
+		width: 24px;
+		height: 24px;
+		border-radius: 50%;
+		background: #22c55e;
+		color: white;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 12px;
+	}
+
+	.step-label {
+		font-weight: 600;
+		text-align: center;
+		white-space: nowrap;
+	}
 </style>
 
+<!-- Edit Run Modal -->
+<div class="modal fade" id="editRunModal" tabindex="-1" aria-labelledby="editRunModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="editRunModalLabel"><i class="fa-solid fa-pen-to-square me-2"></i>Edit Payroll Run</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<input type="hidden" id="editingRunId">
+				
+				<!-- Run Summary -->
+				<div class="alert alert-light border mb-3">
+					<div class="row g-2 text-center">
+						<div class="col-4">
+							<div class="fw-bold text-muted small">PERIOD</div>
+							<div id="editRunPeriod" class="fs-6">-</div>
+						</div>
+						<div class="col-4">
+							<div class="fw-bold text-muted small">STATUS</div>
+							<div id="editRunStatus" class="fs-6">-</div>
+						</div>
+						<div class="col-4">
+							<div class="fw-bold text-muted small">EMPLOYEES</div>
+							<div id="editRunEmployees" class="fs-6">-</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="row g-3">
+					<div class="col-md-6">
+						<label class="form-label">Notes / Comments</label>
+						<textarea id="runNotes" class="form-control" rows="3" placeholder="Add notes or comments about this payroll run..."></textarea>
+						<small class="text-muted">Internal notes for audit/reference purposes</small>
+					</div>
+					<div class="col-md-6">
+						<label class="form-label">Processed Date</label>
+						<input type="date" id="runProcessedDate" class="form-control">
+						<small class="text-muted">Date when payroll was processed</small>
+					</div>
+				</div>
+				
+				<hr class="my-3">
+				
+				<!-- Quick Actions -->
+				<div class="mb-3">
+					<label class="form-label">Quick Actions</label>
+					<div class="d-flex gap-2 flex-wrap">
+						<button type="button" class="btn btn-outline-info btn-sm" onclick="recalculateFromModal()">
+							<i class="fa-solid fa-calculator me-1"></i>Recalculate Payroll
+						</button>
+						<button type="button" class="btn btn-outline-secondary btn-sm" onclick="viewRegisterFromModal()">
+							<i class="fa-solid fa-table me-1"></i>View Register
+						</button>
+					</div>
+					<small class="text-muted d-block mt-1">Recalculate will refresh all employee calculations using current salary structures</small>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-primary" onclick="saveRunEdits()"><i class="fa-solid fa-save me-1"></i>Save Changes</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Payroll Run Wizard Modal -->
+<div class="modal fade" id="payrollWizardModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="payrollWizardModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-xl modal-dialog-scrollable">
+		<div class="modal-content">
+			<div class="modal-header bg-primary text-white">
+				<div>
+					<h5 class="modal-title mb-0" id="payrollWizardModalLabel">
+						<i class="fa-solid fa-money-check-dollar me-2"></i>Payroll Processing Wizard
+					</h5>
+					<small id="wizardPeriodDisplay" class="opacity-75">January 2026</small>
+				</div>
+				<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" id="wizardCloseBtn"></button>
+			</div>
+			<div class="modal-body p-0">
+				<!-- Progress Steps Header -->
+				<div class="wizard-progress-bar p-3 bg-light border-bottom">
+					<div class="d-flex justify-content-between align-items-center">
+						<div class="wizard-step" data-step="1">
+							<div class="step-icon"><i class="fa-solid fa-download"></i></div>
+							<div class="step-label">Pull Inputs</div>
+						</div>
+						<div class="wizard-connector"></div>
+						<div class="wizard-step" data-step="2">
+							<div class="step-icon"><i class="fa-solid fa-calculator"></i></div>
+							<div class="step-label">Calculate</div>
+						</div>
+						<div class="wizard-connector"></div>
+						<div class="wizard-step" data-step="3">
+							<div class="step-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
+							<div class="step-label">Review</div>
+						</div>
+						<div class="wizard-connector"></div>
+						<div class="wizard-step" data-step="4">
+							<div class="step-icon"><i class="fa-solid fa-check-double"></i></div>
+							<div class="step-label">Approve</div>
+						</div>
+						<div class="wizard-connector"></div>
+						<div class="wizard-step" data-step="5">
+							<div class="step-icon"><i class="fa-solid fa-lock"></i></div>
+							<div class="step-label">Lock</div>
+						</div>
+						<div class="wizard-connector"></div>
+						<div class="wizard-step" data-step="6">
+							<div class="step-icon"><i class="fa-solid fa-paper-plane"></i></div>
+							<div class="step-label">Publish</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Step Content Container -->
+				<div class="wizard-content p-4">
+					<!-- Step 1: Pull Inputs -->
+					<div class="wizard-step-content" id="step1Content">
+						<div class="text-center py-4" id="step1Loading">
+							<div class="spinner-border text-primary mb-3" role="status">
+								<span class="visually-hidden">Loading...</span>
+							</div>
+							<h5>Pulling Attendance & Leave Data...</h5>
+							<p class="text-muted">Fetching records for all employees</p>
+						</div>
+						<div id="step1Result" class="d-none">
+							<div class="row g-3 mb-4">
+								<div class="col-md-3">
+									<div class="stat-card bg-primary text-white">
+										<div class="stat-value" id="inputsEmployeeCount">0</div>
+										<div class="stat-label">Employees</div>
+									</div>
+								</div>
+								<div class="col-md-3">
+									<div class="stat-card bg-success text-white">
+										<div class="stat-value" id="inputsAttendanceCount">0</div>
+										<div class="stat-label">Attendance Records</div>
+									</div>
+								</div>
+								<div class="col-md-3">
+									<div class="stat-card bg-info text-white">
+										<div class="stat-value" id="inputsLeaveCount">0</div>
+										<div class="stat-label">Leave Records</div>
+									</div>
+								</div>
+								<div class="col-md-3">
+									<div class="stat-card bg-warning text-dark">
+										<div class="stat-value" id="inputsExceptionCount">0</div>
+										<div class="stat-label">Exceptions</div>
+									</div>
+								</div>
+							</div>
+							<div id="inputsExceptionsContainer" class="mb-3 d-none">
+								<h6 class="text-warning"><i class="fa-solid fa-exclamation-triangle me-2"></i>Exceptions Found</h6>
+								<div class="table-responsive">
+									<table class="table table-sm table-bordered">
+										<thead class="table-warning">
+											<tr><th>Emp ID</th><th>Name</th><th>Issue</th></tr>
+										</thead>
+										<tbody id="inputsExceptionsList"></tbody>
+									</table>
+								</div>
+							</div>
+							<div class="alert alert-success">
+								<i class="fa-solid fa-check-circle me-2"></i>
+								Inputs pulled successfully. Ready to calculate payroll.
+							</div>
+						</div>
+					</div>
+
+					<!-- Step 2: Calculate -->
+					<div class="wizard-step-content d-none" id="step2Content">
+						<div class="text-center py-4" id="step2Loading">
+							<div class="spinner-border text-primary mb-3" role="status">
+								<span class="visually-hidden">Calculating...</span>
+							</div>
+							<h5>Computing Payroll...</h5>
+							<p class="text-muted">Applying salary structures and formulas</p>
+							<div class="progress mt-3" style="height: 8px; max-width: 400px; margin: 0 auto;">
+								<div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" id="calcProgressBar"></div>
+							</div>
+						</div>
+						<div id="step2Result" class="d-none">
+							<div class="row g-3 mb-4">
+								<div class="col-md-4">
+									<div class="stat-card bg-success text-white">
+										<div class="stat-value" id="calcTotalEarnings">₹0</div>
+										<div class="stat-label">Total Earnings</div>
+									</div>
+								</div>
+								<div class="col-md-4">
+									<div class="stat-card bg-danger text-white">
+										<div class="stat-value" id="calcTotalDeductions">₹0</div>
+										<div class="stat-label">Total Deductions</div>
+									</div>
+								</div>
+								<div class="col-md-4">
+									<div class="stat-card bg-primary text-white">
+										<div class="stat-value" id="calcNetPay">₹0</div>
+										<div class="stat-label">Net Pay</div>
+									</div>
+								</div>
+							</div>
+							<div class="alert alert-success">
+								<i class="fa-solid fa-check-circle me-2"></i>
+								<span id="calcEmployeeProcessed">0</span> employees processed. Click "Review" to see the detailed register.
+							</div>
+						</div>
+					</div>
+
+					<!-- Step 3: Review -->
+					<div class="wizard-step-content d-none" id="step3Content">
+						<div class="d-flex justify-content-between align-items-center mb-3">
+							<h6 class="mb-0"><i class="fa-solid fa-table me-2"></i>Payroll Register Preview</h6>
+							<button class="btn btn-outline-primary btn-sm" onclick="openFullRegister()">
+								<i class="fa-solid fa-external-link me-1"></i>Open Full Register
+							</button>
+						</div>
+						<div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+							<table class="table table-hover table-sm table-bordered" id="reviewTable">
+								<thead class="table-light sticky-top">
+									<tr>
+										<th>Emp ID</th>
+										<th>Name</th>
+										<th>Department</th>
+										<th>LOP Days</th>
+										<th class="text-end">Earnings</th>
+										<th class="text-end">Deductions</th>
+										<th class="text-end">Net Pay</th>
+									</tr>
+								</thead>
+								<tbody id="reviewTableBody">
+									<!-- Populated dynamically -->
+								</tbody>
+							</table>
+						</div>
+						<div class="alert alert-info mt-3">
+							<i class="fa-solid fa-info-circle me-2"></i>
+							Review the payroll register above. If everything looks correct, click "Approve" to proceed.
+						</div>
+					</div>
+
+					<!-- Step 4: Approve -->
+					<div class="wizard-step-content d-none" id="step4Content">
+						<div class="text-center py-4" id="step4Loading">
+							<div class="spinner-border text-success mb-3" role="status">
+								<span class="visually-hidden">Approving...</span>
+							</div>
+							<h5>Sending for Approval...</h5>
+							<p class="text-muted">Recording approval timestamp</p>
+						</div>
+						<div id="step4Result" class="d-none">
+							<div class="text-center py-4">
+								<i class="fa-solid fa-circle-check text-success" style="font-size: 64px;"></i>
+								<h4 class="mt-3">Payroll Approved!</h4>
+								<p class="text-muted">The payroll has been approved and is ready to be locked.</p>
+							</div>
+						</div>
+					</div>
+
+					<!-- Step 5: Lock -->
+					<div class="wizard-step-content d-none" id="step5Content">
+						<div class="text-center py-4" id="step5Loading">
+							<div class="spinner-border text-danger mb-3" role="status">
+								<span class="visually-hidden">Locking...</span>
+							</div>
+							<h5>Locking Payroll Period...</h5>
+							<p class="text-muted">Preventing further modifications</p>
+						</div>
+						<div id="step5Result" class="d-none">
+							<div class="text-center py-4">
+								<i class="fa-solid fa-lock text-danger" style="font-size: 64px;"></i>
+								<h4 class="mt-3">Payroll Locked!</h4>
+								<p class="text-muted">This payroll period is now locked for compliance. Ready to publish.</p>
+							</div>
+						</div>
+					</div>
+
+					<!-- Step 6: Publish -->
+					<div class="wizard-step-content d-none" id="step6Content">
+						<div class="text-center py-4" id="step6Loading">
+							<div class="spinner-border text-primary mb-3" role="status">
+								<span class="visually-hidden">Publishing...</span>
+							</div>
+							<h5>Generating Payslips & Publishing...</h5>
+							<p class="text-muted">Creating PDF payslips for all employees</p>
+						</div>
+						<div id="step6Result" class="d-none">
+							<div class="text-center py-4">
+								<i class="fa-solid fa-party-horn text-primary" style="font-size: 64px;"></i>
+								<h4 class="mt-3 text-success">🎉 Payroll Published Successfully!</h4>
+								<p class="text-muted">Payslips have been generated. Now process payments to employees.</p>
+								
+								<!-- Payment Processing Section -->
+								<div class="card border-0 shadow-sm mt-4 mx-auto" style="max-width: 500px;">
+									<div class="card-header bg-white border-bottom">
+										<h6 class="mb-0"><i class="fa-solid fa-money-bill-transfer me-2 text-success"></i>Process Salary Payments</h6>
+									</div>
+									<div class="card-body">
+										<div id="paymentConfig" class="mb-3 text-start">
+											<div class="d-flex align-items-center justify-content-between mb-2">
+												<span class="text-muted">Payment Mode:</span>
+												<span id="paymentModeLabel" class="badge bg-info">Checking...</span>
+											</div>
+											<div class="d-flex align-items-center justify-content-between">
+												<span class="text-muted">Status:</span>
+												<span id="paymentConfigStatus" class="badge bg-secondary">Pending</span>
+											</div>
+										</div>
+										<div id="paymentActions">
+											<button class="btn btn-outline-primary me-2 mb-2" onclick="validatePayments()">
+												<i class="fa-solid fa-check-double me-1"></i>Validate
+											</button>
+											<button class="btn btn-success me-2 mb-2" onclick="processPayments()">
+												<i class="fa-solid fa-paper-plane me-1"></i>Process Payments
+											</button>
+											<button class="btn btn-outline-secondary mb-2" onclick="downloadBankFile()">
+												<i class="fa-solid fa-download me-1"></i>Bank File
+											</button>
+										</div>
+										<div id="paymentProgress" class="d-none mt-3">
+											<div class="progress" style="height: 10px;">
+												<div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%"></div>
+											</div>
+											<small class="text-muted mt-1">Processing payments...</small>
+										</div>
+										<div id="paymentResults" class="d-none mt-3 text-start"></div>
+									</div>
+								</div>
+								
+								<div class="mt-4">
+									<button class="btn btn-primary me-2" onclick="viewPayslips()">
+										<i class="fa-solid fa-file-pdf me-1"></i>View Payslips
+									</button>
+									<button class="btn btn-outline-secondary" data-bs-dismiss="modal">
+										<i class="fa-solid fa-check me-1"></i>Done
+									</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<div class="d-flex justify-content-between w-100">
+					<button type="button" class="btn btn-outline-secondary" id="wizardCancelBtn" data-bs-dismiss="modal">
+						<i class="fa-solid fa-xmark me-1"></i>Cancel
+					</button>
+					<div>
+						<button type="button" class="btn btn-outline-primary me-2 d-none" id="wizardBackBtn" onclick="wizardBack()">
+							<i class="fa-solid fa-arrow-left me-1"></i>Back
+						</button>
+						<button type="button" class="btn btn-primary" id="wizardNextBtn" onclick="wizardNext()">
+							<span id="wizardNextLabel">Pull Inputs</span>
+							<i class="fa-solid fa-arrow-right ms-1"></i>
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
 <script>
-function filterRuns() {
-	const period = document.getElementById('periodSelect').value;
-	const date = new Date(period);
-	const monthName = date.toLocaleString('default', { month: 'long', year: 'numeric' });
-	document.getElementById('selectedPeriod').textContent = monthName;
-	showToast(`Filtered to ${monthName}`, 'info');
-}
+	const businessId = '{{businessId}}';
+	
+	// Wizard state
+	let wizardState = {
+		currentStep: 0,
+		period: null,
+		runId: null,
+		inputsData: null,
+		calcData: null,
+		stepLabels: ['Pull Inputs', 'Calculate', 'Review', 'Approve', 'Lock', 'Publish']
+	};
 
-function startNewRun() {
-	alert('This will initiate a new payroll run - wired to backend');
-	showToast('New payroll run started!', 'success');
-}
-
-function pullInputs() {
-	showToast('Pulling attendance and leave data...', 'info');
-}
-
-function calculatePayroll() {
-	showToast('Calculating payroll...', 'info');
-}
-
-function viewRegister() {
-	window.location.href = '/admin/payroll/register/1';
-}
-
-function sendForApproval() {
-	showToast('Payroll sent for approval!', 'success');
-}
-
-function lockPeriod() {
-	if (confirm('Lock this payroll period? This cannot be undone.')) {
-		showToast('Payroll period locked!', 'success');
+	function getAuthHeaders() {
+		const token = localStorage.getItem('accessToken');
+		return {
+			'Content-Type': 'application/json',
+			'x-business-id': businessId,
+			...(token ? { 'Authorization': `Bearer ${token}` } : {})
+		};
 	}
-}
 
-function generatePayslips() {
-	window.location.href = '/admin/payroll/payslips/1';
-}
+	function formatCurrency(amount) {
+		return '₹' + Number(amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+	}
 
-function showToast(message, type = 'info') {
-	const alertDiv = document.createElement('div');
-	alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-	alertDiv.setAttribute('role', 'alert');
-	alertDiv.innerHTML = `
+	function filterRuns() {
+		const period = document.getElementById('periodSelect').value;
+		const [year, month] = period.split('-');
+		window.location.href = `/admin/payroll/runs?periodYear=${year}&periodMonth=${month}`;
+	}
+
+	// Open the wizard modal instead of direct run creation
+	function startNewRun() {
+		const period = document.getElementById('periodSelect').value;
+		if (!period) {
+			showToast('Please select a period first', 'warning');
+			return;
+		}
+
+		const [year, month] = period.split('-');
+		const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+			'July', 'August', 'September', 'October', 'November', 'December'];
+		const displayPeriod = `${monthNames[parseInt(month) - 1]} ${year}`;
+
+		// Reset wizard state
+		wizardState = {
+			currentStep: 0,
+			period: period,
+			runId: null,
+			inputsData: null,
+			calcData: null,
+			stepLabels: ['Pull Inputs', 'Calculate', 'Review', 'Approve', 'Lock', 'Publish']
+		};
+
+		// Update UI
+		document.getElementById('wizardPeriodDisplay').textContent = displayPeriod;
+		updateWizardUI();
+		
+		// Reset all step contents
+		document.querySelectorAll('.wizard-step-content').forEach(el => el.classList.add('d-none'));
+		document.getElementById('step1Content').classList.remove('d-none');
+		document.getElementById('step1Loading').classList.remove('d-none');
+		document.getElementById('step1Result').classList.add('d-none');
+
+		// Show wizard modal
+		const wizardModal = new bootstrap.Modal(document.getElementById('payrollWizardModal'));
+		wizardModal.show();
+	}
+
+	function updateWizardUI() {
+		const steps = document.querySelectorAll('.wizard-step');
+		const connectors = document.querySelectorAll('.wizard-connector');
+		
+		steps.forEach((step, index) => {
+			step.classList.remove('active', 'completed', 'error');
+			if (index < wizardState.currentStep) {
+				step.classList.add('completed');
+			} else if (index === wizardState.currentStep) {
+				step.classList.add('active');
+			}
+		});
+
+		connectors.forEach((conn, index) => {
+			conn.classList.remove('active', 'completed');
+			if (index < wizardState.currentStep) {
+				conn.classList.add('completed');
+			} else if (index === wizardState.currentStep) {
+				conn.classList.add('active');
+			}
+		});
+
+		// Update button labels
+		const nextBtn = document.getElementById('wizardNextBtn');
+		const backBtn = document.getElementById('wizardBackBtn');
+		const nextLabel = document.getElementById('wizardNextLabel');
+		
+		if (wizardState.currentStep < 6) {
+			nextLabel.textContent = wizardState.stepLabels[wizardState.currentStep];
+		}
+
+		// Show/hide back button
+		if (wizardState.currentStep > 0 && wizardState.currentStep < 3) {
+			backBtn.classList.remove('d-none');
+		} else {
+			backBtn.classList.add('d-none');
+		}
+
+		// Hide next button on final step completion
+		if (wizardState.currentStep >= 6) {
+			nextBtn.classList.add('d-none');
+		} else {
+			nextBtn.classList.remove('d-none');
+		}
+	}
+
+	async function wizardNext() {
+		const currentStep = wizardState.currentStep;
+		
+		switch (currentStep) {
+			case 0: await executePullInputs(); break;
+			case 1: await executeCalculate(); break;
+			case 2: await executeReview(); break;
+			case 3: await executeApprove(); break;
+			case 4: await executeLock(); break;
+			case 5: await executePublish(); break;
+		}
+	}
+
+	function wizardBack() {
+		if (wizardState.currentStep > 0 && wizardState.currentStep < 3) {
+			wizardState.currentStep--;
+			showStepContent(wizardState.currentStep);
+			updateWizardUI();
+		}
+	}
+
+	function showStepContent(step) {
+		document.querySelectorAll('.wizard-step-content').forEach(el => el.classList.add('d-none'));
+		document.getElementById(`step${step + 1}Content`).classList.remove('d-none');
+	}
+
+	// Step 1: Pull Inputs
+	async function executePullInputs() {
+		showStepContent(0);
+		document.getElementById('step1Loading').classList.remove('d-none');
+		document.getElementById('step1Result').classList.add('d-none');
+
+		try {
+			const res = await fetch('/api/admin/payroll/runs/pull-inputs', {
+				method: 'POST',
+				headers: getAuthHeaders(),
+				credentials: 'include',
+				body: JSON.stringify({ period: wizardState.period })
+			});
+
+			const data = await res.json();
+			if (!res.ok) throw new Error(data.message || 'Failed to pull inputs');
+
+			wizardState.inputsData = data.data;
+
+			// Update UI with results
+			document.getElementById('inputsEmployeeCount').textContent = data.data.employeeCount || 0;
+			document.getElementById('inputsAttendanceCount').textContent = data.data.attendanceRecords || 0;
+			document.getElementById('inputsLeaveCount').textContent = data.data.leaveRecords || 0;
+			document.getElementById('inputsExceptionCount').textContent = (data.data.exceptions || []).length;
+
+			// Show exceptions if any
+			if (data.data.exceptions && data.data.exceptions.length > 0) {
+				document.getElementById('inputsExceptionsContainer').classList.remove('d-none');
+				const tbody = document.getElementById('inputsExceptionsList');
+				tbody.innerHTML = data.data.exceptions.map(e => 
+					`<tr><td>${e.empId}</td><td>${e.empName}</td><td class="text-warning">${e.reason}</td></tr>`
+				).join('');
+			} else {
+				document.getElementById('inputsExceptionsContainer').classList.add('d-none');
+			}
+
+			document.getElementById('step1Loading').classList.add('d-none');
+			document.getElementById('step1Result').classList.remove('d-none');
+
+			wizardState.currentStep = 1;
+			updateWizardUI();
+
+		} catch (err) {
+			console.error('Pull inputs error:', err);
+			document.getElementById('step1Loading').innerHTML = `
+				<i class="fa-solid fa-exclamation-circle text-danger" style="font-size: 48px;"></i>
+				<h5 class="text-danger mt-3">Error Pulling Inputs</h5>
+				<p class="text-muted">${err.message}</p>
+				<button class="btn btn-primary mt-2" onclick="executePullInputs()">Retry</button>
+			`;
+		}
+	}
+
+	// Step 2: Calculate
+	async function executeCalculate() {
+		showStepContent(1);
+		document.getElementById('step2Loading').classList.remove('d-none');
+		document.getElementById('step2Result').classList.add('d-none');
+
+		// Animate progress bar
+		const progressBar = document.getElementById('calcProgressBar');
+		let progress = 0;
+		const progressInterval = setInterval(() => {
+			progress += Math.random() * 15;
+			if (progress > 90) progress = 90;
+			progressBar.style.width = `${progress}%`;
+		}, 200);
+
+		try {
+			// First initialize the run
+			const initRes = await fetch('/api/admin/payroll/runs/initialize', {
+				method: 'POST',
+				headers: getAuthHeaders(),
+				credentials: 'include',
+				body: JSON.stringify({ period: wizardState.period })
+			});
+
+			const initData = await initRes.json();
+			if (!initRes.ok) throw new Error(initData.message || 'Failed to initialize run');
+
+				wizardState.runId = initData.data.id;
+
+				// Try to insert the new run into the runs list in-place (avoid full page reload)
+				try {
+					const newRun = initData.data;
+					if (newRun && newRun.id) {
+						const runsContainer = document.querySelector('.main-content .row.g-3');
+						const cardHtml = `
+							<div class="col-md-6" id="payroll-run-${newRun.id}">
+								<div class="card h-100">
+									<div class="card-header d-flex justify-content-between align-items-center">
+										<div>
+											<h6 class="mb-1">${newRun.period || ''}</h6>
+											<small class="text-muted">${newRun.startDate || '-'} to ${newRun.endDate || '-'}</small>
+										</div>
+										<span class="badge bg-secondary">${newRun.status || 'Draft'}</span>
+									</div>
+									<div class="card-body">
+										<div class="row g-2 mb-3">
+											<div class="col-6"><div class="kpi-mini"><small class="text-muted">Employees</small><div class="h6 mb-0">${newRun.employeeCount || 0}</div></div></div>
+											<div class="col-6"><div class="kpi-mini"><small class="text-muted">Net Pay</small><div class="h6 mb-0">₹${newRun.netPay || 0}</div></div></div>
+										</div>
+										<div class="d-grid gap-2">
+											<button class="btn btn-warning btn-sm" onclick="startNewRun()"><i class="fa-solid fa-calculator me-1"></i>Calculate Payroll</button>
+										</div>
+										<hr class="my-2">
+										<small class="text-muted">Last updated: ${newRun.updatedAt || ''}</small>
+									</div>
+								</div>
+							</div>
+						`;
+						if (runsContainer) {
+							const wrapper = document.createElement('div');
+							wrapper.innerHTML = cardHtml;
+							runsContainer.prepend(wrapper.firstElementChild);
+						} else {
+							// If no runs container (empty state), try to replace the no-runs card
+							const noRunsCard = document.querySelector('.card .card-body.text-center.py-5');
+							if (noRunsCard && noRunsCard.parentElement) {
+								noRunsCard.parentElement.outerHTML = `<div class="row g-3">${cardHtml}</div>`;
+							}
+						}
+					}
+				} catch(e) { console.warn('Could not insert new run into DOM', e); }
+
+			// Then calculate
+			const calcRes = await fetch(`/api/admin/payroll/runs/${wizardState.runId}/calculate`, {
+				method: 'POST',
+				headers: getAuthHeaders(),
+				credentials: 'include'
+			});
+
+			const calcData = await calcRes.json();
+			if (!calcRes.ok) throw new Error(calcData.message || 'Failed to calculate payroll');
+
+			clearInterval(progressInterval);
+			progressBar.style.width = '100%';
+
+			wizardState.calcData = calcData.data;
+
+			// Update UI
+			document.getElementById('calcTotalEarnings').textContent = formatCurrency(calcData.data.totalEarnings);
+			document.getElementById('calcTotalDeductions').textContent = formatCurrency(calcData.data.totalDeductions);
+			document.getElementById('calcNetPay').textContent = formatCurrency(calcData.data.totalNetPay);
+			document.getElementById('calcEmployeeProcessed').textContent = calcData.data.employeeCount || 0;
+
+			setTimeout(() => {
+				document.getElementById('step2Loading').classList.add('d-none');
+				document.getElementById('step2Result').classList.remove('d-none');
+				wizardState.currentStep = 2;
+				updateWizardUI();
+			}, 500);
+
+		} catch (err) {
+			clearInterval(progressInterval);
+			console.error('Calculate error:', err);
+			document.getElementById('step2Loading').innerHTML = `
+				<i class="fa-solid fa-exclamation-circle text-danger" style="font-size: 48px;"></i>
+				<h5 class="text-danger mt-3">Error Calculating Payroll</h5>
+				<p class="text-muted">${err.message}</p>
+				<button class="btn btn-primary mt-2" onclick="executeCalculate()">Retry</button>
+			`;
+		}
+	}
+
+	// Step 3: Review
+	async function executeReview() {
+		showStepContent(2);
+
+		try {
+			const res = await fetch(`/api/admin/payroll/register/${wizardState.runId}`, {
+				headers: getAuthHeaders(),
+				credentials: 'include'
+			});
+
+			const data = await res.json();
+			if (!res.ok) throw new Error(data.message || 'Failed to load register');
+
+			const tbody = document.getElementById('reviewTableBody');
+			tbody.innerHTML = (data.data.employees || []).map(emp => `
+				<tr>
+					<td>${emp.empId}</td>
+					<td>${emp.empName}</td>
+					<td>${emp.department || '-'}</td>
+					<td class="${emp.lopDays > 0 ? 'text-warning fw-bold' : ''}">${emp.lopDays || 0}</td>
+					<td class="text-end text-success">${formatCurrency(emp.earnings)}</td>
+					<td class="text-end text-danger">${formatCurrency(emp.deductions)}</td>
+					<td class="text-end fw-bold">${formatCurrency(emp.netPay)}</td>
+				</tr>
+			`).join('');
+
+			wizardState.currentStep = 3;
+			updateWizardUI();
+
+		} catch (err) {
+			console.error('Review error:', err);
+			showToast('Error loading register: ' + err.message, 'danger');
+		}
+	}
+
+	function openFullRegister() {
+		if (wizardState.runId) {
+			window.open(`/admin/payroll/register/${wizardState.runId}`, '_blank');
+		}
+	}
+
+	// Step 4: Approve
+	async function executeApprove() {
+		showStepContent(3);
+		document.getElementById('step4Loading').classList.remove('d-none');
+		document.getElementById('step4Result').classList.add('d-none');
+
+		try {
+			const res = await fetch(`/api/admin/payroll/runs/${wizardState.runId}/approve`, {
+				method: 'POST',
+				headers: getAuthHeaders(),
+				credentials: 'include',
+				body: JSON.stringify({})
+			});
+
+			const data = await res.json();
+			if (!res.ok) throw new Error(data.message || 'Failed to approve');
+
+			setTimeout(() => {
+				document.getElementById('step4Loading').classList.add('d-none');
+				document.getElementById('step4Result').classList.remove('d-none');
+				wizardState.currentStep = 4;
+				updateWizardUI();
+			}, 800);
+
+		} catch (err) {
+			console.error('Approve error:', err);
+			document.getElementById('step4Loading').innerHTML = `
+				<i class="fa-solid fa-exclamation-circle text-danger" style="font-size: 48px;"></i>
+				<h5 class="text-danger mt-3">Error Approving Payroll</h5>
+				<p class="text-muted">${err.message}</p>
+				<button class="btn btn-primary mt-2" onclick="executeApprove()">Retry</button>
+			`;
+		}
+	}
+
+	// Step 5: Lock
+	async function executeLock() {
+		showStepContent(4);
+		document.getElementById('step5Loading').classList.remove('d-none');
+		document.getElementById('step5Result').classList.add('d-none');
+
+		try {
+			const res = await fetch(`/api/admin/payroll/runs/${wizardState.runId}/lock`, {
+				method: 'POST',
+				headers: getAuthHeaders(),
+				credentials: 'include',
+				body: JSON.stringify({})
+			});
+
+			const data = await res.json();
+			if (!res.ok) throw new Error(data.message || 'Failed to lock');
+
+			setTimeout(() => {
+				document.getElementById('step5Loading').classList.add('d-none');
+				document.getElementById('step5Result').classList.remove('d-none');
+				wizardState.currentStep = 5;
+				updateWizardUI();
+			}, 800);
+
+		} catch (err) {
+			console.error('Lock error:', err);
+			document.getElementById('step5Loading').innerHTML = `
+				<i class="fa-solid fa-exclamation-circle text-danger" style="font-size: 48px;"></i>
+				<h5 class="text-danger mt-3">Error Locking Payroll</h5>
+				<p class="text-muted">${err.message}</p>
+				<button class="btn btn-primary mt-2" onclick="executeLock()">Retry</button>
+			`;
+		}
+	}
+
+	// Step 6: Publish
+	async function executePublish() {
+		showStepContent(5);
+		document.getElementById('step6Loading').classList.remove('d-none');
+		document.getElementById('step6Result').classList.add('d-none');
+
+		try {
+			// Generate payslips first
+			const genRes = await fetch(`/api/admin/payroll/payslips/${wizardState.runId}/generate`, {
+				method: 'POST',
+				headers: getAuthHeaders(),
+				credentials: 'include'
+			});
+
+			// Don't fail if payslips already generated
+			if (!genRes.ok) {
+				const genData = await genRes.json();
+				if (!genData.message?.includes('already been generated')) {
+					console.warn('Payslip generation warning:', genData.message);
+				}
+			}
+
+			// Publish the run
+			const pubRes = await fetch(`/api/admin/payroll/runs/${wizardState.runId}/publish`, {
+				method: 'POST',
+				headers: getAuthHeaders(),
+				credentials: 'include',
+				body: JSON.stringify({})
+			});
+
+			const pubData = await pubRes.json();
+			if (!pubRes.ok) throw new Error(pubData.message || 'Failed to publish');
+
+			setTimeout(() => {
+				document.getElementById('step6Loading').classList.add('d-none');
+				document.getElementById('step6Result').classList.remove('d-none');
+				wizardState.currentStep = 6;
+				updateWizardUI();
+				// Check payment configuration
+				checkPaymentConfig();
+			}, 1000);
+
+		} catch (err) {
+			console.error('Publish error:', err);
+			document.getElementById('step6Loading').innerHTML = `
+				<i class="fa-solid fa-exclamation-circle text-danger" style="font-size: 48px;"></i>
+				<h5 class="text-danger mt-3">Error Publishing Payroll</h5>
+				<p class="text-muted">${err.message}</p>
+				<button class="btn btn-primary mt-2" onclick="executePublish()">Retry</button>
+			`;
+		}
+	}
+
+	function viewPayslips() {
+		if (wizardState.runId) {
+			window.location.href = `/admin/payroll/payslips/${wizardState.runId}`;
+		}
+	}
+
+	// Payment Processing Functions
+	let paymentConfigChecked = false;
+	
+	async function checkPaymentConfig() {
+		if (paymentConfigChecked) return;
+		
+		try {
+			const res = await fetch('/api/admin/payroll/payout-config', {
+				headers: getAuthHeaders(),
+				credentials: 'include'
+			});
+			const data = await res.json();
+			
+			if (res.ok && data.success) {
+				const config = data.config;
+				document.getElementById('paymentModeLabel').textContent = 
+					config.razorpayConfigured ? 'RazorpayX (Auto)' : 'Manual (Bank File)';
+				document.getElementById('paymentModeLabel').className = 
+					`badge ${config.razorpayConfigured ? 'bg-success' : 'bg-warning'}`;
+				document.getElementById('paymentConfigStatus').textContent = 'Ready';
+				document.getElementById('paymentConfigStatus').className = 'badge bg-success';
+				paymentConfigChecked = true;
+			}
+		} catch (err) {
+			console.error('Error checking payment config:', err);
+			document.getElementById('paymentModeLabel').textContent = 'Manual (Bank File)';
+			document.getElementById('paymentModeLabel').className = 'badge bg-warning';
+		}
+	}
+	
+	async function validatePayments() {
+		if (!wizardState.runId) return;
+		
+		const btn = event.target;
+		const originalText = btn.innerHTML;
+		btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Validating...';
+		btn.disabled = true;
+		
+		try {
+			const res = await fetch(`/api/admin/payroll/runs/${wizardState.runId}/payment-status`, {
+				headers: getAuthHeaders(),
+				credentials: 'include'
+			});
+			const data = await res.json();
+			
+			if (res.ok && data.success) {
+				const status = data.status;
+				const resultsDiv = document.getElementById('paymentResults');
+				resultsDiv.innerHTML = `
+					<div class="alert alert-info mb-0">
+						<div class="d-flex justify-content-between mb-2">
+							<span><i class="fa-solid fa-users me-1"></i>Total Employees:</span>
+							<strong>${status.total}</strong>
+						</div>
+						<div class="d-flex justify-content-between mb-2">
+							<span><i class="fa-solid fa-clock me-1 text-warning"></i>Pending:</span>
+							<strong>${status.pending}</strong>
+						</div>
+						<div class="d-flex justify-content-between mb-2">
+							<span><i class="fa-solid fa-check me-1 text-success"></i>Processed:</span>
+							<strong>${status.processed}</strong>
+						</div>
+						${status.failed > 0 ? `
+						<div class="d-flex justify-content-between text-danger">
+							<span><i class="fa-solid fa-xmark me-1"></i>Failed:</span>
+							<strong>${status.failed}</strong>
+						</div>` : ''}
+					</div>
+				`;
+				resultsDiv.classList.remove('d-none');
+				showToast('Validation complete', 'success');
+			} else {
+				showToast(data.message || 'Validation failed', 'danger');
+			}
+		} catch (err) {
+			console.error('Error validating payments:', err);
+			showToast('Error validating payments', 'danger');
+		} finally {
+			btn.innerHTML = originalText;
+			btn.disabled = false;
+		}
+	}
+	
+	async function processPayments() {
+		if (!wizardState.runId) return;
+		
+		if (!confirm('Process payments for all employees in this payroll run?\n\nThis will initiate bank transfers to employee accounts.')) {
+			return;
+		}
+		
+		const actionsDiv = document.getElementById('paymentActions');
+		const progressDiv = document.getElementById('paymentProgress');
+		const resultsDiv = document.getElementById('paymentResults');
+		
+		actionsDiv.classList.add('d-none');
+		progressDiv.classList.remove('d-none');
+		
+		// Animate progress bar
+		const progressBar = progressDiv.querySelector('.progress-bar');
+		let progress = 0;
+		const progressInterval = setInterval(() => {
+			if (progress < 90) {
+				progress += Math.random() * 15;
+				progressBar.style.width = `${Math.min(progress, 90)}%`;
+			}
+		}, 500);
+		
+		try {
+			const res = await fetch(`/api/admin/payroll/runs/${wizardState.runId}/process-payments`, {
+				method: 'POST',
+				headers: getAuthHeaders(),
+				credentials: 'include',
+				body: JSON.stringify({ mode: 'auto' })
+			});
+			const data = await res.json();
+			
+			clearInterval(progressInterval);
+			progressBar.style.width = '100%';
+			
+			setTimeout(() => {
+				progressDiv.classList.add('d-none');
+				
+				if (res.ok && data.success) {
+					const result = data.result;
+					resultsDiv.innerHTML = `
+						<div class="alert alert-success mb-0">
+							<h6 class="alert-heading"><i class="fa-solid fa-check-circle me-1"></i>Payments Processed!</h6>
+							<hr>
+							<div class="d-flex justify-content-between mb-1">
+								<span>Successful:</span>
+								<strong class="text-success">${result.processed || 0}</strong>
+							</div>
+							<div class="d-flex justify-content-between mb-1">
+								<span>Failed:</span>
+								<strong class="text-danger">${result.failed || 0}</strong>
+							</div>
+							<div class="d-flex justify-content-between mb-1">
+								<span>Skipped:</span>
+								<strong class="text-muted">${result.skipped || 0}</strong>
+							</div>
+							<hr>
+							<div class="d-flex justify-content-between">
+								<span>Total Amount:</span>
+								<strong>₹${(result.totalAmount || 0).toLocaleString('en-IN')}</strong>
+							</div>
+						</div>
+					`;
+					resultsDiv.classList.remove('d-none');
+					showToast('Payment processing complete!', 'success');
+					
+					// Show close button
+					actionsDiv.innerHTML = `
+						<button class="btn btn-outline-primary" onclick="validatePayments()">
+							<i class="fa-solid fa-refresh me-1"></i>Refresh Status
+						</button>
+					`;
+					actionsDiv.classList.remove('d-none');
+				} else {
+					resultsDiv.innerHTML = `
+						<div class="alert alert-danger mb-0">
+							<i class="fa-solid fa-exclamation-circle me-1"></i>
+							${data.message || 'Payment processing failed'}
+						</div>
+					`;
+					resultsDiv.classList.remove('d-none');
+					actionsDiv.classList.remove('d-none');
+					showToast('Payment processing failed', 'danger');
+				}
+			}, 500);
+		} catch (err) {
+			console.error('Error processing payments:', err);
+			clearInterval(progressInterval);
+			progressDiv.classList.add('d-none');
+			actionsDiv.classList.remove('d-none');
+			resultsDiv.innerHTML = `
+				<div class="alert alert-danger mb-0">
+					<i class="fa-solid fa-exclamation-circle me-1"></i>
+					Error processing payments. Please try again.
+				</div>
+			`;
+			resultsDiv.classList.remove('d-none');
+			showToast('Error processing payments', 'danger');
+		}
+	}
+	
+	async function downloadBankFile() {
+		if (!wizardState.runId) return;
+		
+		try {
+			const res = await fetch(`/api/admin/payroll/runs/${wizardState.runId}/bank-file`, {
+				headers: getAuthHeaders(),
+				credentials: 'include'
+			});
+			
+			if (res.ok) {
+				const blob = await res.blob();
+				const url = window.URL.createObjectURL(blob);
+				const a = document.createElement('a');
+				a.href = url;
+				a.download = `payroll_bank_file_${wizardState.runId}.csv`;
+				document.body.appendChild(a);
+				a.click();
+				window.URL.revokeObjectURL(url);
+				a.remove();
+				showToast('Bank file downloaded!', 'success');
+			} else {
+				const data = await res.json();
+				showToast(data.message || 'Failed to download bank file', 'danger');
+			}
+		} catch (err) {
+			console.error('Error downloading bank file:', err);
+			showToast('Error downloading bank file', 'danger');
+		}
+	}
+
+	// Legacy functions for card buttons
+	function pullInputs() {
+		showToast('Pulling attendance and leave data...', 'info');
+		setTimeout(() => {
+			showToast('Inputs pulled successfully! Ready to calculate.', 'success');
+		}, 1000);
+	}
+
+	function calculatePayroll() {
+		startNewRun();
+	}
+
+	function viewRegister(runId) {
+		window.location.href = `/admin/payroll/register/${runId}`;
+	}
+
+	async function sendForApproval(runId) {
+		if (!confirm('Send this payroll run for approval?')) return;
+
+		try {
+			const res = await fetch(`/api/admin/payroll/runs/${runId}/approve`, {
+				method: 'POST',
+				headers: getAuthHeaders(),
+				credentials: 'include',
+				body: JSON.stringify({})
+			});
+			const data = await res.json();
+
+			if (res.ok) {
+				showToast('Payroll sent for approval!', 'success');
+				setTimeout(() => window.location.reload(), 1000);
+			} else {
+				showToast(data.message || 'Failed to approve', 'danger');
+			}
+		} catch (err) {
+			console.error('Error approving payroll:', err);
+			showToast('Error approving payroll. Check console.', 'danger');
+		}
+	}
+
+	async function lockPeriod(runId) {
+		if (!confirm('Lock this payroll period?\n\nThis prevents further edits and cannot be undone.')) return;
+
+		try {
+			const res = await fetch(`/api/admin/payroll/runs/${runId}/lock`, {
+				method: 'POST',
+				headers: getAuthHeaders(),
+				credentials: 'include',
+				body: JSON.stringify({})
+			});
+			const data = await res.json();
+
+			if (res.ok) {
+				showToast('Payroll period locked!', 'success');
+				setTimeout(() => window.location.reload(), 1000);
+			} else {
+				showToast(data.message || 'Failed to lock period', 'danger');
+			}
+		} catch (err) {
+			console.error('Error locking payroll:', err);
+			showToast('Error locking payroll. Check console.', 'danger');
+		}
+	}
+
+	async function generatePayslips(runId) {
+		showToast('Generating payslips...', 'info');
+		try {
+			const res = await fetch(`/api/admin/payroll/payslips/${runId}/generate`, {
+				method: 'POST',
+				headers: getAuthHeaders(),
+				credentials: 'include',
+			});
+			const data = await res.json();
+
+			if (res.ok) {
+				showToast('Payslips generated!', 'success');
+				window.location.href = `/admin/payroll/payslips/${runId}`;
+			} else {
+				if (res.status === 400 && data.message && data.message.includes('already been generated')) {
+					showToast('Payslips already generated. Redirecting...', 'info');
+					window.location.href = `/admin/payroll/payslips/${runId}`;
+				} else {
+					showToast(data.message || 'Failed to generate payslips', 'danger');
+				}
+			}
+		} catch (err) {
+			console.error('Error generating payslips:', err);
+			showToast('Error generating payslips. Check console.', 'danger');
+		}
+	}
+
+	async function openEditModal(runId) {
+ 		try {
+ 			const res = await fetch(`/api/admin/payroll/runs/${runId}`, { headers: getAuthHeaders(), credentials: 'include' });
+ 			const data = await res.json();
+ 			if (!res.ok) {
+ 				showToast(data.message || 'Failed to fetch run', 'danger');
+ 				return;
+ 			}
+
+ 			const run = data.data || data;
+ 			document.getElementById('editingRunId').value = runId;
+ 			document.getElementById('runNotes').value = run.notes || '';
+ 			document.getElementById('runProcessedDate').value = run.processedDate ? new Date(run.processedDate).toISOString().slice(0,10) : '';
+ 			
+ 			// Populate new fields
+ 			const periodDate = new Date(run.periodYear, run.periodMonth - 1);
+ 			document.getElementById('editRunPeriod').textContent = periodDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+ 			document.getElementById('editRunStatus').innerHTML = `<span class="badge bg-${getStatusColor(run.status)}">${run.status}</span>`;
+ 			document.getElementById('editRunEmployees').textContent = run.totalEmployees || '-';
+ 			
+ 			const modalEl = document.getElementById('editRunModal');
+ 			const bsModal = new bootstrap.Modal(modalEl);
+ 			bsModal.show();
+ 		} catch (err) {
+ 			console.error('Error opening edit modal:', err);
+ 			showToast('Error fetching run details', 'danger');
+ 		}
+	}
+	
+	function getStatusColor(status) {
+		switch (status) {
+			case 'Draft': return 'secondary';
+			case 'Calculated': return 'info';
+			case 'Approved': return 'success';
+			case 'Locked': return 'primary';
+			case 'Paid': return 'dark';
+			default: return 'secondary';
+		}
+	}
+
+	async function recalculateRun(runId, status) {
+		let msg = 'Recalculate this payroll run? This will refresh all employee calculations using current salary structures.';
+		if (status && ['Approved', 'Locked', 'Paid'].includes(status)) {
+			msg = `This run is ${status}. Recalculating will reset it to Processing status and refresh all calculations. Continue?`;
+		}
+		if (!confirm(msg)) return;
+		showToast('Recalculating payroll...', 'info');
+		try {
+			const res = await fetch(`/api/admin/payroll/runs/${runId}/recalculate`, {
+				method: 'POST',
+				headers: getAuthHeaders(),
+				credentials: 'include',
+				body: JSON.stringify({ force: true })
+			});
+			const data = await res.json();
+			if (res.ok) {
+				showToast('Payroll recalculated successfully!', 'success');
+				setTimeout(() => window.location.reload(), 1000);
+			} else {
+				showToast(data.message || 'Failed to recalculate', 'danger');
+			}
+		} catch (err) {
+			console.error('Error recalculating:', err);
+			showToast('Error recalculating payroll', 'danger');
+		}
+	}
+	
+	function recalculateFromModal() {
+		const runId = document.getElementById('editingRunId').value;
+		bootstrap.Modal.getInstance(document.getElementById('editRunModal')).hide();
+		recalculateRun(runId);
+	}
+	
+	function viewRegisterFromModal() {
+		const runId = document.getElementById('editingRunId').value;
+		bootstrap.Modal.getInstance(document.getElementById('editRunModal')).hide();
+		viewRegister(runId);
+	}
+
+	async function confirmForceDeleteRun(runId, status) {
+		if (!confirm(`This run is ${status}. Are you sure you want to FORCE DELETE it? This will remove all payslips, register data, and statutory records. This cannot be undone!`)) return;
+		try {
+			const res = await fetch(`/api/admin/payroll/runs/${runId}?force=true`, {
+				method: 'DELETE',
+				headers: getAuthHeaders(),
+				credentials: 'include',
+				body: JSON.stringify({ force: true })
+			});
+			const data = await res.json();
+			if (res.ok) {
+				showToast('Payroll run force deleted', 'success');
+				setTimeout(() => window.location.reload(), 800);
+			} else {
+				showToast(data.message || 'Failed to delete run', 'danger');
+			}
+		} catch (err) {
+			console.error('Error force deleting run:', err);
+			showToast('Error deleting run', 'danger');
+		}
+	}
+
+	async function saveRunEdits() {
+ 		const runId = document.getElementById('editingRunId').value;
+ 		const notes = document.getElementById('runNotes').value;
+ 		const processedDate = document.getElementById('runProcessedDate').value || null;
+
+ 		try {
+ 			const res = await fetch(`/api/admin/payroll/runs/${runId}`, {
+ 				method: 'PUT',
+ 				headers: getAuthHeaders(),
+ 				credentials: 'include',
+ 				body: JSON.stringify({ notes, processedDate })
+ 			});
+ 			const data = await res.json();
+ 			if (res.ok) {
+ 				showToast('Run updated', 'success');
+ 				setTimeout(() => window.location.reload(), 800);
+ 			} else {
+ 				showToast(data.message || 'Failed to update run', 'danger');
+ 			}
+ 		} catch (err) {
+ 			console.error('Error saving run edits:', err);
+ 			showToast('Error saving run edits', 'danger');
+ 		}
+	}
+
+	async function confirmDeleteRun(runId, status) {
+		let msg = 'Delete this payroll run and all generated data? This cannot be undone.';
+		if (status && ['Approved', 'Locked', 'Paid'].includes(status)) {
+			msg = `This run is ${status}. Are you sure you want to DELETE it? This will remove all payslips, register data, and statutory records. This CANNOT be undone!`;
+		}
+ 		if (!confirm(msg)) return;
+ 		try {
+ 			const res = await fetch(`/api/admin/payroll/runs/${runId}?force=true`, {
+ 				method: 'DELETE',
+ 				headers: getAuthHeaders(),
+ 				credentials: 'include',
+ 				body: JSON.stringify({ force: true })
+ 			});
+ 			const data = await res.json();
+ 			if (res.ok) {
+ 				showToast('Payroll run deleted', 'success');
+ 				setTimeout(() => window.location.reload(), 800);
+ 			} else {
+ 				showToast(data.message || 'Failed to delete run', 'danger');
+ 			}
+ 		} catch (err) {
+ 			console.error('Error deleting run:', err);
+ 			showToast('Error deleting run', 'danger');
+ 		}
+ 	}
+
+	function showToast(message, type = 'info') {
+		const alertDiv = document.createElement('div');
+		alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+		alertDiv.setAttribute('role', 'alert');
+		alertDiv.innerHTML = `
 		${message}
 		<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
 	`;
-	document.querySelector('.main-content').insertAdjacentElement('afterbegin', alertDiv);
-	setTimeout(() => alertDiv.remove(), 4000);
-}
+		document.querySelector('.main-content').insertAdjacentElement('afterbegin', alertDiv);
+		setTimeout(() => alertDiv.remove(), 4000);
+	}
 
-// Initialize period display
-document.addEventListener('DOMContentLoaded', () => {
-	const period = document.getElementById('periodSelect').value;
-	const date = new Date(period);
-	const monthName = date.toLocaleString('default', { month: 'long', year: 'numeric' });
-	document.getElementById('selectedPeriod').textContent = monthName;
-});
+	async function unlockRun(runId) {
+		if (!confirm('Unlock this payroll run? This will allow edits again.')) return;
+		try {
+			const res = await fetch(`/api/admin/payroll/runs/${runId}/unlock`, {
+				method: 'POST',
+				headers: getAuthHeaders(),
+				credentials: 'include',
+				body: JSON.stringify({ reason: 'Manual unlock via UI' })
+			});
+			const data = await res.json();
+			if (res.ok) {
+				showToast('Payroll run unlocked', 'success');
+				setTimeout(() => window.location.reload(), 800);
+			} else {
+				showToast(data.message || 'Failed to unlock run', 'danger');
+			}
+		} catch (err) {
+			console.error('Error unlocking run:', err);
+			showToast('Error unlocking run', 'danger');
+		}
+	}
+
+	// Initialize period display
+	document.addEventListener('DOMContentLoaded', () => {
+		const period = document.getElementById('periodSelect').value;
+		const date = new Date(period);
+		const monthName = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+		document.getElementById('selectedPeriod').textContent = monthName;
+	});
 </script>

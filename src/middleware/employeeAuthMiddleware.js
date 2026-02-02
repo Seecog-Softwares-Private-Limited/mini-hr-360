@@ -25,12 +25,12 @@ function shouldRedirectToEmployeeLogin(req) {
  */
 export const verifyEmployee = asyncHandler(async (req, res, next) => {
   try {
-    // Check for employee-specific token (stored in separate cookie)
+    // Check for employee-specific token (prioritize header for API debugging)
     const token =
-      req.cookies?.employeeAccessToken ||
-      req.header('Authorization')?.replace(/^Bearer\s+/i, '').trim();
+      req.header('Authorization')?.replace(/^Bearer\s+/i, '').trim() ||
+      req.cookies?.employeeAccessToken;
 
-    if (!token) {
+    if (!token || token === 'undefined' || token === 'null') {
       if (shouldRedirectToEmployeeLogin(req)) {
         return res.redirect('/employee/login');
       }
@@ -41,7 +41,14 @@ export const verifyEmployee = asyncHandler(async (req, res, next) => {
       });
     }
 
-    const decoded = verifyAccessToken(token);
+    let decoded;
+    try {
+      decoded = verifyAccessToken(token);
+    } catch (jwtErr) {
+      console.error(`[Auth] JWT malformed/invalid. Received: "${token.substring(0, 20)}..."`);
+      throw jwtErr;
+    }
+
 
     // Check if this is an employee token (has employeeId claim)
     if (!decoded?.employeeId) {

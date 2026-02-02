@@ -17,7 +17,6 @@ const DocumentType = sequelize.define(
         code: {
             type: DataTypes.STRING(50),
             allowNull: false,
-            unique: true,
         },
         icon: {
             type: DataTypes.STRING(255),
@@ -46,8 +45,8 @@ const DocumentType = sequelize.define(
         timestamps: true, // createdAt, updatedAt
         paranoid: false,  // we manage isDeleted + deletedAt manually
         indexes: [
-            { unique: true, fields: ['code'] },
-            { fields: ['isDeleted'] },
+            { name: 'idx_document_types_code', unique: true, fields: ['code'] },
+            { name: 'idx_document_types_isDeleted', fields: ['isDeleted'] },
         ],
     }
 );

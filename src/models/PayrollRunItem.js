@@ -16,6 +16,18 @@ const PayrollRunItem = sequelize.define('PayrollRunItem', {
 
   lopDays: { type: DataTypes.INTEGER, defaultValue: 0 },
 
+  // Payment tracking fields
+  paymentStatus: { 
+    type: DataTypes.ENUM('pending', 'processing', 'processed', 'failed', 'reversed'),
+    defaultValue: 'pending'
+  },
+  paymentId: { type: DataTypes.STRING, allowNull: true }, // RazorpayX payout ID
+  paymentMode: { type: DataTypes.STRING, allowNull: true }, // NEFT, RTGS, IMPS, UPI
+  paymentUtr: { type: DataTypes.STRING, allowNull: true }, // Bank UTR reference
+  paymentInitiatedAt: { type: DataTypes.DATE, allowNull: true },
+  paymentProcessedAt: { type: DataTypes.DATE, allowNull: true },
+  paymentError: { type: DataTypes.TEXT, allowNull: true },
+
 }, {
   tableName: 'payroll_run_items',
   timestamps: true,

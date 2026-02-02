@@ -97,12 +97,15 @@ export const verifyOwner = asyncHandler(async (req, res, next) => {
             });
         }
 
-        if (owner.role !== "shop_owner") {
+        // Allow shop_owner and any role that indicates admin (contains 'admin') to access owner-only routes
+        const role = String(owner.role || '').toLowerCase();
+        const isAdminRole = role.includes('admin');
+        if (role !== 'shop_owner' && !isAdminRole) {
             if (shouldRedirectToLogin(req)) return res.redirect('/login');
             return res.status(403).json({
                 success: false,
                 message: 'Access denied',
-                error: 'only shop owner can access',
+                error: 'only shop owner or admin roles can access',
             });
         }
 

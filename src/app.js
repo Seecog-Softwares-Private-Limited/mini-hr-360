@@ -16,13 +16,6 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// Ensure helpers exist on the exact Handlebars instance used by express-handlebars
-handlebars.registerHelper('eq', (a, b) => a === b);
-handlebars.registerHelper('or', (a, b) => a || b);
-handlebars.registerHelper('and', (a, b) => a && b);
-handlebars.registerHelper('not', (a) => !a);
-handlebars.registerHelper('dec', (n) => (typeof n === 'number' ? n - 1 : n));
-
 // Avoid favicon spam
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 
@@ -68,6 +61,40 @@ app.engine(
                 const m = minutes % 60;
                 return `${h}h ${m}m`;
             },
+            eq(a, b) {
+                return a === b;
+            },
+            formatDate(date) {
+                if (!date) return '-';
+                const d = new Date(date);
+                return isNaN(d.getTime()) ? date : d.toLocaleDateString('en-GB', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                });
+            },
+            eq(a, b) { return a === b; },
+            or(a, b) { return a || b; },
+            and(a, b) { return a && b; },
+            not(a) { return !a; },
+            dec(n) { return (typeof n === 'number' ? n - 1 : n); },
+            slice(str, start, len) {
+                if (typeof str !== 'string') return '';
+                return str.slice(start, len);
+            },
+            includes(str, search) {
+                if (typeof str !== 'string') return false;
+                return str.toLowerCase().includes((search || '').toLowerCase());
+            },
+            substring(str, start, len) {
+                if (typeof str !== 'string') return '';
+                if (start < 0) return str.slice(start);
+                return str.substring(start, len !== undefined ? start + len : undefined);
+            },
+            gt(a, b) { return a > b; },
+            gte(a, b) { return a >= b; },
+            lt(a, b) { return a < b; },
+            lte(a, b) { return a <= b; }
         },
         runtimeOptions: {
             allowProtoPropertiesByDefault: true,
@@ -117,7 +144,7 @@ app.use((req, res, next) => {
     console.log(`Received ${req.method} request with params:`, req.params);
     next();
 });
-app.use(errorHandler);
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 // ---------- Route imports ----------
 import userRoutes from './routes/user.routes.js';
@@ -146,6 +173,10 @@ import { adminLeaveRouter } from './routes/adminLeave.routes.js';
 import { adminAttendanceRouter } from './routes/admin.attendance.routes.js';
 import { billingRouter } from './routes/billing.routes.js';
 import payrollRoutes from './routes/admin.payroll.routes.js';
+import { employeePayrollRouter } from './routes/employeePayroll.routes.js';
+import { adminProfileRouter } from './routes/adminProfile.routes.js';
+import adminPayrollPagesRouter from './routes/admin.payroll.pages.routes.js';
+
 
 // ---------- Frontend pages ----------
 app.get('/', (req, res) => res.redirect('/login'));
@@ -220,6 +251,7 @@ app.get('/clear-storage', (req, res) => {
 
 // Static
 app.use(express.static('public'));
+app.use('/storage', express.static('storage'));
 
 // ---------- API routes ----------
 app.use('/api/v1/users', userRoutes);
@@ -228,6 +260,19 @@ app.use('/api/v1/business', businessRouter);
 app.get('/api/v1/health', (req, res) =>
     res.json({ ok: true, message: 'hello world 2' })
 );
+app.get('/api/v1/debug-models', async (req, res) => {
+    try {
+        const { Employee, User, Business } = await import('./models/index.js');
+        res.json({
+            Employee: !!Employee,
+            User: !!User,
+            Business: !!Business,
+            EmployeeName: Employee?.name || Employee?.tableName
+        });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
 app.get('/api/v1/hello', (req, res) => res.json({ message: 'Hello, world!' }));
 
 setupSwagger(app);
@@ -261,6 +306,7 @@ app.use('/', emailTemplateRoutes);
 
 // Employee Portal Routes
 app.use('/employee/attendance', employeeAttendanceRouter);
+app.use('/employee/payroll', employeePayrollRouter);
 app.use('/employee', employeePortalRouter);
 
 // Admin Attendance Management Routes
@@ -271,5 +317,14 @@ app.use('/leave-requests', adminLeaveRouter);
 
 // Billing & Plans
 app.use('/billing', billingRouter);
+
+// Admin Profile
+app.use('/admin', adminProfileRouter);
+
+// Admin Payroll pages (HBS)
+app.use('/admin/payroll', adminPayrollPagesRouter);
+
+// Error handler MUST be at the end
+app.use(errorHandler);
 
 export { app };

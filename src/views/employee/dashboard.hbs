@@ -1,81 +1,7 @@
 <div class="container-fluid">
     <div class="row">
         <!-- Sidebar -->
-        <div class="col-md-2 emp-sidebar p-3">
-            <div class="emp-brand mb-4">
-                <div class="emp-brand-mark">
-                    <i class="fa-solid fa-user-tie"></i>
-                </div>
-                <div>
-                    <div class="emp-brand-title">mini-hr-360</div>
-                    <div class="emp-brand-subtitle">Employee Portal</div>
-                </div>
-            </div>
-
-            <div class="emp-profile mb-3">
-                <div class="emp-profile-avatar">
-                    <i class="fa-solid fa-user"></i>
-                </div>
-                <div>
-                    <div class="emp-profile-name">{{employee.empName}}</div>
-                    <div class="emp-profile-role">{{employee.empId}}</div>
-                </div>
-            </div>
-
-            <div class="emp-divider"></div>
-
-            <nav class="nav flex-column">
-                <a class="nav-link {{#if (eq active 'dashboard')}}active{{/if}}" href="/employee/dashboard">
-                    <i class="fa-solid fa-house"></i> Dashboard
-                </a>
-                <a class="nav-link {{#if (eq active 'leaves')}}active{{/if}}" href="/employee/leaves">
-                    <i class="fa-solid fa-calendar-days"></i> My Leaves
-                </a>
-                <a class="nav-link" href="/employee/leaves/apply">
-                    <i class="fa-solid fa-plus-circle"></i> Apply Leave
-                </a>
-
-                <div class="emp-divider mt-3"></div>
-                <div class="emp-section-label text-muted small ps-2">Attendance</div>
-                <a class="nav-link {{#if (eq active 'attendance_today')}}active{{/if}}" href="/employee/attendance/today">
-                    <i class="fa-solid fa-calendar-day"></i> Today
-                </a>
-                <a class="nav-link {{#if (eq active 'attendance_calendar')}}active{{/if}}" href="/employee/attendance/calendar">
-                    <i class="fa-solid fa-calendar-alt"></i> Calendar
-                </a>
-                <a class="nav-link {{#if (eq active 'attendance_regularizations')}}active{{/if}}" href="/employee/attendance/regularizations">
-                    <i class="fa-solid fa-file-lines"></i> Regularizations
-                </a>
-                <a class="nav-link {{#if (eq active 'attendance_request')}}active{{/if}}" href="/employee/attendance/regularization_form">
-                    <i class="fa-solid fa-pen"></i> Request Regularization
-                </a>
-            </nav>
-
-            <div class="emp-divider"></div>
-
-            <nav class="nav flex-column">
-                <a class="nav-link {{#if (eq active 'payroll_payslips')}}active{{/if}}" href="/employee/payroll/payslips">
-                    <i class="fa-solid fa-file-invoice-dollar"></i> My Payslips
-                </a>
-                <a class="nav-link {{#if (eq active 'payroll_bank_tax')}}active{{/if}}" href="/employee/payroll/bank-tax">
-                    <i class="fa-solid fa-bank"></i> Bank & Tax
-                </a>
-                <a class="nav-link {{#if (eq active 'payroll_salary_details')}}active{{/if}}" href="/employee/payroll/salary-details">
-                    <i class="fa-solid fa-chart-bar"></i> Salary Details
-                </a>
-                <a class="nav-link {{#if (eq active 'payroll_queries')}}active{{/if}}" href="/employee/payroll/queries">
-                    <i class="fa-solid fa-comments"></i> Payroll Queries
-                </a>
-            </nav>
-
-            <div class="emp-divider"></div>
-
-            <nav class="nav flex-column">
-                <a class="nav-link text-danger" href="/employee/logout">
-                    <i class="fa-solid fa-right-from-bracket"></i> Logout
-                </a>
-            </nav>
-        </div>
+        {{> employee-sidebar employee=employee active='dashboard'}}
 
         <!-- Main Content -->
         <div class="col-md-10 emp-main">
@@ -184,7 +110,8 @@
                                             <small class="text-muted d-block">days</small>
                                         </td>
                                         <td class="text-end">
-                                            <span class="emp-badge {{#if (eq this.status 'PENDING')}}emp-badge-pending{{/if}}{{#if (eq this.status 'APPROVED')}}emp-badge-approved{{/if}}{{#if (eq this.status 'REJECTED')}}emp-badge-rejected{{/if}}{{#if (eq this.status 'CANCELED')}}emp-badge-canceled{{/if}}">
+                                            <span
+                                                class="emp-badge {{#if (eq this.status 'PENDING')}}emp-badge-pending{{/if}}{{#if (eq this.status 'APPROVED')}}emp-badge-approved{{/if}}{{#if (eq this.status 'REJECTED')}}emp-badge-rejected{{/if}}{{#if (eq this.status 'CANCELED')}}emp-badge-canceled{{/if}}">
                                                 {{this.status}}
                                             </span>
                                         </td>
@@ -215,7 +142,8 @@
                             <div class="row g-3">
                                 <div class="col-12">
                                     <a href="/employee/leaves/apply" class="quick-action">
-                                        <div class="quick-action-icon" style="background: linear-gradient(135deg, #22c55e 0%, #10b981 100%);">
+                                        <div class="quick-action-icon"
+                                            style="background: linear-gradient(135deg, #22c55e 0%, #10b981 100%);">
                                             <i class="fa-solid fa-plus"></i>
                                         </div>
                                         <div>
@@ -226,7 +154,8 @@
                                 </div>
                                 <div class="col-12">
                                     <a href="/employee/leaves" class="quick-action">
-                                        <div class="quick-action-icon" style="background: linear-gradient(135deg, var(--emp-primary) 0%, #06b6d4 100%);">
+                                        <div class="quick-action-icon"
+                                            style="background: linear-gradient(135deg, var(--emp-primary) 0%, #06b6d4 100%);">
                                             <i class="fa-solid fa-list"></i>
                                         </div>
                                         <div>
@@ -237,7 +166,8 @@
                                 </div>
                                 <div class="col-12">
                                     <a href="/employee/leaves?status=PENDING" class="quick-action">
-                                        <div class="quick-action-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);">
+                                        <div class="quick-action-icon"
+                                            style="background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);">
                                             <i class="fa-solid fa-clock"></i>
                                         </div>
                                         <div>
@@ -292,7 +222,11 @@
             {{/if}}
         </div>
     </div>
+<<<<<<< HEAD
 </div>
 
 <!-- Include Employee Dashboard Real-time Sync Script -->
 <script src="/assets/js/employee-dashboard.js"></script>
+=======
+</div>
+>>>>>>> df1b9e7beba8f0d196d1a3608751ce523c54211e

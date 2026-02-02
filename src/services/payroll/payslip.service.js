@@ -1,128 +1,111 @@
-// import Payslip from '../../models/payroll/Payslip.js';
-// import PayrollRunItem from '../../models/payroll/PayrollRunItem.js';
-// import { generatePayslipPdf } from './payslipPdf.service.js';
-
-
-
-// export const generate = async (runId) => {
-//   const items = await PayrollRunItem.findAll({
-//     where: { payrollRunId: runId },
-//   });
-
-//   for (const item of items) {
-//     await Payslip.create({
-//       payrollRunId: runId,
-//       employeeId: item.employeeId,
-//       month: new Date().toISOString().slice(0, 7),
-//       status: 'GENERATED',
-//     });
-//   }
-
-//   return { count: items.length };
-// };
-
-// export const publish = async (runId) => {
-//   await Payslip.update(
-//     { status: 'PUBLISHED', publishedAt: new Date() },
-//     { where: { payrollRunId: runId } }
-//   );
-
-//   return true;
-// };
-
-
-import Payslip from '../../models/payroll.Payslip.js';
-import PayrollRunItem from '../../models/PayrollRunItem.js';
-import PayrollRun from '../../models/payroll.PayrollRun.js';
+import { Payslip, PayrollRun, PayrollRunItem, Employee, EmployeeBankDetail, Department } from '../../models/index.js';
 import { generatePayslipPdf } from './payslipPdf.service.js';
 import { ApiError } from '../../utils/ApiError.js';
 
-export const generate = async (runId) => {
-
-  // 🔒 1. LOCK VALIDATION (as per payroll flow)
+/**
+ * Generate payslips for a locked payroll run
+ */
+export const generate = async (runId, templateOverride = null) => {
   const payrollRun = await PayrollRun.findByPk(runId);
 
   if (!payrollRun) {
     throw new ApiError(404, 'Payroll run not found');
   }
 
-  if (payrollRun.status !== 'LOCKED') {
-    throw new ApiError(
-      400,
-      'Payslips can only be generated after payroll is locked'
-    );
+  // Only allow generation if Locked (standard payroll practice)
+  if (payrollRun.status !== 'Locked') {
+    throw new ApiError(400, 'Payslips can only be generated after payroll is locked');
   }
 
-  // 🛑 2. DUPLICATE PREVENTION (idempotency)
-  const existingPayslipCount = await Payslip.count({
-    where: { payrollRunId: runId },
-  });
-
-  if (existingPayslipCount > 0) {
-    throw new ApiError(
-      400,
-      'Payslips have already been generated for this payroll run'
-    );
+  // Check if payslips already exist to avoid duplicates
+  const existingCount = await Payslip.count({ where: { payrollRunId: runId } });
+  if (existingCount > 0) {
+    throw new ApiError(400, 'Payslips have already been generated for this payroll run');
   }
 
-  // 📄 3. Fetch payroll register items
-  const items = await PayrollRunItem.findAll({
-    where: { payrollRunId: runId },
-  });
-
+  const items = await PayrollRunItem.findAll({ where: { payrollRunId: runId } });
   let generatedCount = 0;
 
   for (const item of items) {
-
-    // 4️⃣ Create payslip record
     const payslip = await Payslip.create({
       payrollRunId: runId,
       employeeId: item.employeeId,
-      month: new Date().toISOString().slice(0, 7),
-      status: 'GENERATED',
+      periodMonth: payrollRun.periodMonth,
+      periodYear: payrollRun.periodYear,
+      earnings: item.earnings,
+      deductions: item.deductions,
+      netPay: item.netPay,
+      status: 'Published', // Default to Published for simplicity, or Held if requirements differ
+      publishedAt: new Date()
     });
 
-    // 5️⃣ Generate PDF using payroll register data
-    const pdfPath = await generatePayslipPdf(payslip, item);
-
-    // 6️⃣ Save PDF path (audit-safe)
-    await payslip.update({ pdfPath });
+    // Optional: Generate PDF immediately
+    try {
+      const pdfUrl = await generatePayslipPdf(payslip.id, templateOverride);
+      await payslip.update({ pdfUrl });
+    } catch (pdfErr) {
+      console.error(`Failed to generate PDF for payslip ${payslip.id}:`, pdfErr);
+    }
 
     generatedCount++;
   }
 
-  return {
-    count: generatedCount,
-    message: 'Payslips generated successfully',
-  };
+  return { count: generatedCount, message: 'Payslips generated successfully' };
 };
 
-export const publish = async (runId) => {
-
-  // 🔒 Optional safety: ensure payslips exist before publish
-  const count = await Payslip.count({
+/**
+ * List payslips for a run with employee details
+ */
+export const list = async (runId) => {
+  const payslips = await Payslip.findAll({
     where: { payrollRunId: runId },
+    include: [
+      {
+        model: Employee,
+        as: 'employee',
+        attributes: ['empName', 'empId', 'empDepartment'],
+        include: [{ model: EmployeeBankDetail, as: 'bankDetails', attributes: ['id'] }]
+      }
+    ]
   });
 
-  if (count === 0) {
-    throw new ApiError(
-      400,
-      'No payslips found to publish for this payroll run'
-    );
-  }
+  return payslips.map(ps => ({
+    id: ps.id,
+    empName: ps.employee?.empName || 'Unknown',
+    empId: ps.employee?.empId || '-',
+    department: ps.employee?.empDepartment || '-',
+    netPay: ps.netPay,
+    bankStatus: !!ps.employee?.bankDetails,
+    status: ps.status,
+    pdfUrl: ps.pdfUrl
+  }));
+};
 
-  await Payslip.update(
-    {
-      status: 'PUBLISHED',
-      publishedAt: new Date(),
-    },
-    {
-      where: {
-        payrollRunId: runId,
-        status: 'GENERATED',
-      },
-    }
+/**
+ * Publish all generated payslips for a run
+ */
+export const publish = async (runId) => {
+  const [updatedCount] = await Payslip.update(
+    { status: 'Published', publishedAt: new Date() },
+    { where: { payrollRunId: runId, status: 'Held' } }
   );
+  return { updatedCount };
+};
 
-  return true;
+/**
+ * Get single payslip for preview
+ */
+export const getPayslip = async (id) => {
+  const payslip = await Payslip.findByPk(id, {
+    include: [
+      {
+        model: Employee,
+        as: 'employee',
+        include: [{ model: EmployeeBankDetail, as: 'bankDetails' }]
+      },
+      { model: PayrollRun, as: 'payrollRun' }
+    ]
+  });
+  if (!payslip) throw new ApiError(404, 'Payslip not found');
+  return payslip;
 };

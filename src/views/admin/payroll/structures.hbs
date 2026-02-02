@@ -1,5 +1,411 @@
 {{!-- Admin Salary Structures --}}
+<style>
+/* Salary Structure Card Styles */
+.structure-card {
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	border: none;
+	border-radius: 16px;
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	position: relative;
+	overflow: hidden;
+	cursor: pointer;
+}
+
+.structure-card::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+	pointer-events: none;
+}
+
+.structure-card:hover {
+	transform: translateY(-4px);
+	box-shadow: 0 20px 40px rgba(102, 126, 234, 0.4);
+}
+
+.structure-card.active {
+	box-shadow: 0 0 0 3px rgba(255,255,255,0.8), 0 20px 40px rgba(102, 126, 234, 0.4);
+	transform: translateY(-4px);
+}
+
+.structure-card .card-body {
+	padding: 1.5rem;
+	position: relative;
+	z-index: 1;
+}
+
+.structure-card .structure-name {
+	color: #fff;
+	font-size: 1.25rem;
+	font-weight: 600;
+	margin-bottom: 0.5rem;
+}
+
+.structure-card .structure-meta {
+	color: rgba(255,255,255,0.8);
+	font-size: 0.85rem;
+}
+
+.structure-card .structure-version {
+	color: rgba(255,255,255,0.7);
+	font-size: 0.8rem;
+	margin-top: 0.5rem;
+}
+
+.structure-card .badge-active {
+	background: rgba(255,255,255,0.25);
+	color: #fff;
+	border: 1px solid rgba(255,255,255,0.4);
+	font-weight: 500;
+	padding: 0.35rem 0.75rem;
+	border-radius: 20px;
+	font-size: 0.75rem;
+	backdrop-filter: blur(10px);
+}
+
+.structure-card .badge-inactive {
+	background: rgba(0,0,0,0.2);
+	color: rgba(255,255,255,0.8);
+	font-weight: 500;
+	padding: 0.35rem 0.75rem;
+	border-radius: 20px;
+	font-size: 0.75rem;
+}
+
+.structure-card .employee-count {
+	background: rgba(255,255,255,0.2);
+	color: #fff;
+	padding: 0.35rem 0.75rem;
+	border-radius: 20px;
+	font-size: 0.8rem;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	margin-top: 0.75rem;
+}
+
+.structure-card .employee-count i {
+	font-size: 0.75rem;
+}
+
+/* Structure Details Card */
+.details-card {
+	border: none;
+	border-radius: 16px;
+	box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.details-card .card-header {
+	background: #fff;
+	border-bottom: 1px solid #f0f0f0;
+	border-radius: 16px 16px 0 0;
+	padding: 1.25rem 1.5rem;
+}
+
+.details-header-title {
+	font-size: 1.1rem;
+	font-weight: 600;
+	color: #1a1a2e;
+}
+
+.summary-stats {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 1rem;
+	padding: 1.5rem;
+	background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+	border-radius: 12px;
+	margin-top: 1rem;
+}
+
+.stat-item {
+	text-align: center;
+	padding: 1rem;
+	background: #fff;
+	border-radius: 10px;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.stat-label {
+	font-size: 0.75rem;
+	color: #6b7280;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	margin-bottom: 0.5rem;
+}
+
+.stat-value {
+	font-size: 1.35rem;
+	font-weight: 700;
+	color: #1a1a2e;
+}
+
+.stat-value.earnings {
+	color: #10b981;
+}
+
+.stat-value.deductions {
+	color: #ef4444;
+}
+
+/* Components Table */
+.components-section {
+	margin-top: 1.5rem;
+}
+
+.components-section h6 {
+	font-size: 0.9rem;
+	font-weight: 600;
+	color: #374151;
+	margin-bottom: 0.75rem;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.components-section h6 i {
+	font-size: 0.8rem;
+}
+
+.component-table {
+	width: 100%;
+	border-collapse: separate;
+	border-spacing: 0;
+}
+
+.component-table tr:not(.total-row) td {
+	padding: 0.6rem 0;
+	border-bottom: 1px solid #f3f4f6;
+}
+
+.component-table .total-row td {
+	padding: 0.75rem 0;
+	font-weight: 600;
+	border-top: 2px solid #e5e7eb;
+}
+
+.component-table .amount {
+	text-align: right;
+	font-weight: 500;
+}
+
+/* Scrollable structure list */
+.structure-list-container {
+	max-height: calc(100vh - 300px);
+	overflow-y: auto;
+}
+
+.structure-list-container::-webkit-scrollbar {
+	width: 6px;
+}
+
+.structure-list-container::-webkit-scrollbar-track {
+	background: #f1f1f1;
+	border-radius: 3px;
+}
+
+.structure-list-container::-webkit-scrollbar-thumb {
+	background: #c1c1c1;
+	border-radius: 3px;
+}
+
+.structure-list-container::-webkit-scrollbar-thumb:hover {
+	background: #a1a1a1;
+}
+
+/* ========================================
+   NEW STRUCTURE DETAILS CARD STYLES
+   ======================================== */
+
+/* Stat Cards */
+.stat-card {
+	display: flex;
+	align-items: center;
+	padding: 1.25rem;
+	border-radius: 16px;
+	color: #fff;
+	position: relative;
+	overflow: hidden;
+}
+
+.stat-card::before {
+	content: '';
+	position: absolute;
+	top: -50%;
+	right: -50%;
+	width: 100%;
+	height: 200%;
+	background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+	pointer-events: none;
+}
+
+.stat-card .stat-icon {
+	width: 48px;
+	height: 48px;
+	border-radius: 12px;
+	background: rgba(255,255,255,0.2);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 1.25rem;
+	margin-right: 1rem;
+	flex-shrink: 0;
+}
+
+.stat-card .stat-content {
+	flex: 1;
+	min-width: 0;
+}
+
+.stat-card .stat-label {
+	font-size: 0.75rem;
+	opacity: 0.9;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	margin-bottom: 0.25rem;
+}
+
+.stat-card .stat-value {
+	font-size: 1.35rem;
+	font-weight: 700;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.stat-card .stat-value small {
+	font-size: 0.7rem;
+	font-weight: 400;
+	opacity: 0.8;
+}
+
+.bg-gradient-primary {
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.bg-gradient-success {
+	background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+}
+
+.bg-gradient-info {
+	background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.bg-success-soft {
+	background: #d1fae5 !important;
+}
+
+.bg-secondary-soft {
+	background: #e5e7eb !important;
+}
+
+/* Component Cards */
+.component-card {
+	border-radius: 16px;
+	overflow: hidden;
+	box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.component-card .component-header {
+	padding: 1rem 1.25rem;
+	font-weight: 600;
+	font-size: 0.95rem;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.earnings-card .component-header {
+	background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+	color: #047857;
+}
+
+.deductions-card .component-header {
+	background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+	color: #b91c1c;
+}
+
+.component-card .component-body {
+	background: #fff;
+	padding: 0;
+}
+
+.component-card .component-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 0.875rem 1.25rem;
+	border-bottom: 1px solid #f3f4f6;
+}
+
+.component-card .component-row:last-of-type {
+	border-bottom: none;
+}
+
+.component-card .component-name {
+	display: flex;
+	flex-direction: column;
+}
+
+.component-card .component-name span {
+	font-weight: 500;
+	color: #1f2937;
+}
+
+.component-card .component-name small {
+	font-size: 0.7rem;
+}
+
+.component-card .component-value {
+	font-weight: 600;
+	font-size: 0.95rem;
+}
+
+.component-card .component-total {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 1rem 1.25rem;
+	background: #f9fafb;
+	border-top: 2px solid #e5e7eb;
+	font-weight: 600;
+}
+
+/* Net Salary Card */
+.net-salary-card {
+	background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+	border: 1px solid #a7f3d0;
+	border-radius: 16px;
+	padding: 1.5rem;
+}
+
+.net-salary-card .net-item .net-label {
+	font-size: 0.8rem;
+	color: #047857;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	margin-bottom: 0.25rem;
+}
+
+.net-salary-card .net-item .net-value {
+	font-size: 1.75rem;
+	font-weight: 700;
+	color: #065f46;
+}
+
+/* Structure Detail Header */
+.structure-detail-header {
+	padding-bottom: 1rem;
+	border-bottom: 1px solid #f3f4f6;
+}
+</style>
+
 <div class="container-fluid">
+	<input type="hidden" id="businessId" value="{{businessId}}">
 	<div class="row">
 		<div class="col-md-3 col-lg-2 px-0">
 			{{> sidebar active="payroll-structures" activeGroup="workspace"}}
@@ -27,42 +433,49 @@
 				<div class="row gy-4">
 					<!-- Structures List (Left Column) -->
 					<div class="col-md-5">
-						<div class="card">
-							<div class="card-header">
-								<h6 class="mb-0">Salary Structures</h6>
+						<div class="card border-0 shadow-sm" style="border-radius: 16px;">
+							<div class="card-header bg-white border-0 py-3" style="border-radius: 16px 16px 0 0;">
+								<h6 class="mb-0 fw-semibold">Salary Structures</h6>
 							</div>
-							<div class="card-body p-0">
+							<div class="card-body p-3">
 								{{#if structures}}
-									<div class="list-group list-group-flush">
+									<div class="structure-list-container d-flex flex-column gap-3">
 										{{#each structures}}
-										<a href="#" class="list-group-item list-group-item-action p-3 structure-item" data-id="{{this.id}}" onclick="selectStructure({{this.id}}); return false;">
-											<div class="d-flex justify-content-between align-items-start">
-												<div>
-													<h6 class="mb-1">{{this.name}}</h6>
-													<small class="text-muted">Effective: {{this.effectiveDate}}</small>
-												</div>
-												<div>
+										<div class="structure-card structure-item" data-id="{{this.id}}" onclick="selectStructure({{this.id}}); return false;">
+											<div class="card-body">
+												<div class="d-flex justify-content-between align-items-start">
+													<div class="structure-name">{{this.name}}</div>
 													{{#if this.isActive}}
-														<span class="badge bg-success">Active</span>
+														<span class="badge-active"><i class="fa-solid fa-circle-check me-1"></i>Active</span>
 													{{else}}
-														<span class="badge bg-secondary">Inactive</span>
+														<span class="badge-inactive">Inactive</span>
 													{{/if}}
 												</div>
+												<div class="structure-meta">
+													{{#if this.effectiveDate}}
+													Effective: {{this.effectiveDate}}
+													{{else}}
+													No effective date set
+													{{/if}}
+												</div>
+												<div class="structure-version">
+													<i class="fa-solid fa-code-branch me-1"></i>v{{this.version}} • Updated {{this.updatedAt}}
+												</div>
+												<div class="employee-count">
+													<i class="fa-solid fa-users"></i>
+													{{this.assignedCount}} employees
+												</div>
 											</div>
-											<div class="mt-2">
-												<small class="text-muted">v{{this.version}} • Updated {{this.updatedAt}}</small>
-											</div>
-											<div class="mt-2">
-												<small class="badge bg-light text-dark">{{this.assignedCount}} employees</small>
-											</div>
-										</a>
+										</div>
 										{{/each}}
 									</div>
 								{{else}}
 									<div class="p-4 text-center text-muted">
-										<i class="fa-solid fa-inbox" style="font-size: 32px; opacity: 0.3; display: block; margin-bottom: 10px;"></i>
-										<p>No structures created yet</p>
-										<button class="btn btn-sm btn-primary" onclick="openCreateStructureModal()">Create First Structure</button>
+										<i class="fa-solid fa-inbox" style="font-size: 48px; opacity: 0.3; display: block; margin-bottom: 16px;"></i>
+										<p class="mb-3">No structures created yet</p>
+										<button class="btn btn-primary" onclick="openCreateStructureModal()">
+											<i class="fa-solid fa-plus me-2"></i>Create First Structure
+										</button>
 									</div>
 								{{/if}}
 							</div>
@@ -71,18 +484,19 @@
 
 					<!-- Structure Details (Right Column) -->
 					<div class="col-md-7">
-						<div class="card">
+						<div class="card details-card">
 							<div class="card-header d-flex justify-content-between align-items-center">
-								<h6 class="mb-0">Structure Details</h6>
+								<h6 class="details-header-title mb-0">Structure Details</h6>
 								<div class="btn-group btn-group-sm">
 									<button class="btn btn-outline-secondary" onclick="editStructure()"><i class="fa-solid fa-pen me-1"></i>Edit</button>
+									<button class="btn btn-outline-danger" onclick="deleteStructure()"><i class="fa-solid fa-trash me-1"></i>Delete</button>
 									<button class="btn btn-outline-primary" onclick="assignToEmployees()"><i class="fa-solid fa-user-plus me-1"></i>Assign</button>
 								</div>
 							</div>
-							<div class="card-body" id="structureDetails">
+							<div class="card-body p-4" id="structureDetails">
 								<div class="text-center text-muted py-5">
-									<i class="fa-solid fa-select" style="font-size: 32px; opacity: 0.3; display: block; margin-bottom: 10px;"></i>
-									<p>Select a structure to view details</p>
+									<i class="fa-solid fa-hand-pointer" style="font-size: 48px; opacity: 0.3; display: block; margin-bottom: 16px;"></i>
+									<p class="mb-0">Select a structure to view details</p>
 								</div>
 							</div>
 						</div>
@@ -106,50 +520,23 @@
 					<div class="row mb-3">
 						<div class="col-md-6">
 							<label class="form-label fw-600">Structure Name</label>
-							<input type="text" class="form-control" placeholder="e.g., Standard IT" required>
+							<input id="structureName" type="text" class="form-control" placeholder="e.g., Standard IT" required>
 						</div>
 						<div class="col-md-6">
 							<label class="form-label fw-600">Effective Date</label>
-							<input type="date" class="form-control" required>
+							<input id="structureEffectiveDate" type="date" class="form-control" required>
 						</div>
 					</div>
 
-					<div class="mb-3">
-						<label class="form-label fw-600">Description</label>
-						<textarea class="form-control" rows="2" placeholder="Brief description of this structure"></textarea>
-					</div>
+						<div class="mb-3">
+							<label class="form-label fw-600">Description</label>
+							<textarea id="structureDescription" class="form-control" rows="2" placeholder="Brief description of this structure"></textarea>
+						</div>
 
 					<div class="mb-3">
 						<h6 class="mb-3">Components</h6>
 						<div id="componentsList">
-							<div class="row component-row mb-3 align-items-end">
-								<div class="col-md-4">
-									<label class="form-label small">Component</label>
-									<select class="form-select form-select-sm">
-										<option>Select component...</option>
-										<option>Basic Salary</option>
-										<option>Dearness Allowance</option>
-										<option>House Rent Allowance</option>
-									</select>
-								</div>
-								<div class="col-md-4">
-									<label class="form-label small">Calculation Type</label>
-									<select class="form-select form-select-sm">
-										<option>Fixed Amount</option>
-										<option>% of Basic</option>
-										<option>% of CTC</option>
-									</select>
-								</div>
-								<div class="col-md-3">
-									<label class="form-label small">Value</label>
-									<input type="number" class="form-control form-control-sm" placeholder="0" step="0.01">
-								</div>
-								<div class="col-md-1">
-									<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeComponentRow(this)">
-										<i class="fa-solid fa-trash"></i>
-									</button>
-								</div>
-							</div>
+							<!-- Component rows will be added dynamically -->
 						</div>
 						<button type="button" class="btn btn-sm btn-outline-primary" onclick="addComponentRow()">
 							<i class="fa-solid fa-plus me-1"></i>Add Component
@@ -176,9 +563,9 @@
 					</div>
 				</form>
 			</div>
-			<div class="modal-footer">
+				<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-				<button type="button" class="btn btn-primary" onclick="saveStructure()">Save Structure</button>
+					<button type="button" class="btn btn-primary" onclick="saveStructure()">Save Structure</button>
 			</div>
 		</div>
 	</div>
@@ -231,83 +618,541 @@
 	</div>
 </div>
 
+			<!-- Unassign Modal (show assigned employees to remove before delete) -->
+			<div class="modal fade" id="unassignModal" tabindex="-1">
+				<div class="modal-dialog modal-lg">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h5 class="modal-title">Assigned Employees</h5>
+							<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+						</div>
+						<div class="modal-body">
+							<div style="border: 1px solid #dee2e6; border-radius: 8px; max-height: 350px; overflow-y: auto;">
+								<div class="list-group list-group-flush" id="assignedList">
+									<!-- populated dynamically -->
+								</div>
+							</div>
+							<div class="mt-3 p-2 bg-light border rounded">
+								<small class="text-muted">Selected: <strong id="unassignSelectedCount">0</strong> employees</small>
+							</div>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+							<button type="button" class="btn btn-danger" onclick="confirmUnassign()">Unassign Selected</button>
+						</div>
+					</div>
+				</div>
+			</div>
+
 <script>
 function openCreateStructureModal() {
+	_editingStructureId = null;
 	document.getElementById('structureModalTitle').textContent = 'Create Salary Structure';
+	// clear fields
+	document.getElementById('structureName').value = '';
+	document.getElementById('structureEffectiveDate').value = new Date().toISOString().split('T')[0];
+	document.getElementById('structureDescription').value = '';
+	const list = document.getElementById('componentsList');
+	if (list) list.innerHTML = '';
+	// Add initial component row
+	addComponentRow();
+	// Reset CTC display
+	document.getElementById('monthlyCTC').textContent = '₹0';
+	document.getElementById('annualCTC').textContent = '₹0';
+	document.getElementById('monthlyDeductions').textContent = '₹0';
+	// ensure listeners are bound and initial calc runs
+	try { recalcBind(); } catch(e){}
+	setTimeout(()=>{ try{ recalcStructure(); }catch(e){} },50);
 	new bootstrap.Modal(document.getElementById('structureModal')).show();
 }
 
-function editStructure() {
-	alert('Edit functionality - will be wired to backend');
+let _editingStructureId = null;
+async function editStructure() {
+	const selected = document.querySelector('.structure-item.active');
+	if (!selected) return showToast('Select a structure to edit', 'warning');
+	const id = selected.getAttribute('data-id');
+	if (!id) return showToast('Invalid structure selected', 'danger');
+	try {
+		const headers = {};
+		const token = localStorage.getItem('accessToken');
+		if (token) headers['Authorization'] = `Bearer ${token}`;
+		const bizId = document.getElementById('businessId')?.value || '{{businessId}}';
+		if (bizId) headers['x-business-id'] = String(bizId);
+		const res = await fetch(`/api/admin/payroll/structures/${id}`, { credentials: 'include', headers });
+		if (!res.ok) {
+			const txt = await res.text();
+			return showToast('Failed to load structure: ' + (txt || res.statusText), 'danger');
+		}
+		const payload = await res.json();
+		const data = payload?.data || payload;
+		// populate modal
+		document.getElementById('structureModalTitle').textContent = 'Edit Salary Structure';
+		document.getElementById('structureName').value = data.name || '';
+		document.getElementById('structureEffectiveDate').value = data.effectiveDate ? (data.effectiveDate.split && data.effectiveDate.split('T')[0]) : (data.effectiveDate || '');
+		document.getElementById('structureDescription').value = data.description || '';
+		// clear components
+		const list = document.getElementById('componentsList');
+		list.innerHTML = '';
+		(data.components || []).forEach(c => {
+			const compName = c.componentId || c.name || '';
+			const calcType = c.calcType || 'fixed';
+			const val = c.value || 0;
+			const isDeduction = (c.type || '').toUpperCase() === 'DEDUCTION';
+			const prefix = (calcType === 'pct_basic' || calcType === 'pct_ctc') ? '%' : '₹';
+			
+			const row = document.createElement('div');
+			row.className = 'row component-row mb-3 align-items-end';
+			row.innerHTML = `
+				<div class="col-md-4">
+					<label class="form-label small">Component</label>
+					<select class="form-select form-select-sm component-select">
+						<option value="">Select component...</option>
+						<optgroup label="Earnings">
+							<option value="Basic Salary" ${compName === 'Basic Salary' ? 'selected' : ''}>Basic Salary</option>
+							<option value="House Rent Allowance" ${compName === 'House Rent Allowance' ? 'selected' : ''}>House Rent Allowance (HRA)</option>
+							<option value="Dearness Allowance" ${compName === 'Dearness Allowance' ? 'selected' : ''}>Dearness Allowance (DA)</option>
+							<option value="Conveyance Allowance" ${compName === 'Conveyance Allowance' ? 'selected' : ''}>Conveyance Allowance</option>
+							<option value="Medical Allowance" ${compName === 'Medical Allowance' ? 'selected' : ''}>Medical Allowance</option>
+							<option value="Special Allowance" ${compName === 'Special Allowance' ? 'selected' : ''}>Special Allowance</option>
+							<option value="Leave Travel Allowance" ${compName === 'Leave Travel Allowance' ? 'selected' : ''}>Leave Travel Allowance (LTA)</option>
+							<option value="Performance Bonus" ${compName === 'Performance Bonus' ? 'selected' : ''}>Performance Bonus</option>
+							<option value="Other Earnings" ${compName === 'Other Earnings' ? 'selected' : ''}>Other Earnings</option>
+						</optgroup>
+						<optgroup label="Deductions">
+							<option value="Provident Fund" ${compName === 'Provident Fund' ? 'selected' : ''}>Provident Fund (PF)</option>
+							<option value="Employee State Insurance" ${compName === 'Employee State Insurance' ? 'selected' : ''}>Employee State Insurance (ESI)</option>
+							<option value="Professional Tax" ${compName === 'Professional Tax' ? 'selected' : ''}>Professional Tax</option>
+							<option value="TDS" ${compName === 'TDS' ? 'selected' : ''}>Tax Deducted at Source (TDS)</option>
+							<option value="Loan Deduction" ${compName === 'Loan Deduction' ? 'selected' : ''}>Loan Deduction</option>
+							<option value="Advance Deduction" ${compName === 'Advance Deduction' ? 'selected' : ''}>Advance Deduction</option>
+							<option value="Other Deductions" ${compName === 'Other Deductions' ? 'selected' : ''}>Other Deductions</option>
+						</optgroup>
+					</select>
+				</div>
+				<div class="col-md-3">
+					<label class="form-label small">Calculation Type</label>
+					<select class="form-select form-select-sm component-type">
+						<option value="fixed" ${calcType === 'fixed' ? 'selected' : ''}>Fixed Amount</option>
+						<option value="pct_basic" ${calcType === 'pct_basic' ? 'selected' : ''}>% of Basic</option>
+						<option value="pct_ctc" ${calcType === 'pct_ctc' ? 'selected' : ''}>% of CTC</option>
+					</select>
+				</div>
+				<div class="col-md-3">
+					<label class="form-label small">Value</label>
+					<div class="input-group input-group-sm">
+						<span class="input-group-text value-prefix">${prefix}</span>
+						<input type="number" class="form-control form-control-sm component-value" value="${val}" step="0.01">
+					</div>
+				</div>
+				<div class="col-md-2 d-flex gap-1">
+					<button type="button" class="btn btn-sm btn-outline-danger flex-grow-1" onclick="removeComponentRow(this)">
+						<i class="fa-solid fa-trash"></i>
+					</button>
+				</div>
+			`;
+			list.appendChild(row);
+			
+			// Bind change handler for prefix
+			const typeSelect = row.querySelector('.component-type');
+			const prefixEl = row.querySelector('.value-prefix');
+			if (typeSelect && prefixEl) {
+				typeSelect.addEventListener('change', function() {
+					prefixEl.textContent = (this.value === 'pct_basic' || this.value === 'pct_ctc') ? '%' : '₹';
+				});
+			}
+		});
+		_editingStructureId = Number(id);
+		// bind recalculation listeners and perform initial calc
+		recalcBind();
+		setTimeout(recalcStructure, 50);
+		new bootstrap.Modal(document.getElementById('structureModal')).show();
+	} catch (err) {
+		console.error('Edit load error', err);
+		showToast('Error loading structure: ' + (err.message || err), 'danger');
+	}
 }
 
 function assignToEmployees() {
-	new bootstrap.Modal(document.getElementById('assignModal')).show();
+	const selected = document.querySelector('.structure-item.active');
+	if (!selected) return showToast('Select a structure to assign', 'warning');
+	const id = selected.getAttribute('data-id');
+	if (!id) return showToast('Invalid structure selected', 'danger');
+	// store selected structure id on modal element
+	const modalEl = document.getElementById('assignModal');
+	modalEl.dataset.structureId = id;
+	// load employees from API before showing
+	loadEmployees().then(() => new bootstrap.Modal(modalEl).show()).catch(() => new bootstrap.Modal(modalEl).show());
 }
 
-function selectStructure(id) {
-	document.querySelectorAll('.structure-item').forEach(el => el.classList.remove('active'));
-	document.querySelector(`.structure-item[data-id="${id}"]`).classList.add('active');
+// Load employees from backend and populate assign modal
+async function loadEmployees() {
+	try {
+		const headers = {};
+		const token = localStorage.getItem('accessToken');
+		if (token) headers['Authorization'] = `Bearer ${token}`;
+		const bizId = document.getElementById('businessId')?.value || '{{businessId}}';
+		const url = `/api/v1/employees?businessId=${encodeURIComponent(bizId)}&limit=1000`;
+		const res = await fetch(url, { credentials: 'include', headers });
+		const txt = await res.text();
+		let data = {};
+		try { data = txt ? JSON.parse(txt) : {}; } catch(e) { data = { raw: txt }; }
+		if (!res.ok) return showToast('Failed to load employees', 'danger');
+		const listContainer = document.querySelector('#assignModal .list-group');
+		if (!listContainer) return;
+		// clear existing (keep first Select All node)
+		// remove all children after the first (Select All)
+		while (listContainer.children.length > 1) listContainer.removeChild(listContainer.lastChild);
 
-	// Sample structure details
-	document.getElementById('structureDetails').innerHTML = `
-		<h6>Standard IT Structure</h6>
-		<small class="text-muted">Effective: 2025-01-01 • v1.0</small>
-		<hr>
-		<h6 class="mt-3 mb-2">Earnings</h6>
-		<div class="table-responsive">
-			<table class="table table-sm table-borderless">
-				<tr>
-					<td>Basic Salary</td>
-					<td class="text-end"><strong>₹50,000</strong></td>
-				</tr>
-				<tr>
-					<td>Dearness Allowance</td>
-					<td class="text-end"><strong>₹10,000</strong></td>
-				</tr>
-				<tr>
-					<td>House Rent Allowance</td>
-					<td class="text-end"><strong>₹15,000</strong></td>
-				</tr>
-				<tr class="table-light">
-					<td><strong>Total Earnings</strong></td>
-					<td class="text-end"><strong>₹75,000</strong></td>
-				</tr>
-			</table>
-		</div>
-		<h6 class="mt-3 mb-2">Deductions</h6>
-		<div class="table-responsive">
-			<table class="table table-sm table-borderless">
-				<tr>
-					<td>Provident Fund (12%)</td>
-					<td class="text-end"><strong>₹6,000</strong></td>
-				</tr>
-				<tr>
-					<td>Professional Tax</td>
-					<td class="text-end"><strong>₹500</strong></td>
-				</tr>
-				<tr class="table-light">
-					<td><strong>Total Deductions</strong></td>
-					<td class="text-end"><strong>₹6,500</strong></td>
-				</tr>
-			</table>
-		</div>
-		<hr>
-		<div class="row">
-			<div class="col-md-4 text-center">
-				<small class="text-muted">Monthly CTC</small>
-				<div class="h5">₹75,000</div>
+		const employees = (data.data && Array.isArray(data.data)) ? data.data : (Array.isArray(data) ? data : []);
+		employees.forEach(emp => {
+			const label = document.createElement('label');
+			label.className = 'list-group-item p-3';
+			label.setAttribute('data-name', (emp.empName || emp.name || '').toLowerCase());
+			label.innerHTML = `<input class="form-check-input me-2 emp-checkbox" type="checkbox" value="${emp.id || emp.employeeId}" data-name="${(emp.empName||emp.name||'')}"> <strong>${emp.empName || emp.name || 'Unknown'}</strong> <small class="text-muted d-block">${emp.empId || emp.employeeCode || ''} • ${emp.empDepartment || emp.department || ''}</small>`;
+			listContainer.appendChild(label);
+		});
+
+		// attach listeners
+		document.querySelectorAll('.emp-checkbox').forEach(el => el && el.addEventListener('change', updateSelectedCount));
+		// ensure search is wired
+		const empSearch = document.getElementById('employeeSearch');
+		if (empSearch) {
+			empSearch.removeEventListener('input', employeeSearchHandler);
+			empSearch.addEventListener('input', employeeSearchHandler);
+		}
+		updateSelectedCount();
+	} catch (err) {
+		console.error('loadEmployees error', err);
+		throw err;
+	}
+}
+
+function employeeSearchHandler(e) {
+	const query = String(e.target.value || '').toLowerCase();
+	document.querySelectorAll('.emp-checkbox').forEach(checkbox => {
+		const parent = checkbox.closest && checkbox.closest('label');
+		const name = (checkbox.getAttribute('data-name') || '') + (parent?.getAttribute('data-name')||'');
+		parent && (parent.style.display = name.toLowerCase().includes(query) ? '' : 'none');
+	});
+}
+
+// Store selected structure ID globally for edit/delete operations
+let selectedStructureId = null;
+
+/**
+ * Calculate CTC and totals from components array
+ * This is a frontend fallback in case the backend doesn't return computed values
+ */
+function calculateComponentTotals(components) {
+	if (!Array.isArray(components) || components.length === 0) {
+		return { monthlyCTC: 0, annualCTC: 0, totalEarnings: 0, totalDeductions: 0 };
+	}
+	
+	// Detect deductions by name pattern
+	const isDeductionByName = (name) => /pf|provident|tds|tax|esi|loan|deduct|advance|professional|insurance|state/i.test(name || '');
+	
+	let basicAmount = 0;
+	let fixedEarnings = 0;
+	let pctBasicEarnings = 0;
+	let pctCtcEarnings = 0;
+	let fixedDeductions = 0;
+	let pctBasicDeductions = 0;
+	let pctCtcDeductions = 0;
+	
+	components.forEach(c => {
+		const val = Number(c.value || 0);
+		const typeField = String(c.type || '').toUpperCase();
+		const calcType = String(c.calcType || 'fixed').toLowerCase();
+		const compName = String(c.componentId || c.name || '').toLowerCase();
+		
+		// Determine if it's a deduction
+		const isDeduction = typeField === 'DEDUCTION' || (typeField !== 'EARNING' && isDeductionByName(compName));
+		const isBasic = compName.includes('basic');
+		
+		if (calcType === 'fixed' || calcType === '' || !calcType) {
+			if (isBasic && !isDeduction) basicAmount = val;
+			if (isDeduction) fixedDeductions += val;
+			else fixedEarnings += val;
+		} else if (calcType === 'pct_basic') {
+			if (isDeduction) pctBasicDeductions += val;
+			else pctBasicEarnings += val;
+		} else if (calcType === 'pct_ctc') {
+			if (isDeduction) pctCtcDeductions += val;
+			else pctCtcEarnings += val;
+		}
+	});
+	
+	// Calculate % of basic contributions
+	const basicBasedEarnings = (basicAmount * pctBasicEarnings) / 100;
+	const basicBasedDeductions = (basicAmount * pctBasicDeductions) / 100;
+	
+	// Base earnings (fixed + % of basic)
+	const baseEarnings = fixedEarnings + basicBasedEarnings;
+	
+	// Solve for CTC
+	let monthlyCTC = 0;
+	const denom = 1 - (pctCtcEarnings / 100);
+	if (Math.abs(denom) < 0.001) {
+		monthlyCTC = baseEarnings;
+	} else {
+		monthlyCTC = baseEarnings / denom;
+	}
+	
+	// Calculate deductions
+	const ctcBasedDeductions = (monthlyCTC * pctCtcDeductions) / 100;
+	const totalDeductions = fixedDeductions + basicBasedDeductions + ctcBasedDeductions;
+	
+	return {
+		monthlyCTC: Math.round(monthlyCTC * 100) / 100,
+		annualCTC: Math.round(monthlyCTC * 12 * 100) / 100,
+		totalEarnings: Math.round(monthlyCTC * 100) / 100,
+		totalDeductions: Math.round(totalDeductions * 100) / 100
+	};
+}
+
+/**
+ * Format currency in Indian Rupee format
+ */
+function formatCurrency(value) {
+	const num = Number(value || 0);
+	if (isNaN(num)) return '₹0';
+	return '₹' + num.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+}
+
+/**
+ * Render structure details card with given data
+ */
+function renderStructureDetails(data) {
+	const detailsEl = document.getElementById('structureDetails');
+	if (!detailsEl) return;
+	
+	const comps = Array.isArray(data.components) ? data.components : [];
+	
+	// Helper to detect deductions by name
+	const isDeductionByName = (name) => /pf|provident|tds|tax|esi|loan|deduct|advance|professional|insurance|state/i.test(name || '');
+	
+	// Categorize components
+	const earnings = comps.filter(c => {
+		const typeField = String(c.type || '').toUpperCase();
+		const compName = c.componentId || c.name || '';
+		return typeField === 'EARNING' || (typeField !== 'DEDUCTION' && !isDeductionByName(compName));
+	});
+	const deductions = comps.filter(c => {
+		const typeField = String(c.type || '').toUpperCase();
+		const compName = c.componentId || c.name || '';
+		return typeField === 'DEDUCTION' || isDeductionByName(compName);
+	});
+	
+	// Use server values if available, otherwise calculate on frontend
+	let monthlyCTC = Number(data.monthlyCTC || 0);
+	let annualCTC = Number(data.annualCTC || 0);
+	let assignedCount = Number(data.assignedCount || 0);
+	let totalDeductions = Number(data.totalDeductions || 0);
+	
+	// If server didn't provide values (all zeros), calculate on frontend
+	if (monthlyCTC === 0 && comps.length > 0) {
+		const calculated = calculateComponentTotals(comps);
+		monthlyCTC = calculated.monthlyCTC;
+		annualCTC = calculated.annualCTC;
+		totalDeductions = calculated.totalDeductions;
+	}
+	
+	const netMonthly = monthlyCTC - totalDeductions;
+	const netAnnual = netMonthly * 12;
+	
+	detailsEl.innerHTML = `
+		<!-- Header Section -->
+		<div class="structure-detail-header">
+			<div class="d-flex justify-content-between align-items-start mb-3">
+				<div>
+					<h4 class="mb-1 fw-bold text-dark">${data.name || 'Salary Structure'}</h4>
+					<div class="d-flex align-items-center gap-3 text-muted" style="font-size: 0.875rem;">
+						<span><i class="fa-regular fa-calendar me-1"></i>${data.effectiveDate || 'No date set'}</span>
+						<span><i class="fa-solid fa-code-branch me-1"></i>v${data.version || 1}</span>
+					</div>
+				</div>
+				<span class="badge ${data.isActive !== false ? 'bg-success-soft text-success' : 'bg-secondary-soft text-secondary'}" style="padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.8rem;">
+					<i class="fa-solid ${data.isActive !== false ? 'fa-check-circle' : 'fa-pause-circle'} me-1"></i>
+					${data.isActive !== false ? 'Active' : 'Inactive'}
+				</span>
 			</div>
-			<div class="col-md-4 text-center">
-				<small class="text-muted">Annual CTC</small>
-				<div class="h5">₹9,00,000</div>
+			${data.description ? `<p class="text-muted mb-0" style="font-size: 0.9rem;">${data.description}</p>` : ''}
+		</div>
+		
+		<!-- Stats Cards Row -->
+		<div class="row g-3 my-4">
+			<div class="col-4">
+				<div class="stat-card bg-gradient-primary">
+					<div class="stat-icon"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+					<div class="stat-content">
+						<div class="stat-label">Monthly CTC</div>
+						<div class="stat-value">${formatCurrency(monthlyCTC)}</div>
+					</div>
+				</div>
 			</div>
-			<div class="col-md-4 text-center">
-				<small class="text-muted">Assigned to</small>
-				<div class="h5">12 Employees</div>
+			<div class="col-4">
+				<div class="stat-card bg-gradient-success">
+					<div class="stat-icon"><i class="fa-solid fa-calendar-check"></i></div>
+					<div class="stat-content">
+						<div class="stat-label">Annual CTC</div>
+						<div class="stat-value">${formatCurrency(annualCTC)}</div>
+					</div>
+				</div>
+			</div>
+			<div class="col-4">
+				<div class="stat-card bg-gradient-info">
+					<div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+					<div class="stat-content">
+						<div class="stat-label">Assigned</div>
+						<div class="stat-value">${assignedCount} <small>employees</small></div>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<!-- Earnings & Deductions Section -->
+		<div class="row g-4">
+			<div class="col-md-6">
+				<div class="component-card earnings-card">
+					<div class="component-header">
+						<i class="fa-solid fa-arrow-trend-up"></i>
+						<span>Earnings</span>
+					</div>
+					<div class="component-body">
+						${earnings.length > 0 ? earnings.map(e => {
+							const calcLabel = e.calcType === 'pct_basic' ? '% of Basic' : (e.calcType === 'pct_ctc' ? '% of CTC' : 'Fixed');
+							return `
+								<div class="component-row">
+									<div class="component-name">
+										<span>${e.componentId || e.name || 'Component'}</span>
+										<small class="text-muted">${calcLabel}</small>
+									</div>
+									<div class="component-value text-success">${formatCurrency(e.value || 0)}</div>
+								</div>
+							`;
+						}).join('') : '<div class="text-center text-muted py-3"><i class="fa-solid fa-inbox me-2"></i>No earnings defined</div>'}
+						<div class="component-total">
+							<span>Total Earnings</span>
+							<span class="text-success fw-bold">${formatCurrency(monthlyCTC)}</span>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="col-md-6">
+				<div class="component-card deductions-card">
+					<div class="component-header">
+						<i class="fa-solid fa-arrow-trend-down"></i>
+						<span>Deductions</span>
+					</div>
+					<div class="component-body">
+						${deductions.length > 0 ? deductions.map(d => {
+							const calcLabel = d.calcType === 'pct_basic' ? '% of Basic' : (d.calcType === 'pct_ctc' ? '% of CTC' : 'Fixed');
+							return `
+								<div class="component-row">
+									<div class="component-name">
+										<span>${d.componentId || d.name || 'Deduction'}</span>
+										<small class="text-muted">${calcLabel}</small>
+									</div>
+									<div class="component-value text-danger">${formatCurrency(d.value || 0)}</div>
+								</div>
+							`;
+						}).join('') : '<div class="text-center text-muted py-3"><i class="fa-solid fa-inbox me-2"></i>No deductions</div>'}
+						<div class="component-total">
+							<span>Total Deductions</span>
+							<span class="text-danger fw-bold">${formatCurrency(totalDeductions)}</span>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<!-- Net Salary Summary -->
+		<div class="net-salary-card mt-4">
+			<div class="row align-items-center">
+				<div class="col-6">
+					<div class="net-item">
+						<div class="net-label">Net Monthly Salary</div>
+						<div class="net-value">${formatCurrency(netMonthly)}</div>
+					</div>
+				</div>
+				<div class="col-6 text-end">
+					<div class="net-item">
+						<div class="net-label">Net Annual Salary</div>
+						<div class="net-value">${formatCurrency(netAnnual)}</div>
+					</div>
+				</div>
 			</div>
 		</div>
 	`;
+}
+
+function selectStructure(id) {
+	selectedStructureId = id;
+	
+	// Update active state on cards
+	document.querySelectorAll('.structure-item').forEach(el => el.classList.remove('active'));
+	const selected = document.querySelector(`.structure-item[data-id="${id}"]`);
+	if (selected) selected.classList.add('active');
+	
+	const detailsEl = document.getElementById('structureDetails');
+	if (!detailsEl) return;
+	
+	// Show loading state
+	detailsEl.innerHTML = `
+		<div class="text-center py-5">
+			<div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
+			<p class="text-muted mb-0">Loading structure details...</p>
+		</div>
+	`;
+	
+	// Get businessId
+	const bizId = document.getElementById('businessId')?.value || '';
+	const headers = { 'Content-Type': 'application/json' };
+	const token = localStorage.getItem('accessToken');
+	if (token) headers['Authorization'] = `Bearer ${token}`;
+	if (bizId) headers['x-business-id'] = String(bizId);
+	
+	// Fetch structure details
+	fetch(`/api/admin/payroll/structures/${id}`, { 
+		method: 'GET',
+		credentials: 'include', 
+		headers 
+	})
+	.then(async response => {
+		const text = await response.text();
+		let json;
+		try {
+			json = text ? JSON.parse(text) : {};
+		} catch (e) {
+			throw new Error('Invalid JSON response: ' + text.substring(0, 100));
+		}
+		
+		if (!response.ok) {
+			throw new Error(json.message || json.error || `HTTP ${response.status}`);
+		}
+		
+		// Extract data - handle both { data: {...} } and direct object responses
+		const data = json.data || json;
+		
+		if (!data || !data.id) {
+			throw new Error('Structure not found');
+		}
+		
+		renderStructureDetails(data);
+	})
+	.catch(err => {
+		console.error('selectStructure error:', err);
+		detailsEl.innerHTML = `
+			<div class="text-center py-5">
+				<i class="fa-solid fa-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+				<h5 class="mt-3">Failed to Load Structure</h5>
+				<p class="text-muted">${err.message || 'Unknown error occurred'}</p>
+				<button class="btn btn-primary btn-sm" onclick="selectStructure(${id})">
+					<i class="fa-solid fa-refresh me-1"></i>Retry
+				</button>
+			</div>
+		`;
+	});
 }
 
 function addComponentRow() {
@@ -315,70 +1160,471 @@ function addComponentRow() {
 	row.className = 'row component-row mb-3 align-items-end';
 	row.innerHTML = `
 		<div class="col-md-4">
-			<select class="form-select form-select-sm">
-				<option>Select component...</option>
-				<option>Basic Salary</option>
-				<option>Dearness Allowance</option>
-			</select>
-		</div>
-		<div class="col-md-4">
-			<select class="form-select form-select-sm">
-				<option>Fixed Amount</option>
-				<option>% of Basic</option>
+			<label class="form-label small">Component</label>
+			<select class="form-select form-select-sm component-select">
+				<option value="">Select component...</option>
+				<optgroup label="Earnings">
+					<option value="Basic Salary">Basic Salary</option>
+					<option value="House Rent Allowance">House Rent Allowance (HRA)</option>
+					<option value="Dearness Allowance">Dearness Allowance (DA)</option>
+					<option value="Conveyance Allowance">Conveyance Allowance</option>
+					<option value="Medical Allowance">Medical Allowance</option>
+					<option value="Special Allowance">Special Allowance</option>
+					<option value="Leave Travel Allowance">Leave Travel Allowance (LTA)</option>
+					<option value="Performance Bonus">Performance Bonus</option>
+					<option value="Other Earnings">Other Earnings</option>
+				</optgroup>
+				<optgroup label="Deductions">
+					<option value="Provident Fund">Provident Fund (PF)</option>
+					<option value="Employee State Insurance">Employee State Insurance (ESI)</option>
+					<option value="Professional Tax">Professional Tax</option>
+					<option value="TDS">Tax Deducted at Source (TDS)</option>
+					<option value="Loan Deduction">Loan Deduction</option>
+					<option value="Advance Deduction">Advance Deduction</option>
+					<option value="Other Deductions">Other Deductions</option>
+				</optgroup>
 			</select>
 		</div>
 		<div class="col-md-3">
-			<input type="number" class="form-control form-control-sm" placeholder="0" step="0.01">
+			<label class="form-label small">Calculation Type</label>
+			<select class="form-select form-select-sm component-type">
+				<option value="fixed">Fixed Amount</option>
+				<option value="pct_basic">% of Basic</option>
+				<option value="pct_ctc">% of CTC</option>
+			</select>
 		</div>
-		<div class="col-md-1">
-			<button type="button" class="btn btn-sm btn-outline-danger" onclick="removeComponentRow(this)">
+		<div class="col-md-3">
+			<label class="form-label small">Value</label>
+			<div class="input-group input-group-sm">
+				<span class="input-group-text value-prefix">₹</span>
+				<input type="number" class="form-control form-control-sm component-value" placeholder="0" step="0.01">
+			</div>
+		</div>
+		<div class="col-md-2 d-flex gap-1">
+			<button type="button" class="btn btn-sm btn-outline-danger flex-grow-1" onclick="removeComponentRow(this)">
 				<i class="fa-solid fa-trash"></i>
 			</button>
 		</div>
 	`;
-	document.getElementById('componentsList').appendChild(row);
+	const list = document.getElementById('componentsList');
+	if (list) {
+		list.appendChild(row);
+		// Bind change handler to update prefix
+		const typeSelect = row.querySelector('.component-type');
+		const prefixEl = row.querySelector('.value-prefix');
+		if (typeSelect && prefixEl) {
+			typeSelect.addEventListener('change', function() {
+				prefixEl.textContent = (this.value === 'pct_basic' || this.value === 'pct_ctc') ? '%' : '₹';
+			});
+		}
+	}
 }
 
+// Recalculate totals for the modal in real-time
+function recalcStructure() {
+	try {
+		const rows = Array.from(document.querySelectorAll('#componentsList .component-row'));
+		
+		// First pass: identify basic salary
+		let basicAmount = 0;
+		let ctcPctComponents = []; // Components that are % of CTC
+		let fixedEarnings = 0;
+		let pctBasicEarnings = 0;
+		let fixedDeductions = 0;
+		let pctBasicDeductions = 0;
+		let pctCtcDeductions = 0;
+		
+		rows.forEach(r => {
+			const selects = r.querySelectorAll('select');
+			const compSel = selects[0];
+			const typeSel = selects[1];
+			const valInput = r.querySelector('input[type="number"]');
+			
+			if (!compSel || !typeSel || !valInput) return;
+			
+			const compName = String(compSel.value || compSel.options[compSel.selectedIndex]?.text || '').trim();
+			const calcType = String(typeSel.value || 'fixed').trim();
+			const val = Number(valInput.value || 0);
+			
+			if (!compName || compName === 'Select component...' || compName === '') return;
+			
+			const isDeduction = /pf|provident|tds|tax|esi|loan|deduct|advance|professional|insurance|state/i.test(compName);
+			const isBasic = /basic/i.test(compName);
+			
+			if (calcType === 'fixed') {
+				if (isBasic) basicAmount = val;
+				if (isDeduction) fixedDeductions += val;
+				else fixedEarnings += val;
+			} else if (calcType === 'pct_basic') {
+				if (isDeduction) pctBasicDeductions += val;
+				else pctBasicEarnings += val;
+			} else if (calcType === 'pct_ctc') {
+				ctcPctComponents.push({ isDeduction, val, isBasic });
+			}
+		});
+		
+		// Calculate % of basic contributions
+		const basicBasedEarnings = (basicAmount * pctBasicEarnings) / 100;
+		const basicBasedDeductions = (basicAmount * pctBasicDeductions) / 100;
+		
+		// For % of CTC: Solve equation CTC = Fixed + (pct_of_ctc * CTC)
+		// CTC * (1 - sum_pct) = Fixed
+		// CTC = Fixed / (1 - sum_pct)
+		let sumCtcPctEarnings = 0;
+		let sumCtcPctDeductions = 0;
+		ctcPctComponents.forEach(c => {
+			if (c.isDeduction) sumCtcPctDeductions += c.val / 100;
+			else sumCtcPctEarnings += c.val / 100;
+		});
+		
+		// Total fixed + pct_basic earnings
+		const baseEarnings = fixedEarnings + basicBasedEarnings;
+		
+		// Solve for monthly CTC
+		let monthlyCTC = 0;
+		const denom = 1 - sumCtcPctEarnings;
+		if (Math.abs(denom) < 0.001) {
+			monthlyCTC = baseEarnings;
+		} else {
+			monthlyCTC = baseEarnings / denom;
+		}
+		
+		// Calculate deductions
+		const ctcBasedDeductions = monthlyCTC * sumCtcPctDeductions;
+		const totalDeductions = fixedDeductions + basicBasedDeductions + ctcBasedDeductions;
+		
+		// Update DOM
+		const monthlyEl = document.getElementById('monthlyCTC');
+		const annualEl = document.getElementById('annualCTC');
+		const dedEl = document.getElementById('monthlyDeductions');
+		
+		const fmt = v => '₹' + Number(Math.round((v || 0) * 100) / 100).toLocaleString('en-IN');
+		
+		if (monthlyEl) monthlyEl.textContent = fmt(monthlyCTC);
+		if (annualEl) annualEl.textContent = fmt(monthlyCTC * 12);
+		if (dedEl) dedEl.textContent = fmt(totalDeductions);
+		
+	} catch (err) { 
+		console.warn('Recalc failed', err); 
+	}
+}
+
+// ensure recalc on add/remove and input changes
+const recalcBind = () => {
+	document.querySelectorAll('#componentsList .component-row').forEach(r => {
+		r.querySelectorAll('select, input[type="number"]').forEach(el => {
+			el.removeEventListener('input', recalcStructure);
+			el.removeEventListener('change', recalcStructure);
+			const ev = (el.tagName === 'SELECT') ? 'change' : 'input';
+			el.addEventListener(ev, recalcStructure);
+		});
+	});
+};
+	
+// Ensure modal-level listeners also trigger recalc in case elements are added dynamically
+try {
+    const modalEl = document.getElementById('structureModal');
+    if (modalEl) {
+        modalEl.removeEventListener('input', recalcStructure);
+        modalEl.removeEventListener('change', recalcStructure);
+        modalEl.addEventListener('input', function(){ try{ recalcStructure(); }catch(e){} });
+        modalEl.addEventListener('change', function(){ try{ recalcStructure(); }catch(e){} });
+    }
+} catch(e) { /* ignore */ }
+
+// call recalc after row addition/removal
+const origAddComponentRow = addComponentRow;
+addComponentRow = function(){ origAddComponentRow(); recalcBind(); setTimeout(recalcStructure,50); };
+const origRemoveComponentRow = removeComponentRow;
+removeComponentRow = function(btn){ origRemoveComponentRow(btn); setTimeout(recalcStructure,50); };
+
+
 function removeComponentRow(btn) {
-	btn.closest('.component-row').remove();
+	const row = btn.closest && btn.closest('.component-row');
+	if (row && row.remove) row.remove();
 }
 
 function saveStructure() {
-	showToast('Salary structure saved successfully!', 'success');
-	new bootstrap.Modal(document.getElementById('structureModal')).hide();
+	// collect form values
+		// Resolve businessId from multiple possible sources (hidden input, global, localStorage, or template fallback)
+		let _bizRaw = null;
+		try { _bizRaw = document.getElementById('businessId')?.value || null; } catch(e) { _bizRaw = null; }
+		if (!_bizRaw) _bizRaw = (window && window._BUSINESS_ID) ? String(window._BUSINESS_ID) : null;
+		if (!_bizRaw) _bizRaw = (localStorage && localStorage.getItem('businessId')) ? localStorage.getItem('businessId') : null;
+		const businessId = Number((_bizRaw && _bizRaw !== 'undefined') ? _bizRaw : ('{{businessId}}'));
+	const form = document.getElementById('structureForm');
+	if (!form) return showToast('Form not found', 'danger');
+	const nameInput = form.querySelector('input[type="text"]');
+	const dateInput = form.querySelector('input[type="date"]');
+	const descInput = form.querySelector('textarea');
+	const name = nameInput ? String(nameInput.value || '').trim() : '';
+	const effectiveDate = dateInput ? String(dateInput.value || '') : '';
+	const description = descInput ? String(descInput.value || '').trim() : '';
+
+	if (!businessId || !name) {
+	    return showToast('Business and Name are required', 'danger');
+	}
+
+		const comps = [];
+		document.querySelectorAll('#componentsList .component-row').forEach(row => {
+			const selects = row.querySelectorAll('select');
+			const sel = selects[0]; // component select
+			const typeSel = selects[1]; // calculation type select
+			const valInput = row.querySelector('input[type="number"]');
+			const val = valInput ? Number(valInput.value || 0) : 0;
+			if (!sel || !typeSel) return;
+			// Build component object matching backend expected shape
+			const compNameText = String(sel.value || sel.options[sel.selectedIndex]?.text || '').trim();
+			if (!compNameText || compNameText === 'Select component...' || compNameText === '') return;
+			
+			const calcType = String(typeSel.value || 'fixed').trim();
+			const isDed = /pf|provident|tds|tax|esi|loan|deduct|advance|professional|insurance|state/i.test(compNameText);
+			const compObj = {
+				componentId: compNameText,
+				name: compNameText,
+				value: val,
+				calcType: calcType, // Store calculation type for formula processing
+				// backend expects 'EARNING' or 'DEDUCTION'
+				type: isDed ? 'DEDUCTION' : 'EARNING'
+			};
+			comps.push(compObj);
+		});
+
+		// validate components
+		const validComps = comps.filter(c => c && c.componentId && String(c.componentId).trim() !== '');
+		if (validComps.length === 0) return showToast('Add at least one component', 'danger');
+
+		const payload = { businessId: Number(businessId), name, description, effectiveDate: effectiveDate || null, components: validComps, status: 'ACTIVE', version: 1 };
+
+		const authToken = localStorage.getItem('accessToken');
+		const headers = { 'Content-Type': 'application/json' };
+		if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+		// include business id header when present (server may require it)
+		if (businessId) headers['x-business-id'] = String(businessId);
+
+		console.log('Saving salary structure payload:', payload);
+
+		const method = _editingStructureId ? 'PUT' : 'POST';
+		const url = _editingStructureId ? `/api/admin/payroll/structures/${_editingStructureId}` : '/api/admin/payroll/structures';
+
+		fetch(url, { method, credentials: 'include', headers, body: JSON.stringify(payload) })
+			.then(async r => {
+				const text = await r.text();
+				console.log('Create structure response status:', r.status, 'text:', text);
+				let data = {};
+				try { data = text ? JSON.parse(text) : {}; } catch (e) { data = { raw: text }; }
+				if (r.ok) {
+					showToast(data?.message || 'Salary structure saved successfully!', 'success');
+					// Update UI in-place instead of full reload
+					try {
+						const created = (data && data.data) ? data.data : data;
+						if (created && created.id) {
+							// remove any existing card for this id (update case)
+							const existingCard = document.querySelector('.structure-item[data-id="' + String(created.id) + '"]');
+							if (existingCard && existingCard.remove) existingCard.remove();
+							// Hide modal
+							try { bootstrap.Modal.getInstance(document.getElementById('structureModal')).hide(); } catch(e) { try { new bootstrap.Modal(document.getElementById('structureModal')).hide(); } catch(e){} }
+							// Build card element (match server-rendered markup)
+							const card = document.createElement('div');
+							card.className = 'structure-card structure-item';
+							card.setAttribute('data-id', String(created.id));
+							card.onclick = function(){ selectStructure(created.id); return false; };
+							card.innerHTML = `
+								<div class="card-body">
+									<div class="d-flex justify-content-between align-items-start">
+										<div class="structure-name">${created.name || 'New Structure'}</div>
+										${created.isActive !== false ? '<span class="badge-active"><i class="fa-solid fa-circle-check me-1"></i>Active</span>' : '<span class="badge-inactive">Inactive</span>'}
+									</div>
+									<div class="structure-meta">${created.effectiveDate ? 'Effective: ' + (created.effectiveDate.split && created.effectiveDate.split('T')[0] || created.effectiveDate) : 'No effective date set'}</div>
+									<div class="structure-version"><i class="fa-solid fa-code-branch me-1"></i>v${created.version || 1} • Updated ${created.updatedAt || ''}</div>
+									<div class="employee-count"><i class="fa-solid fa-users"></i> ${created.assignedCount || 0} employees</div>
+								</div>
+							`;
+							// Insert into list (create container if missing)
+							let list = document.querySelector('.structure-list-container');
+							if (!list) {
+								// If 'no structures' empty state exists, replace card body
+								const parentCardBody = document.querySelector('.card-body.p-3');
+								if (parentCardBody) {
+									parentCardBody.innerHTML = '<div class="structure-list-container d-flex flex-column gap-3"></div>' + parentCardBody.innerHTML;
+									list = document.querySelector('.structure-list-container');
+								}
+							}
+							if (list) list.prepend(card);
+							// select and load details for created item
+							selectStructure(created.id);
+						}
+					} catch(e) {
+						// fallback: reload if incremental update fails
+						setTimeout(() => location.reload(), 600);
+					}
+					return;
+				}
+				// server returned non-OK
+				const errMsg = data?.message || data?.error || data?.errors || data?.raw || 'Failed to save';
+				console.error('Create structure error', errMsg);
+				try { showToast('Save failed: ' + (typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg)), 'danger'); } catch(e){}
+			})
+			.catch(err => {
+				console.error('Create structure network/error', err);
+				try { showToast('Save failed: ' + (err.message || 'Unknown'), 'danger'); } catch(e){}
+			});
 }
 
 function toggleSelectAll(checkbox) {
-	document.querySelectorAll('.emp-checkbox').forEach(el => el.checked = checkbox.checked);
+	const list = document.querySelectorAll('.emp-checkbox');
+	if (list && list.length) list.forEach(el => el.checked = checkbox.checked);
 	updateSelectedCount();
 }
 
 function updateSelectedCount() {
-	const count = document.querySelectorAll('.emp-checkbox:checked').length;
-	document.getElementById('selectedCount').textContent = count;
+	const count = document.querySelectorAll('.emp-checkbox:checked')?.length || 0;
+	const sel = document.getElementById('selectedCount');
+	if (sel) sel.textContent = count;
 }
 
-function confirmAssignment() {
-	const count = document.querySelectorAll('.emp-checkbox:checked').length;
-	if (count === 0) {
-		alert('Please select at least one employee');
-		return;
+async function confirmAssignment() {
+	const checked = Array.from(document.querySelectorAll('.emp-checkbox:checked'));
+	if (!checked.length) return showToast('Please select at least one employee', 'warning');
+	const employeeIds = checked.map(c => Number(c.value));
+	const modal = document.getElementById('assignModal');
+	const salaryStructureId = modal.dataset.structureId;
+	// Ensure effective date is provided; default to today if missing to satisfy DB NOT NULL
+	let effectiveDate = modal.querySelector('input[type="date"]')?.value || '';
+	if (!effectiveDate) {
+		effectiveDate = new Date().toISOString().split('T')[0];
 	}
-	showToast(`Structure assigned to ${count} employee(s)!`, 'success');
-	new bootstrap.Modal(document.getElementById('assignModal')).hide();
+	if (!salaryStructureId) return showToast('No structure selected', 'danger');
+
+	const bizId = document.getElementById('businessId')?.value || '{{businessId}}';
+	const payload = { businessId: Number(bizId) || undefined, employeeIds, salaryStructureId: Number(salaryStructureId), effectiveFrom: effectiveDate };
+	const headers = { 'Content-Type': 'application/json' };
+	const token = localStorage.getItem('accessToken');
+	if (token) headers['Authorization'] = `Bearer ${token}`;
+	if (bizId) headers['x-business-id'] = String(bizId);
+	try {
+		const res = await fetch('/api/admin/payroll/structures/assign', { method: 'POST', credentials: 'include', headers, body: JSON.stringify(payload) });
+		const txt = await res.text();
+		let body = {};
+		try { body = txt ? JSON.parse(txt) : {}; } catch (e) { body = { raw: txt }; }
+		if (!res.ok) return showToast('Assign failed: ' + (body?.message || body?.raw || res.statusText), 'danger');
+		showToast(body?.message || 'Assigned successfully', 'success');
+		new bootstrap.Modal(modal).hide();
+	} catch (err) {
+		console.error('Assign error', err);
+		showToast('Assign failed: ' + (err.message || err), 'danger');
+	}
 }
 
-document.getElementById('employeeSearch').addEventListener('input', function(e) {
-	const query = e.target.value.toLowerCase();
-	document.querySelectorAll('.emp-checkbox').forEach(checkbox => {
-		const parent = checkbox.closest('label');
-		const name = parent.getAttribute('data-name').toLowerCase();
-		parent.style.display = name.includes(query) ? '' : 'none';
+async function deleteStructure() {
+	const selected = document.querySelector('.structure-item.active');
+	if (!selected) return showToast('Select a structure to delete', 'warning');
+	const id = selected.getAttribute('data-id');
+	if (!id) return showToast('Invalid structure selected', 'danger');
+	if (!confirm('Are you sure you want to delete this salary structure? This action cannot be undone.')) return;
+	try {
+		const headers = {};
+		const token = localStorage.getItem('accessToken');
+		if (token) headers['Authorization'] = `Bearer ${token}`;
+		// include business id header if available from template
+		const bizId = document.getElementById('businessId')?.value || '{{businessId}}';
+		if (bizId) headers['x-business-id'] = String(bizId);
+
+		const res = await fetch(`/api/admin/payroll/structures/${id}`, { method: 'DELETE', credentials: 'include', headers });
+		const text = await res.text();
+		let body = {};
+		try { body = text ? JSON.parse(text) : {}; } catch (e) { body = { raw: text }; }
+		if (!res.ok) {
+			const msg = body?.message || body?.raw || res.statusText;
+			// If failure due to assignments, open unassign modal
+			if (String(msg || '').toLowerCase().includes('assigned')) {
+				await loadAssignments(id);
+				new bootstrap.Modal(document.getElementById('unassignModal')).show();
+				return;
+			}
+			return showToast('Delete failed: ' + msg, 'danger');
+		}
+		showToast(body?.message || 'Deleted successfully', 'success');
+		setTimeout(() => location.reload(), 600);
+	} catch (err) {
+		console.error('Delete error', err);
+		showToast('Delete failed: ' + (err.message || err), 'danger');
+	}
+}
+
+async function loadAssignments(structureId) {
+	const headers = {};
+	const token = localStorage.getItem('accessToken');
+	if (token) headers['Authorization'] = `Bearer ${token}`;
+	const bizId = document.getElementById('businessId')?.value || '{{businessId}}';
+	if (bizId) headers['x-business-id'] = String(bizId);
+	try {
+		const res = await fetch(`/api/admin/payroll/structures/${structureId}/assignments`, { credentials: 'include', headers });
+		const txt = await res.text();
+		let data = {};
+		try { data = txt ? JSON.parse(txt) : {}; } catch (e) { data = { raw: txt }; }
+		if (!res.ok) return showToast('Failed to load assignments', 'danger');
+		const list = document.getElementById('assignedList');
+		list.innerHTML = '';
+		(data?.data || data || []).forEach(item => {
+			const emp = item.employee || {};
+			const label = document.createElement('label');
+			label.className = 'list-group-item p-3';
+			label.innerHTML = `<input class="form-check-input me-2 unassign-checkbox" type="checkbox" value="${emp.id || item.employeeId}"> <strong>${emp.empName || 'Unknown'}</strong> <small class="text-muted d-block">${emp.empId || ''} • ${emp.empDepartment || ''}</small>`;
+			list.appendChild(label);
+		});
+		document.querySelectorAll('.unassign-checkbox').forEach(el => el && el.addEventListener('change', () => {
+			const c = document.querySelectorAll('.unassign-checkbox:checked')?.length || 0;
+			document.getElementById('unassignSelectedCount').textContent = c;
+		}));
+	} catch (err) {
+		console.error('Load assignments error', err);
+		showToast('Failed to load assignments: ' + (err.message || err), 'danger');
+	}
+}
+
+async function confirmUnassign() {
+	const checked = Array.from(document.querySelectorAll('.unassign-checkbox:checked'));
+	if (!checked.length) return showToast('Select employees to unassign', 'warning');
+	const employeeIds = checked.map(c => Number(c.value));
+	const modal = document.getElementById('unassignModal');
+	const structureId = document.querySelector('.structure-item.active')?.getAttribute('data-id');
+	if (!structureId) return showToast('No structure selected', 'danger');
+	const headers = { 'Content-Type': 'application/json' };
+	const token = localStorage.getItem('accessToken');
+	if (token) headers['Authorization'] = `Bearer ${token}`;
+	const bizId = document.getElementById('businessId')?.value || '{{businessId}}';
+	if (bizId) headers['x-business-id'] = String(bizId);
+	try {
+		const res = await fetch(`/api/admin/payroll/structures/${structureId}/unassign`, { method: 'POST', credentials: 'include', headers, body: JSON.stringify({ employeeIds }) });
+		const txt = await res.text();
+		let body = {};
+		try { body = txt ? JSON.parse(txt) : {}; } catch (e) { body = { raw: txt }; }
+		if (!res.ok) return showToast('Unassign failed: ' + (body?.message || body?.raw || res.statusText), 'danger');
+		showToast(body?.message || 'Unassigned successfully', 'success');
+		new bootstrap.Modal(modal).hide();
+		// after unassign, attempt delete again
+		await deleteStructure();
+	} catch (err) {
+		console.error('Unassign error', err);
+		showToast('Unassign failed: ' + (err.message || err), 'danger');
+	}
+}
+
+const empSearch = document.getElementById('employeeSearch');
+if (empSearch) {
+	empSearch.addEventListener('input', function(e) {
+		const query = String(e.target.value || '').toLowerCase();
+		document.querySelectorAll('.emp-checkbox').forEach(checkbox => {
+			const parent = checkbox.closest && checkbox.closest('label');
+			const name = parent?.getAttribute('data-name') || '';
+			parent && (parent.style.display = name.toLowerCase().includes(query) ? '' : 'none');
+		});
 	});
-});
+}
 
 document.querySelectorAll('.emp-checkbox').forEach(el => {
-	el.addEventListener('change', updateSelectedCount);
+	if (el && el.addEventListener) el.addEventListener('change', updateSelectedCount);
 });
 
 function showToast(message, type = 'info') {
@@ -393,6 +1639,12 @@ function showToast(message, type = 'info') {
 	setTimeout(() => alertDiv.remove(), 4000);
 }
 
-// Initialize with first structure
-selectStructure(1);
+// Initialize with first structure if exists
+(() => {
+	const first = document.querySelector('.structure-item');
+	if (first) {
+		const id = first.getAttribute('data-id');
+		if (id) selectStructure(id);
+	}
+})();
 </script>

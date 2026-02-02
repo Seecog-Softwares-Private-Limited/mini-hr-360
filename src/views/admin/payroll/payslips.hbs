@@ -2,7 +2,7 @@
 <div class="container-fluid">
 	<div class="row">
 		<div class="col-md-3 col-lg-2 px-0">
-			{{> sidebar active="payroll-payslips" activeGroup="workspace"}}
+			{{> sidebar active="payroll-payslips" activeGroup="payroll"}}
 		</div>
 
 		<div class="col-md-9 col-lg-10">
@@ -18,35 +18,60 @@
 				<div class="d-flex align-items-center justify-content-between mb-4">
 					<div>
 						<h2 class="mb-1">Payslips</h2>
-						<small class="text-muted">January 2026 | Run ID: {{runId}}</small>
+						{{#if error}}
+						<div class="alert alert-danger mt-3">
+							<i class="fa-solid fa-triangle-exclamation me-2"></i>
+							<strong>Error:</strong> {{error}}
+						</div>
+						{{/if}}
+						{{#if noRuns}}
+						<div class="alert alert-warning mt-3">
+							<i class="fa-solid fa-info-circle me-2"></i>
+							No payroll runs found. <a href="/admin/payroll/runs">Create a payroll run</a> first.
+						</div>
+						{{else}}
+						<small class="text-muted">{{periodDisplay}} | Run ID: {{runId}}</small>
+						{{/if}}
+					</div>
+					<div class="d-flex gap-2">
+						{{#unless noRuns}}
+						<select class="form-select form-select-sm" id="runSelector" onchange="switchRun(this.value)" style="width: auto;">
+							<option value="{{runId}}" selected>Current Run: {{periodDisplay}}</option>
+						</select>
+						{{/unless}}
+						<button type="button" class="btn btn-outline-primary" onclick="listRuns()">
+							<i class="fa-solid fa-arrow-left me-2"></i>Back to runs
+						</button>
 					</div>
 				</div>
 
+				<div id="alertContainer"></div>
+
 				<!-- Bulk Actions -->
-				<div class="card mb-4">
+				<div class="card mb-4 shadow-sm border-0">
 					<div class="card-body">
 						<div class="row align-items-center">
-							<div class="col-md-6">
+							<div class="col-md-4">
 								<div class="form-check form-switch">
-									<input class="form-check-input" type="checkbox" id="selectAllPayslips" onchange="toggleSelectAll(this)">
+									<input class="form-check-input" type="checkbox" id="selectAllPayslips"
+										onchange="toggleSelectAll(this)">
 									<label class="form-check-label" for="selectAllPayslips">
 										<strong>Select All</strong>
 									</label>
 								</div>
 							</div>
-							<div class="col-md-6 text-end">
-								<div class="btn-group" role="group">
-									<button type="button" class="btn btn-primary" onclick="generateAll()">
+							<div class="col-md-8 text-end">
+								<div class="btn-group shadow-sm" role="group">
+									<button type="button" id="btnGenerate" class="btn btn-primary"
+										onclick="generateAll()">
 										<i class="fa-solid fa-file-pdf me-2"></i>Generate All
 									</button>
-									<button type="button" class="btn btn-success" onclick="publishAll()">
+									<button type="button" id="btnPublish" class="btn btn-success"
+										onclick="publishAll()">
 										<i class="fa-solid fa-paper-plane me-2"></i>Publish All
 									</button>
 									<button type="button" class="btn btn-warning" onclick="holdSelected()">
 										<i class="fa-solid fa-pause-circle me-2"></i>Hold Selected
-									</button>
-									<button type="button" class="btn btn-outline-secondary" disabled>
-										<i class="fa-solid fa-download me-2"></i>Bulk Download
 									</button>
 								</div>
 							</div>
@@ -55,71 +80,105 @@
 				</div>
 
 				<!-- Payslips Table -->
-				<div class="card">
-					<div class="card-header d-flex justify-content-between align-items-center">
-						<h6 class="mb-0">Payslips</h6>
-						<input type="text" class="form-control form-control-sm" placeholder="Search employee..." style="width: 250px;" id="searchInput" onkeyup="filterTable()">
+				<div class="card shadow-sm border-0">
+					<div
+						class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-bottom">
+						<h6 class="mb-0 fw-bold">Employee Payslips</h6>
+						<div class="input-group" style="width: 250px;">
+							<span class="input-group-text bg-transparent border-end-0"><i
+									class="fa-solid fa-magnifying-glass text-muted"></i></span>
+							<input type="text" class="form-control border-start-0 ps-0" placeholder="Search employee..."
+								id="searchInput" onkeyup="filterTable()">
+						</div>
 					</div>
 					<div class="card-body p-0">
 						<div class="table-responsive">
-							<table class="table table-hover mb-0">
-								<thead class="table-light">
+							<table class="table table-hover align-middle mb-0">
+								<thead class="bg-light">
 									<tr>
-										<th style="width: 40px;"><input class="form-check-input" type="checkbox" onchange="toggleSelectAll(this)"></th>
+										<th style="width: 40px; padding-left: 1.5rem;"><input
+												class="form-check-input payslip-checkbox-parent" type="checkbox"
+												onchange="toggleSelectAll(this)"></th>
 										<th>Employee</th>
 										<th>Net Pay</th>
-										<th>Bank Status</th>
-										<th>Payslip Status</th>
-										<th>Actions</th>
+										<th class="text-center">Bank Status</th>
+										<th class="text-center">Status</th>
+										<th class="text-end" style="padding-right: 1.5rem;">Actions</th>
 									</tr>
 								</thead>
 								<tbody>
 									{{#if payslips.length}}
-										{{#each payslips}}
-										<tr data-employee="{{this.empName}}" class="payslip-row">
-											<td>
-												<input class="form-check-input payslip-checkbox" type="checkbox">
-											</td>
-											<td>
-												<strong>{{this.empName}}</strong>
-												<small class="d-block text-muted">{{this.empId}} • {{this.department}}</small>
-											</td>
-											<td><strong>₹{{this.netPay}}</strong></td>
-											<td>
-												{{#if this.bankStatus}}
-													<span class="badge bg-success">Verified</span>
-												{{else}}
-													<span class="badge bg-warning text-dark">Pending</span>
-												{{/if}}
-											</td>
-											<td>
-												{{#if (eq this.status 'GENERATED')}}
-													<span class="badge bg-info">Generated</span>
-												{{else if (eq this.status 'PUBLISHED')}}
-													<span class="badge bg-success">Published</span>
-												{{else if (eq this.status 'HELD')}}
-													<span class="badge bg-danger">Held</span>
-												{{/if}}
-											</td>
-											<td>
-												<div class="btn-group btn-group-sm">
-													<button class="btn btn-outline-primary" onclick="viewPayslip({{this.id}})" title="View">
-														<i class="fa-solid fa-eye"></i>
-													</button>
-													<a href="#" class="btn btn-outline-secondary" title="Download">
-														<i class="fa-solid fa-download"></i>
-													</a>
+									{{#each payslips}}
+									<tr data-employee="{{this.empName}}" class="payslip-row">
+										<td style="padding-left: 1.5rem;">
+											<input class="form-check-input payslip-checkbox" type="checkbox"
+												data-id="{{this.id}}">
+										</td>
+										<td>
+											<div class="d-flex align-items-center">
+												<div class="avatar-sm bg-primary bg-opacity-10 text-primary rounded-circle me-3 d-flex align-items-center justify-content-center fw-bold"
+													style="width: 32px; height: 32px; font-size: 12px;">
+													{{#if this.empName}}{{slice this.empName 0 1}}{{else}}?{{/if}}
 												</div>
-											</td>
-										</tr>
-										{{/each}}
+												<div>
+													<strong class="d-block">{{this.empName}}</strong>
+													<small class="text-muted">{{this.empId}} •
+														{{this.department}}</small>
+												</div>
+											</div>
+										</td>
+										<td><span class="fw-bold">₹{{#if
+												this.netPay}}{{this.netPay}}{{else}}0.00{{/if}}</span></td>
+										<td class="text-center">
+											{{#if this.bankStatus}}
+											<span
+												class="badge rounded-pill bg-success-subtle text-success border border-success border-opacity-25 px-3">Verified</span>
+											{{else}}
+											<span
+												class="badge rounded-pill bg-warning-subtle text-warning border border-warning border-opacity-25 px-3 text-dark">Pending</span>
+											{{/if}}
+										</td>
+										<td class="text-center">
+											{{#if (eq this.status 'Published')}}
+											<span class="badge rounded-pill bg-success px-3">Published</span>
+											{{else if (eq this.status 'Held')}}
+											<span class="badge rounded-pill bg-danger px-3">Held</span>
+											{{else}}
+											<span class="badge rounded-pill bg-info px-3">{{this.status}}</span>
+											{{/if}}
+										</td>
+										<td class="text-end" style="padding-right: 1.5rem;">
+											<div class="btn-group btn-group-sm rounded shadow-sm">
+												<button class="btn btn-white border" onclick="viewPayslip({{this.id}})"
+													title="Preview">
+													<i class="fa-solid fa-eye text-primary"></i>
+												</button>
+												{{#if this.pdfUrl}}
+												<a href="/api/admin/payroll/payslips/download/{{this.id}}"
+													class="btn btn-white border" title="Download PDF">
+													<i class="fa-solid fa-download text-success"></i>
+												</a>
+												{{else}}
+												<button class="btn btn-white border" disabled title="Not Generated">
+													<i class="fa-solid fa-download text-muted"></i>
+												</button>
+												{{/if}}
+											</div>
+										</td>
+									</tr>
+									{{/each}}
 									{{else}}
-										<tr>
-											<td colspan="6" class="text-center text-muted py-4">
-												<i class="fa-solid fa-inbox" style="font-size: 24px; opacity: 0.3; display: block; margin-bottom: 10px;"></i>
-												No payslips generated for this run
-											</td>
-										</tr>
+									<tr>
+										<td colspan="6" class="text-center text-muted py-5">
+											<div class="mb-3">
+												<i class="fa-solid fa-file-invoice-dollar"
+													style="font-size: 48px; opacity: 0.1;"></i>
+											</div>
+											<h5 class="fw-normal">No payslips found</h5>
+											<p class="small mb-0">Generate payslips for this run to populate this list.
+											</p>
+										</td>
+									</tr>
 									{{/if}}
 								</tbody>
 							</table>
@@ -134,114 +193,23 @@
 <!-- Payslip Preview Modal -->
 <div class="modal fade" id="payslipModal" tabindex="-1">
 	<div class="modal-dialog modal-lg">
-		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title">Payslip Preview</h5>
-				<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+		<div class="modal-content border-0 shadow-lg">
+			<div class="modal-header bg-primary text-white py-3">
+				<h5 class="modal-title fw-bold"><i class="fa-solid fa-file-invoice-dollar me-2"></i>Payslip Preview</h5>
+				<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
 			</div>
-			<div class="modal-body" id="payslipContent" style="background: #f5f5f5;">
-				<!-- Payslip Preview -->
-				<div style="background: white; padding: 30px; border-radius: 8px; max-height: 600px; overflow-y: auto;">
-					<div style="text-align: center; padding-bottom: 20px; border-bottom: 2px solid #e5e7eb;">
-						<div style="font-weight: 700; font-size: 18px; margin-bottom: 5px;">ACME CORPORATION</div>
-						<small style="color: #666;">123 Business Park, Tech City, TC 560001</small>
-					</div>
-
-					<div style="padding: 20px 0; border-bottom: 1px solid #e5e7eb;">
-						<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 13px;">
-							<div>
-								<div style="color: #999; font-size: 11px; text-transform: uppercase;">Employee Name</div>
-								<div style="font-weight: 600;">John Doe</div>
-							</div>
-							<div>
-								<div style="color: #999; font-size: 11px; text-transform: uppercase;">Employee ID</div>
-								<div style="font-weight: 600;">EMP-001</div>
-							</div>
-							<div>
-								<div style="color: #999; font-size: 11px; text-transform: uppercase;">Designation</div>
-								<div style="font-weight: 600;">Senior Developer</div>
-							</div>
-							<div>
-								<div style="color: #999; font-size: 11px; text-transform: uppercase;">Department</div>
-								<div style="font-weight: 600;">Engineering</div>
-							</div>
-							<div>
-								<div style="color: #999; font-size: 11px; text-transform: uppercase;">Pay Period</div>
-								<div style="font-weight: 600;">January 1-31, 2026</div>
-							</div>
-							<div>
-								<div style="color: #999; font-size: 11px; text-transform: uppercase;">Pay Date</div>
-								<div style="font-weight: 600;">February 5, 2026</div>
-							</div>
-						</div>
-					</div>
-
-					<div style="padding: 20px 0; border-bottom: 1px solid #e5e7eb;">
-						<div style="font-weight: 600; margin-bottom: 12px; color: #333;">Earnings</div>
-						<table style="width: 100%; font-size: 13px;">
-							<tr>
-								<td>Basic Salary</td>
-								<td style="text-align: right;">₹50,000.00</td>
-							</tr>
-							<tr>
-								<td>Dearness Allowance (20%)</td>
-								<td style="text-align: right;">₹10,000.00</td>
-							</tr>
-							<tr>
-								<td>House Rent Allowance</td>
-								<td style="text-align: right;">₹15,000.00</td>
-							</tr>
-							<tr style="border-top: 1px solid #e5e7eb; font-weight: 600; background: #f9f9f9;">
-								<td>Total Earnings</td>
-								<td style="text-align: right;">₹75,000.00</td>
-							</tr>
-						</table>
-					</div>
-
-					<div style="padding: 20px 0; border-bottom: 1px solid #e5e7eb;">
-						<div style="font-weight: 600; margin-bottom: 12px; color: #333;">Deductions</div>
-						<table style="width: 100%; font-size: 13px;">
-							<tr>
-								<td>Provident Fund (12%)</td>
-								<td style="text-align: right;">₹6,000.00</td>
-							</tr>
-							<tr>
-								<td>Professional Tax</td>
-								<td style="text-align: right;">₹500.00</td>
-							</tr>
-							<tr style="border-top: 1px solid #e5e7eb; font-weight: 600; background: #f9f9f9;">
-								<td>Total Deductions</td>
-								<td style="text-align: right;">₹6,500.00</td>
-							</tr>
-						</table>
-					</div>
-
-					<div style="padding: 20px 0; background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%); color: white; border-radius: 6px; margin: 20px 0; text-align: center;">
-						<div style="font-size: 11px; opacity: 0.9; margin-bottom: 5px;">NET PAY</div>
-						<div style="font-size: 28px; font-weight: 700;">₹68,500.00</div>
-					</div>
-
-					<div style="padding: 12px 0; border-top: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb; font-size: 13px;">
-						<table style="width: 100%;">
-							<tr style="background: #f9f9f9;">
-								<td style="font-weight: 600;">Year-to-Date Earnings</td>
-								<td style="text-align: right;">₹75,000.00</td>
-							</tr>
-							<tr style="background: #f9f9f9;">
-								<td style="font-weight: 600;">Year-to-Date Deductions</td>
-								<td style="text-align: right;">₹6,500.00</td>
-							</tr>
-						</table>
-					</div>
-
-					<div style="padding: 15px 0; text-align: center; color: #999; font-size: 11px; border-top: 1px solid #e5e7eb;">
-						This is a system-generated payslip. Please contact HR for any discrepancies.
-					</div>
+			<div class="modal-body p-0 bg-light" id="payslipContent">
+				<div class="text-center p-5 text-muted" id="modalLoader">
+					<div class="spinner-border text-primary mb-3" role="status"></div>
+					<p>Loading payslip details...</p>
+				</div>
+				<div id="payslipDetail" style="display: none;">
+					<!-- Dynamic Content Here -->
 				</div>
 			</div>
-			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-				<button type="button" class="btn btn-primary" onclick="downloadPayslip()">
+			<div class="modal-footer bg-white border-top py-3">
+				<button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Close</button>
+				<button type="button" id="btnModalDownload" class="btn btn-primary px-4">
 					<i class="fa-solid fa-download me-2"></i>Download PDF
 				</button>
 			</div>
@@ -250,54 +218,254 @@
 </div>
 
 <script>
-function filterTable() {
-	const query = document.getElementById('searchInput').value.toLowerCase();
-	document.querySelectorAll('.payslip-row').forEach(row => {
-		const employee = row.getAttribute('data-employee').toLowerCase();
-		row.style.display = employee.includes(query) ? '' : 'none';
-	});
-}
+	const runId = '{{runId}}';
+	const PAYROLL_BASE_URL = '/api/admin/payroll';
 
-function toggleSelectAll(checkbox) {
-	document.querySelectorAll('.payslip-checkbox').forEach(el => el.checked = checkbox.checked);
-}
-
-function viewPayslip(id) {
-	new bootstrap.Modal(document.getElementById('payslipModal')).show();
-}
-
-function downloadPayslip() {
-	showToast('Downloading payslip...', 'info');
-}
-
-function generateAll() {
-	showToast('Generating all payslips...', 'info');
-}
-
-function publishAll() {
-	if (confirm('Publish all payslips? This will make them visible to employees.')) {
-		showToast('All payslips published!', 'success');
+	function listRuns() {
+		window.location.href = '/admin/payroll/runs';
 	}
-}
 
-function holdSelected() {
-	const count = document.querySelectorAll('.payslip-checkbox:checked').length;
-	if (count === 0) {
-		alert('Please select at least one payslip');
-		return;
+	function filterTable() {
+		const query = document.getElementById('searchInput').value.toLowerCase();
+		document.querySelectorAll('.payslip-row').forEach(row => {
+			const employee = row.getAttribute('data-employee').toLowerCase();
+			row.style.display = employee.includes(query) ? '' : 'none';
+		});
 	}
-	showToast(`${count} payslip(s) held!`, 'success');
-}
 
-function showToast(message, type = 'info') {
-	const alertDiv = document.createElement('div');
-	alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-	alertDiv.setAttribute('role', 'alert');
-	alertDiv.innerHTML = `
-		${message}
-		<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+	function toggleSelectAll(checkbox) {
+		document.querySelectorAll('.payslip-checkbox, .payslip-checkbox-parent').forEach(el => el.checked = checkbox.checked);
+	}
+
+	async function payrollApiCall(url, method = 'GET', body = null) {
+		try {
+			const token = localStorage.getItem('accessToken');
+			const options = {
+				method,
+				credentials: 'include',
+				headers: {
+					'Content-Type': 'application/json',
+					...(token ? { 'Authorization': `Bearer ${token}` } : {})
+				},
+			};
+			if (body) options.body = JSON.stringify(body);
+
+			const response = await fetch(url, options);
+			const result = await response.json();
+
+			if (!response.ok) throw new Error(result.message || 'API Error');
+			return result;
+		} catch (err) {
+			showToast(err.message, 'danger');
+			console.error(err);
+			return null;
+		}
+	}
+
+	async function generateAll() {
+		const btn = document.getElementById('btnGenerate');
+		const originalContent = btn.innerHTML;
+		btn.disabled = true;
+		btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generating...';
+
+		const result = await payrollApiCall(`${PAYROLL_BASE_URL}/payslips/${runId}/generate`, 'POST');
+		if (result) {
+			showToast(result.message, 'success');
+			setTimeout(() => location.reload(), 1500);
+		} else {
+			btn.disabled = false;
+			btn.innerHTML = originalContent;
+		}
+	}
+
+	async function publishAll() {
+		if (!confirm('Publish all generated payslips? This will make them visible to employees.')) return;
+
+		const btn = document.getElementById('btnPublish');
+		const originalContent = btn.innerHTML;
+		btn.disabled = true;
+		btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Publishing...';
+
+		const result = await payrollApiCall(`${PAYROLL_BASE_URL}/payslips/${runId}/publish`, 'POST');
+		if (result) {
+			showToast('All payslips published successfully!', 'success');
+			setTimeout(() => location.reload(), 1500);
+		} else {
+			btn.disabled = false;
+			btn.innerHTML = originalContent;
+		}
+	}
+
+	function holdSelected() {
+		const selected = Array.from(document.querySelectorAll('.payslip-checkbox:checked')).map(cb => cb.dataset.id);
+		if (selected.length === 0) {
+			alert('Please select at least one payslip');
+			return;
+		}
+		showToast(`${selected.length} payslip(s) placed on hold (Not implemented yet)`, 'info');
+	}
+
+	async function viewPayslip(id) {
+		const modal = new bootstrap.Modal(document.getElementById('payslipModal'));
+		const loader = document.getElementById('modalLoader');
+		const detail = document.getElementById('payslipDetail');
+		const btnDownload = document.getElementById('btnModalDownload');
+
+		loader.style.display = 'block';
+		detail.style.display = 'none';
+		btnDownload.onclick = () => window.location.href = `${PAYROLL_BASE_URL}/payslips/download/${id}`;
+
+		modal.show();
+
+		const result = await payrollApiCall(`${PAYROLL_BASE_URL}/payslips/preview/${id}`);
+		if (result && result.data) {
+			const payslip = result.data;
+
+			let earningsHtml = '';
+			for (const [key, val] of Object.entries(payslip.earnings || {})) {
+				earningsHtml += `<tr><td>${key}</td><td class="text-end">₹${val}</td></tr>`;
+			}
+
+			let deductionsHtml = '';
+			for (const [key, val] of Object.entries(payslip.deductions || {})) {
+				deductionsHtml += `<tr><td>${key}</td><td class="text-end">₹${val}</td></tr>`;
+			}
+
+			detail.innerHTML = `
+			<div class="bg-white p-5 mx-auto" style="max-width: 800px; box-shadow: 0 0 40px rgba(0,0,0,0.05); border-radius: 8px; margin: 20px;">
+				<div class="text-center mb-5 border-bottom pb-4">
+					<h3 class="fw-bold mb-1 text-uppercase letter-spacing-1">EMPLOYEE PAYSLIP</h3>
+					<p class="text-muted mb-0">${payslip.periodMonth}/${payslip.periodYear}</p>
+				</div>
+				
+				<div class="row g-4 mb-5">
+					<div class="col-6">
+						<small class="text-uppercase text-muted d-block mb-1" style="font-size: 10px; font-weight: 700;">Employee Information</small>
+						<div class="ps-1">
+							<h6 class="mb-1 fw-bold">${payslip.employee?.empName || 'Unknown'}</h6>
+							<p class="small mb-0">${payslip.employee?.empId || '-'} | ${payslip.employee?.empDesignation || '-'}</p>
+							<p class="small mb-0 text-muted">${payslip.employee?.empDepartment || '-'}</p>
+						</div>
+					</div>
+					<div class="col-6 text-end">
+						<small class="text-uppercase text-muted d-block mb-1" style="font-size: 10px; font-weight: 700;">Bank Details</small>
+						<p class="small mb-0">Status: <span class="badge ${payslip.employee?.bankDetails ? 'bg-success' : 'bg-warning'} rounded-pill">${payslip.employee?.bankDetails ? 'Verified' : 'Pending'}</span></p>
+					</div>
+				</div>
+
+				<div class="row g-5">
+					<div class="col-md-6">
+						<h6 class="fw-bold border-bottom pb-2 mb-3"><i class="fa-solid fa-plus-circle text-success me-2 small"></i>Earnings</h6>
+						<table class="table table-sm table-borderless small">
+							<tbody>${earningsHtml}</tbody>
+						</table>
+					</div>
+					<div class="col-md-6">
+						<h6 class="fw-bold border-bottom pb-2 mb-3"><i class="fa-solid fa-minus-circle text-danger me-2 small"></i>Deductions</h6>
+						<table class="table table-sm table-borderless small">
+							<tbody>${deductionsHtml}</tbody>
+						</table>
+					</div>
+				</div>
+
+				<div class="mt-5 p-4 bg-primary bg-opacity-10 rounded-4 border border-primary border-opacity-10">
+					<div class="d-flex justify-content-between align-items-center">
+						<span class="fw-bold text-primary">NET TAKE HOME PAY</span>
+						<h2 class="fw-bold mb-0 text-primary">₹${payslip.netPay}</h2>
+					</div>
+				</div>
+				
+				<div class="mt-5 pt-4 text-center border-top">
+					<p class="text-muted small mb-0 italic">This is a system generated document. No signature required.</p>
+				</div>
+			</div>
+		`;
+
+			loader.style.display = 'none';
+			detail.style.display = 'block';
+		}
+	}
+
+	function showToast(message, type = 'info') {
+		const container = document.getElementById('alertContainer');
+		const id = 'alert_' + Date.now();
+		container.innerHTML = `
+		<div id="${id}" class="alert alert-${type} alert-dismissible fade show shadow-sm border-0 mb-4 animate__animated animate__fadeInDown" role="alert">
+			<i class="fa-solid ${type === 'danger' ? 'fa-circle-xmark' : 'fa-circle-check'} me-2"></i>
+			${message}
+			<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+		</div>
 	`;
-	document.querySelector('.main-content').insertAdjacentElement('afterbegin', alertDiv);
-	setTimeout(() => alertDiv.remove(), 4000);
-}
+		setTimeout(() => {
+			const el = document.getElementById(id);
+			if (el) {
+				el.classList.remove('animate__fadeInDown');
+				el.classList.add('animate__fadeOutUp');
+				setTimeout(() => el.remove(), 500);
+			}
+		}, 4000);
+	}
+
+	function switchRun(runId) {
+		if (runId) {
+			window.location.href = `/admin/payroll/payslips/${runId}`;
+		}
+	}
+
+	async function loadAvailableRuns() {
+		try {
+			const token = localStorage.getItem('accessToken');
+			const res = await fetch('/api/admin/payroll/runs', {
+				headers: {
+					'Content-Type': 'application/json',
+					...(token ? { 'Authorization': `Bearer ${token}` } : {})
+				},
+				credentials: 'include'
+			});
+			const data = await res.json();
+			
+			if (res.ok && data.data) {
+				const selector = document.getElementById('runSelector');
+				const currentRunId = {{#if runId}}{{runId}}{{else}}null{{/if}};
+				if (selector && data.data.length > 0) {
+					selector.innerHTML = '';
+					data.data.forEach(run => {
+						const period = `${run.periodYear}-${String(run.periodMonth).padStart(2, '0')}`;
+						const option = document.createElement('option');
+						option.value = run.id;
+						option.textContent = `${period} (${run.status})`;
+						if (run.id === currentRunId) option.selected = true;
+						selector.appendChild(option);
+					});
+				}
+			}
+		} catch (err) {
+			console.error('Error loading runs:', err);
+		}
+	}
+
+	// Load available runs on page load
+	document.addEventListener('DOMContentLoaded', loadAvailableRuns);
 </script>
+
+<style>
+	.letter-spacing-1 {
+		letter-spacing: 1px;
+	}
+
+	.italic {
+		font-style: italic;
+	}
+
+	.bg-success-subtle {
+		background-color: #d1e7dd !important;
+	}
+
+	.bg-warning-subtle {
+		background-color: #fff3cd !important;
+	}
+
+	.bg-primary-subtle {
+		background-color: #cfe2ff !important;
+	}
+</style>

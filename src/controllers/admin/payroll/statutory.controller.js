@@ -21,3 +21,19 @@ export const getTDSReport = asyncHandler(async (req, res) => {
   const data = await statutoryService.generateTDSReport(req.params.runId);
   res.json(new ApiResponse(200, data, 'TDS report generated'));
 });
+
+export const getSummary = asyncHandler(async (req, res) => {
+  const data = await statutoryService.getStatutorySummary(req.params.runId);
+  res.json(new ApiResponse(200, data, 'Statutory summary retrieved'));
+});
+
+export const getComplianceStatus = asyncHandler(async (req, res) => {
+  const data = await statutoryService.getComplianceStatus(req.params.runId);
+  res.json(new ApiResponse(200, data, 'Compliance status retrieved'));
+});
+
+export const updateComplianceStatus = asyncHandler(async (req, res) => {
+  const { field, value } = req.body;
+  const data = await statutoryService.updateComplianceStatus(req.params.runId, field, value);
+  res.json(new ApiResponse(200, data, 'Compliance status updated'));
+});

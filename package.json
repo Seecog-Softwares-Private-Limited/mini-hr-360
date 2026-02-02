@@ -29,6 +29,7 @@
     "migrate": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config scripts/run_migrations.js",
     "test:e2e": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config scripts/e2e_subscription_test.js",
     "sync-db": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules database/sync-database.js",
+    "screen": "cross-env DOTENV_CONFIG_PATH=./property.env SYNC_DB=true nodemon -r dotenv/config --experimental-json-modules src/index.js",
     "update-departments-business": "node scripts/update-departments-business.js"
   },
   "dependencies": {

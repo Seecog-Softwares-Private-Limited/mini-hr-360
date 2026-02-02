@@ -25,12 +25,7 @@
   </div>
 
   <nav class="nav flex-column">
-    <div class="sidebar-item">
-      <a class="nav-link {{#if (eq active 'settings')}}active{{/if}}" href="#" onclick="return false;">
-        <i class="fa-solid fa-gear"></i>
-        Settings
-      </a>
-    </div>
+
 
     <div class="menu-toggle mt-1" onclick="toggleMenu('workspace-submenu')">
       <div class="nav-link {{#if (eq activeGroup 'workspace')}}active{{/if}}">
@@ -51,17 +46,21 @@
         <i class="fas fa-user-tie"></i> Employee Management
       </a>
 
-      
+
 
       <!-- Leave Management Submenu -->
       <div class="submenu-toggle" onclick="toggleMenu('leave-submenu')">
-        <div class="nav-link submenu-parent {{#if (or (eq active 'leaveRequests') (or (eq active 'leaveTypes') (eq active 'leaveBalances')))}}active{{/if}}">
+        <div
+          class="nav-link submenu-parent {{#if (or (eq active 'leaveRequests') (or (eq active 'leaveTypes') (eq active 'leaveBalances')))}}active{{/if}}">
           <i class="fas fa-calendar-alt"></i>
           Leave Management
-          <i class="fas fa-chevron-down submenu-arrow {{#if (or (eq active 'leaveRequests') (or (eq active 'leaveTypes') (eq active 'leaveBalances')))}}open{{/if}}"></i>
+          <i
+            class="fas fa-chevron-down submenu-arrow {{#if (or (eq active 'leaveRequests') (or (eq active 'leaveTypes') (eq active 'leaveBalances')))}}open{{/if}}"></i>
         </div>
       </div>
-      <div class="nested-submenu {{#if (or (eq active 'leaveRequests') (or (eq active 'leaveTypes') (eq active 'leaveBalances')))}}show{{/if}}" id="leave-submenu">
+      <div
+        class="nested-submenu {{#if (or (eq active 'leaveRequests') (or (eq active 'leaveTypes') (eq active 'leaveBalances')))}}show{{/if}}"
+        id="leave-submenu">
         <a class="nav-link {{#if (eq active 'leaveRequests')}}active{{/if}}" href="/leave-requests">
           <i class="fas fa-clipboard-list"></i> Leave Requests
         </a>
@@ -137,10 +136,10 @@
         <a class="nav-link {{#if (eq active 'payroll-runs')}}active{{/if}}" href="/admin/payroll/runs">
           <i class="fas fa-play-circle"></i> Payroll Runs
         </a>
-        <a class="nav-link {{#if (eq active 'payroll-register')}}active{{/if}}" href="/admin/payroll/register/1">
+        <a class="nav-link {{#if (eq active 'payroll-register')}}active{{/if}}" href="/admin/payroll/register">
           <i class="fas fa-list"></i> Payroll Register
         </a>
-        <a class="nav-link {{#if (eq active 'payroll-payslips')}}active{{/if}}" href="/admin/payroll/payslips/1">
+        <a class="nav-link {{#if (eq active 'payroll-payslips')}}active{{/if}}" href="/admin/payroll/payslips">
           <i class="fas fa-file-invoice-dollar"></i> Payslips
         </a>
 
@@ -179,6 +178,13 @@
       <a class="nav-link {{#if (eq active 'billing')}}active{{/if}}" href="/billing">
         <i class="fa-solid fa-crown"></i>
         Billing &amp; Plan
+      </a>
+    </div>
+
+    <div class="sidebar-item">
+      <a class="nav-link {{#if (eq active 'profile')}}active{{/if}}" href="/admin/profile">
+        <i class="fa-solid fa-user-circle"></i>
+        My Profile
       </a>
     </div>
 

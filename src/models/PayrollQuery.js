@@ -1,28 +1,79 @@
-import { DataTypes } from "sequelize";
-import { sequelize } from "../db/index.js";
+import { DataTypes } from 'sequelize';
+import { sequelize } from '../db/index.js';
 
-const PayrollQuery = sequelize.define('PayrollQuery', {
-  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+const PayrollQuery = sequelize.define(
+  'PayrollQuery',
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
 
-  businessId: { type: DataTypes.INTEGER, allowNull: false },
-  employeeId: { type: DataTypes.INTEGER, allowNull: false },
+    businessId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: 'businesses',
+        key: 'id',
+      },
+    },
 
-  payrollRunId: { type: DataTypes.INTEGER },
+    employeeId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: 'employees',
+        key: 'id',
+      },
+    },
 
-  subject: { type: DataTypes.STRING(120), allowNull: false },
-  description: { type: DataTypes.TEXT, allowNull: false },
+    category: {
+      type: DataTypes.ENUM(
+        'Salary Mismatch',
+        'Tax Deduction',
+        'Reimbursement',
+        'LOP/Attendance',
+        'Other'
+      ),
+      allowNull: false,
+    },
 
-  status: {
-    type: DataTypes.ENUM('OPEN', 'IN_PROGRESS', 'RESOLVED'),
-    defaultValue: 'OPEN',
+    subject: {
+      type: DataTypes.STRING(120),
+      allowNull: false,
+    },
+
+    description: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+    },
+
+    status: {
+      type: DataTypes.ENUM('Pending', 'In Progress', 'Resolved', 'Closed'),
+      allowNull: false,
+      defaultValue: 'Pending',
+    },
+
+    resolutionNotes: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+
+    resolvedBy: {
+      type: DataTypes.INTEGER, // User ID
+      allowNull: true,
+    },
+
+    resolvedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
-
-  resolvedBy: { type: DataTypes.INTEGER },
-  resolvedAt: { type: DataTypes.DATE },
-
-}, {
-  tableName: 'payroll_queries',
-  timestamps: true,
-});
+  {
+    tableName: 'payroll_queries',
+    timestamps: true,
+  }
+);
 
 export default PayrollQuery;

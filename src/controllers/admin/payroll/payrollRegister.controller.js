@@ -13,3 +13,14 @@ export const getPayrollRegister = asyncHandler(async (req, res) => {
   const data = await payrollRunService.getRegister(runId);
   return res.json(new ApiResponse(200, data));
 });
+
+export const addAdjustment = asyncHandler(async (req, res) => {
+  const { itemId, type, amount, description } = req.body;
+
+  if (!itemId || !type || !amount) {
+    throw new ApiError(400, 'itemId, type and amount are required');
+  }
+
+  const result = await payrollRunService.addAdjustment({ itemId, type, amount, description });
+  return res.json(new ApiResponse(200, result, 'Adjustment added successfully'));
+});

@@ -2,7 +2,7 @@
 <div class="container-fluid">
 	<div class="row">
 		<div class="col-md-3 col-lg-2 px-0">
-			{{> sidebar active="payroll-queries" activeGroup="workspace"}}
+			{{> sidebar active="payroll-queries" activeGroup="payroll"}}
 		</div>
 
 		<div class="col-md-9 col-lg-10">
@@ -10,7 +10,8 @@
 				<nav aria-label="breadcrumb">
 					<ol class="breadcrumb mb-3 bg-transparent p-0">
 						<li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
-						<li class="breadcrumb-item active" aria-current="page">Payroll Queries</li>
+						<li class="breadcrumb-item"><a href="/admin/payroll/runs">Payroll</a></li>
+						<li class="breadcrumb-item active" aria-current="page">Queries</li>
 					</ol>
 				</nav>
 
@@ -19,45 +20,83 @@
 						<h2 class="mb-1">Payroll Queries</h2>
 						<p class="text-muted mb-0">Support tickets from employees regarding payroll</p>
 					</div>
+					<button class="btn btn-outline-primary btn-sm" onclick="loadQueries()">
+						<i class="fa-solid fa-refresh me-1"></i>Refresh
+					</button>
+				</div>
+
+				<!-- Status Summary Cards -->
+				<div class="row g-3 mb-4">
+					<div class="col-md-3">
+						<div class="stat-card pending" onclick="filterByStatus('Pending')">
+							<div class="stat-icon"><i class="fa-solid fa-clock"></i></div>
+							<div class="stat-info">
+								<div class="stat-value" id="pendingCount">0</div>
+								<div class="stat-label">Pending</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-3">
+						<div class="stat-card in-progress" onclick="filterByStatus('In Progress')">
+							<div class="stat-icon"><i class="fa-solid fa-spinner"></i></div>
+							<div class="stat-info">
+								<div class="stat-value" id="inProgressCount">0</div>
+								<div class="stat-label">In Progress</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-3">
+						<div class="stat-card resolved" onclick="filterByStatus('Resolved')">
+							<div class="stat-icon"><i class="fa-solid fa-check-circle"></i></div>
+							<div class="stat-info">
+								<div class="stat-value" id="resolvedCount">0</div>
+								<div class="stat-label">Resolved</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-3">
+						<div class="stat-card total" onclick="filterByStatus('')">
+							<div class="stat-icon"><i class="fa-solid fa-list"></i></div>
+							<div class="stat-info">
+								<div class="stat-value" id="totalCount">0</div>
+								<div class="stat-label">Total</div>
+							</div>
+						</div>
+					</div>
 				</div>
 
 				<!-- Filters -->
 				<div class="card mb-4">
-					<div class="card-body">
-						<div class="row g-3">
+					<div class="card-body py-3">
+						<div class="row g-3 align-items-end">
 							<div class="col-md-3">
 								<label class="form-label small fw-600">Status</label>
-								<select class="form-select form-select-sm" onchange="filterQueries()">
+								<select class="form-select form-select-sm" id="statusFilter" onchange="applyFilters()">
 									<option value="">All Statuses</option>
-									<option value="OPEN">Open</option>
-									<option value="IN_PROGRESS">In Progress</option>
-									<option value="RESOLVED">Resolved</option>
-									<option value="CLOSED">Closed</option>
+									<option value="Pending">Pending</option>
+									<option value="In Progress">In Progress</option>
+									<option value="Resolved">Resolved</option>
+									<option value="Closed">Closed</option>
 								</select>
 							</div>
 							<div class="col-md-3">
 								<label class="form-label small fw-600">Category</label>
-								<select class="form-select form-select-sm" onchange="filterQueries()">
+								<select class="form-select form-select-sm" id="categoryFilter" onchange="applyFilters()">
 									<option value="">All Categories</option>
-									<option value="MISMATCH">Salary Mismatch</option>
-									<option value="TAX">Tax Related</option>
-									<option value="REIMBURSEMENT">Reimbursement</option>
-									<option value="OTHER">Other</option>
+									<option value="Salary Mismatch">Salary Mismatch</option>
+									<option value="Tax Deduction">Tax Related</option>
+									<option value="Reimbursement">Reimbursement</option>
+									<option value="LOP/Attendance">LOP/Attendance</option>
+									<option value="Other">Other</option>
 								</select>
 							</div>
 							<div class="col-md-3">
-								<label class="form-label small fw-600">Assignee</label>
-								<select class="form-select form-select-sm" onchange="filterQueries()">
-									<option value="">All Users</option>
-									<option value="UNASSIGNED">Unassigned</option>
-									<option value="me">Assigned to Me</option>
-									<option value="hrmanager">HR Manager</option>
-									<option value="finmanager">Finance Manager</option>
-								</select>
+								<label class="form-label small fw-600">Search</label>
+								<input type="text" class="form-control form-control-sm" id="searchInput" placeholder="Search by name or subject..." oninput="applyFilters()">
 							</div>
-							<div class="col-md-3 d-flex align-items-end">
+							<div class="col-md-3">
 								<button class="btn btn-sm btn-outline-secondary w-100" onclick="resetFilters()">
-									<i class="fa-solid fa-rotate-left me-1"></i>Reset
+									<i class="fa-solid fa-rotate-left me-1"></i>Reset Filters
 								</button>
 							</div>
 						</div>
@@ -66,52 +105,27 @@
 
 				<div class="row g-3">
 					<!-- Query List (Left Column) -->
-					<div class="col-md-4">
-						<div class="card">
-							<div class="card-header">
-								<h6 class="mb-0">Queries <span class="badge bg-secondary ms-2">{{queries.length}}</span></h6>
+					<div class="col-md-5 col-lg-4">
+						<div class="card query-list-card">
+							<div class="card-header d-flex justify-content-between align-items-center">
+								<h6 class="mb-0">Queries</h6>
+								<span class="badge bg-primary" id="queryCountBadge">0</span>
 							</div>
-							<div class="card-body p-0">
-								{{#if queries.length}}
-									<div class="list-group list-group-flush">
-										{{#each queries}}
-										<a href="#" class="list-group-item list-group-item-action p-3 query-item" data-id="{{this.id}}" onclick="selectQuery({{this.id}}); return false;">
-											<div class="d-flex justify-content-between align-items-start mb-2">
-												<strong>{{this.empName}}</strong>
-												{{#if (eq this.status 'OPEN')}}
-													<span class="badge bg-danger">Open</span>
-												{{else if (eq this.status 'IN_PROGRESS')}}
-													<span class="badge bg-warning">In Progress</span>
-												{{else if (eq this.status 'RESOLVED')}}
-													<span class="badge bg-success">Resolved</span>
-												{{else}}
-													<span class="badge bg-secondary">Closed</span>
-												{{/if}}
-											</div>
-											<div class="small">
-												<span class="badge bg-light text-dark">{{this.category}}</span>
-												<span class="text-muted d-block mt-1">{{this.subject}}</span>
-											</div>
-											<small class="text-muted d-block mt-2">{{this.createdAt}}</small>
-										</a>
-										{{/each}}
-									</div>
-								{{else}}
-									<div class="p-4 text-center text-muted">
-										<i class="fa-solid fa-inbox" style="font-size: 32px; opacity: 0.3; display: block; margin-bottom: 10px;"></i>
-										<p>No queries found</p>
-									</div>
-								{{/if}}
+							<div class="card-body p-0" id="queryListContainer" style="max-height: 600px; overflow-y: auto;">
+								<!-- Query list will be rendered here -->
+								<div class="text-center py-5 text-muted">
+									<div class="spinner-border spinner-border-sm me-2"></div>Loading queries...
+								</div>
 							</div>
 						</div>
 					</div>
 
 					<!-- Query Details (Right Column) -->
-					<div class="col-md-8">
+					<div class="col-md-7 col-lg-8">
 						<div class="card" id="queryDetailsCard">
 							<div class="card-body text-center text-muted py-5">
-								<i class="fa-solid fa-select" style="font-size: 32px; opacity: 0.3; display: block; margin-bottom: 10px;"></i>
-								<p>Select a query to view details</p>
+								<i class="fa-solid fa-hand-pointer" style="font-size: 48px; opacity: 0.3; display: block; margin-bottom: 15px;"></i>
+								<p class="mb-0">Select a query from the list to view details</p>
 							</div>
 						</div>
 					</div>
@@ -121,127 +135,477 @@
 	</div>
 </div>
 
-<script>
-function selectQuery(id) {
-	document.querySelectorAll('.query-item').forEach(el => el.classList.remove('active'));
-	document.querySelector(`.query-item[data-id="${id}"]`).classList.add('active');
-
-	// Sample query details
-	const detailsHtml = `
-		<div class="card-header">
-			<div class="d-flex justify-content-between align-items-start">
-				<div>
-					<h6 class="mb-1">Salary Mismatch Query</h6>
-					<small class="text-muted">from <strong>Rajesh Kumar</strong> (EMP-042)</small>
-				</div>
-				<span class="badge bg-warning">In Progress</span>
-			</div>
-		</div>
-
-		<div class="card-body">
-			<div class="mb-3">
-				<strong>Category:</strong> <span class="badge bg-light text-dark">Salary Mismatch</span>
-			</div>
-			<div class="mb-3">
-				<strong>Subject:</strong> December bonus not reflected in payslip
-			</div>
-
-			<hr>
-
-			<h6 class="mb-3">Conversation</h6>
-			<div style="max-height: 300px; overflow-y: auto; padding-right: 10px;">
-				<!-- Employee Message -->
-				<div class="mb-3">
-					<div style="background: #f0f7ff; padding: 10px 12px; border-radius: 6px; border-left: 3px solid #4f46e5;">
-						<div style="font-weight: 600; font-size: 13px; color: #4f46e5;">Rajesh Kumar</div>
-						<div style="font-size: 13px; margin-top: 4px;">Hi, I received my December payslip but the monthly bonus of ₹5000 is not showing. Can you check?</div>
-						<small class="text-muted d-block mt-2">Dec 28, 2025 at 10:30 AM</small>
-					</div>
-				</div>
-
-				<!-- HR Reply -->
-				<div class="mb-3">
-					<div style="background: #f0fdf4; padding: 10px 12px; border-radius: 6px; border-left: 3px solid #22c55e;">
-						<div style="font-weight: 600; font-size: 13px; color: #22c55e;">HR Manager</div>
-						<div style="font-size: 13px; margin-top: 4px;">Hi Rajesh, Thank you for reporting this. I've checked with finance - the bonus was processed but may appear in January payslip due to processing delay. Will confirm in next 24 hrs.</div>
-						<small class="text-muted d-block mt-2">Dec 29, 2025 at 2:15 PM</small>
-					</div>
-				</div>
-
-				<!-- Employee Reply -->
-				<div class="mb-3">
-					<div style="background: #f0f7ff; padding: 10px 12px; border-radius: 6px; border-left: 3px solid #4f46e5;">
-						<div style="font-weight: 600; font-size: 13px; color: #4f46e5;">Rajesh Kumar</div>
-						<div style="font-size: 13px; margin-top: 4px;">Thank you for the update. I understand. Please let me know once it's confirmed.</div>
-						<small class="text-muted d-block mt-2">Dec 29, 2025 at 3:45 PM</small>
-					</div>
-				</div>
-			</div>
-
-			<hr>
-
-			<h6 class="mb-2">Internal Notes</h6>
-			<textarea class="form-control form-control-sm mb-3" rows="2" placeholder="Add internal notes...">Confirmed with Finance - bonus will appear in January payout</textarea>
-
-			<div class="row g-2">
-				<div class="col-md-6">
-					<button class="btn btn-success btn-sm w-100" onclick="resolveQuery()">
-						<i class="fa-solid fa-check-circle me-1"></i>Mark as Resolved
-					</button>
-				</div>
-				<div class="col-md-6">
-					<button class="btn btn-outline-secondary btn-sm w-100" onclick="requestInfo()">
-						<i class="fa-solid fa-comments me-1"></i>Request More Info
-					</button>
-				</div>
-			</div>
-		</div>
-	`;
-
-	document.getElementById('queryDetailsCard').innerHTML = detailsHtml;
-}
-
-function filterQueries() {
-	showToast('Filters applied', 'info');
-}
-
-function resetFilters() {
-	document.querySelectorAll('select').forEach(sel => sel.value = '');
-	showToast('Filters reset', 'info');
-}
-
-function resolveQuery() {
-	showToast('Query marked as resolved!', 'success');
-}
-
-function requestInfo() {
-	showToast('Request for more information sent!', 'success');
-}
-
-function showToast(message, type = 'info') {
-	const alertDiv = document.createElement('div');
-	alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-	alertDiv.setAttribute('role', 'alert');
-	alertDiv.innerHTML = `
-		${message}
-		<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-	`;
-	document.querySelector('.main-content').insertAdjacentElement('afterbegin', alertDiv);
-	setTimeout(() => alertDiv.remove(), 4000);
-}
-</script>
-
 <style>
+.stat-card {
+	display: flex;
+	align-items: center;
+	padding: 16px;
+	border-radius: 10px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card .stat-icon {
+	width: 48px;
+	height: 48px;
+	border-radius: 10px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 20px;
+	margin-right: 14px;
+}
+
+.stat-card .stat-value {
+	font-size: 24px;
+	font-weight: 700;
+}
+
+.stat-card .stat-label {
+	font-size: 13px;
+	color: #64748b;
+}
+
+.stat-card.pending {
+	background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+	border: 1px solid #fcd34d;
+}
+
+.stat-card.pending .stat-icon {
+	background: #fcd34d;
+	color: #92400e;
+}
+
+.stat-card.pending .stat-value {
+	color: #92400e;
+}
+
+.stat-card.in-progress {
+	background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+	border: 1px solid #93c5fd;
+}
+
+.stat-card.in-progress .stat-icon {
+	background: #3b82f6;
+	color: white;
+}
+
+.stat-card.in-progress .stat-value {
+	color: #1d4ed8;
+}
+
+.stat-card.resolved {
+	background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+	border: 1px solid #86efac;
+}
+
+.stat-card.resolved .stat-icon {
+	background: #22c55e;
+	color: white;
+}
+
+.stat-card.resolved .stat-value {
+	color: #166534;
+}
+
+.stat-card.total {
+	background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+	border: 1px solid #cbd5e1;
+}
+
+.stat-card.total .stat-icon {
+	background: #475569;
+	color: white;
+}
+
+.stat-card.total .stat-value {
+	color: #1e293b;
+}
+
+.query-list-card {
+	border: 1px solid #e2e8f0;
+}
+
 .query-item {
-	transition: all 150ms ease;
+	padding: 14px 16px;
+	border-bottom: 1px solid #f1f5f9;
+	cursor: pointer;
+	transition: all 0.15s ease;
 }
 
 .query-item:hover {
-	background: #f8f9fa;
+	background: #f8fafc;
 }
 
 .query-item.active {
 	background: #e0e7ff;
 	border-left: 3px solid #4f46e5;
 }
+
+.query-item .employee-name {
+	font-weight: 600;
+	font-size: 14px;
+	margin-bottom: 2px;
+}
+
+.query-item .query-subject {
+	font-size: 13px;
+	color: #475569;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.query-item .query-meta {
+	font-size: 11px;
+	color: #94a3b8;
+	margin-top: 6px;
+}
+
+.status-badge {
+	padding: 4px 10px;
+	border-radius: 12px;
+	font-size: 10px;
+	font-weight: 600;
+	text-transform: uppercase;
+}
+
+.status-pending { background: #fef3c7; color: #92400e; }
+.status-in-progress { background: #dbeafe; color: #1d4ed8; }
+.status-resolved { background: #dcfce7; color: #166534; }
+.status-closed { background: #f1f5f9; color: #64748b; }
+
+.category-badge {
+	background: #f1f5f9;
+	color: #475569;
+	padding: 3px 8px;
+	border-radius: 4px;
+	font-size: 11px;
+}
+
+.resolution-box {
+	background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+	border-left: 4px solid #22c55e;
+	border-radius: 0 8px 8px 0;
+	padding: 16px;
+}
 </style>
+
+<script>
+let allQueries = [];
+let filteredQueries = [];
+let selectedQueryId = null;
+
+// Initialize with data from server
+const initialQueries = {{{queries}}};
+const initialStats = {{{stats}}};
+
+document.addEventListener('DOMContentLoaded', function() {
+	if (initialQueries && initialQueries.length > 0) {
+		allQueries = initialQueries;
+		filteredQueries = [...allQueries];
+		updateStats(initialStats);
+		renderQueryList();
+	} else {
+		loadQueries();
+	}
+});
+
+async function loadQueries() {
+	const container = document.getElementById('queryListContainer');
+	container.innerHTML = '<div class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Loading...</div>';
+	
+	try {
+		const response = await fetch('/admin/payroll/api/queries');
+		const data = await response.json();
+		
+		if (data.success) {
+			allQueries = data.queries;
+			filteredQueries = [...allQueries];
+			updateStats(data.stats);
+			renderQueryList();
+		} else {
+			showError('Failed to load queries');
+		}
+	} catch (error) {
+		console.error('Error loading queries:', error);
+		showError('Error connecting to server');
+	}
+}
+
+function updateStats(stats) {
+	document.getElementById('pendingCount').textContent = stats.pending || 0;
+	document.getElementById('inProgressCount').textContent = stats.inProgress || 0;
+	document.getElementById('resolvedCount').textContent = (stats.resolved || 0) + (stats.closed || 0);
+	document.getElementById('totalCount').textContent = stats.total || 0;
+}
+
+function renderQueryList() {
+	const container = document.getElementById('queryListContainer');
+	document.getElementById('queryCountBadge').textContent = filteredQueries.length;
+	
+	if (!filteredQueries || filteredQueries.length === 0) {
+		container.innerHTML = `
+			<div class="text-center py-5 text-muted">
+				<i class="fa-solid fa-inbox" style="font-size: 32px; opacity: 0.3; display: block; margin-bottom: 10px;"></i>
+				<p class="mb-0">No queries found</p>
+			</div>
+		`;
+		return;
+	}
+	
+	let html = '';
+	filteredQueries.forEach(q => {
+		const statusClass = q.status === 'Pending' ? 'status-pending' :
+						   q.status === 'In Progress' ? 'status-in-progress' :
+						   q.status === 'Resolved' ? 'status-resolved' : 'status-closed';
+		const isActive = selectedQueryId === q.id ? 'active' : '';
+		const date = new Date(q.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+		
+		html += `
+			<div class="query-item ${isActive}" data-id="${q.id}" onclick="selectQuery(${q.id})">
+				<div class="d-flex justify-content-between align-items-start">
+					<div class="employee-name">${q.employee ? q.employee.name : 'Unknown'}</div>
+					<span class="status-badge ${statusClass}">${q.status}</span>
+				</div>
+				<div class="query-subject">${escapeHtml(q.subject)}</div>
+				<div class="query-meta">
+					<span class="category-badge">${q.category}</span>
+					<span class="ms-2">${date}</span>
+				</div>
+			</div>
+		`;
+	});
+	
+	container.innerHTML = html;
+}
+
+function selectQuery(id) {
+	selectedQueryId = id;
+	renderQueryList();
+	
+	const query = allQueries.find(q => q.id === id);
+	if (!query) return;
+	
+	renderQueryDetails(query);
+}
+
+function renderQueryDetails(q) {
+	const statusClass = q.status === 'Pending' ? 'status-pending' :
+					   q.status === 'In Progress' ? 'status-in-progress' :
+					   q.status === 'Resolved' ? 'status-resolved' : 'status-closed';
+	
+	const date = new Date(q.createdAt).toLocaleDateString('en-IN', { 
+		day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+	});
+	
+	const card = document.getElementById('queryDetailsCard');
+	card.innerHTML = `
+		<div class="card-header" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);">
+			<div class="d-flex justify-content-between align-items-start">
+				<div>
+					<h5 class="mb-1">${escapeHtml(q.subject)}</h5>
+					<small class="text-muted">
+						Query #${q.id} • Raised by 
+						<strong>${q.employee ? q.employee.name : 'Unknown'}</strong>
+						${q.employee?.employeeId ? `(${q.employee.employeeId})` : ''}
+					</small>
+				</div>
+				<span class="status-badge ${statusClass}" style="font-size: 12px; padding: 6px 14px;">${q.status}</span>
+			</div>
+		</div>
+		
+		<div class="card-body">
+			<!-- Employee Info -->
+			<div class="row mb-4">
+				<div class="col-md-6">
+					<div class="d-flex align-items-center">
+						<div style="width: 48px; height: 48px; background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 18px; margin-right: 12px;">
+							${q.employee ? q.employee.name.charAt(0).toUpperCase() : '?'}
+						</div>
+						<div>
+							<div class="fw-600">${q.employee ? q.employee.name : 'Unknown Employee'}</div>
+							<small class="text-muted">${q.employee?.email || ''}</small>
+							${q.employee?.department ? `<br><small class="text-muted">${q.employee.department}</small>` : ''}
+						</div>
+					</div>
+				</div>
+				<div class="col-md-6 text-md-end">
+					<span class="category-badge">${q.category}</span>
+					<div class="text-muted small mt-2"><i class="fa-regular fa-clock me-1"></i>${date}</div>
+				</div>
+			</div>
+			
+			<!-- Query Description -->
+			<div class="mb-4">
+				<label class="text-muted small fw-600 mb-2 d-block">EMPLOYEE'S QUERY</label>
+				<div style="background: #f8fafc; padding: 16px; border-radius: 8px; border-left: 3px solid #4f46e5;">
+					<p class="mb-0" style="white-space: pre-wrap;">${escapeHtml(q.description)}</p>
+				</div>
+			</div>
+			
+			${q.resolutionNotes ? `
+				<!-- Resolution -->
+				<div class="mb-4">
+					<label class="text-muted small fw-600 mb-2 d-block">RESOLUTION</label>
+					<div class="resolution-box">
+						<p class="mb-0" style="white-space: pre-wrap;">${escapeHtml(q.resolutionNotes)}</p>
+						${q.resolvedAt ? `<small class="text-muted d-block mt-2"><i class="fa-regular fa-clock me-1"></i>Resolved on ${new Date(q.resolvedAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</small>` : ''}
+					</div>
+				</div>
+			` : ''}
+			
+			<!-- Actions -->
+			${q.status !== 'Resolved' && q.status !== 'Closed' ? `
+				<hr>
+				<div>
+					<label class="form-label fw-600">Resolution Notes <span class="text-danger">*</span></label>
+					<textarea class="form-control mb-3" id="resolutionNotes" rows="3" placeholder="Provide resolution details or response to the employee..."></textarea>
+					
+					<div class="d-flex gap-2">
+						${q.status === 'Pending' ? `
+							<button class="btn btn-outline-primary" onclick="updateStatus(${q.id}, 'In Progress')">
+								<i class="fa-solid fa-spinner me-1"></i>Mark In Progress
+							</button>
+						` : ''}
+						<button class="btn btn-success" onclick="resolveQuery(${q.id})">
+							<i class="fa-solid fa-check-circle me-1"></i>Mark as Resolved
+						</button>
+						<button class="btn btn-outline-secondary" onclick="updateStatus(${q.id}, 'Closed')">
+							<i class="fa-solid fa-times-circle me-1"></i>Close Without Resolution
+						</button>
+					</div>
+				</div>
+			` : `
+				<div class="alert alert-light mb-0">
+					<i class="fa-solid fa-info-circle me-2"></i>
+					This query has been ${q.status.toLowerCase()}. No further action required.
+				</div>
+			`}
+		</div>
+	`;
+}
+
+async function resolveQuery(id) {
+	const notes = document.getElementById('resolutionNotes')?.value;
+	
+	if (!notes || notes.trim() === '') {
+		showToast('Please provide resolution notes', 'warning');
+		return;
+	}
+	
+	try {
+		const response = await fetch(`/admin/payroll/api/queries/${id}/resolve`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ resolutionNotes: notes, status: 'Resolved' })
+		});
+		
+		const data = await response.json();
+		
+		if (data.success) {
+			showToast('Query resolved successfully!', 'success');
+			loadQueries();
+		} else {
+			showToast(data.message || 'Failed to resolve query', 'danger');
+		}
+	} catch (error) {
+		console.error('Error resolving query:', error);
+		showToast('Error connecting to server', 'danger');
+	}
+}
+
+async function updateStatus(id, status) {
+	try {
+		const response = await fetch(`/admin/payroll/api/queries/${id}/status`, {
+			method: 'PATCH',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ status })
+		});
+		
+		const data = await response.json();
+		
+		if (data.success) {
+			showToast(`Status updated to ${status}`, 'success');
+			loadQueries();
+		} else {
+			showToast(data.message || 'Failed to update status', 'danger');
+		}
+	} catch (error) {
+		console.error('Error updating status:', error);
+		showToast('Error connecting to server', 'danger');
+	}
+}
+
+function filterByStatus(status) {
+	document.getElementById('statusFilter').value = status;
+	applyFilters();
+}
+
+function applyFilters() {
+	const status = document.getElementById('statusFilter').value;
+	const category = document.getElementById('categoryFilter').value;
+	const search = document.getElementById('searchInput').value.toLowerCase();
+	
+	filteredQueries = allQueries.filter(q => {
+		if (status && q.status !== status) return false;
+		if (category && q.category !== category) return false;
+		if (search) {
+			const nameMatch = q.employee?.name?.toLowerCase().includes(search);
+			const subjectMatch = q.subject?.toLowerCase().includes(search);
+			if (!nameMatch && !subjectMatch) return false;
+		}
+		return true;
+	});
+	
+	renderQueryList();
+}
+
+function resetFilters() {
+	document.getElementById('statusFilter').value = '';
+	document.getElementById('categoryFilter').value = '';
+	document.getElementById('searchInput').value = '';
+	filteredQueries = [...allQueries];
+	renderQueryList();
+}
+
+function showError(message) {
+	const container = document.getElementById('queryListContainer');
+	container.innerHTML = `
+		<div class="text-center py-4 text-muted">
+			<i class="fa-solid fa-exclamation-triangle text-warning mb-2" style="font-size: 24px; display: block;"></i>
+			<p class="mb-2">${message}</p>
+			<button class="btn btn-sm btn-primary" onclick="loadQueries()">Try Again</button>
+		</div>
+	`;
+}
+
+function escapeHtml(text) {
+	if (!text) return '';
+	const div = document.createElement('div');
+	div.textContent = text;
+	return div.innerHTML;
+}
+
+function showToast(message, type = 'info') {
+	const alertDiv = document.createElement('div');
+	alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+	alertDiv.style.top = '20px';
+	alertDiv.style.right = '20px';
+	alertDiv.style.zIndex = '9999';
+	alertDiv.style.minWidth = '300px';
+	alertDiv.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+	alertDiv.setAttribute('role', 'alert');
+	alertDiv.innerHTML = `
+		${message}
+		<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+	`;
+	document.body.appendChild(alertDiv);
+	setTimeout(() => alertDiv.remove(), 5000);
+}
+</script>

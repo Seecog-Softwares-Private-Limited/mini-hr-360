@@ -1542,6 +1542,20 @@
             box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.15);
         }
 
+        /* No global input-group overrides here to avoid changing Bootstrap defaults. */
+
+        /* Draw a subtle separator between addon and input using a pseudo element */
+        .input-group .input-group-text::after {
+            content: '';
+            position: absolute;
+            right: -1px;
+            top: 6px;
+            bottom: 6px;
+            width: 1px;
+            background: rgba(0,0,0,0.08);
+            border-radius: 1px;
+        }
+
         /* Status badge animations */
         .badge {
             animation: fadeInScale 0.4s ease;
