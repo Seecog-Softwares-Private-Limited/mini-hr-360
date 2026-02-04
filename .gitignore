@@ -27,3 +27,6 @@ dist/
 build/
 
 
+# Environment files
+.env
+property.env
