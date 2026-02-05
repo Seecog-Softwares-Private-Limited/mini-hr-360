@@ -98,11 +98,23 @@
                 };
                 payload.approvalWorkflow = {
                     steps: [
-                        document.querySelector('#workflow select:nth-of-type(1)')?.value || null,
-                        document.querySelector('#workflow select:nth-of-type(2)')?.value || null,
-                        document.querySelector('#workflow select:nth-of-type(3)')?.value || null,
-                    ].filter(Boolean),
-                    autoApproveDays: Number(document.querySelector('#workflow input[type="number"]')?.value || 0)
+                        {
+                            step: 1,
+                            name: 'HR_REVIEW',
+                            assignedUserId: document.getElementById('hrReviewerSelect')?.value || null,
+                        },
+                        {
+                            step: 2,
+                            name: 'FINANCE_REVIEW',
+                            assignedUserId: document.getElementById('financeReviewerSelect')?.value || null,
+                        },
+                        {
+                            step: 3,
+                            name: 'ADMIN_APPROVAL',
+                            assignedUserId: document.getElementById('adminApproverSelect')?.value || null,
+                        }
+                    ].filter(s => s.assignedUserId),
+                    autoApproveDays: Number(document.getElementById('autoApproveAfterDays')?.value || 0)
                 };
                 payload.companyName = document.getElementById('companyName')?.value || '';
                 payload.companyAddress = document.getElementById('companyAddress')?.value || '';
@@ -1673,35 +1685,44 @@
                                 <div class="row g-4 mt-3">
                                     <div class="col-md-6">
                                         <label class="form-label fw-600">Step 1: HR Reviewer</label>
-                                        <select class="form-select">
-                                            <option selected>Select user...</option>
-                                            <option>HR Manager</option>
-                                            <option>HR Lead</option>
+                                        <select id="hrReviewerSelect" class="form-select">
+                                            <option value="">Select HR user...</option>
                                         </select>
+                                        <small class="text-muted">Users with HR_MANAGER or HR_EXECUTIVE role can review</small>
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label fw-600">Step 2: Finance Reviewer</label>
-                                        <select class="form-select">
-                                            <option selected>Select user...</option>
-                                            <option>Finance Manager</option>
-                                            <option>CFO</option>
+                                        <select id="financeReviewerSelect" class="form-select">
+                                            <option value="">Select Finance user...</option>
                                         </select>
+                                        <small class="text-muted">Users with FINANCE role can review budget</small>
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label fw-600">Step 3: Admin Approver</label>
-                                        <select class="form-select">
-                                            <option selected>Select user...</option>
-                                            <option>Admin</option>
-                                            <option>Managing Director</option>
+                                        <select id="adminApproverSelect" class="form-select">
+                                            <option value="">Select Admin user...</option>
                                         </select>
+                                        <small class="text-muted">Users with admin or SUPER_ADMIN role for final approval</small>
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label fw-600">Auto-Approve if No Objections After</label>
                                         <div class="input-group">
-                                            <input type="number" class="form-control" placeholder="3" value="3">
+                                            <input type="number" id="autoApproveAfterDays" class="form-control" placeholder="3" value="3" min="1" max="30">
                                             <span class="input-group-text">days</span>
                                         </div>
+                                        <small class="text-muted">Set to 0 to disable auto-approval</small>
                                     </div>
+                                </div>
+                                
+                                <!-- Workflow Info Box -->
+                                <div class="alert alert-info mt-4">
+                                    <h6 class="alert-heading"><i class="fa-solid fa-info-circle me-2"></i>How Approval Workflow Works</h6>
+                                    <ul class="mb-0 small">
+                                        <li><strong>Step 1 - HR Review:</strong> HR validates employee data, attendance, and leave records</li>
+                                        <li><strong>Step 2 - Finance Review:</strong> Finance checks budget allocation and fund availability</li>
+                                        <li><strong>Step 3 - Admin Approval:</strong> Final sign-off before payroll can be locked</li>
+                                    </ul>
+                                    <p class="mt-2 mb-0 small">Notifications will be sent to the respective roles when their approval is needed.</p>
                                 </div>
                             </div>
                         </div>
@@ -2026,11 +2047,23 @@ function savePayrollSetup(e) {
 
     payload.approvalWorkflow = {
         steps: [
-            document.querySelector('#workflow select:nth-of-type(1)')?.value || null,
-            document.querySelector('#workflow select:nth-of-type(2)')?.value || null,
-            document.querySelector('#workflow select:nth-of-type(3)')?.value || null,
-        ].filter(Boolean),
-        autoApproveDays: Number(document.querySelector('#workflow input[type="number"]')?.value || 0)
+            {
+                step: 1,
+                name: 'HR_REVIEW',
+                assignedUserId: document.getElementById('hrReviewerSelect')?.value || null,
+            },
+            {
+                step: 2,
+                name: 'FINANCE_REVIEW',
+                assignedUserId: document.getElementById('financeReviewerSelect')?.value || null,
+            },
+            {
+                step: 3,
+                name: 'ADMIN_APPROVAL',
+                assignedUserId: document.getElementById('adminApproverSelect')?.value || null,
+            }
+        ].filter(s => s.assignedUserId),
+        autoApproveDays: Number(document.getElementById('autoApproveAfterDays')?.value || 0)
     };
 
     payload.companyName = document.getElementById('companyName')?.value || '';
@@ -2486,7 +2519,116 @@ document.addEventListener('DOMContentLoaded', function(){
         }
     } catch(e) { console.warn('Failed to bind Add Component button', e); }
 
+    // Load approval workflow users for the dropdowns
+    loadApprovalWorkflowUsers();
+
 });
+
+// Function to load users for approval workflow dropdowns
+async function loadApprovalWorkflowUsers() {
+    try {
+        const businessId = document.getElementById('businessId')?.value;
+        const authToken = localStorage.getItem('accessToken');
+        const headers = { 'Content-Type': 'application/json' };
+        if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+        if (businessId) headers['x-business-id'] = businessId;
+
+        // Fetch all users for the business
+        const response = await fetch('/api/admin/users', {
+            method: 'GET',
+            credentials: 'include',
+            headers
+        });
+
+        if (!response.ok) {
+            console.warn('Failed to load users for approval workflow');
+            return;
+        }
+
+        const result = await response.json();
+        const users = result.data || result.users || result || [];
+
+        // Categorize users by their roles
+        const hrUsers = users.filter(u => 
+            ['HR_MANAGER', 'HR_EXECUTIVE'].includes(u.role) ||
+            (u.role && u.role.toLowerCase().includes('hr'))
+        );
+        const financeUsers = users.filter(u => 
+            ['FINANCE'].includes(u.role) ||
+            (u.role && u.role.toLowerCase().includes('finance'))
+        );
+        const adminUsers = users.filter(u => 
+            ['admin', 'SUPER_ADMIN'].includes(u.role) ||
+            (u.role && (u.role.toLowerCase().includes('admin') || u.role.toLowerCase().includes('super')))
+        );
+
+        // Populate HR Reviewer dropdown
+        const hrSelect = document.getElementById('hrReviewerSelect');
+        if (hrSelect) {
+            hrSelect.innerHTML = '<option value="">Select HR user...</option>';
+            if (hrUsers.length === 0) {
+                hrSelect.innerHTML += '<option value="" disabled>No HR users found</option>';
+            } else {
+                hrUsers.forEach(user => {
+                    const name = user.name || user.username || user.email;
+                    const roleLabel = user.role ? ` (${user.role})` : '';
+                    hrSelect.innerHTML += `<option value="${user.id}">${name}${roleLabel}</option>`;
+                });
+            }
+        }
+
+        // Populate Finance Reviewer dropdown
+        const financeSelect = document.getElementById('financeReviewerSelect');
+        if (financeSelect) {
+            financeSelect.innerHTML = '<option value="">Select Finance user...</option>';
+            if (financeUsers.length === 0) {
+                financeSelect.innerHTML += '<option value="" disabled>No Finance users found</option>';
+            } else {
+                financeUsers.forEach(user => {
+                    const name = user.name || user.username || user.email;
+                    const roleLabel = user.role ? ` (${user.role})` : '';
+                    financeSelect.innerHTML += `<option value="${user.id}">${name}${roleLabel}</option>`;
+                });
+            }
+        }
+
+        // Populate Admin Approver dropdown
+        const adminSelect = document.getElementById('adminApproverSelect');
+        if (adminSelect) {
+            adminSelect.innerHTML = '<option value="">Select Admin user...</option>';
+            if (adminUsers.length === 0) {
+                adminSelect.innerHTML += '<option value="" disabled>No Admin users found</option>';
+            } else {
+                adminUsers.forEach(user => {
+                    const name = user.name || user.username || user.email;
+                    const roleLabel = user.role ? ` (${user.role})` : '';
+                    adminSelect.innerHTML += `<option value="${user.id}">${name}${roleLabel}</option>`;
+                });
+            }
+        }
+
+        // Add change listeners to mark form dirty
+        [hrSelect, financeSelect, adminSelect].forEach(select => {
+            if (select) {
+                select.addEventListener('change', window.markDirty);
+            }
+        });
+
+        const autoApproveInput = document.getElementById('autoApproveAfterDays');
+        if (autoApproveInput) {
+            autoApproveInput.addEventListener('input', window.markDirty);
+        }
+
+        console.log('✅ Loaded approval workflow users:', {
+            hr: hrUsers.length,
+            finance: financeUsers.length,
+            admin: adminUsers.length
+        });
+
+    } catch (error) {
+        console.error('Error loading approval workflow users:', error);
+    }
+}
 </script>
 <script>
 // Payslip preview: update company name, address, footer, and logo in real-time

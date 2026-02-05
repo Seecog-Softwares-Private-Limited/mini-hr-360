@@ -176,6 +176,7 @@ import payrollRoutes from './routes/admin.payroll.routes.js';
 import { employeePayrollRouter } from './routes/employeePayroll.routes.js';
 import { adminProfileRouter } from './routes/adminProfile.routes.js';
 import adminPayrollPagesRouter from './routes/admin.payroll.pages.routes.js';
+import notificationRoutes from './routes/notification.routes.js';
 
 
 // ---------- Frontend pages ----------
@@ -290,6 +291,7 @@ app.use('/api/v1/designations', designationsRoutes);
 app.use('/api/leave-types', leaveTypesRoutes);
 app.use('/api/leave-requests', leaveRequestsRoutes);
 app.use('/api/admin/payroll', payrollRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
 
 
 // HR & Docs

@@ -5,6 +5,7 @@ import {
   testPayment
 } from '../controllers/admin/payroll/payrollsetup.controller.js';
 import { verifyOwner, verifyUser } from '../middleware/authMiddleware.js';
+import { canApprovePayroll, canFinalApprovePayroll, requireRoles } from '../middleware/roleMiddleware.js';
 
 import {
   createSalaryStructure,
@@ -59,6 +60,18 @@ import {
   getComplianceStatus,
   updateComplianceStatus,
 } from '../controllers/admin/payroll/statutory.controller.js';
+
+import {
+  initializeWorkflow,
+  getWorkflowStatus,
+  submitApproval,
+  skipStep,
+  resetWorkflow,
+  getWorkflowHistory,
+  getPendingApprovals,
+  getApprovalSteps,
+  getUserPermissions,
+} from '../controllers/admin/payroll/payrollApproval.controller.js';
 
 const router = express.Router();
 
@@ -131,6 +144,17 @@ router.get('/payslips/preview/:id', getPayslipPreview);
 router.get('/payslips/download/:id', downloadPayslip);
 
 router.get("/__ping", (req, res) => res.json({ ok: true }));
+
+/* Approval Workflow */
+router.get('/workflow/steps', getApprovalSteps);
+router.get('/workflow/permissions', getUserPermissions);
+router.get('/approvals/pending', getPendingApprovals);
+router.post('/runs/:id/workflow/initialize', initializeWorkflow);
+router.get('/runs/:id/workflow/status', getWorkflowStatus);
+router.post('/runs/:id/workflow/approve', canApprovePayroll, submitApproval);
+router.post('/runs/:id/workflow/skip', requireRoles('admin', 'SUPER_ADMIN', 'shop_owner'), skipStep);
+router.post('/runs/:id/workflow/reset', resetWorkflow);
+router.get('/runs/:id/workflow/history', getWorkflowHistory);
 
 
 export default router;

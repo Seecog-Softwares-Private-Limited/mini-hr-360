@@ -569,6 +569,19 @@
                 </div>
 
                 <div class="col-md-4">
+                  <label class="form-label">System Role</label>
+                  <select name="systemRole" class="form-select">
+                    <option value="EMPLOYEE">Employee (Default)</option>
+                    <option value="MANAGER">Manager</option>
+                    <option value="HR_MANAGER">HR Manager</option>
+                    <option value="HR_EXECUTIVE">HR Executive</option>
+                    <option value="FINANCE">Finance</option>
+                    <option value="admin">Administrator</option>
+                  </select>
+                  <small class="text-muted">Determines dashboard access level</small>
+                </div>
+
+                <div class="col-md-4">
                   <label class="form-label">Employment Status</label>
                   <select name="employmentStatus" class="form-select">
                     <option value="Active">Active</option>
@@ -2363,6 +2376,7 @@
 
         renderKeyValueList("viewProfessionalDetails", [
           ["Employee Type", emp.employeeType],
+          ["System Role", emp.systemRole || "EMPLOYEE"],
           ["Employment Status", emp.employmentStatus],
           ["Department", emp.empDepartment],
           ["Designation / Job Title", emp.empDesignation],
@@ -2585,6 +2599,7 @@ if (expContainer) {
         fillBaseField("businessId", emp.businessId);
         fillBaseField("empId", emp.empId);
         fillBaseField("employeeType", emp.employeeType);
+        fillBaseField("systemRole", emp.systemRole);
         fillBaseField("employmentStatus", emp.employmentStatus);
         fillBaseField("empDepartment", emp.empDepartment);
         fillBaseField("empDesignation", emp.empDesignation);

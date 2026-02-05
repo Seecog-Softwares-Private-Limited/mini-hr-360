@@ -1,0 +1,274 @@
+{{!-- Team & Roles Management --}}
+<div class="container-fluid py-4">
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h4 class="mb-1"><i class="fas fa-users-cog me-2"></i>Team & Roles</h4>
+          <p class="text-muted mb-0">Manage user roles for approval workflow and system access</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Role Legend -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header bg-light">
+          <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Role Permissions</h6>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <div class="d-flex align-items-start">
+                <span class="badge bg-danger me-2" style="min-width: 100px;">Admin</span>
+                <small class="text-muted">Full system access, final payroll approval</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="d-flex align-items-start">
+                <span class="badge bg-primary me-2" style="min-width: 100px;">HR Manager</span>
+                <small class="text-muted">Employee management, payroll step 1 approval</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="d-flex align-items-start">
+                <span class="badge bg-info me-2" style="min-width: 100px;">HR Executive</span>
+                <small class="text-muted">Employee records, attendance, leave</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="d-flex align-items-start">
+                <span class="badge bg-success me-2" style="min-width: 100px;">Finance</span>
+                <small class="text-muted">Payroll step 2 approval, billing access</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="d-flex align-items-start">
+                <span class="badge bg-warning text-dark me-2" style="min-width: 100px;">Manager</span>
+                <small class="text-muted">Team attendance, leave approvals</small>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="d-flex align-items-start">
+                <span class="badge bg-secondary me-2" style="min-width: 100px;">Employee</span>
+                <small class="text-muted">Self-service portal only</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Users Table -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h6 class="mb-0"><i class="fas fa-users me-2"></i>System Users</h6>
+          <div class="input-group" style="max-width: 300px;">
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+            <input type="text" id="searchUsers" class="form-control" placeholder="Search users...">
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0" id="usersTable">
+              <thead class="table-light">
+                <tr>
+                  <th>User</th>
+                  <th>Email</th>
+                  <th>Current Role</th>
+                  <th>Status</th>
+                  <th>Change Role</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody">
+                <tr>
+                  <td colspan="5" class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mb-0 mt-2">Loading users...</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  loadUsers();
+  
+  // Search functionality
+  document.getElementById('searchUsers').addEventListener('input', function(e) {
+    const search = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('#usersTableBody tr[data-user-id]');
+    rows.forEach(row => {
+      const text = row.textContent.toLowerCase();
+      row.style.display = text.includes(search) ? '' : 'none';
+    });
+  });
+});
+
+async function loadUsers() {
+  const tbody = document.getElementById('usersTableBody');
+  
+  try {
+    const response = await apiCall('/users');
+    const data = response.data || response;
+    const users = Array.isArray(data) ? data : (data.users || []);
+    
+    if (users.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" class="text-center py-4 text-muted">
+            <i class="fas fa-users fa-2x mb-2"></i>
+            <p class="mb-0">No users found</p>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+    
+    tbody.innerHTML = users.map(user => `
+      <tr data-user-id="${user.id}">
+        <td>
+          <div class="d-flex align-items-center">
+            <div class="avatar-circle me-2" style="width: 36px; height: 36px; background: #6366f1; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600;">
+              ${getInitials(user.name || user.email)}
+            </div>
+            <div>
+              <div class="fw-500">${escapeHtml(user.name || 'Unnamed User')}</div>
+            </div>
+          </div>
+        </td>
+        <td class="text-muted">${escapeHtml(user.email)}</td>
+        <td>
+          <span class="badge ${getRoleBadgeClass(user.role)}">${formatRoleName(user.role)}</span>
+        </td>
+        <td>
+          <span class="badge ${user.status === 'active' ? 'bg-success' : 'bg-secondary'}">${user.status || 'active'}</span>
+        </td>
+        <td>
+          <select class="form-select form-select-sm" style="width: auto; min-width: 150px;" onchange="updateUserRole(${user.id}, this.value, this)" data-original="${user.role}">
+            <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
+            <option value="SUPER_ADMIN" ${user.role === 'SUPER_ADMIN' ? 'selected' : ''}>Super Admin</option>
+            <option value="HR_MANAGER" ${user.role === 'HR_MANAGER' ? 'selected' : ''}>HR Manager</option>
+            <option value="HR_EXECUTIVE" ${user.role === 'HR_EXECUTIVE' ? 'selected' : ''}>HR Executive</option>
+            <option value="FINANCE" ${user.role === 'FINANCE' ? 'selected' : ''}>Finance</option>
+            <option value="MANAGER" ${user.role === 'MANAGER' ? 'selected' : ''}>Manager</option>
+            <option value="EMPLOYEE" ${user.role === 'EMPLOYEE' ? 'selected' : ''}>Employee</option>
+            <option value="shop_owner" ${user.role === 'shop_owner' ? 'selected' : ''}>Shop Owner</option>
+          </select>
+        </td>
+      </tr>
+    `).join('');
+    
+  } catch (error) {
+    console.error('Error loading users:', error);
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" class="text-center py-4 text-danger">
+          <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+          <p class="mb-0">Error loading users</p>
+        </td>
+      </tr>
+    `;
+  }
+}
+
+async function updateUserRole(userId, newRole, selectEl) {
+  const originalRole = selectEl.dataset.original;
+  
+  try {
+    selectEl.disabled = true;
+    
+    const response = await apiCall(`/users/${userId}/role`, {
+      method: 'PUT',
+      body: JSON.stringify({ role: newRole })
+    });
+    
+    // Update the badge in the same row
+    const row = selectEl.closest('tr');
+    const badge = row.querySelector('td:nth-child(3) .badge');
+    if (badge) {
+      badge.className = `badge ${getRoleBadgeClass(newRole)}`;
+      badge.textContent = formatRoleName(newRole);
+    }
+    
+    selectEl.dataset.original = newRole;
+    showToast(`Role updated to ${formatRoleName(newRole)}`, 'success');
+    
+  } catch (error) {
+    console.error('Error updating role:', error);
+    selectEl.value = originalRole; // Revert
+    showToast('Failed to update role', 'danger');
+  } finally {
+    selectEl.disabled = false;
+  }
+}
+
+function getInitials(name) {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
+  }
+  return name.substring(0, 2).toUpperCase();
+}
+
+function getRoleBadgeClass(role) {
+  const classes = {
+    'admin': 'bg-danger',
+    'SUPER_ADMIN': 'bg-danger',
+    'HR_MANAGER': 'bg-primary',
+    'HR_EXECUTIVE': 'bg-info',
+    'FINANCE': 'bg-success',
+    'MANAGER': 'bg-warning text-dark',
+    'EMPLOYEE': 'bg-secondary',
+    'shop_owner': 'bg-dark',
+    'shop_manager': 'bg-secondary',
+    'shop_worker': 'bg-light text-dark',
+  };
+  return classes[role] || 'bg-secondary';
+}
+
+function formatRoleName(role) {
+  const names = {
+    'admin': 'Admin',
+    'SUPER_ADMIN': 'Super Admin',
+    'HR_MANAGER': 'HR Manager',
+    'HR_EXECUTIVE': 'HR Executive',
+    'FINANCE': 'Finance',
+    'MANAGER': 'Manager',
+    'EMPLOYEE': 'Employee',
+    'shop_owner': 'Shop Owner',
+    'shop_manager': 'Shop Manager',
+    'shop_worker': 'Shop Worker',
+  };
+  return names[role] || role;
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function showToast(message, type = 'info') {
+  const container = document.querySelector('.container-fluid') || document.body;
+  const alertDiv = document.createElement('div');
+  alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+  alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 250px;';
+  alertDiv.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+  container.appendChild(alertDiv);
+  setTimeout(() => alertDiv.remove(), 3000);
+}
+</script>

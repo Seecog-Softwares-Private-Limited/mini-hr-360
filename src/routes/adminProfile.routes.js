@@ -14,5 +14,14 @@ router.get('/profile', verifyUser, renderProfile);
 router.get('/change-password', verifyUser, renderChangePassword);
 router.post('/change-password', verifyUser, updatePassword);
 
+// Team & Roles management page
+router.get('/team', verifyUser, (req, res) => {
+    res.render('admin/team', {
+        title: 'Team & Roles',
+        active: 'team',
+        user: req.user,
+    });
+});
+
 export default router;
 export { router as adminProfileRouter };

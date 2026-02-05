@@ -51,6 +51,10 @@ import UserEducation from './UserEducation.js';
 import UserExperience from './UserExperience.js';
 import UserDocument from './UserDocument.js';
 
+// Payroll Approval Workflow models
+import PayrollApproval from './PayrollApproval.js';
+import Notification from './Notification.js';
+
 
 /**
  * IMPORTANT:
@@ -364,6 +368,32 @@ UserExperience.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 User.hasMany(UserDocument, { foreignKey: 'userId', as: 'documents', onDelete: 'CASCADE' });
 UserDocument.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
+// === Payroll Approval Workflow Associations ===
+
+// PayrollRun ⇄ PayrollApproval
+PayrollRun.hasMany(PayrollApproval, { foreignKey: 'payrollRunId', as: 'approvals' });
+PayrollApproval.belongsTo(PayrollRun, { foreignKey: 'payrollRunId', as: 'payrollRun' });
+
+// Business ⇄ PayrollApproval
+Business.hasMany(PayrollApproval, { foreignKey: 'businessId', as: 'payrollApprovals' });
+PayrollApproval.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+
+// User (approver) ⇄ PayrollApproval
+User.hasMany(PayrollApproval, { foreignKey: 'approverId', as: 'payrollApprovalActions' });
+PayrollApproval.belongsTo(User, { foreignKey: 'approverId', as: 'approver' });
+
+// User (assigned) ⇄ PayrollApproval
+User.hasMany(PayrollApproval, { foreignKey: 'assignedToUserId', as: 'assignedPayrollApprovals' });
+PayrollApproval.belongsTo(User, { foreignKey: 'assignedToUserId', as: 'assignedTo' });
+
+// User ⇄ Notification
+User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications' });
+Notification.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+// Business ⇄ Notification
+Business.hasMany(Notification, { foreignKey: 'businessId', as: 'notifications' });
+Notification.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+
 
 export {
   AttendancePolicy,
@@ -414,5 +444,8 @@ export {
   UserEducation,
   UserExperience,
   UserDocument,
+  // Payroll Approval Workflow
+  PayrollApproval,
+  Notification,
 };
 

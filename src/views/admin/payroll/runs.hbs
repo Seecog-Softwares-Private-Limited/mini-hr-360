@@ -166,17 +166,32 @@
 									<button class="btn btn-primary btn-sm" onclick="viewRegister({{this.id}})"><i
 											class="fa-solid fa-table me-1"></i>Review Register</button>
 									<button class="btn btn-success btn-sm" onclick="sendForApproval({{this.id}})"><i
-											class="fa-solid fa-paper-plane me-1"></i>Approve</button>
+											class="fa-solid fa-paper-plane me-1"></i>Send for Approval</button>
 									{{else if (eq this.status 'Pending Approval')}}
+									<!-- Approval Status Card -->
+									<div class="approval-status-card mb-2" id="approvalStatus-{{this.id}}">
+										<div class="small text-muted mb-1">Approval Status:</div>
+										<div class="d-flex gap-2 mb-2">
+											<span class="badge" id="hrBadge-{{this.id}}"><i class="fa-solid fa-spinner fa-spin me-1"></i>HR</span>
+											<span class="badge" id="financeBadge-{{this.id}}"><i class="fa-solid fa-spinner fa-spin me-1"></i>Finance</span>
+										</div>
+									</div>
 									<button class="btn btn-primary btn-sm" onclick="viewRegister({{this.id}})"><i
-											class="fa-solid fa-table me-1"></i>Review Register</button>
-									<button class="btn btn-success btn-sm" onclick="sendForApproval({{this.id}})"><i
-											class="fa-solid fa-paper-plane me-1"></i>Approve</button>
+											class="fa-solid fa-table me-1"></i>View Register</button>
+									<button class="btn btn-outline-info btn-sm" onclick="viewWorkflowStatus({{this.id}})"><i
+											class="fa-solid fa-code-branch me-1"></i>View Workflow</button>
+									<!-- HR/Finance can approve from here -->
+									<button class="btn btn-success btn-sm approval-action-btn d-none" data-run-id="{{this.id}}" onclick="openApprovalModal({{this.id}}, 'approve')"><i
+											class="fa-solid fa-check me-1"></i>Approve</button>
+									<button class="btn btn-outline-danger btn-sm approval-action-btn d-none" data-run-id="{{this.id}}" onclick="openApprovalModal({{this.id}}, 'reject')"><i
+											class="fa-solid fa-times me-1"></i>Reject</button>
 									{{else if (eq this.status 'Approved')}}
 									<button class="btn btn-primary btn-sm" onclick="viewRegister({{this.id}})"><i
 											class="fa-solid fa-table me-1"></i>View Register</button>
 									<button class="btn btn-danger btn-sm" onclick="lockPeriod({{this.id}})"><i
 											class="fa-solid fa-lock me-1"></i>Lock Period</button>
+									<button class="btn btn-outline-info btn-sm" onclick="viewWorkflowStatus({{this.id}})"><i
+											class="fa-solid fa-code-branch me-1"></i>View Workflow</button>
 									{{else if (eq this.status 'Locked')}}
 									<button class="btn btn-primary btn-sm" onclick="viewRegister({{this.id}})"><i class="fa-solid fa-table me-1"></i>View Register</button>
 									<button class="btn btn-success btn-sm" onclick="generatePayslips({{this.id}})"><i class="fa-solid fa-file-pdf me-1"></i>Generate Payslips</button>
@@ -710,20 +725,78 @@
 						</div>
 					</div>
 
-					<!-- Step 4: Approve -->
+					<!-- Step 4: Approve (HR & Finance Workflow) -->
 					<div class="wizard-step-content d-none" id="step4Content">
 						<div class="text-center py-4" id="step4Loading">
 							<div class="spinner-border text-success mb-3" role="status">
-								<span class="visually-hidden">Approving...</span>
+								<span class="visually-hidden">Initializing workflow...</span>
 							</div>
-							<h5>Sending for Approval...</h5>
-							<p class="text-muted">Recording approval timestamp</p>
+							<h5>Initializing Approval Workflow...</h5>
+							<p class="text-muted">Setting up HR and Finance approvals</p>
 						</div>
 						<div id="step4Result" class="d-none">
 							<div class="text-center py-4">
+								<i class="fa-solid fa-hourglass-half text-warning" style="font-size: 64px;"></i>
+								<h4 class="mt-3">Awaiting Approvals</h4>
+								<p class="text-muted">The payroll is now pending HR and Finance approval.</p>
+								
+								<!-- Approval Status Cards -->
+								<div class="row justify-content-center mt-4">
+									<div class="col-md-5 mb-3">
+										<div class="card h-100" id="wizardHrCard">
+											<div class="card-body text-center">
+												<i class="fa-solid fa-user-tie fa-2x text-primary mb-2"></i>
+												<h6>HR Approval</h6>
+												<span class="badge bg-warning text-dark" id="wizardHrBadge">
+													<i class="fa-solid fa-clock me-1"></i>Pending
+												</span>
+												<p class="small text-muted mt-2 mb-0" id="wizardHrDetails"></p>
+											</div>
+										</div>
+									</div>
+									<div class="col-md-5 mb-3">
+										<div class="card h-100" id="wizardFinanceCard">
+											<div class="card-body text-center">
+												<i class="fa-solid fa-indian-rupee-sign fa-2x text-success mb-2"></i>
+												<h6>Finance Approval</h6>
+												<span class="badge bg-secondary" id="wizardFinanceBadge">
+													<i class="fa-solid fa-hourglass me-1"></i>Waiting
+												</span>
+												<p class="small text-muted mt-2 mb-0" id="wizardFinanceDetails"></p>
+											</div>
+										</div>
+									</div>
+								</div>
+								
+								<!-- HR/Finance Action Buttons -->
+								<div id="wizardApprovalActions" class="mt-3 d-none">
+									<hr>
+									<p class="text-info"><i class="fa-solid fa-info-circle me-1"></i>You can approve or reject this payroll:</p>
+									<button class="btn btn-success me-2" onclick="openWizardApproval('approve')">
+										<i class="fa-solid fa-check me-1"></i>Approve
+									</button>
+									<button class="btn btn-danger" onclick="openWizardApproval('reject')">
+										<i class="fa-solid fa-times me-1"></i>Reject
+									</button>
+								</div>
+								
+								<!-- Refresh & Status Check -->
+								<div class="mt-3">
+									<button class="btn btn-outline-primary btn-sm" onclick="refreshApprovalStatus()">
+										<i class="fa-solid fa-sync me-1"></i>Refresh Status
+									</button>
+								</div>
+							</div>
+						</div>
+						<div id="step4Approved" class="d-none">
+							<div class="text-center py-4">
 								<i class="fa-solid fa-circle-check text-success" style="font-size: 64px;"></i>
-								<h4 class="mt-3">Payroll Approved!</h4>
-								<p class="text-muted">The payroll has been approved and is ready to be locked.</p>
+								<h4 class="mt-3 text-success">All Approvals Complete!</h4>
+								<p class="text-muted">HR and Finance have approved. Ready to Lock & Publish.</p>
+								<div class="d-flex justify-content-center gap-3 mt-3">
+									<span class="badge bg-success fs-6 py-2 px-3"><i class="fa-solid fa-check me-1"></i>HR ✓</span>
+									<span class="badge bg-success fs-6 py-2 px-3"><i class="fa-solid fa-check me-1"></i>Finance ✓</span>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -831,6 +904,64 @@
 	</div>
 </div>
 
+<!-- Approval Action Modal (for HR/Finance to approve/reject) -->
+<div class="modal fade" id="approvalModal" tabindex="-1" aria-labelledby="approvalModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header" id="approvalModalHeader">
+				<h5 class="modal-title" id="approvalModalLabel"><i class="fa-solid fa-clipboard-check me-2"></i>Approve Payroll</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<input type="hidden" id="approvalRunId">
+				<input type="hidden" id="approvalAction">
+				
+				<div class="alert alert-info" id="approvalInfo">
+					<strong>Payroll Run:</strong> <span id="approvalPeriod">-</span><br>
+					<strong>Total Net Pay:</strong> <span id="approvalNetPay">-</span>
+				</div>
+				
+				<div class="mb-3">
+					<label for="approvalNotes" class="form-label">Notes / Comments <span class="text-muted">(required for rejection)</span></label>
+					<textarea class="form-control" id="approvalNotes" rows="3" placeholder="Add your notes or reason for this action..."></textarea>
+				</div>
+				
+				<div class="alert alert-warning d-none" id="approvalRejectWarning">
+					<i class="fa-solid fa-exclamation-triangle me-2"></i>
+					Rejecting will send the payroll back to Admin for corrections. Please provide a clear reason.
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-success" id="approvalSubmitBtn" onclick="submitApprovalAction()">
+					<i class="fa-solid fa-check me-1"></i>Approve
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- Workflow Status Modal -->
+<div class="modal fade" id="workflowModal" tabindex="-1" aria-labelledby="workflowModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content">
+			<div class="modal-header bg-info text-white">
+				<h5 class="modal-title" id="workflowModalLabel"><i class="fa-solid fa-code-branch me-2"></i>Approval Workflow Status</h5>
+				<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body" id="workflowModalBody">
+				<div class="text-center py-4">
+					<div class="spinner-border text-info" role="status"></div>
+					<p class="mt-2 text-muted">Loading workflow status...</p>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <script>
 	const businessId = '{{businessId}}';
 	
@@ -841,6 +972,7 @@
 		runId: null,
 		inputsData: null,
 		calcData: null,
+		approvalsComplete: false,
 		stepLabels: ['Pull Inputs', 'Calculate', 'Review', 'Approve', 'Lock', 'Publish']
 	};
 
@@ -883,6 +1015,7 @@
 			runId: null,
 			inputsData: null,
 			calcData: null,
+			approvalsComplete: false,
 			stepLabels: ['Pull Inputs', 'Calculate', 'Review', 'Approve', 'Lock', 'Publish']
 		};
 
@@ -945,10 +1078,29 @@
 		} else {
 			nextBtn.classList.remove('d-none');
 		}
+		
+		// Block Lock/Publish if approvals not complete (step 4 = Lock, step 5 = Publish)
+		if (wizardState.currentStep === 4 && !wizardState.approvalsComplete) {
+			// On Approve step but waiting for HR/Finance
+			nextBtn.disabled = true;
+			nextBtn.classList.add('btn-secondary');
+			nextBtn.classList.remove('btn-primary');
+			nextLabel.textContent = 'Awaiting Approvals...';
+		} else {
+			nextBtn.disabled = false;
+			nextBtn.classList.remove('btn-secondary');
+			nextBtn.classList.add('btn-primary');
+		}
 	}
 
 	async function wizardNext() {
 		const currentStep = wizardState.currentStep;
+		
+		// Block Lock step if approvals not complete
+		if (currentStep === 4 && !wizardState.approvalsComplete) {
+			showToast('Please wait for HR and Finance approvals before locking.', 'warning');
+			return;
+		}
 		
 		switch (currentStep) {
 			case 0: await executePullInputs(); break;
@@ -1179,39 +1331,159 @@
 		}
 	}
 
-	// Step 4: Approve
+	// Step 4: Approve - Initialize workflow and show approval status
 	async function executeApprove() {
 		showStepContent(3);
 		document.getElementById('step4Loading').classList.remove('d-none');
 		document.getElementById('step4Result').classList.add('d-none');
+		document.getElementById('step4Approved').classList.add('d-none');
 
 		try {
-			const res = await fetch(`/api/admin/payroll/runs/${wizardState.runId}/approve`, {
+			// Initialize the approval workflow (creates HR & Finance approval records)
+			const initRes = await fetch(`/api/admin/payroll/runs/${wizardState.runId}/workflow/initialize`, {
 				method: 'POST',
 				headers: getAuthHeaders(),
 				credentials: 'include',
-				body: JSON.stringify({})
+				body: JSON.stringify({ businessId: businessId })
 			});
 
-			const data = await res.json();
-			if (!res.ok) throw new Error(data.message || 'Failed to approve');
+			const initData = await initRes.json();
+			if (!initRes.ok && !initData.message?.includes('already')) {
+				throw new Error(initData.message || 'Failed to initialize workflow');
+			}
 
-			setTimeout(() => {
-				document.getElementById('step4Loading').classList.add('d-none');
-				document.getElementById('step4Result').classList.remove('d-none');
+			// Now check the workflow status
+			const statusRes = await fetch(`/api/admin/payroll/runs/${wizardState.runId}/workflow/status`, {
+				headers: getAuthHeaders(),
+				credentials: 'include'
+			});
+
+			const statusData = await statusRes.json();
+			if (!statusRes.ok) {
+				throw new Error(statusData.message || 'Failed to get workflow status');
+			}
+
+			// Hide loading, show appropriate result
+			document.getElementById('step4Loading').classList.add('d-none');
+			
+			if (statusData.data?.allApproved) {
+				// All approvals done - show completed state
+				document.getElementById('step4Approved').classList.remove('d-none');
 				wizardState.currentStep = 4;
-				updateWizardUI();
-			}, 800);
+			} else {
+				// Show waiting for approvals
+				document.getElementById('step4Result').classList.remove('d-none');
+				updateWizardApprovalDisplay(statusData.data);
+				wizardState.currentStep = 4;
+				wizardState.approvalsComplete = false;
+			}
+			
+			updateWizardUI();
 
 		} catch (err) {
 			console.error('Approve error:', err);
 			document.getElementById('step4Loading').innerHTML = `
 				<i class="fa-solid fa-exclamation-circle text-danger" style="font-size: 48px;"></i>
-				<h5 class="text-danger mt-3">Error Approving Payroll</h5>
+				<h5 class="text-danger mt-3">Error Initializing Approval Workflow</h5>
 				<p class="text-muted">${err.message}</p>
 				<button class="btn btn-primary mt-2" onclick="executeApprove()">Retry</button>
 			`;
 		}
+	}
+	
+	// Update the wizard approval display based on status
+	function updateWizardApprovalDisplay(status) {
+		if (!status) return;
+		
+		const userRole = localStorage.getItem('userRole') || '';
+		const isHR = ['HR_MANAGER', 'HR_EXECUTIVE'].includes(userRole);
+		const isFinance = userRole === 'FINANCE';
+		
+		// HR Badge
+		const hrBadge = document.getElementById('wizardHrBadge');
+		const hrDetails = document.getElementById('wizardHrDetails');
+		if (status.hrStatus === 'APPROVED') {
+			hrBadge.className = 'badge bg-success';
+			hrBadge.innerHTML = '<i class="fa-solid fa-check me-1"></i>Approved';
+			if (status.hrApprover) {
+				hrDetails.textContent = `By ${status.hrApprover.firstName} ${status.hrApprover.lastName}`;
+			}
+		} else if (status.hrStatus === 'PENDING') {
+			hrBadge.className = 'badge bg-warning text-dark';
+			hrBadge.innerHTML = '<i class="fa-solid fa-clock me-1"></i>Pending';
+			hrDetails.textContent = 'Awaiting HR team approval';
+		} else if (status.hrStatus === 'REJECTED') {
+			hrBadge.className = 'badge bg-danger';
+			hrBadge.innerHTML = '<i class="fa-solid fa-times me-1"></i>Rejected';
+			if (status.hrComments) {
+				hrDetails.textContent = `Reason: ${status.hrComments}`;
+			}
+		}
+		
+		// Finance Badge
+		const financeBadge = document.getElementById('wizardFinanceBadge');
+		const financeDetails = document.getElementById('wizardFinanceDetails');
+		if (status.financeStatus === 'APPROVED') {
+			financeBadge.className = 'badge bg-success';
+			financeBadge.innerHTML = '<i class="fa-solid fa-check me-1"></i>Approved';
+			if (status.financeApprover) {
+				financeDetails.textContent = `By ${status.financeApprover.firstName} ${status.financeApprover.lastName}`;
+			}
+		} else if (status.financeStatus === 'PENDING') {
+			financeBadge.className = 'badge bg-warning text-dark';
+			financeBadge.innerHTML = '<i class="fa-solid fa-clock me-1"></i>Pending';
+			financeDetails.textContent = 'Awaiting Finance team approval';
+		} else if (status.financeStatus === 'WAITING') {
+			financeBadge.className = 'badge bg-secondary';
+			financeBadge.innerHTML = '<i class="fa-solid fa-hourglass me-1"></i>Waiting';
+			financeDetails.textContent = 'Will be enabled after HR approval';
+		} else if (status.financeStatus === 'REJECTED') {
+			financeBadge.className = 'badge bg-danger';
+			financeBadge.innerHTML = '<i class="fa-solid fa-times me-1"></i>Rejected';
+			if (status.financeComments) {
+				financeDetails.textContent = `Reason: ${status.financeComments}`;
+			}
+		}
+		
+		// Show action buttons for HR/Finance users if it's their turn
+		const actionsDiv = document.getElementById('wizardApprovalActions');
+		const canApprove = (isHR && status.hrStatus === 'PENDING') || (isFinance && status.financeStatus === 'PENDING');
+		if (canApprove) {
+			actionsDiv.classList.remove('d-none');
+		} else {
+			actionsDiv.classList.add('d-none');
+		}
+	}
+	
+	// Refresh approval status in wizard
+	async function refreshApprovalStatus() {
+		try {
+			const res = await fetch(`/api/admin/payroll/runs/${wizardState.runId}/workflow/status`, {
+				headers: getAuthHeaders(),
+				credentials: 'include'
+			});
+			const data = await res.json();
+			
+			if (res.ok && data.data) {
+				if (data.data.allApproved) {
+					document.getElementById('step4Result').classList.add('d-none');
+					document.getElementById('step4Approved').classList.remove('d-none');
+					wizardState.approvalsComplete = true;
+					updateWizardUI();
+					showToast('All approvals complete! You can proceed to Lock.', 'success');
+				} else {
+					updateWizardApprovalDisplay(data.data);
+					showToast('Status refreshed', 'info');
+				}
+			}
+		} catch (err) {
+			showToast('Error refreshing status', 'danger');
+		}
+	}
+	
+	// Open approval modal from wizard
+	function openWizardApproval(action) {
+		openApprovalModal(wizardState.runId, action);
 	}
 
 	// Step 5: Lock
@@ -1539,28 +1811,157 @@
 		window.location.href = `/admin/payroll/register/${runId}`;
 	}
 
-	async function sendForApproval(runId) {
-		if (!confirm('Send this payroll run for approval?')) return;
-
+	// Initialize approval workflow for a payroll run
+	async function initializeApprovalWorkflow(runId) {
 		try {
-			const res = await fetch(`/api/admin/payroll/runs/${runId}/approve`, {
+			const res = await fetch(`/api/admin/payroll/runs/${runId}/workflow/initialize`, {
 				method: 'POST',
 				headers: getAuthHeaders(),
 				credentials: 'include',
-				body: JSON.stringify({})
+				body: JSON.stringify({ businessId })
 			});
 			const data = await res.json();
-
-			if (res.ok) {
-				showToast('Payroll sent for approval!', 'success');
-				setTimeout(() => window.location.reload(), 1000);
-			} else {
-				showToast(data.message || 'Failed to approve', 'danger');
+			if (!res.ok) {
+				console.warn('Workflow init warning:', data.message);
 			}
+			return data;
 		} catch (err) {
-			console.error('Error approving payroll:', err);
-			showToast('Error approving payroll. Check console.', 'danger');
+			console.error('Error initializing workflow:', err);
 		}
+	}
+
+	// Get workflow status for a payroll run
+	async function getWorkflowStatus(runId) {
+		try {
+			const res = await fetch(`/api/admin/payroll/runs/${runId}/workflow/status`, {
+				method: 'GET',
+				headers: getAuthHeaders(),
+				credentials: 'include',
+			});
+			return await res.json();
+		} catch (err) {
+			console.error('Error getting workflow status:', err);
+			return null;
+		}
+	}
+
+	// Submit approval for current step
+	async function submitWorkflowApproval(runId, action, comments = '') {
+		try {
+			const res = await fetch(`/api/admin/payroll/runs/${runId}/workflow/approve`, {
+				method: 'POST',
+				headers: getAuthHeaders(),
+				credentials: 'include',
+				body: JSON.stringify({ action, comments })
+			});
+			const data = await res.json();
+			return { ok: res.ok, data };
+		} catch (err) {
+			console.error('Error submitting approval:', err);
+			return { ok: false, error: err.message };
+		}
+	}
+
+	async function sendForApproval(runId) {
+		// First, check if workflow is initialized
+		const statusRes = await getWorkflowStatus(runId);
+		const status = statusRes?.data;
+		
+		if (!status?.initialized) {
+			// Initialize workflow first
+			if (!confirm('This will start the approval workflow.\n\n1. HR Review (Data Validation)\n2. Finance Review (Budget Check)\n3. Admin Approval (Final Sign-off)\n\nProceed?')) return;
+			
+			await initializeApprovalWorkflow(runId);
+			showToast('Approval workflow started! HR has been notified.', 'success');
+			setTimeout(() => window.location.reload(), 1500);
+			return;
+		}
+		
+		// Workflow exists - submit approval for current step
+		const currentStep = status.currentStep;
+		const stepNames = { 1: 'HR Review', 2: 'Finance Review', 3: 'Admin Approval' };
+		
+		const comments = prompt(`Approve ${stepNames[currentStep] || 'this step'}?\n\nAdd optional comments:`, '');
+		if (comments === null) return; // Cancelled
+		
+		const result = await submitWorkflowApproval(runId, 'approve', comments);
+		
+		if (result.ok) {
+			if (result.data?.data?.action === 'fully_approved') {
+				showToast('Payroll fully approved! All steps complete.', 'success');
+			} else if (result.data?.data?.nextStep) {
+				showToast(`${stepNames[currentStep]} complete! Pending: ${stepNames[result.data.data.nextStep]}`, 'success');
+			} else {
+				showToast('Approval submitted successfully!', 'success');
+			}
+			setTimeout(() => window.location.reload(), 1500);
+		} else {
+			showToast(result.data?.message || 'Failed to approve', 'danger');
+		}
+	}
+
+	// Reject payroll (sends back to draft)
+	async function rejectPayroll(runId) {
+		const reason = prompt('Reason for rejection:');
+		if (!reason) return;
+		
+		const result = await submitWorkflowApproval(runId, 'reject', reason);
+		
+		if (result.ok) {
+			showToast('Payroll rejected. It has been sent back to Draft status.', 'warning');
+			setTimeout(() => window.location.reload(), 1500);
+		} else {
+			showToast(result.data?.message || 'Failed to reject', 'danger');
+		}
+	}
+
+	// View approval workflow status
+	async function viewWorkflowStatus(runId) {
+		const statusRes = await getWorkflowStatus(runId);
+		const status = statusRes?.data;
+		
+		if (!status?.initialized) {
+			showToast('Approval workflow not yet started for this run.', 'info');
+			return;
+		}
+		
+		const steps = status.steps || [];
+		let html = '<div class="approval-workflow-status">';
+		
+		steps.forEach((step, idx) => {
+			const icon = step.status === 'APPROVED' ? '✅' : step.status === 'REJECTED' ? '❌' : step.status === 'SKIPPED' ? '⏭️' : '⏳';
+			const bgColor = step.status === 'APPROVED' ? '#d1fae5' : step.status === 'REJECTED' ? '#fee2e2' : step.status === 'SKIPPED' ? '#e5e7eb' : '#fef3c7';
+			html += `<div style="padding: 10px; margin: 5px 0; background: ${bgColor}; border-radius: 6px;">
+				<strong>${icon} Step ${step.step}: ${step.stepName.replace('_', ' ')}</strong><br>
+				<small>Status: ${step.status}</small>
+				${step.approver ? `<br><small>By: ${step.approver.firstName} ${step.approver.lastName}</small>` : ''}
+				${step.comments ? `<br><small>Comment: ${step.comments}</small>` : ''}
+				${step.actionAt ? `<br><small>At: ${new Date(step.actionAt).toLocaleString()}</small>` : ''}
+			</div>`;
+		});
+		html += '</div>';
+		
+		// Show in a simple alert or modal
+		const modal = document.createElement('div');
+		modal.innerHTML = `
+			<div class="modal fade" tabindex="-1">
+				<div class="modal-dialog">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h5 class="modal-title"><i class="fa-solid fa-code-branch me-2"></i>Approval Workflow Status</h5>
+							<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+						</div>
+						<div class="modal-body">${html}</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+						</div>
+					</div>
+				</div>
+			</div>`;
+		document.body.appendChild(modal);
+		const bsModal = new bootstrap.Modal(modal.querySelector('.modal'));
+		bsModal.show();
+		modal.querySelector('.modal').addEventListener('hidden.bs.modal', () => modal.remove());
 	}
 
 	async function lockPeriod(runId) {
@@ -1800,11 +2201,316 @@
 		}
 	}
 
+	// Load and display approval status for each Pending Approval run
+	async function loadApprovalStatuses() {
+		const userRole = localStorage.getItem('userRole') || '';
+		const canApprove = ['HR_MANAGER', 'HR_EXECUTIVE', 'FINANCE', 'admin', 'SUPER_ADMIN', 'shop_owner'].includes(userRole);
+		
+		// Find all runs with Pending Approval status
+		document.querySelectorAll('[id^="approvalStatus-"]').forEach(async (card) => {
+			const runId = card.id.replace('approvalStatus-', '');
+			try {
+				const res = await fetch(`/api/admin/payroll/runs/${runId}/workflow/status`, {
+					headers: getAuthHeaders(),
+					credentials: 'include'
+				});
+				const data = await res.json();
+				if (res.ok && data.data) {
+					updateApprovalBadges(runId, data.data, userRole);
+				}
+			} catch (e) {
+				console.error('Error loading approval status:', e);
+			}
+		});
+	}
+	
+	function updateApprovalBadges(runId, status, userRole) {
+		const hrBadge = document.getElementById(`hrBadge-${runId}`);
+		const financeBadge = document.getElementById(`financeBadge-${runId}`);
+		
+		if (hrBadge) {
+			if (status.hrStatus === 'APPROVED') {
+				hrBadge.className = 'badge bg-success';
+				hrBadge.innerHTML = '<i class="fa-solid fa-check me-1"></i>HR ✓';
+			} else if (status.hrStatus === 'PENDING') {
+				hrBadge.className = 'badge bg-warning text-dark';
+				hrBadge.innerHTML = '<i class="fa-solid fa-clock me-1"></i>HR Pending';
+			} else if (status.hrStatus === 'REJECTED') {
+				hrBadge.className = 'badge bg-danger';
+				hrBadge.innerHTML = '<i class="fa-solid fa-times me-1"></i>HR Rejected';
+			} else {
+				hrBadge.className = 'badge bg-secondary';
+				hrBadge.innerHTML = '<i class="fa-solid fa-hourglass me-1"></i>HR Waiting';
+			}
+		}
+		
+		if (financeBadge) {
+			if (status.financeStatus === 'APPROVED') {
+				financeBadge.className = 'badge bg-success';
+				financeBadge.innerHTML = '<i class="fa-solid fa-check me-1"></i>Finance ✓';
+			} else if (status.financeStatus === 'PENDING') {
+				financeBadge.className = 'badge bg-warning text-dark';
+				financeBadge.innerHTML = '<i class="fa-solid fa-clock me-1"></i>Finance Pending';
+			} else if (status.financeStatus === 'REJECTED') {
+				financeBadge.className = 'badge bg-danger';
+				financeBadge.innerHTML = '<i class="fa-solid fa-times me-1"></i>Finance Rejected';
+			} else {
+				financeBadge.className = 'badge bg-secondary';
+				financeBadge.innerHTML = '<i class="fa-solid fa-hourglass me-1"></i>Finance Waiting';
+			}
+		}
+		
+		// Show approve/reject buttons for HR/Finance users if it's their turn
+		const isHR = ['HR_MANAGER', 'HR_EXECUTIVE'].includes(userRole);
+		const isFinance = userRole === 'FINANCE';
+		const canApproveNow = (isHR && status.hrStatus === 'PENDING') || (isFinance && status.financeStatus === 'PENDING');
+		
+		const approveBtn = document.querySelector(`.approval-action-btn[data-run-id="${runId}"][onclick*="approve"]`);
+		const rejectBtn = document.querySelector(`.approval-action-btn[data-run-id="${runId}"][onclick*="reject"]`);
+		
+		if (approveBtn && rejectBtn && canApproveNow) {
+			approveBtn.classList.remove('d-none');
+			rejectBtn.classList.remove('d-none');
+		}
+	}
+	
+	// Open approval modal for HR/Finance
+	async function openApprovalModal(runId, action) {
+		document.getElementById('approvalRunId').value = runId;
+		document.getElementById('approvalAction').value = action;
+		document.getElementById('approvalNotes').value = '';
+		
+		// Fetch run details
+		try {
+			const res = await fetch(`/api/admin/payroll/runs/${runId}`, {
+				headers: getAuthHeaders(),
+				credentials: 'include'
+			});
+			const data = await res.json();
+			if (res.ok && data.data) {
+				const run = data.data;
+				document.getElementById('approvalPeriod').textContent = `${run.periodYear}-${String(run.periodMonth).padStart(2, '0')}`;
+				document.getElementById('approvalNetPay').textContent = formatCurrency(run.totalNetPay);
+			}
+		} catch (e) {
+			console.error('Error loading run details:', e);
+		}
+		
+		// Update modal appearance based on action
+		const modal = document.getElementById('approvalModal');
+		const header = document.getElementById('approvalModalHeader');
+		const submitBtn = document.getElementById('approvalSubmitBtn');
+		const title = document.getElementById('approvalModalLabel');
+		const rejectWarning = document.getElementById('approvalRejectWarning');
+		
+		if (action === 'reject') {
+			header.className = 'modal-header bg-danger text-white';
+			title.innerHTML = '<i class="fa-solid fa-times-circle me-2"></i>Reject Payroll';
+			submitBtn.className = 'btn btn-danger';
+			submitBtn.innerHTML = '<i class="fa-solid fa-times me-1"></i>Reject';
+			rejectWarning.classList.remove('d-none');
+		} else {
+			header.className = 'modal-header bg-success text-white';
+			title.innerHTML = '<i class="fa-solid fa-clipboard-check me-2"></i>Approve Payroll';
+			submitBtn.className = 'btn btn-success';
+			submitBtn.innerHTML = '<i class="fa-solid fa-check me-1"></i>Approve';
+			rejectWarning.classList.add('d-none');
+		}
+		
+		new bootstrap.Modal(modal).show();
+	}
+	
+	// Submit approval action
+	async function submitApprovalAction() {
+		const runId = document.getElementById('approvalRunId').value;
+		const action = document.getElementById('approvalAction').value;
+		const comments = document.getElementById('approvalNotes').value.trim();
+		
+		if (action === 'reject' && !comments) {
+			showToast('Please provide a reason for rejection', 'warning');
+			return;
+		}
+		
+		try {
+			const res = await fetch(`/api/admin/payroll/runs/${runId}/workflow/approve`, {
+				method: 'POST',
+				headers: getAuthHeaders(),
+				credentials: 'include',
+				body: JSON.stringify({ action, comments })
+			});
+			const data = await res.json();
+			
+			if (res.ok) {
+				const result = data.data;
+				if (result.action === 'approved') {
+					showToast(`${result.stepName === 'HR_REVIEW' ? 'HR' : 'Finance'} approval submitted successfully!`, 'success');
+				} else if (result.action === 'rejected') {
+					showToast('Payroll rejected. Admin will be notified.', 'warning');
+				} else if (result.action === 'fully_approved') {
+					showToast('All approvals complete! Ready for Lock & Publish.', 'success');
+				}
+				bootstrap.Modal.getInstance(document.getElementById('approvalModal')).hide();
+				setTimeout(() => window.location.reload(), 1000);
+			} else {
+				showToast(data.message || 'Failed to submit approval', 'danger');
+			}
+		} catch (err) {
+			console.error('Error submitting approval:', err);
+			showToast('Error submitting approval', 'danger');
+		}
+	}
+	
+	// View workflow status in modal
+	async function viewWorkflowStatus(runId) {
+		const modal = new bootstrap.Modal(document.getElementById('workflowModal'));
+		modal.show();
+		
+		const body = document.getElementById('workflowModalBody');
+		body.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-info" role="status"></div><p class="mt-2 text-muted">Loading workflow status...</p></div>';
+		
+		try {
+			const res = await fetch(`/api/admin/payroll/runs/${runId}/workflow/status`, {
+				headers: getAuthHeaders(),
+				credentials: 'include'
+			});
+			const data = await res.json();
+			
+			if (res.ok && data.data) {
+				const status = data.data;
+				body.innerHTML = renderWorkflowStatus(status);
+			} else {
+				body.innerHTML = '<div class="alert alert-warning">Workflow not initialized yet.</div>';
+			}
+		} catch (err) {
+			body.innerHTML = '<div class="alert alert-danger">Error loading workflow status.</div>';
+		}
+	}
+	
+	function renderWorkflowStatus(status) {
+		if (!status.initialized) {
+			return '<div class="alert alert-info">Approval workflow has not been started yet.</div>';
+		}
+		
+		let html = '<div class="workflow-timeline">';
+		
+		// HR Step
+		html += `
+			<div class="workflow-step ${status.hrStatus === 'APPROVED' ? 'completed' : status.hrStatus === 'PENDING' ? 'active' : status.hrStatus === 'REJECTED' ? 'rejected' : 'waiting'}">
+				<div class="step-icon">
+					${status.hrStatus === 'APPROVED' ? '<i class="fa-solid fa-check text-success"></i>' : 
+					  status.hrStatus === 'REJECTED' ? '<i class="fa-solid fa-times text-danger"></i>' :
+					  status.hrStatus === 'PENDING' ? '<i class="fa-solid fa-clock text-warning"></i>' :
+					  '<i class="fa-solid fa-hourglass text-muted"></i>'}
+				</div>
+				<div class="step-content">
+					<h6 class="mb-1">HR Approval</h6>
+					<span class="badge ${status.hrStatus === 'APPROVED' ? 'bg-success' : status.hrStatus === 'PENDING' ? 'bg-warning text-dark' : status.hrStatus === 'REJECTED' ? 'bg-danger' : 'bg-secondary'}">
+						${status.hrStatus}
+					</span>
+					${status.hrApprover ? `<br><small class="text-muted">By: ${status.hrApprover.firstName} ${status.hrApprover.lastName}</small>` : ''}
+					${status.hrComments ? `<br><small class="text-muted">Notes: ${status.hrComments}</small>` : ''}
+					${status.hrActionAt ? `<br><small class="text-muted">${new Date(status.hrActionAt).toLocaleString()}</small>` : ''}
+				</div>
+			</div>
+		`;
+		
+		// Finance Step
+		html += `
+			<div class="workflow-step ${status.financeStatus === 'APPROVED' ? 'completed' : status.financeStatus === 'PENDING' ? 'active' : status.financeStatus === 'REJECTED' ? 'rejected' : 'waiting'}">
+				<div class="step-icon">
+					${status.financeStatus === 'APPROVED' ? '<i class="fa-solid fa-check text-success"></i>' : 
+					  status.financeStatus === 'REJECTED' ? '<i class="fa-solid fa-times text-danger"></i>' :
+					  status.financeStatus === 'PENDING' ? '<i class="fa-solid fa-clock text-warning"></i>' :
+					  '<i class="fa-solid fa-hourglass text-muted"></i>'}
+				</div>
+				<div class="step-content">
+					<h6 class="mb-1">Finance Approval</h6>
+					<span class="badge ${status.financeStatus === 'APPROVED' ? 'bg-success' : status.financeStatus === 'PENDING' ? 'bg-warning text-dark' : status.financeStatus === 'REJECTED' ? 'bg-danger' : 'bg-secondary'}">
+						${status.financeStatus}
+					</span>
+					${status.financeApprover ? `<br><small class="text-muted">By: ${status.financeApprover.firstName} ${status.financeApprover.lastName}</small>` : ''}
+					${status.financeComments ? `<br><small class="text-muted">Notes: ${status.financeComments}</small>` : ''}
+					${status.financeActionAt ? `<br><small class="text-muted">${new Date(status.financeActionAt).toLocaleString()}</small>` : ''}
+				</div>
+			</div>
+		`;
+		
+		html += '</div>';
+		
+		// Summary
+		if (status.allApproved) {
+			html += '<div class="alert alert-success mt-3"><i class="fa-solid fa-check-circle me-2"></i>All approvals complete! Ready for Lock & Publish.</div>';
+		} else if (status.isRejected) {
+			html += '<div class="alert alert-danger mt-3"><i class="fa-solid fa-times-circle me-2"></i>Payroll was rejected. Please review and resubmit.</div>';
+		} else if (status.hrStatus === 'PENDING') {
+			html += '<div class="alert alert-warning mt-3"><i class="fa-solid fa-clock me-2"></i>Awaiting HR Approval...</div>';
+		} else if (status.financeStatus === 'PENDING') {
+			html += '<div class="alert alert-warning mt-3"><i class="fa-solid fa-clock me-2"></i>HR Approved. Awaiting Finance Approval...</div>';
+		}
+		
+		return html;
+	}
+
 	// Initialize period display
 	document.addEventListener('DOMContentLoaded', () => {
 		const period = document.getElementById('periodSelect').value;
 		const date = new Date(period);
 		const monthName = date.toLocaleString('default', { month: 'long', year: 'numeric' });
 		document.getElementById('selectedPeriod').textContent = monthName;
+		
+		// Load approval statuses for all pending runs
+		loadApprovalStatuses();
 	});
 </script>
+
+<style>
+	.approval-status-card {
+		background: #f8f9fa;
+		padding: 10px;
+		border-radius: 6px;
+		border: 1px solid #e9ecef;
+	}
+	.workflow-timeline {
+		position: relative;
+		padding-left: 40px;
+	}
+	.workflow-timeline::before {
+		content: '';
+		position: absolute;
+		left: 15px;
+		top: 0;
+		bottom: 0;
+		width: 2px;
+		background: #e9ecef;
+	}
+	.workflow-step {
+		position: relative;
+		padding: 15px 0;
+		display: flex;
+		align-items: flex-start;
+	}
+	.workflow-step .step-icon {
+		position: absolute;
+		left: -40px;
+		width: 32px;
+		height: 32px;
+		border-radius: 50%;
+		background: white;
+		border: 2px solid #e9ecef;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	.workflow-step.completed .step-icon {
+		border-color: #28a745;
+	}
+	.workflow-step.active .step-icon {
+		border-color: #ffc107;
+	}
+	.workflow-step.rejected .step-icon {
+		border-color: #dc3545;
+	}
+	.workflow-step .step-content {
+		flex: 1;
+	}
+</style>
