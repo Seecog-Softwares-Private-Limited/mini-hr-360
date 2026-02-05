@@ -1,49 +1,6 @@
 <div class="container-fluid">
     <div class="row">
-        <!-- Sidebar -->
-        <div class="col-md-2 emp-sidebar p-3">
-            <div class="emp-brand mb-4">
-                <div class="emp-brand-mark">
-                    <i class="fa-solid fa-user-tie"></i>
-                </div>
-                <div>
-                    <div class="emp-brand-title">mini-hr-360</div>
-                    <div class="emp-brand-subtitle">Employee Portal</div>
-                </div>
-            </div>
-
-            <div class="emp-profile mb-3">
-                <div class="emp-profile-avatar">
-                    <i class="fa-solid fa-user"></i>
-                </div>
-                <div>
-                    <div class="emp-profile-name">{{employee.empName}}</div>
-                    <div class="emp-profile-role">{{employee.empId}}</div>
-                </div>
-            </div>
-
-            <div class="emp-divider"></div>
-
-            <nav class="nav flex-column">
-                <a class="nav-link" href="/employee/dashboard">
-                    <i class="fa-solid fa-house"></i> Dashboard
-                </a>
-                <a class="nav-link" href="/employee/leaves">
-                    <i class="fa-solid fa-calendar-days"></i> My Leaves
-                </a>
-                <a class="nav-link active" href="/employee/leaves/apply">
-                    <i class="fa-solid fa-plus-circle"></i> Apply Leave
-                </a>
-            </nav>
-
-            <div class="emp-divider"></div>
-
-            <nav class="nav flex-column">
-                <a class="nav-link text-danger" href="/employee/logout">
-                    <i class="fa-solid fa-right-from-bracket"></i> Logout
-                </a>
-            </nav>
-        </div>
+        {{> employee-sidebar employee=employee active='apply-leave'}}
 
         <!-- Main Content -->
         <div class="col-md-10 emp-main">
@@ -69,18 +26,16 @@
                                 <!-- Leave Type -->
                                 <div class="mb-4">
                                     <label for="leaveTypeId" class="emp-form-label">
-                                        <i class="fa-solid fa-tag me-1"></i> Leave Type <span class="text-danger">*</span>
+                                        <i class="fa-solid fa-tag me-1"></i> Leave Type <span
+                                            class="text-danger">*</span>
                                     </label>
-                                    <select class="form-select emp-form-control" id="leaveTypeId" name="leaveTypeId" required>
+                                    <select class="form-select emp-form-control" id="leaveTypeId" name="leaveTypeId"
+                                        required>
                                         <option value="">Select Leave Type</option>
                                         {{#each leaveTypes}}
-                                        <option 
-                                            value="{{this.id}}" 
-                                            data-allow-half-day="{{this.allowHalfDay}}"
+                                        <option value="{{this.id}}" data-allow-half-day="{{this.allowHalfDay}}"
                                             data-requires-attachment="{{this.requiresAttachment}}"
-                                            data-min-notice="{{this.minDaysNotice}}"
-                                            data-color="{{this.color}}"
-                                        >
+                                            data-min-notice="{{this.minDaysNotice}}" data-color="{{this.color}}">
                                             {{this.name}}{{#unless this.isPaid}} (Unpaid){{/unless}}
                                         </option>
                                         {{/each}}
@@ -91,27 +46,19 @@
                                 <div class="row mb-4">
                                     <div class="col-md-6">
                                         <label for="startDate" class="emp-form-label">
-                                            <i class="fa-solid fa-calendar me-1"></i> From Date <span class="text-danger">*</span>
+                                            <i class="fa-solid fa-calendar me-1"></i> From Date <span
+                                                class="text-danger">*</span>
                                         </label>
-                                        <input 
-                                            type="date" 
-                                            class="form-control emp-form-control" 
-                                            id="startDate" 
-                                            name="startDate" 
-                                            required
-                                        >
+                                        <input type="date" class="form-control emp-form-control" id="startDate"
+                                            name="startDate" required>
                                     </div>
                                     <div class="col-md-6">
                                         <label for="endDate" class="emp-form-label">
-                                            <i class="fa-solid fa-calendar me-1"></i> To Date <span class="text-danger">*</span>
+                                            <i class="fa-solid fa-calendar me-1"></i> To Date <span
+                                                class="text-danger">*</span>
                                         </label>
-                                        <input 
-                                            type="date" 
-                                            class="form-control emp-form-control" 
-                                            id="endDate" 
-                                            name="endDate" 
-                                            required
-                                        >
+                                        <input type="date" class="form-control emp-form-control" id="endDate"
+                                            name="endDate" required>
                                     </div>
                                 </div>
 
@@ -123,7 +70,8 @@
                                     <div class="row">
                                         <div class="col-md-6">
                                             <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="isHalfDayStart" name="isHalfDayStart">
+                                                <input class="form-check-input" type="checkbox" id="isHalfDayStart"
+                                                    name="isHalfDayStart">
                                                 <label class="form-check-label" for="isHalfDayStart">
                                                     First day is half day
                                                 </label>
@@ -131,7 +79,8 @@
                                         </div>
                                         <div class="col-md-6">
                                             <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="isHalfDayEnd" name="isHalfDayEnd">
+                                                <input class="form-check-input" type="checkbox" id="isHalfDayEnd"
+                                                    name="isHalfDayEnd">
                                                 <label class="form-check-label" for="isHalfDayEnd">
                                                     Last day is half day
                                                 </label>
@@ -139,7 +88,8 @@
                                         </div>
                                     </div>
                                     <div class="mt-2" id="halfDaySessionSection" style="display: none;">
-                                        <select class="form-select emp-form-control" id="halfDaySession" name="halfDaySession">
+                                        <select class="form-select emp-form-control" id="halfDaySession"
+                                            name="halfDaySession">
                                             <option value="">Select Session</option>
                                             <option value="FIRST_HALF">First Half (Morning)</option>
                                             <option value="SECOND_HALF">Second Half (Afternoon)</option>
@@ -148,45 +98,40 @@
                                 </div>
 
                                 <!-- Leave Days Summary -->
-                                <div class="mb-4 p-3 rounded" style="background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(14, 165, 233, 0.2);">
+                                <div class="mb-4 p-3 rounded"
+                                    style="background: rgba(14, 165, 233, 0.08); border: 1px solid rgba(14, 165, 233, 0.2);">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <span style="font-weight: 600; color: #0f172a;">
-                                            <i class="fa-solid fa-calculator me-2" style="color: var(--emp-primary);"></i>
+                                            <i class="fa-solid fa-calculator me-2"
+                                                style="color: var(--emp-primary);"></i>
                                             Total Leave Days:
                                         </span>
-                                        <span id="totalDays" style="font-size: 1.5rem; font-weight: 800; color: var(--emp-primary);">0</span>
+                                        <span id="totalDays"
+                                            style="font-size: 1.5rem; font-weight: 800; color: var(--emp-primary);">0</span>
                                     </div>
                                 </div>
 
                                 <!-- Reason -->
                                 <div class="mb-4">
                                     <label for="reason" class="emp-form-label">
-                                        <i class="fa-solid fa-comment me-1"></i> Reason <span class="text-danger">*</span>
+                                        <i class="fa-solid fa-comment me-1"></i> Reason <span
+                                            class="text-danger">*</span>
                                     </label>
-                                    <textarea 
-                                        class="form-control emp-form-control" 
-                                        id="reason" 
-                                        name="reason" 
-                                        rows="3"
+                                    <textarea class="form-control emp-form-control" id="reason" name="reason" rows="3"
                                         placeholder="Please provide a reason for your leave request..."
-                                        required
-                                    ></textarea>
+                                        required></textarea>
                                 </div>
 
                                 <!-- Attachment (Optional unless leave type requires it) -->
                                 <div class="mb-4" id="attachmentSection">
                                     <label for="attachment" class="emp-form-label">
-                                        <i class="fa-solid fa-paperclip me-1"></i> Attachment 
-                                        <span id="attachmentRequired" class="text-danger" style="display: none;">*</span>
+                                        <i class="fa-solid fa-paperclip me-1"></i> Attachment
+                                        <span id="attachmentRequired" class="text-danger"
+                                            style="display: none;">*</span>
                                         <span id="attachmentOptional" class="text-muted">(Optional)</span>
                                     </label>
-                                    <input 
-                                        type="file" 
-                                        class="form-control emp-form-control" 
-                                        id="attachmentFile" 
-                                        name="attachmentFile"
-                                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                                    >
+                                    <input type="file" class="form-control emp-form-control" id="attachmentFile"
+                                        name="attachmentFile" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
                                     <small class="text-muted">Accepted formats: PDF, JPG, PNG, DOC (Max 5MB)</small>
                                 </div>
 
@@ -220,7 +165,8 @@
                         </div>
                         <div class="emp-card-body">
                             {{#each balances}}
-                            <div class="d-flex justify-content-between align-items-center mb-3 pb-3 {{#unless @last}}border-bottom{{/unless}}">
+                            <div
+                                class="d-flex justify-content-between align-items-center mb-3 pb-3 {{#unless @last}}border-bottom{{/unless}}">
                                 <div>
                                     <div style="font-weight: 600; color: {{this.color}};">{{this.leaveTypeName}}</div>
                                     <small class="text-muted">Used: {{this.used}} / {{this.allocated}}</small>
@@ -257,7 +203,7 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const form = document.getElementById('leaveForm');
         const leaveTypeSelect = document.getElementById('leaveTypeId');
         const startDateInput = document.getElementById('startDate');
@@ -279,13 +225,13 @@
         const attachmentOptionalLabel = document.getElementById('attachmentOptional');
 
         // Update form based on leave type selection
-        leaveTypeSelect.addEventListener('change', function() {
+        leaveTypeSelect.addEventListener('change', function () {
             const selected = this.options[this.selectedIndex];
             const allowHalfDay = selected.dataset.allowHalfDay === 'true';
             const requiresAttachment = selected.dataset.requiresAttachment === 'true';
 
             halfDaySection.style.display = allowHalfDay ? 'block' : 'none';
-            
+
             // Update attachment field - always visible but only required for certain leave types (like Sick Leave)
             if (requiresAttachment) {
                 attachmentRequired.style.display = 'inline';
@@ -301,7 +247,7 @@
         });
 
         // Update end date min when start date changes
-        startDateInput.addEventListener('change', function() {
+        startDateInput.addEventListener('change', function () {
             endDateInput.min = this.value;
             if (endDateInput.value && endDateInput.value < this.value) {
                 endDateInput.value = this.value;
@@ -310,11 +256,11 @@
         });
 
         endDateInput.addEventListener('change', calculateDays);
-        isHalfDayStart.addEventListener('change', function() {
+        isHalfDayStart.addEventListener('change', function () {
             calculateDays();
             updateHalfDaySession();
         });
-        isHalfDayEnd.addEventListener('change', function() {
+        isHalfDayEnd.addEventListener('change', function () {
             calculateDays();
             updateHalfDaySession();
         });
@@ -325,7 +271,7 @@
             const end = endDateInput.value;
             const isSingleDay = start && end && start === end;
             const isHalfDay = isHalfDayStart.checked || isHalfDayEnd.checked;
-            
+
             halfDaySessionSection.style.display = (isSingleDay && isHalfDay) ? 'block' : 'none';
         }
 
@@ -340,7 +286,7 @@
 
             const startDate = new Date(start);
             const endDate = new Date(end);
-            
+
             if (startDate > endDate) {
                 totalDaysDisplay.textContent = '0';
                 return;
@@ -356,7 +302,7 @@
         }
 
         // Form submission
-        form.addEventListener('submit', async function(e) {
+        form.addEventListener('submit', async function (e) {
             e.preventDefault();
 
             const submitBtn = document.getElementById('submitBtn');
@@ -424,7 +370,7 @@
         function showAlert(message, type) {
             const alertClass = type === 'success' ? 'emp-alert-success' : 'emp-alert-danger';
             const icon = type === 'success' ? 'fa-check-circle' : 'fa-circle-exclamation';
-            
+
             document.getElementById('alertContainer').innerHTML = `
                 <div class="emp-alert ${alertClass} mb-4">
                     <i class="fa-solid ${icon} me-2"></i>

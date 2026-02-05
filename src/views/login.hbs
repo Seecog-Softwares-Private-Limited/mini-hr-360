@@ -117,6 +117,11 @@
       // Store user + token
       if (user) localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('accessToken', tokens.accessToken);
+      
+      // Store user role for role-based access
+      if (user && user.role) {
+        localStorage.setItem('userRole', user.role);
+      }
 
       // Success + redirect
       showAlert('Login successful! Redirecting...', 'success');

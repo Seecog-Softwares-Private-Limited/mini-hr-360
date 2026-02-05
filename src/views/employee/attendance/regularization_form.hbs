@@ -1,0 +1,312 @@
+<div class="container-fluid">
+    <div class="row">
+        {{> employee-sidebar employee=employee active='attendance_request'}}
+
+        <!-- Main Content -->
+        <div class="col-md-10 emp-main">
+            <div class="emp-page-header">
+                <h1 class="emp-page-title">Request Regularization</h1>
+                <p class="text-muted mt-1">Submit a request to regularize an attendance entry</p>
+            </div>
+
+            <!-- Alert Messages -->
+            <div id="alertContainer" class="mb-4"></div>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="emp-card">
+                        <div class="emp-card-header">
+                            <h5 class="emp-card-title">
+                                <i class="fa-solid fa-pen-fancy" style="color: var(--emp-primary);"></i>
+                                Regularization Form
+                            </h5>
+                        </div>
+                        <div class="emp-card-body">
+                            <form id="regularizationForm">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Date <span class="text-danger">*</span></label>
+                                        <input type="date" id="dateInput" name="date" class="form-control" required />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Shift <span class="text-danger">*</span></label>
+                                        <select id="shiftSelect" name="shift" class="form-select">
+                                            <option value="">Select shift</option>
+                                            {{#each shifts}}
+                                            <option value="{{this.id}}">{{this.name}} ({{this.startTime}} - {{this.endTime}})</option>
+                                            {{/each}}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Issue Type <span class="text-danger">*</span></label>
+                                        <select id="issueTypeSelect" name="type" class="form-select" required>
+                                            <option value="">Select issue type</option>
+                                            <!-- ENUM mapping: value must match backend AttendanceRegularization.type ENUM -->
+                                            <option value="MISSED_PUNCH">Missed Check-in / Check-out</option>
+                                            <option value="LATE">Late Arrival</option>
+                                            <option value="EARLY_OUT">Early Departure</option>
+                                            <option value="ABSENT">Absent</option>
+                                            <option value="WRONG_SHIFT">Wrong Shift</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Duration <span class="text-danger">*</span></label>
+                                        <input type="text" id="durationInput" name="duration" class="form-control" placeholder="e.g., 2 hours" />
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">Reason <span class="text-danger">*</span></label>
+                                        <textarea id="reasonInput" name="reason" class="form-control" rows="5" placeholder="Please provide a detailed explanation..." required></textarea>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">Supporting Documents (Optional)</label>
+                                        <div id="uploadArea" style="border: 2px dashed #cbd5e1; border-radius: 8px; padding: 20px; text-align: center; background: #f8fafc; cursor: pointer;" onclick="document.getElementById('fileInput').click();">
+                                            <input type="file" id="fileInput" name="file" style="display: none;" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
+                                            <div style="font-size: 28px; color: var(--emp-primary); margin-bottom: 8px;">
+                                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                            </div>
+                                            <div style="color: #475569; font-weight: 500;">Drag & drop files here</div>
+                                            <div style="color: #94a3b8; font-size: 13px; margin-top: 4px;">or click to browse (Max 5MB)</div>
+                                            <div id="fileName" style="color: #22c55e; font-size: 12px; margin-top: 8px; display: none;"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 pt-2">
+                                        <div style="display: flex; gap: 8px;">
+                                            <button type="submit" id="submitBtn" class="btn emp-btn-primary">
+                                                <i class="fa-solid fa-paper-plane me-2"></i>Submit Request
+                                            </button>
+                                            <a href="/employee/attendance/regularizations" class="btn emp-btn-secondary">
+                                                Back to Regularizations
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="emp-card mb-3">
+                        <div class="emp-card-header">
+                            <h5 class="emp-card-title">
+                                <i class="fa-solid fa-info-circle" style="color: var(--emp-primary);"></i>
+                                Need Help?
+                            </h5>
+                        </div>
+                        <div class="emp-card-body">
+                            <div style="font-size: 13px; color: #475569; line-height: 1.6;">
+                                <p><strong>How to regularize:</strong></p>
+                                <ul style="margin: 0; padding-left: 20px;">
+                                    <li>Select the date and shift</li>
+                                    <li>Specify the issue type</li>
+                                    <li>Explain the reason</li>
+                                    <li>Upload supporting documents if available</li>
+                                    <li>Submit for approval</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="emp-card">
+                        <div class="emp-card-header">
+                            <h5 class="emp-card-title">
+                                <i class="fa-solid fa-clock-history" style="color: var(--emp-primary);"></i>
+                                Recent Requests
+                            </h5>
+                        </div>
+                        <div class="emp-card-body">
+                            <div id="recentRequestsContainer">
+                                <div style="text-align: center; color: #94a3b8; padding: 20px;">
+                                    <i class="fa-solid fa-spinner fa-spin"></i> Loading...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showAlert(message, type = 'info') {
+    const alertContainer = document.getElementById('alertContainer');
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show`;
+    alert.role = 'alert';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    alertContainer.appendChild(alert);
+    setTimeout(() => alert.remove(), 5000);
+}
+
+// File upload handling
+let selectedFile = null;
+const fileInput = document.getElementById('fileInput');
+const uploadArea = document.getElementById('uploadArea');
+
+fileInput.addEventListener('change', function(e) {
+    if (this.files.length > 0) {
+        const file = this.files[0];
+        if (file.size > 5 * 1024 * 1024) {
+            showAlert('File size must be less than 5MB', 'warning');
+            return;
+        }
+        selectedFile = file;
+        document.getElementById('fileName').textContent = `Selected: ${file.name}`;
+        document.getElementById('fileName').style.display = 'block';
+    }
+});
+
+// Drag and drop
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.style.background = '#e0e7ff';
+});
+
+uploadArea.addEventListener('dragleave', () => {
+    uploadArea.style.background = '#f8fafc';
+});
+
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.style.background = '#f8fafc';
+    if (e.dataTransfer.files.length > 0) {
+        const file = e.dataTransfer.files[0];
+        if (file.size > 5 * 1024 * 1024) {
+            showAlert('File size must be less than 5MB', 'warning');
+            return;
+        }
+        selectedFile = file;
+        document.getElementById('fileName').textContent = `Selected: ${file.name}`;
+        document.getElementById('fileName').style.display = 'block';
+    }
+});
+
+// Form submission using FormData API
+document.getElementById('regularizationForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const form = document.getElementById('regularizationForm');
+    const date = form.elements['date'].value;
+    const type = form.elements['type'].value;
+    const reason = form.elements['reason'].value;
+    
+    // Validate required fields
+    if (!date || !type || !reason) {
+        showAlert('Please fill in all required fields: Date, Issue Type, and Reason', 'warning');
+        return;
+    }
+    
+    try {
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Submitting...';
+        
+        // Create FormData from form element - this automatically includes all named fields
+        const formData = new FormData(form);
+        
+        // Backend expects 'correction' field (optional, for punch time adjustments)
+        if (!formData.has('correction')) {
+            formData.append('correction', JSON.stringify({
+                punchIn: null,
+                punchOut: null
+            }));
+        }
+        
+        // Debug: Log FormData entries to verify payload
+        console.log('FormData entries being sent:');
+        for (let [key, value] of formData.entries()) {
+            console.log(`  ${key}: ${value instanceof File ? `File(${value.name})` : value}`);
+        }
+        
+        // Send request
+        const response = await fetch('/employee/attendance/regularization', {
+            method: 'POST',
+            body: formData,
+            credentials: 'include'
+            // IMPORTANT: Do NOT set Content-Type header when using FormData
+            // Browser will automatically set it to multipart/form-data with proper boundary
+        });
+        
+        // Handle response
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+            console.error('Server response error:', errorData);
+            showAlert(`Server error: ${errorData.message || response.statusText}`, 'danger');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane me-2"></i>Submit Request';
+            return;
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showAlert('Regularization request submitted successfully!', 'success');
+            form.reset();
+            document.getElementById('fileName').style.display = 'none';
+            
+            // Redirect after showing success message
+            setTimeout(() => {
+                window.location.href = '/employee/attendance/regularizations';
+            }, 1500);
+        } else {
+            showAlert(data.message || 'Failed to submit regularization request', 'danger');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane me-2"></i>Submit Request';
+        }
+    } catch (error) {
+        console.error('Form submission error:', error);
+        showAlert(`Error submitting request: ${error.message}`, 'danger');
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane me-2"></i>Submit Request';
+    }
+});
+
+// Load and display recent requests
+async function loadRecentRequests() {
+    try {
+        const response = await fetch('/employee/attendance/api/regularizations', {
+            credentials: 'include'
+        });
+        const data = await response.json();
+        
+        if (data.success && Array.isArray(data.regularizations)) {
+            const recentRequestsContainer = document.getElementById('recentRequestsContainer');
+            const requests = data.regularizations.slice(0, 3);
+            
+            if (requests.length === 0) {
+                recentRequestsContainer.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 20px;">No requests yet</div>';
+                return;
+            }
+            
+            recentRequestsContainer.innerHTML = requests.map(req => {
+                const date = new Date(req.date).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' });
+                const badgeClass = req.status === 'PENDING' ? 'emp-badge-pending' : 
+                                 req.status === 'APPROVED' ? 'emp-badge-approved' : 'emp-badge-rejected';
+                const badgeLabel = req.status === 'PENDING' ? 'Pending' :
+                                 req.status === 'APPROVED' ? 'Approved' : 'Rejected';
+                
+                return `
+                    <div style="padding: 12px 0; border-bottom: 1px solid #e2e8f0;">
+                        <div style="font-size: 13px; font-weight: 600; color: #1e293b;">${date}</div>
+                        <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">${req.type}</div>
+                        <span class="emp-badge ${badgeClass}" style="font-size: 11px; margin-top: 6px; display: inline-block;">${badgeLabel}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+    } catch (error) {
+        console.error('Error loading recent requests:', error);
+    }
+}
+
+// Load recent requests on page load
+loadRecentRequests();
+
+// Auto-refresh recent requests every 10 seconds for real-time updates
+setInterval(loadRecentRequests, 10000);
+</script>

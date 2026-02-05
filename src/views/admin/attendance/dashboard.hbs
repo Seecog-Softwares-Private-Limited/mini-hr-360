@@ -1,0 +1,169 @@
+{{!-- Admin Attendance Dashboard (Refined) --}}
+ 
+<div class="container-fluid">
+	<div class="row">
+		<div class="col-md-3 col-lg-2 px-0">
+			{{> sidebar active="attendance-dashboard" activeGroup="attendance"}}
+		</div>
+
+		<div class="col-md-9 col-lg-10">
+			<div class="main-content p-4">
+				<nav aria-label="breadcrumb">
+					<ol class="breadcrumb mb-3 bg-transparent p-0">
+						<li class="breadcrumb-item"><a href="/admin">Admin</a></li>
+						<li class="breadcrumb-item active" aria-current="page">Attendance</li>
+					</ol>
+				</nav>
+
+				<div class="d-flex align-items-center justify-content-between mb-4">
+					<h2 class="mb-0">Attendance Dashboard</h2>
+					<div class="d-flex gap-2">
+						<button class="btn btn-outline-secondary" onclick="exportAttendance()"><i class="fa-solid fa-file-export me-1"></i> Export</button>
+						<a href="/admin/attendance/reports" class="btn btn-primary">Reports</a>
+					</div>
+				</div>
+
+				<!-- KPI & Chart Row -->
+				<div class="row gy-3 mb-4">
+					<div class="col-md-8">
+						<div class="card h-100">
+							<div class="card-body">
+								<div class="d-flex justify-content-between align-items-start mb-3">
+									<h5 class="card-title mb-0">Today Overview</h5>
+									<small class="text-muted">Updated: <span id="lastUpdatedTime">just now</span></small>
+								</div>
+								<div class="row">
+									<div class="col-md-3">
+										<div class="kpi-card p-3 text-center">
+											<div class="h2 text-primary" data-kpi="present">-</div>
+											<div class="text-muted small">Present</div>
+										</div>
+									</div>
+									<div class="col-md-3">
+										<div class="kpi-card p-3 text-center">
+											<div class="h2 text-danger" data-kpi="absent">-</div>
+											<div class="text-muted small">Absent</div>
+										</div>
+									</div>
+									<div class="col-md-3">
+										<div class="kpi-card p-3 text-center">
+											<div class="h2 text-warning" data-kpi="late">-</div>
+											<div class="text-muted small">Late</div>
+										</div>
+									</div>
+									<div class="col-md-3">
+										<div class="kpi-card p-3 text-center">
+											<div class="h2 text-success" data-kpi="onLeave">-</div>
+											<div class="text-muted small">On Leave</div>
+										</div>
+									</div>
+								</div>
+
+								<hr />
+								<canvas id="attendanceTrendChart" height="120" aria-label="Attendance trend chart"></canvas>
+								<small class="text-muted">Trend for last 30 days</small>
+							</div>
+						</div>
+					</div>
+
+					<div class="col-md-4">
+						<div class="card h-100">
+							<div class="card-body">
+								<h5 class="card-title">Quick Actions</h5>
+								<div class="d-grid gap-2">
+									<button class="btn btn-outline-primary" onclick="openAssignModal()"><i class="fa-solid fa-user-tag me-2"></i> Assign Shift</button>
+									<button class="btn btn-outline-warning" onclick="openRegularizeModal()"><i class="fa-solid fa-pen me-2"></i> Regularize</button>
+									<button class="btn btn-outline-danger" onclick="openLockModal()"><i class="fa-solid fa-lock me-2"></i> Lock Day</button>
+								</div>
+							</div>
+						</div>
+						<div class="card mt-3">
+							<div class="card-body">
+								<h6 class="mb-2">Upcoming Holidays</h6>
+								<ul class="list-unstyled mb-0">
+									{{#each upcomingHolidays}}
+									<li><strong>{{this.date}}</strong> — {{this.name}}</li>
+									{{/each}}
+								</ul>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Today's Attendance Details -->
+				<div class="card shadow-sm">
+					<div class="card-header bg-gradient pb-3 pt-3 border-0">
+						<div class="d-flex justify-content-between align-items-center">
+							<div>
+								<h5 class="mb-0"><i class="fa-solid fa-users-check me-2 text-primary"></i>Today's Attendance Details</h5>
+								<small class="text-muted d-block mt-1"><i class="fa-solid fa-calendar-day me-1"></i>Updated every 5 seconds</small>
+							</div>
+							<div class="d-flex align-items-center gap-2">
+								<input type="text" id="attendanceSearch" class="form-control form-control-sm" placeholder="Search name, ID, dept..." oninput="filterAttendance()" style="width: 250px;">
+								<select id="statusFilter" class="form-select form-select-sm" onchange="filterAttendance()" style="width: 140px;">
+									<option value="">All Status</option>
+									<option value="PRESENT">✓ Present</option>
+									<option value="ABSENT">✗ Absent</option>
+									<option value="LATE">⏰ Late</option>
+									<option value="LEAVE">🏖️ On Leave</option>
+									<option value="HALF_DAY">⏸️ Half Day</option>
+								</select>
+								<span class="badge bg-secondary" id="recordCount">0 records</span>
+							</div>
+						</div>
+					</div>
+					<div class="card-body p-0">
+						<div class="table-responsive">
+							<table class="table table-hover table-striped mb-0" style="font-size: 0.95rem;">
+								<thead class="table-light sticky-top">
+									<tr>
+										<th style="width: 50px;">#</th>
+										<th style="width: 220px;">
+											<i class="fa-solid fa-user me-1 text-primary"></i>Employee
+										</th>
+										<th style="width: 140px;">
+											<i class="fa-solid fa-building me-1 text-info"></i>Department
+										</th>
+										<th style="width: 120px;">
+											<i class="fa-solid fa-briefcase me-1 text-secondary"></i>Designation
+										</th>
+										<th style="width: 90px;" class="text-center">
+											<i class="fa-solid fa-hourglass me-1 text-warning"></i>Status
+										</th>
+										<th style="width: 100px;" class="text-center">
+											<i class="fa-solid fa-arrow-right-to-bracket me-1 text-success"></i>Check-in
+										</th>
+										<th style="width: 100px;" class="text-center">
+											<i class="fa-solid fa-arrow-right-from-bracket me-1 text-danger"></i>Check-out
+										</th>
+										<th style="width: 80px;" class="text-center">
+											<i class="fa-solid fa-clock me-1 text-primary"></i>Hours
+										</th>
+										<th style="width: 110px;">
+											<i class="fa-solid fa-business-time me-1 text-muted"></i>Shift
+										</th>
+										<th style="width: 120px;" class="text-center">Actions</th>
+									</tr>
+								</thead>
+								<tbody id="attendanceTableBody">
+									<tr>
+										<td colspan="10" class="text-center text-muted py-4">
+											<i class="fa-solid fa-spinner fa-spin me-2"></i>Loading attendance data...
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+					<div class="card-footer bg-light text-muted small py-2">
+						<i class="fa-solid fa-info-circle me-1"></i>Last refreshed: <span id="refreshTime">now</span>
+					</div>
+				</div>
+
+				{{> attendance-modals }}
+				<script src="/assets/js/admin-attendance.js"></script>
+			</div>
+		</div>
+	</div>
+</div>
+ 

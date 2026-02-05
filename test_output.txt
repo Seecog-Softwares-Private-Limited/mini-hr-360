@@ -1,0 +1,8 @@
+﻿DB_HOST :  localhost
+[PayrollRunService] Initializing. Models availability: { PayrollRun: true, PayrollRunItem: true, Employee: true }
+[PayrollRunService] getRegister called for runId: 1
+ERROR: Payroll run not found
+STACK: Error: Payroll run not found
+    at Module.getRegister (file:///C:/Users/nikhi/OneDrive/Documents/GitHub/mini-hr-360/src/services/payroll/payrollRun.service.js:61:21)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async file:///C:/Users/nikhi/OneDrive/Documents/GitHub/mini-hr-360/test_register.js:3:18

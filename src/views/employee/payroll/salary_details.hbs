@@ -1,0 +1,397 @@
+{{!-- Employee Salary Details --}}
+<div class="container-fluid">
+	<div class="row">
+		{{> employee-sidebar employee=employee active='payroll_salary_details'}}
+
+		<!-- Main Content -->
+		<div class="col-md-10 emp-main">
+			<div class="emp-page-header">
+				<h1 class="emp-page-title">Salary Details</h1>
+				<p class="text-muted mt-1">View your current salary structure and breakdown</p>
+			</div>
+
+			<!-- Content Container -->
+			<div id="salaryDetailsContainer">
+				<!-- Loading State -->
+				<div class="emp-card" id="loadingState">
+					<div class="emp-card-body text-center py-5">
+						<div class="spinner-border text-primary mb-3" role="status">
+							<span class="visually-hidden">Loading...</span>
+						</div>
+						<p class="text-muted mb-0">Loading your salary details...</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<style>
+.salary-overview-card {
+	background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+	color: white;
+	border-radius: 12px;
+	padding: 24px;
+	margin-bottom: 24px;
+}
+
+.salary-stat-box {
+	padding: 16px;
+	border-radius: 10px;
+	text-align: center;
+	transition: all 0.2s ease;
+}
+
+.salary-stat-box:hover {
+	transform: translateY(-2px);
+}
+
+.stat-monthly {
+	background: linear-gradient(135deg, #f0f7ff 0%, #e0e7ff 100%);
+	border: 1px solid #c7d2fe;
+}
+
+.stat-annual {
+	background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+	border: 1px solid #c4b5fd;
+}
+
+.stat-gross {
+	background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+	border: 1px solid #86efac;
+}
+
+.stat-net {
+	background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+	border: 1px solid #fcd34d;
+}
+
+.component-table {
+	border-radius: 8px;
+	overflow: hidden;
+}
+
+.component-table th {
+	background: #f8fafc;
+	font-weight: 600;
+	font-size: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	color: #64748b;
+	padding: 12px 16px;
+	border-bottom: 2px solid #e2e8f0;
+}
+
+.component-table td {
+	padding: 14px 16px;
+	vertical-align: middle;
+	border-bottom: 1px solid #f1f5f9;
+}
+
+.component-table tbody tr:hover {
+	background: #f8fafc;
+}
+
+.component-table tfoot td {
+	background: #f8fafc;
+	font-weight: 700;
+	border-top: 2px solid #e2e8f0;
+}
+
+.earnings-header {
+	background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+	color: #166534;
+	padding: 12px 16px;
+	border-radius: 8px 8px 0 0;
+	font-weight: 700;
+}
+
+.deductions-header {
+	background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+	color: #991b1b;
+	padding: 12px 16px;
+	border-radius: 8px 8px 0 0;
+	font-weight: 700;
+}
+
+.summary-card {
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	border-radius: 10px;
+	padding: 16px;
+	height: 100%;
+}
+
+.summary-card .value {
+	font-size: 20px;
+	font-weight: 700;
+	color: #1e293b;
+}
+
+.summary-card .percentage {
+	font-size: 12px;
+	color: #64748b;
+	margin-top: 4px;
+}
+
+.taxable-badge {
+	padding: 3px 8px;
+	border-radius: 12px;
+	font-size: 11px;
+	font-weight: 600;
+}
+
+.taxable-yes {
+	background: #fef3c7;
+	color: #92400e;
+}
+
+.taxable-no {
+	background: #dcfce7;
+	color: #166534;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+	loadSalaryDetails();
+});
+
+async function loadSalaryDetails() {
+	const container = document.getElementById('salaryDetailsContainer');
+	
+	try {
+		const response = await fetch('/employee/payroll/api/salary-details');
+		const data = await response.json();
+		
+		if (data.success) {
+			if (data.salaryDetails) {
+				renderSalaryDetails(data.salaryDetails);
+			} else {
+				renderEmptyState();
+			}
+		} else {
+			showError('Failed to load salary details');
+		}
+	} catch (error) {
+		console.error('Error loading salary details:', error);
+		showError('Error connecting to server');
+	}
+}
+
+function renderSalaryDetails(details) {
+	const container = document.getElementById('salaryDetailsContainer');
+	
+	const html = `
+		<!-- Structure Overview -->
+		<div class="salary-overview-card">
+			<div class="d-flex justify-content-between align-items-start mb-4">
+				<div>
+					<h4 class="mb-1"><i class="fa-solid fa-chart-pie me-2"></i>${details.structure.name}</h4>
+					<p class="mb-0" style="opacity: 0.9;"><i class="fa-regular fa-calendar me-1"></i>Effective from ${details.structure.effectiveDate}</p>
+				</div>
+				<span style="background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 20px; font-size: 12px;">
+					<i class="fa-solid fa-check-circle me-1"></i>Active
+				</span>
+			</div>
+			<p style="opacity: 0.85; margin-bottom: 0;">${details.structure.description}</p>
+		</div>
+
+		<!-- Stats Row -->
+		<div class="row g-3 mb-4">
+			<div class="col-md-3">
+				<div class="salary-stat-box stat-monthly">
+					<small class="text-muted d-block mb-1">Monthly CTC</small>
+					<div style="font-size: 22px; font-weight: 700; color: #4f46e5;">₹${details.structure.monthlyCTC}</div>
+				</div>
+			</div>
+			<div class="col-md-3">
+				<div class="salary-stat-box stat-annual">
+					<small class="text-muted d-block mb-1">Annual CTC</small>
+					<div style="font-size: 22px; font-weight: 700; color: #7c3aed;">₹${details.structure.annualCTC}</div>
+				</div>
+			</div>
+			<div class="col-md-3">
+				<div class="salary-stat-box stat-gross">
+					<small class="text-muted d-block mb-1">Gross Pay</small>
+					<div style="font-size: 22px; font-weight: 700; color: #16a34a;">₹${details.structure.grossPay}</div>
+				</div>
+			</div>
+			<div class="col-md-3">
+				<div class="salary-stat-box stat-net">
+					<small class="text-muted d-block mb-1">Net Pay (In-Hand)</small>
+					<div style="font-size: 22px; font-weight: 700; color: #b45309;">₹${details.structure.netPay}</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Earnings Table -->
+		<div class="emp-card mb-4">
+			<div class="earnings-header d-flex align-items-center">
+				<i class="fa-solid fa-arrow-trend-up me-2"></i>
+				<span>Monthly Earnings</span>
+			</div>
+			<div class="emp-card-body p-0">
+				<table class="table component-table mb-0">
+					<thead>
+						<tr>
+							<th style="width: 50%">Component</th>
+							<th style="width: 30%">Amount</th>
+							<th style="width: 20%">Taxable</th>
+						</tr>
+					</thead>
+					<tbody>
+						${details.earnings && details.earnings.length > 0 ? details.earnings.map(e => `
+							<tr>
+								<td>
+									<strong>${e.name}</strong>
+									${e.description ? `<small class="d-block text-muted">${e.description}</small>` : ''}
+								</td>
+								<td><strong style="color: #16a34a;">₹${e.amount}</strong></td>
+								<td>
+									<span class="taxable-badge ${e.taxable ? 'taxable-yes' : 'taxable-no'}">
+										${e.taxable ? 'Yes' : 'No'}
+									</span>
+								</td>
+							</tr>
+						`).join('') : `
+							<tr><td colspan="3" class="text-center text-muted py-3">No earnings components configured</td></tr>
+						`}
+					</tbody>
+					<tfoot>
+						<tr>
+							<td><strong>Total Earnings</strong></td>
+							<td colspan="2"><strong style="color: #16a34a; font-size: 16px;">₹${details.totalEarnings}</strong></td>
+						</tr>
+					</tfoot>
+				</table>
+			</div>
+		</div>
+
+		<!-- Deductions Table -->
+		<div class="emp-card mb-4">
+			<div class="deductions-header d-flex align-items-center">
+				<i class="fa-solid fa-arrow-trend-down me-2"></i>
+				<span>Monthly Deductions</span>
+			</div>
+			<div class="emp-card-body p-0">
+				<table class="table component-table mb-0">
+					<thead>
+						<tr>
+							<th style="width: 50%">Component</th>
+							<th style="width: 30%">Amount</th>
+							<th style="width: 20%">Note</th>
+						</tr>
+					</thead>
+					<tbody>
+						${details.deductions && details.deductions.length > 0 ? details.deductions.map(d => `
+							<tr>
+								<td>
+									<strong>${d.name}</strong>
+									${d.description ? `<small class="d-block text-muted">${d.description}</small>` : ''}
+								</td>
+								<td><strong style="color: #dc2626;">₹${d.amount}</strong></td>
+								<td><small class="text-muted">${d.note || '-'}</small></td>
+							</tr>
+						`).join('') : `
+							<tr><td colspan="3" class="text-center text-muted py-3">No deductions configured</td></tr>
+						`}
+					</tbody>
+					<tfoot>
+						<tr>
+							<td><strong>Total Deductions</strong></td>
+							<td colspan="2"><strong style="color: #dc2626; font-size: 16px;">₹${details.totalDeductions}</strong></td>
+						</tr>
+					</tfoot>
+				</table>
+			</div>
+		</div>
+
+		<!-- Summary Cards -->
+		<div class="emp-card mb-4">
+			<div class="emp-card-header">
+				<h5 class="emp-card-title mb-0">
+					<i class="fa-solid fa-calculator me-2" style="color: var(--emp-primary);"></i>
+					Salary Breakdown Summary
+				</h5>
+			</div>
+			<div class="emp-card-body">
+				<div class="row g-3">
+					<div class="col-md-6 col-lg-3">
+						<div class="summary-card">
+							<small class="text-muted d-block mb-2">Basic Salary</small>
+							<div class="value">₹${details.basic}</div>
+							<div class="percentage">${details.basicPercentage}% of CTC</div>
+						</div>
+					</div>
+					<div class="col-md-6 col-lg-3">
+						<div class="summary-card">
+							<small class="text-muted d-block mb-2">Total Allowances</small>
+							<div class="value">₹${details.allowances}</div>
+							<div class="percentage">${details.allowancesPercentage}% of CTC</div>
+						</div>
+					</div>
+					<div class="col-md-6 col-lg-3">
+						<div class="summary-card">
+							<small class="text-muted d-block mb-2">Statutory Deductions</small>
+							<div class="value">₹${details.statutoryDeductions}</div>
+							<div class="percentage">PF, ESI, PT, TDS</div>
+						</div>
+					</div>
+					<div class="col-md-6 col-lg-3">
+						<div class="summary-card" style="background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); color: white;">
+							<small class="d-block mb-2" style="opacity: 0.9;">Take-Home Pay</small>
+							<div class="value" style="color: white;">₹${details.takeHome}</div>
+							<div class="percentage" style="color: rgba(255,255,255,0.8);">After all deductions</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Last Revision Info -->
+		<div class="alert" style="background: #f0f7ff; border: 1px solid #c7d2fe; color: #4f46e5;">
+			<i class="fa-solid fa-clock me-2"></i>
+			<strong>Last Revision:</strong> ${details.lastRevision}
+		</div>
+	`;
+	
+	container.innerHTML = html;
+}
+
+function renderEmptyState() {
+	const container = document.getElementById('salaryDetailsContainer');
+	container.innerHTML = `
+		<div class="emp-card">
+			<div class="emp-card-body text-center py-5">
+				<div class="mb-4">
+					<div style="width: 80px; height: 80px; margin: 0 auto; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+						<i class="fa-solid fa-file-circle-question" style="font-size: 32px; color: #b45309;"></i>
+					</div>
+				</div>
+				<h5 class="mb-2">No Salary Structure Assigned</h5>
+				<p class="text-muted mb-3">A salary structure hasn't been assigned to you yet.<br>Please contact HR for more information.</p>
+				<a href="/employee/payroll/queries" class="btn btn-primary btn-sm">
+					<i class="fa-solid fa-question-circle me-1"></i>Raise a Query
+				</a>
+			</div>
+		</div>
+	`;
+}
+
+function showError(message) {
+	const container = document.getElementById('salaryDetailsContainer');
+	container.innerHTML = `
+		<div class="emp-card">
+			<div class="emp-card-body text-center py-5">
+				<i class="fa-solid fa-exclamation-triangle text-warning" style="font-size: 48px; display: block; margin-bottom: 15px;"></i>
+				<h6>Error Loading Salary Details</h6>
+				<p class="text-muted mb-3">${message}</p>
+				<button class="btn btn-primary btn-sm" onclick="loadSalaryDetails()">
+					<i class="fa-solid fa-refresh me-1"></i>Try Again
+				</button>
+			</div>
+		</div>
+	`;
+}
+</script>

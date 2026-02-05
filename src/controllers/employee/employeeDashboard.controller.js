@@ -3,6 +3,7 @@ import { Op } from 'sequelize';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { LeaveRequest, LeaveType, Employee, Business } from '../../models/index.js';
 import { getLeaveStats, getAllLeaveBalances } from '../../services/leave.service.js';
+import { getEffectiveAssignment } from '../../services/attendance.service.js';
 
 /**
  * GET /employee/dashboard - Render employee dashboard
@@ -52,6 +53,9 @@ export const renderEmployeeDashboard = asyncHandler(async (req, res) => {
       empDateOfJoining: employee.empDateOfJoining,
       empPhone: employee.empPhone,
       role: employee.role,
+      shiftName: null,
+      shiftStartTime: null,
+      shiftEndTime: null,
     },
     business: business ? {
       id: business.id,
@@ -81,6 +85,19 @@ export const renderEmployeeDashboard = asyncHandler(async (req, res) => {
       totalDays: r.totalDays,
     })),
   };
+
+  // Attach today's effective shift for the logged-in employee
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const assignment = await getEffectiveAssignment({ businessId, employeeId: employee.id, date: today });
+    if (assignment?.shift) {
+      dashboardData.employee.shiftName = assignment.shift.name;
+      dashboardData.employee.shiftStartTime = assignment.shift.startTime;
+      dashboardData.employee.shiftEndTime = assignment.shift.endTime;
+    }
+  } catch (e) {
+    // ignore
+  }
 
   res.render('employee/dashboard', {
     title: 'Employee Dashboard',

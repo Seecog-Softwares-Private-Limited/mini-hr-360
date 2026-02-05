@@ -1,0 +1,282 @@
+{{!-- Employee My Payslips --}}
+<div class="container-fluid">
+	<div class="row">
+		{{> employee-sidebar employee=employee active='payroll_payslips'}}
+
+		<!-- Main Content -->
+		<div class="col-md-10 emp-main">
+			<div class="emp-page-header">
+				<h1 class="emp-page-title">My Payslips</h1>
+				<p class="text-muted mt-1">View and download your payslips</p>
+			</div>
+
+			<!-- Year Filter -->
+			<div class="emp-card mb-4">
+				<div class="emp-card-body">
+					<div class="d-flex align-items-center gap-3">
+						<label class="form-label mb-0 fw-600">Filter by Year:</label>
+						<select class="form-select form-select-sm" style="width: 150px;" id="yearFilter" onchange="filterPayslips()">
+							<option value="">All Years</option>
+							<option value="2026">2026</option>
+							<option value="2025">2025</option>
+							<option value="2024">2024</option>
+						</select>
+						<div id="loadingSpinner" class="spinner-border spinner-border-sm text-primary d-none" role="status">
+							<span class="visually-hidden">Loading...</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Payslips List Container -->
+			<div id="payslipsContainer">
+				<!-- Loading State -->
+				<div class="emp-card" id="loadingState">
+					<div class="emp-card-body text-center py-5">
+						<div class="spinner-border text-primary mb-3" role="status">
+							<span class="visually-hidden">Loading...</span>
+						</div>
+						<p class="text-muted mb-0">Loading your payslips...</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<style>
+.emp-btn-primary {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 8px 12px;
+	background: var(--emp-primary);
+	color: white;
+	border: none;
+	border-radius: 6px;
+	font-weight: 600;
+	text-decoration: none;
+	transition: all 150ms ease;
+	font-size: 13px;
+}
+
+.emp-btn-primary:hover {
+	background: var(--emp-primary-dark);
+	color: white;
+	text-decoration: none;
+}
+
+.payslip-card {
+	transition: all 0.2s ease;
+	border: 1px solid #e5e7eb;
+}
+
+.payslip-card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.earnings-box {
+	padding: 12px;
+	background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+	border-radius: 8px;
+	border-left: 3px solid #22c55e;
+}
+
+.deductions-box {
+	padding: 12px;
+	background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+	border-radius: 8px;
+	border-left: 3px solid #ef4444;
+}
+
+.netpay-box {
+	padding: 16px;
+	background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+	border-radius: 10px;
+	color: white;
+	text-align: center;
+}
+
+.status-badge {
+	padding: 4px 10px;
+	border-radius: 20px;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+}
+
+.status-published {
+	background: #dcfce7;
+	color: #166534;
+}
+
+.status-held {
+	background: #fee2e2;
+	color: #991b1b;
+}
+
+.status-pending {
+	background: #fef3c7;
+	color: #92400e;
+}
+</style>
+
+<script>
+let allPayslips = [];
+
+// Load payslips on page load
+document.addEventListener('DOMContentLoaded', function() {
+	loadPayslips();
+});
+
+async function loadPayslips(year = '') {
+	const container = document.getElementById('payslipsContainer');
+	const spinner = document.getElementById('loadingSpinner');
+	
+	spinner.classList.remove('d-none');
+	
+	try {
+		const url = year 
+			? `/employee/payroll/api/payslips?year=${year}` 
+			: '/employee/payroll/api/payslips';
+			
+		const response = await fetch(url);
+		const data = await response.json();
+		
+		if (data.success) {
+			allPayslips = data.payslips;
+			renderPayslips(data.payslips);
+		} else {
+			showError('Failed to load payslips');
+		}
+	} catch (error) {
+		console.error('Error loading payslips:', error);
+		showError('Error connecting to server');
+	} finally {
+		spinner.classList.add('d-none');
+	}
+}
+
+function renderPayslips(payslips) {
+	const container = document.getElementById('payslipsContainer');
+	
+	if (!payslips || payslips.length === 0) {
+		container.innerHTML = `
+			<div class="emp-card">
+				<div class="emp-card-body text-center py-5">
+					<div class="mb-4">
+						<div style="width: 80px; height: 80px; margin: 0 auto; background: linear-gradient(135deg, #f0f7ff 0%, #e0e7ff 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+							<i class="fa-solid fa-file-invoice" style="font-size: 32px; color: #4f46e5;"></i>
+						</div>
+					</div>
+					<h5 class="mb-2">No Payslips Yet</h5>
+					<p class="text-muted mb-0">Payslips will be available after your first payroll is processed.<br>Check back after the end of the current pay cycle.</p>
+				</div>
+			</div>
+		`;
+		return;
+	}
+	
+	let html = '<div class="row g-3">';
+	
+	payslips.forEach(payslip => {
+		const statusClass = payslip.status === 'Published' ? 'status-published' : 
+						   payslip.status === 'Held' ? 'status-held' : 'status-pending';
+		
+		html += `
+			<div class="col-md-6 col-lg-4">
+				<div class="emp-card payslip-card h-100">
+					<div class="emp-card-header d-flex justify-content-between align-items-start pb-2">
+						<div>
+							<h6 class="emp-card-title mb-1" style="font-size: 16px; font-weight: 700;">${payslip.period}</h6>
+							<small class="text-muted"><i class="fa-regular fa-calendar me-1"></i>Pay Date: ${payslip.payDate}</small>
+						</div>
+						<span class="status-badge ${statusClass}">${payslip.status}</span>
+					</div>
+
+					<div class="emp-card-body pt-2">
+						<div class="row g-2 mb-3">
+							<div class="col-6">
+								<div class="earnings-box">
+									<small class="text-muted d-block mb-1">Earnings</small>
+									<div style="font-size: 16px; font-weight: 700; color: #166534;">₹${payslip.earnings}</div>
+								</div>
+							</div>
+							<div class="col-6">
+								<div class="deductions-box">
+									<small class="text-muted d-block mb-1">Deductions</small>
+									<div style="font-size: 16px; font-weight: 700; color: #dc2626;">₹${payslip.deductions}</div>
+								</div>
+							</div>
+						</div>
+						
+						<div class="netpay-box mb-3">
+							<small style="opacity: 0.9;">NET PAY</small>
+							<div style="font-size: 22px; font-weight: 700;">₹${payslip.netPay}</div>
+						</div>
+
+						<div class="d-flex gap-2">
+							<a href="/employee/payroll/payslips/${payslip.id}/view" class="emp-btn-primary btn-sm flex-grow-1">
+								<i class="fa-solid fa-eye me-1"></i>View Details
+							</a>
+							${payslip.pdfUrl ? `
+								<a href="/${payslip.pdfUrl}" class="btn btn-outline-primary btn-sm" title="Download PDF" target="_blank">
+									<i class="fa-solid fa-download"></i>
+								</a>
+							` : `
+								<button class="btn btn-outline-secondary btn-sm" title="PDF Not Available" disabled>
+									<i class="fa-solid fa-download"></i>
+								</button>
+							`}
+						</div>
+					</div>
+				</div>
+			</div>
+		`;
+	});
+	
+	html += '</div>';
+	container.innerHTML = html;
+}
+
+function filterPayslips() {
+	const year = document.getElementById('yearFilter').value;
+	loadPayslips(year);
+}
+
+function showError(message) {
+	const container = document.getElementById('payslipsContainer');
+	container.innerHTML = `
+		<div class="emp-card">
+			<div class="emp-card-body text-center py-5">
+				<i class="fa-solid fa-exclamation-triangle text-warning" style="font-size: 48px; display: block; margin-bottom: 15px;"></i>
+				<h6>Error Loading Payslips</h6>
+				<p class="text-muted mb-3">${message}</p>
+				<button class="btn btn-primary btn-sm" onclick="loadPayslips()">
+					<i class="fa-solid fa-refresh me-1"></i>Try Again
+				</button>
+			</div>
+		</div>
+	`;
+}
+
+function showToast(message, type = 'info') {
+	const alertDiv = document.createElement('div');
+	alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+	alertDiv.style.top = '20px';
+	alertDiv.style.right = '20px';
+	alertDiv.style.zIndex = '9999';
+	alertDiv.style.width = '300px';
+	alertDiv.setAttribute('role', 'alert');
+	alertDiv.innerHTML = `
+		${message}
+		<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+	`;
+	document.body.appendChild(alertDiv);
+	setTimeout(() => alertDiv.remove(), 4000);
+}
+</script>
+
+<!-- Include Employee Dashboard Real-time Sync Script -->
+<script src="/assets/js/employee-dashboard.js"></script>

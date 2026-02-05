@@ -1,0 +1,369 @@
+{{!-- Employee Bank & Tax Details - AJAX Driven --}}
+<div class="container-fluid">
+	<div class="row">
+		{{> employee-sidebar employee=employee active='payroll_bank_tax'}}
+
+		<!-- Main Content -->
+		<div class="col-md-10 emp-main">
+			<div class="emp-page-header">
+				<div class="d-flex justify-content-between align-items-center">
+					<div>
+						<h1 class="emp-page-title">Bank & Tax Details</h1>
+						<p class="text-muted mt-1">Manage your banking and tax information for salary disbursement</p>
+					</div>
+					<div id="saveStatus"></div>
+				</div>
+			</div>
+
+			<!-- Loading State -->
+			<div id="loadingState" class="text-center py-5">
+				<div class="spinner-border text-primary" role="status">
+					<span class="visually-hidden">Loading...</span>
+				</div>
+				<p class="text-muted mt-3">Loading your details...</p>
+			</div>
+
+			<!-- Main Content (hidden until loaded) -->
+			<div id="mainContent" style="display: none;">
+				<!-- Bank Details Card -->
+				<div class="emp-card mb-4">
+					<div class="emp-card-header d-flex justify-content-between align-items-center">
+						<h5 class="emp-card-title mb-0">
+							<i class="fa-solid fa-building-columns text-primary me-2"></i>
+							Bank Account Details
+						</h5>
+						<span id="bankVerificationBadge" class="badge bg-secondary">Not Verified</span>
+					</div>
+					<div class="emp-card-body">
+						<div class="row g-3">
+							<div class="col-md-6">
+								<label class="form-label fw-semibold">Account Holder Name <span class="text-danger">*</span></label>
+								<input type="text" id="accountHolderName" class="form-control" placeholder="Name as per bank account">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-semibold">Account Number <span class="text-danger">*</span></label>
+								<input type="text" id="accountNumber" class="form-control" placeholder="Enter account number">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-semibold">IFSC Code <span class="text-danger">*</span></label>
+								<div class="input-group">
+									<input type="text" id="ifscCode" class="form-control text-uppercase" placeholder="e.g., ICIC0001234" maxlength="11">
+									<button type="button" class="btn btn-outline-primary" onclick="lookupIFSC()">
+										<i class="fa-solid fa-search"></i> Lookup
+									</button>
+								</div>
+								<div id="ifscStatus" class="form-text"></div>
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-semibold">Bank Name</label>
+								<input type="text" id="bankName" class="form-control" placeholder="Auto-detected from IFSC" readonly style="background-color: #f8f9fa;">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-semibold">Branch Name</label>
+								<input type="text" id="branchName" class="form-control" placeholder="Auto-detected from IFSC" readonly style="background-color: #f8f9fa;">
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Tax & ID Details Card -->
+				<div class="emp-card mb-4">
+					<div class="emp-card-header">
+						<h5 class="emp-card-title mb-0">
+							<i class="fa-solid fa-file-invoice text-success me-2"></i>
+							Tax & Statutory Details
+						</h5>
+					</div>
+					<div class="emp-card-body">
+						<div class="row g-3">
+							<div class="col-md-6">
+								<label class="form-label fw-semibold">PAN (Permanent Account Number) <span class="text-danger">*</span></label>
+								<input type="text" id="panNumber" class="form-control text-uppercase" placeholder="ABCDE1234F" maxlength="10">
+								<div id="panStatus" class="form-text"></div>
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-semibold">Aadhaar Number</label>
+								<input type="text" id="aadhaarNumber" class="form-control" placeholder="XXXX XXXX XXXX" maxlength="14">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-semibold">UAN (Universal Account Number)</label>
+								<input type="text" id="uanNumber" class="form-control" placeholder="PF Universal Account Number">
+								<div class="form-text text-muted">For Provident Fund (EPFO)</div>
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-semibold">ESI Number</label>
+								<input type="text" id="esiNumber" class="form-control" placeholder="Employee State Insurance Number">
+								<div class="form-text text-muted">If applicable based on salary</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Contact Details Card (Read-only from employee record) -->
+				<div class="emp-card mb-4">
+					<div class="emp-card-header">
+						<h5 class="emp-card-title mb-0">
+							<i class="fa-solid fa-user-circle text-info me-2"></i>
+							Contact Information
+							<span class="badge bg-secondary ms-2">From HR Records</span>
+						</h5>
+					</div>
+					<div class="emp-card-body">
+						<div class="row g-3">
+							<div class="col-md-6">
+								<label class="form-label fw-semibold">Email Address</label>
+								<input type="email" id="email" class="form-control" readonly style="background-color: #f8f9fa;">
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-semibold">Phone Number</label>
+								<input type="tel" id="phone" class="form-control" readonly style="background-color: #f8f9fa;">
+							</div>
+							<div class="col-md-12">
+								<label class="form-label fw-semibold">Address</label>
+								<input type="text" id="address" class="form-control" readonly style="background-color: #f8f9fa;">
+							</div>
+							<div class="col-md-4">
+								<label class="form-label fw-semibold">City</label>
+								<input type="text" id="city" class="form-control" readonly style="background-color: #f8f9fa;">
+							</div>
+							<div class="col-md-4">
+								<label class="form-label fw-semibold">State</label>
+								<input type="text" id="state" class="form-control" readonly style="background-color: #f8f9fa;">
+							</div>
+							<div class="col-md-4">
+								<label class="form-label fw-semibold">PIN Code</label>
+								<input type="text" id="pinCode" class="form-control" readonly style="background-color: #f8f9fa;">
+							</div>
+						</div>
+						<div class="mt-3">
+							<small class="text-muted">
+								<i class="fa-solid fa-info-circle me-1"></i>
+								Contact details are managed by HR. To update, please raise a request through your HR portal.
+							</small>
+						</div>
+					</div>
+				</div>
+
+				<!-- Action Buttons -->
+				<div class="d-flex gap-2 justify-content-between mb-4">
+					<div>
+						<small id="lastUpdated" class="text-muted"></small>
+					</div>
+					<div>
+						<button class="btn btn-outline-secondary me-2" onclick="resetForm()">
+							<i class="fa-solid fa-rotate-left me-2"></i>Reset Changes
+						</button>
+						<button class="btn btn-primary" onclick="saveChanges()">
+							<i class="fa-solid fa-check me-2"></i>Save Details
+						</button>
+					</div>
+				</div>
+
+				<!-- Info Box -->
+				<div class="alert alert-info border-0" role="alert" style="background: linear-gradient(135deg, #e8f4fd 0%, #d4ecfc 100%);">
+					<div class="d-flex align-items-start">
+						<i class="fa-solid fa-shield-check text-primary me-3 mt-1" style="font-size: 1.5rem;"></i>
+						<div>
+							<h6 class="alert-heading mb-1">Your data is secure</h6>
+							<p class="mb-0 small">Bank and tax details are encrypted and used only for salary processing and statutory compliance. Updates take effect from the next payroll cycle.</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script>
+let originalData = {};
+
+document.addEventListener('DOMContentLoaded', function() {
+	loadBankTaxDetails();
+});
+
+async function loadBankTaxDetails() {
+	try {
+		const response = await fetch('/employee/payroll/api/bank-tax');
+		const data = await response.json();
+		
+		if (data.success) {
+			populateForm(data.bankDetails);
+			originalData = { ...data.bankDetails };
+			document.getElementById('loadingState').style.display = 'none';
+			document.getElementById('mainContent').style.display = 'block';
+		} else {
+			showError('Failed to load bank details');
+		}
+	} catch (error) {
+		console.error('Error loading bank details:', error);
+		showError('Error loading bank details');
+	}
+}
+
+function populateForm(data) {
+	// Bank details
+	document.getElementById('accountHolderName').value = data.accountHolderName || '';
+	document.getElementById('accountNumber').value = data.accountNumber || '';
+	document.getElementById('ifscCode').value = data.ifscCode || '';
+	document.getElementById('bankName').value = data.bankName || '';
+	document.getElementById('branchName').value = data.branchName || '';
+	
+	// Tax details
+	document.getElementById('panNumber').value = data.panNumber || '';
+	document.getElementById('aadhaarNumber').value = formatAadhaar(data.aadhaarNumber || '');
+	document.getElementById('uanNumber').value = data.uanNumber || '';
+	document.getElementById('esiNumber').value = data.esiNumber || '';
+	
+	// Contact info (read-only)
+	document.getElementById('email').value = data.email || '';
+	document.getElementById('phone').value = data.phone || '';
+	document.getElementById('address').value = data.address || '';
+	document.getElementById('city').value = data.city || '';
+	document.getElementById('state').value = data.state || '';
+	document.getElementById('pinCode').value = data.pinCode || '';
+	
+	// Update verification badge
+	if (data.accountNumber && data.ifscCode && data.panNumber) {
+		document.getElementById('bankVerificationBadge').className = 'badge bg-success';
+		document.getElementById('bankVerificationBadge').textContent = 'Details Added';
+	}
+	
+	// Last updated
+	if (data.updatedAt) {
+		const date = new Date(data.updatedAt);
+		document.getElementById('lastUpdated').textContent = 'Last updated: ' + date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+	}
+}
+
+function formatAadhaar(value) {
+	const digits = value.replace(/\D/g, '');
+	if (digits.length === 12) {
+		return digits.slice(0,4) + ' ' + digits.slice(4,8) + ' ' + digits.slice(8,12);
+	}
+	return value;
+}
+
+async function lookupIFSC() {
+	const ifsc = document.getElementById('ifscCode').value.trim().toUpperCase();
+	const statusEl = document.getElementById('ifscStatus');
+	
+	if (!ifsc || ifsc.length !== 11) {
+		statusEl.innerHTML = '<span class="text-danger"><i class="fa-solid fa-exclamation-circle me-1"></i>IFSC must be 11 characters</span>';
+		return;
+	}
+	
+	statusEl.innerHTML = '<span class="text-info"><i class="fa-solid fa-spinner fa-spin me-1"></i>Looking up...</span>';
+	
+	try {
+		const res = await fetch('https://ifsc.razorpay.com/' + ifsc);
+		if (!res.ok) throw new Error('Invalid IFSC');
+		const data = await res.json();
+		
+		document.getElementById('bankName').value = data.BANK || '';
+		document.getElementById('branchName').value = data.BRANCH || '';
+		document.getElementById('ifscCode').value = ifsc;
+		
+		statusEl.innerHTML = '<span class="text-success"><i class="fa-solid fa-check-circle me-1"></i>Bank details found</span>';
+	} catch (error) {
+		statusEl.innerHTML = '<span class="text-danger"><i class="fa-solid fa-times-circle me-1"></i>Invalid IFSC code</span>';
+	}
+}
+
+function validatePAN() {
+	const pan = document.getElementById('panNumber').value.trim().toUpperCase();
+	const statusEl = document.getElementById('panStatus');
+	const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+	
+	if (pan && !panRegex.test(pan)) {
+		statusEl.innerHTML = '<span class="text-danger"><i class="fa-solid fa-exclamation-circle me-1"></i>Invalid PAN format</span>';
+		return false;
+	} else if (pan) {
+		statusEl.innerHTML = '<span class="text-success"><i class="fa-solid fa-check-circle me-1"></i>Valid format</span>';
+	} else {
+		statusEl.innerHTML = '';
+	}
+	return true;
+}
+
+// Add PAN validation on blur
+document.getElementById('panNumber')?.addEventListener('blur', validatePAN);
+
+// Aadhaar formatting
+document.getElementById('aadhaarNumber')?.addEventListener('input', function(e) {
+	let value = e.target.value.replace(/\D/g, '').slice(0, 12);
+	if (value.length > 4) value = value.slice(0,4) + ' ' + value.slice(4);
+	if (value.length > 9) value = value.slice(0,9) + ' ' + value.slice(9);
+	e.target.value = value;
+});
+
+async function saveChanges() {
+	const saveStatus = document.getElementById('saveStatus');
+	
+	// Validate PAN
+	if (!validatePAN()) {
+		saveStatus.innerHTML = '<span class="badge bg-danger">Please fix validation errors</span>';
+		return;
+	}
+	
+	const formData = {
+		accountHolderName: document.getElementById('accountHolderName').value.trim(),
+		accountNumber: document.getElementById('accountNumber').value.trim(),
+		ifscCode: document.getElementById('ifscCode').value.trim().toUpperCase(),
+		bankName: document.getElementById('bankName').value.trim(),
+		branchName: document.getElementById('branchName').value.trim(),
+		panNumber: document.getElementById('panNumber').value.trim().toUpperCase(),
+		aadhaarNumber: document.getElementById('aadhaarNumber').value.replace(/\s/g, ''),
+		uanNumber: document.getElementById('uanNumber').value.trim(),
+		esiNumber: document.getElementById('esiNumber').value.trim(),
+	};
+	
+	saveStatus.innerHTML = '<span class="badge bg-info"><i class="fa-solid fa-spinner fa-spin me-1"></i>Saving...</span>';
+	
+	try {
+		const response = await fetch('/employee/payroll/api/bank-tax', {
+			method: 'PUT',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(formData)
+		});
+		
+		const data = await response.json();
+		
+		if (data.success) {
+			saveStatus.innerHTML = '<span class="badge bg-success"><i class="fa-solid fa-check me-1"></i>Saved successfully</span>';
+			originalData = { ...formData };
+			
+			// Update verification badge
+			if (formData.accountNumber && formData.ifscCode && formData.panNumber) {
+				document.getElementById('bankVerificationBadge').className = 'badge bg-success';
+				document.getElementById('bankVerificationBadge').textContent = 'Details Added';
+			}
+			
+			setTimeout(function() {
+				saveStatus.innerHTML = '';
+			}, 3000);
+		} else {
+			saveStatus.innerHTML = '<span class="badge bg-danger">' + (data.message || 'Save failed') + '</span>';
+		}
+	} catch (error) {
+		console.error('Error saving:', error);
+		saveStatus.innerHTML = '<span class="badge bg-danger">Error saving details</span>';
+	}
+}
+
+function resetForm() {
+	if (confirm('Reset all changes to last saved values?')) {
+		populateForm(originalData);
+		document.getElementById('ifscStatus').innerHTML = '';
+		document.getElementById('panStatus').innerHTML = '';
+	}
+}
+
+function showError(message) {
+	document.getElementById('loadingState').innerHTML = 
+		'<div class="text-center py-5">' +
+			'<i class="fa-solid fa-exclamation-triangle text-danger" style="font-size: 3rem;"></i>' +
+			'<p class="text-danger mt-3">' + message + '</p>' +
+			'<button class="btn btn-primary mt-2" onclick="location.reload()">Retry</button>' +
+		'</div>';
+}
+</script>

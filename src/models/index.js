@@ -1,3 +1,6 @@
+import { DataTypes } from "sequelize";
+import { sequelize } from "../db/index.js";
+
 // src/models/index.js
 import { User } from './User.js';
 import { Business } from './Business.js';
@@ -15,10 +18,43 @@ import { LeaveBalance } from './LeaveBalance.js';
 import { LeaveApproval } from './LeaveApproval.js';
 import DocumentType from './DocumentType.js';
 import EmailTemplate from './EmailTemplate.js';
+import AttendanceDailySummary from './AttendanceDailySummary.js';
+import AttendanceLock from './AttendanceLock.js';
+import AttendancePolicy from './AttendancePolicy.js';
+import AttendancePunch from './AttendancePunch.js';
+import AttendanceRegularization from './AttendanceRegularization.js';
+import EmployeeShiftAssignment from './EmployeeShiftAssignment.js';
+import Holiday from './Holiday.js';
+import Shift from './Shift.js';
+
 // Child tables for Employee
 import EmployeeEducation from './EmployeeEducation.js';
 import EmployeeExperience from './EmployeeExperience.js';
 import EmployeeDocument from './EmployeeDocument.js';
+// Attendance
+// Attendance
+
+// Payroll & related models (single set of imports)
+import PayrollRun from './PayrollRun.js';
+import PayrollRunItem from './PayrollRunItem.js';
+import Payslip from './Payslip.js';
+import SalaryStructure from './SalaryStructure.js';
+import EmployeeSalaryAssignment from './payroll.EmployeeSalaryAssignment.js';
+import PayrollSetting from './payrollSetting.js';
+import PayrollSetup from './PayrollSetup.js';
+import EmployeeSalaryStructure from './EmployeeSalaryStructure.js';
+import PayrollRegister from './PayrollRegister.js';
+import PayrollQuery from './PayrollQuery.js';
+import StatutoryCompliance from './StatutoryCompliance.js';
+import EmployeeBankDetail from './EmployeeBankDetail.js';
+import UserEducation from './UserEducation.js';
+import UserExperience from './UserExperience.js';
+import UserDocument from './UserDocument.js';
+
+// Payroll Approval Workflow models
+import PayrollApproval from './PayrollApproval.js';
+import Notification from './Notification.js';
+
 
 /**
  * IMPORTANT:
@@ -134,6 +170,51 @@ LeaveApproval.belongsTo(User, { foreignKey: 'approverId', as: 'approver' });
 Business.hasMany(Employee, { foreignKey: 'businessId', as: 'employees' });
 Employee.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
 
+/* ✅ PayrollSetting ⇄ Business (IMPORTANT) */
+Business.hasOne(PayrollSetting, {
+  foreignKey: 'businessId',
+  as: 'payrollSetting',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE',
+});
+PayrollSetting.belongsTo(Business, {
+  foreignKey: 'businessId',
+  as: 'business',
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE',
+});
+
+
+
+
+
+/* admin payroll */
+PayrollRun.hasMany(PayrollRunItem, { foreignKey: 'payrollRunId' });
+PayrollRunItem.belongsTo(PayrollRun, { foreignKey: "payrollRunId" });
+
+Employee.hasMany(PayrollRunItem, { foreignKey: 'employeeId' });
+PayrollRunItem.belongsTo(Employee, { foreignKey: 'employeeId' });
+
+PayrollRun.hasMany(Payslip, { foreignKey: 'payrollRunId' });
+
+
+
+
+SalaryStructure.hasMany(EmployeeSalaryAssignment, {
+  foreignKey: 'salaryStructureId',
+  as: 'employeeSalaryAssignments',
+});
+
+EmployeeSalaryAssignment.belongsTo(SalaryStructure, {
+  foreignKey: 'salaryStructureId',
+  as: 'salaryStructure',
+});
+
+
+
+
+
+
 /* ✅ NEW: Employee ⇄ EmployeeEducation */
 Employee.hasMany(EmployeeEducation, {
   foreignKey: 'employeeId',
@@ -181,8 +262,148 @@ EmailTemplate.belongsTo(DocumentType, {
   as: 'documentType',
 });
 
+// ========== BILLING MODELS ==========
+import { Plan } from './Plan.js';
+import { Subscription } from './Subscription.js';
+import { Invoice } from './Invoice.js';
+import { WebhookLog } from './WebhookLog.js';
+
+// Business ⇄ Subscription
+Business.hasMany(Subscription, { foreignKey: 'businessId', as: 'subscriptions' });
+Subscription.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+
+// Plan ⇄ Subscription
+Plan.hasMany(Subscription, { foreignKey: 'planId', as: 'subscriptions' });
+Subscription.belongsTo(Plan, { foreignKey: 'planId', as: 'plan' });
+
+// Subscription ⇄ Invoice
+Subscription.hasMany(Invoice, { foreignKey: 'subscriptionId', as: 'invoices' });
+Invoice.belongsTo(Subscription, { foreignKey: 'subscriptionId', as: 'subscription' });
+
+// Business ⇄ Invoice
+Business.hasMany(Invoice, { foreignKey: 'businessId', as: 'invoices' });
+Invoice.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+
+
+// --- Attendance Module Relationships ---
+Business.hasMany(AttendancePolicy, { foreignKey: 'businessId', as: 'attendancePolicies' });
+AttendancePolicy.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+
+Business.hasMany(Shift, { foreignKey: 'businessId', as: 'shifts' });
+Shift.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+
+Business.hasMany(Holiday, { foreignKey: 'businessId', as: 'holidays' });
+Holiday.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+
+Employee.hasMany(EmployeeShiftAssignment, { foreignKey: 'employeeId', as: 'shiftAssignments' });
+EmployeeShiftAssignment.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
+
+AttendancePolicy.hasMany(EmployeeShiftAssignment, { foreignKey: 'policyId', as: 'assignments' });
+EmployeeShiftAssignment.belongsTo(AttendancePolicy, { foreignKey: 'policyId', as: 'policy' });
+
+Shift.hasMany(EmployeeShiftAssignment, { foreignKey: 'shiftId', as: 'assignments' });
+EmployeeShiftAssignment.belongsTo(Shift, { foreignKey: 'shiftId', as: 'shift' });
+
+Employee.hasMany(AttendancePunch, { foreignKey: 'employeeId', as: 'punches' });
+AttendancePunch.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
+
+Employee.hasMany(AttendanceDailySummary, { foreignKey: 'employeeId', as: 'dailySummaries' });
+AttendanceDailySummary.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
+
+Employee.hasMany(AttendanceRegularization, { foreignKey: 'employeeId', as: 'regularizations' });
+AttendanceRegularization.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
+
+User.hasMany(AttendanceRegularization, { foreignKey: 'actionByUserId', as: 'actionedRegularizations' });
+AttendanceRegularization.belongsTo(User, { foreignKey: 'actionByUserId', as: 'actionBy' });
+
+Business.hasMany(AttendanceLock, { foreignKey: 'businessId', as: 'attendanceLocks' });
+AttendanceLock.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+
+// --- Payroll Module Relationships ---
+Business.hasOne(PayrollSetup, { foreignKey: 'businessId', as: 'payrollSetup' });
+PayrollSetup.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+
+Business.hasMany(SalaryStructure, { foreignKey: 'businessId', as: 'salaryStructures' });
+SalaryStructure.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+
+Employee.hasMany(EmployeeSalaryStructure, { foreignKey: 'employeeId', as: 'salaryStructures' });
+EmployeeSalaryStructure.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
+
+SalaryStructure.hasMany(EmployeeSalaryStructure, { foreignKey: 'salaryStructureId', as: 'employeeAssignments' });
+EmployeeSalaryStructure.belongsTo(SalaryStructure, { foreignKey: 'salaryStructureId', as: 'salaryStructure' });
+
+Business.hasMany(PayrollRun, { foreignKey: 'businessId', as: 'payrollRuns' });
+PayrollRun.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+
+PayrollRun.hasMany(PayrollRegister, { foreignKey: 'payrollRunId', as: 'registers' });
+PayrollRegister.belongsTo(PayrollRun, { foreignKey: 'payrollRunId', as: 'payrollRun' });
+
+Employee.hasMany(PayrollRegister, { foreignKey: 'employeeId', as: 'payrollRegisters' });
+PayrollRegister.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
+
+PayrollRun.hasMany(Payslip, { foreignKey: 'payrollRunId', as: 'payslips' });
+Payslip.belongsTo(PayrollRun, { foreignKey: 'payrollRunId', as: 'payrollRun' });
+
+Employee.hasMany(Payslip, { foreignKey: 'employeeId', as: 'payslips' });
+Payslip.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
+
+Business.hasMany(PayrollQuery, { foreignKey: 'businessId', as: 'payrollQueries' });
+PayrollQuery.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+
+Employee.hasMany(PayrollQuery, { foreignKey: 'employeeId', as: 'payrollQueries' });
+PayrollQuery.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
+
+Employee.hasOne(EmployeeBankDetail, { foreignKey: 'employeeId', as: 'bankDetails' });
+EmployeeBankDetail.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
+
+// User ⇄ UserEducation
+User.hasMany(UserEducation, { foreignKey: 'userId', as: 'educations', onDelete: 'CASCADE' });
+UserEducation.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+// User ⇄ UserExperience
+User.hasMany(UserExperience, { foreignKey: 'userId', as: 'experiences', onDelete: 'CASCADE' });
+UserExperience.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+// User ⇄ UserDocument
+User.hasMany(UserDocument, { foreignKey: 'userId', as: 'documents', onDelete: 'CASCADE' });
+UserDocument.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+// === Payroll Approval Workflow Associations ===
+
+// PayrollRun ⇄ PayrollApproval
+PayrollRun.hasMany(PayrollApproval, { foreignKey: 'payrollRunId', as: 'approvals' });
+PayrollApproval.belongsTo(PayrollRun, { foreignKey: 'payrollRunId', as: 'payrollRun' });
+
+// Business ⇄ PayrollApproval
+Business.hasMany(PayrollApproval, { foreignKey: 'businessId', as: 'payrollApprovals' });
+PayrollApproval.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+
+// User (approver) ⇄ PayrollApproval
+User.hasMany(PayrollApproval, { foreignKey: 'approverId', as: 'payrollApprovalActions' });
+PayrollApproval.belongsTo(User, { foreignKey: 'approverId', as: 'approver' });
+
+// User (assigned) ⇄ PayrollApproval
+User.hasMany(PayrollApproval, { foreignKey: 'assignedToUserId', as: 'assignedPayrollApprovals' });
+PayrollApproval.belongsTo(User, { foreignKey: 'assignedToUserId', as: 'assignedTo' });
+
+// User ⇄ Notification
+User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications' });
+Notification.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+// Business ⇄ Notification
+Business.hasMany(Notification, { foreignKey: 'businessId', as: 'notifications' });
+Notification.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+
 
 export {
+  AttendancePolicy,
+  Shift,
+  Holiday,
+  EmployeeShiftAssignment,
+  AttendancePunch,
+  AttendanceDailySummary,
+  AttendanceRegularization,
+  AttendanceLock,
   User,
   Business,
   Customer,
@@ -202,4 +423,29 @@ export {
   EmployeeExperience,
   EmployeeDocument,
   EmailTemplate,
+  // Billing models
+  Plan,
+  Subscription,
+  Invoice,
+  WebhookLog,
+  // Payroll models
+  PayrollRun,
+  PayrollRunItem,
+  Payslip,
+  SalaryStructure,
+  EmployeeSalaryAssignment,
+  PayrollSetting,
+  PayrollSetup,
+  EmployeeSalaryStructure,
+  PayrollRegister,
+  PayrollQuery,
+  StatutoryCompliance,
+  EmployeeBankDetail,
+  UserEducation,
+  UserExperience,
+  UserDocument,
+  // Payroll Approval Workflow
+  PayrollApproval,
+  Notification,
 };
+

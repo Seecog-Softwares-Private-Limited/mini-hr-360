@@ -1,0 +1,559 @@
+{{!-- Employee Payroll Queries --}}
+<div class="container-fluid">
+	<div class="row">
+		{{> employee-sidebar employee=employee active='payroll_queries'}}
+
+		<!-- Main Content -->
+		<div class="col-md-10 emp-main">
+			<div class="emp-page-header">
+				<div class="d-flex align-items-center justify-content-between">
+					<div>
+						<h1 class="emp-page-title">Payroll Queries</h1>
+						<p class="text-muted mt-1">Raise and track your payroll-related queries</p>
+					</div>
+					<button class="btn btn-primary" onclick="openNewQueryModal()">
+						<i class="fa-solid fa-plus me-2"></i>Raise New Query
+					</button>
+				</div>
+			</div>
+
+			<!-- Status Summary Cards -->
+			<div class="row g-3 mb-4" id="statusSummary">
+				<div class="col-md-3">
+					<div class="status-summary-card pending">
+						<div class="status-icon"><i class="fa-solid fa-clock"></i></div>
+						<div class="status-info">
+							<div class="status-count" id="pendingCount">0</div>
+							<div class="status-label">Pending</div>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-3">
+					<div class="status-summary-card in-progress">
+						<div class="status-icon"><i class="fa-solid fa-spinner"></i></div>
+						<div class="status-info">
+							<div class="status-count" id="inProgressCount">0</div>
+							<div class="status-label">In Progress</div>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-3">
+					<div class="status-summary-card resolved">
+						<div class="status-icon"><i class="fa-solid fa-check-circle"></i></div>
+						<div class="status-info">
+							<div class="status-count" id="resolvedCount">0</div>
+							<div class="status-label">Resolved</div>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-3">
+					<div class="status-summary-card total">
+						<div class="status-icon"><i class="fa-solid fa-list"></i></div>
+						<div class="status-info">
+							<div class="status-count" id="totalCount">0</div>
+							<div class="status-label">Total</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Queries List Container -->
+			<div id="queriesContainer">
+				<!-- Loading State -->
+				<div class="emp-card" id="loadingState">
+					<div class="emp-card-body text-center py-5">
+						<div class="spinner-border text-primary mb-3" role="status">
+							<span class="visually-hidden">Loading...</span>
+						</div>
+						<p class="text-muted mb-0">Loading your queries...</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- New Query Modal -->
+<div class="modal fade" id="newQueryModal" tabindex="-1">
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-header" style="background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%); color: white;">
+				<h5 class="modal-title"><i class="fa-solid fa-plus-circle me-2"></i>Raise New Payroll Query</h5>
+				<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+			</div>
+			<div class="modal-body">
+				<form id="newQueryForm">
+					<div class="mb-3">
+						<label class="form-label fw-600">Category <span class="text-danger">*</span></label>
+						<select class="form-select" id="queryCategory" required>
+							<option value="">Select category...</option>
+							<option value="Salary Mismatch">Salary Mismatch</option>
+							<option value="Tax Deduction">Tax Related</option>
+							<option value="Reimbursement">Reimbursement</option>
+							<option value="LOP/Attendance">LOP / Attendance Deduction</option>
+							<option value="Other">Other</option>
+						</select>
+					</div>
+
+					<div class="mb-3">
+						<label class="form-label fw-600">Subject <span class="text-danger">*</span></label>
+						<input type="text" class="form-control" id="querySubject" placeholder="Brief subject of your query" maxlength="120" required>
+						<small class="text-muted">Max 120 characters</small>
+					</div>
+
+					<div class="mb-3">
+						<label class="form-label fw-600">Description <span class="text-danger">*</span></label>
+						<textarea class="form-control" id="queryDescription" rows="4" placeholder="Please describe your query in detail. Include relevant dates, amounts, or payslip periods if applicable..." required></textarea>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+				<button type="button" class="btn btn-primary" id="submitQueryBtn" onclick="submitQuery()">
+					<i class="fa-solid fa-paper-plane me-1"></i>Submit Query
+				</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- View Query Details Modal -->
+<div class="modal fade" id="viewQueryModal" tabindex="-1">
+	<div class="modal-dialog modal-lg modal-dialog-centered">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="queryTitle">Query Details</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+			</div>
+			<div class="modal-body" id="queryDetailsBody">
+				<!-- Query details will be loaded here -->
+			</div>
+		</div>
+	</div>
+</div>
+
+<style>
+.status-summary-card {
+	display: flex;
+	align-items: center;
+	padding: 16px;
+	border-radius: 12px;
+	transition: all 0.2s ease;
+}
+
+.status-summary-card:hover {
+	transform: translateY(-2px);
+}
+
+.status-summary-card .status-icon {
+	width: 48px;
+	height: 48px;
+	border-radius: 12px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 20px;
+	margin-right: 14px;
+}
+
+.status-summary-card .status-count {
+	font-size: 24px;
+	font-weight: 700;
+}
+
+.status-summary-card .status-label {
+	font-size: 13px;
+	color: #64748b;
+}
+
+.status-summary-card.pending {
+	background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+	border: 1px solid #fcd34d;
+}
+
+.status-summary-card.pending .status-icon {
+	background: #fcd34d;
+	color: #92400e;
+}
+
+.status-summary-card.pending .status-count {
+	color: #92400e;
+}
+
+.status-summary-card.in-progress {
+	background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+	border: 1px solid #93c5fd;
+}
+
+.status-summary-card.in-progress .status-icon {
+	background: #3b82f6;
+	color: white;
+}
+
+.status-summary-card.in-progress .status-count {
+	color: #1d4ed8;
+}
+
+.status-summary-card.resolved {
+	background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+	border: 1px solid #86efac;
+}
+
+.status-summary-card.resolved .status-icon {
+	background: #22c55e;
+	color: white;
+}
+
+.status-summary-card.resolved .status-count {
+	color: #166534;
+}
+
+.status-summary-card.total {
+	background: linear-gradient(135deg, #f0f7ff 0%, #e0e7ff 100%);
+	border: 1px solid #c7d2fe;
+}
+
+.status-summary-card.total .status-icon {
+	background: #4f46e5;
+	color: white;
+}
+
+.status-summary-card.total .status-count {
+	color: #4f46e5;
+}
+
+.query-card {
+	border: 1px solid #e5e7eb;
+	border-radius: 12px;
+	padding: 20px;
+	margin-bottom: 16px;
+	transition: all 0.2s ease;
+	background: white;
+}
+
+.query-card:hover {
+	border-color: #c7d2fe;
+	box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1);
+}
+
+.query-status-badge {
+	padding: 6px 12px;
+	border-radius: 20px;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+}
+
+.status-pending {
+	background: #fef3c7;
+	color: #92400e;
+}
+
+.status-in-progress {
+	background: #dbeafe;
+	color: #1d4ed8;
+}
+
+.status-resolved {
+	background: #dcfce7;
+	color: #166534;
+}
+
+.status-closed {
+	background: #f1f5f9;
+	color: #64748b;
+}
+
+.category-badge {
+	background: #f1f5f9;
+	color: #475569;
+	padding: 4px 10px;
+	border-radius: 6px;
+	font-size: 12px;
+	font-weight: 500;
+}
+
+.resolution-box {
+	background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+	border-left: 4px solid #22c55e;
+	border-radius: 0 8px 8px 0;
+	padding: 14px;
+	margin-top: 12px;
+}
+
+.query-description {
+	color: #475569;
+	line-height: 1.6;
+}
+
+.query-meta {
+	font-size: 12px;
+	color: #94a3b8;
+}
+</style>
+
+<script>
+let allQueries = [];
+let newQueryModal = null;
+let viewQueryModal = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+	newQueryModal = new bootstrap.Modal(document.getElementById('newQueryModal'));
+	viewQueryModal = new bootstrap.Modal(document.getElementById('viewQueryModal'));
+	loadQueries();
+});
+
+async function loadQueries() {
+	const container = document.getElementById('queriesContainer');
+	
+	try {
+		const response = await fetch('/employee/payroll/api/queries');
+		const data = await response.json();
+		
+		if (data.success) {
+			allQueries = data.queries;
+			updateStatusCounts(data.queries);
+			renderQueries(data.queries);
+		} else {
+			showError('Failed to load queries');
+		}
+	} catch (error) {
+		console.error('Error loading queries:', error);
+		showError('Error connecting to server');
+	}
+}
+
+function updateStatusCounts(queries) {
+	const pending = queries.filter(q => q.status === 'Pending').length;
+	const inProgress = queries.filter(q => q.status === 'In Progress').length;
+	const resolved = queries.filter(q => q.status === 'Resolved' || q.status === 'Closed').length;
+	
+	document.getElementById('pendingCount').textContent = pending;
+	document.getElementById('inProgressCount').textContent = inProgress;
+	document.getElementById('resolvedCount').textContent = resolved;
+	document.getElementById('totalCount').textContent = queries.length;
+}
+
+function renderQueries(queries) {
+	const container = document.getElementById('queriesContainer');
+	
+	if (!queries || queries.length === 0) {
+		container.innerHTML = `
+			<div class="emp-card">
+				<div class="emp-card-body text-center py-5">
+					<div class="mb-4">
+						<div style="width: 80px; height: 80px; margin: 0 auto; background: linear-gradient(135deg, #f0f7ff 0%, #e0e7ff 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+							<i class="fa-solid fa-comments" style="font-size: 32px; color: #4f46e5;"></i>
+						</div>
+					</div>
+					<h5 class="mb-2">No Queries Yet</h5>
+					<p class="text-muted mb-3">You haven't raised any payroll queries yet.<br>If you have any questions about your salary or payslips, raise a query here.</p>
+					<button class="btn btn-primary" onclick="openNewQueryModal()">
+						<i class="fa-solid fa-plus me-2"></i>Raise First Query
+					</button>
+				</div>
+			</div>
+		`;
+		return;
+	}
+	
+	let html = '';
+	
+	queries.forEach(query => {
+		const statusClass = query.status === 'Pending' ? 'status-pending' :
+						   query.status === 'In Progress' ? 'status-in-progress' :
+						   query.status === 'Resolved' ? 'status-resolved' : 'status-closed';
+		
+		html += `
+			<div class="query-card">
+				<div class="d-flex justify-content-between align-items-start mb-3">
+					<div>
+						<h5 class="mb-1" style="font-weight: 600;">${escapeHtml(query.subject)}</h5>
+						<div class="query-meta">
+							<span><i class="fa-regular fa-calendar me-1"></i>${query.createdAt}</span>
+							<span class="mx-2">•</span>
+							<span>Query #${query.id}</span>
+						</div>
+					</div>
+					<span class="query-status-badge ${statusClass}">${query.status}</span>
+				</div>
+				
+				<div class="mb-3">
+					<span class="category-badge"><i class="fa-solid fa-tag me-1"></i>${query.category}</span>
+				</div>
+				
+				<p class="query-description mb-0">${escapeHtml(query.description)}</p>
+				
+				${query.resolutionNotes ? `
+					<div class="resolution-box">
+						<div class="d-flex align-items-center mb-2">
+							<i class="fa-solid fa-check-circle text-success me-2"></i>
+							<strong style="color: #166534;">Resolution</strong>
+							${query.resolvedAt ? `<small class="ms-auto text-muted">${query.resolvedAt}</small>` : ''}
+						</div>
+						<p class="mb-0" style="color: #166534;">${escapeHtml(query.resolutionNotes)}</p>
+					</div>
+				` : ''}
+				
+				<div class="mt-3 pt-3 border-top">
+					<div class="d-flex justify-content-between align-items-center">
+						<small class="text-muted">Last updated: ${query.lastUpdated}</small>
+						<button class="btn btn-sm btn-outline-primary" onclick="viewQueryDetails(${query.id})">
+							<i class="fa-solid fa-expand me-1"></i>View Details
+						</button>
+					</div>
+				</div>
+			</div>
+		`;
+	});
+	
+	container.innerHTML = html;
+}
+
+function openNewQueryModal() {
+	// Reset form
+	document.getElementById('newQueryForm').reset();
+	newQueryModal.show();
+}
+
+async function submitQuery() {
+	const category = document.getElementById('queryCategory').value;
+	const subject = document.getElementById('querySubject').value;
+	const description = document.getElementById('queryDescription').value;
+	
+	// Validate
+	if (!category || !subject || !description) {
+		showToast('Please fill in all required fields', 'warning');
+		return;
+	}
+	
+	const submitBtn = document.getElementById('submitQueryBtn');
+	submitBtn.disabled = true;
+	submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Submitting...';
+	
+	try {
+		const response = await fetch('/employee/payroll/api/queries', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({ category, subject, description })
+		});
+		
+		const data = await response.json();
+		
+		if (data.success) {
+			showToast(data.message || 'Query submitted successfully!', 'success');
+			newQueryModal.hide();
+			loadQueries(); // Refresh the list
+		} else {
+			showToast(data.message || 'Failed to submit query', 'danger');
+		}
+	} catch (error) {
+		console.error('Error submitting query:', error);
+		showToast('Error connecting to server', 'danger');
+	} finally {
+		submitBtn.disabled = false;
+		submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane me-1"></i>Submit Query';
+	}
+}
+
+async function viewQueryDetails(id) {
+	const query = allQueries.find(q => q.id === id);
+	if (!query) return;
+	
+	const statusClass = query.status === 'Pending' ? 'status-pending' :
+					   query.status === 'In Progress' ? 'status-in-progress' :
+					   query.status === 'Resolved' ? 'status-resolved' : 'status-closed';
+	
+	document.getElementById('queryTitle').innerHTML = `
+		<i class="fa-solid fa-comment-dots me-2" style="color: #4f46e5;"></i>
+		Query #${query.id}
+	`;
+	
+	document.getElementById('queryDetailsBody').innerHTML = `
+		<div class="mb-4">
+			<div class="d-flex justify-content-between align-items-start mb-3">
+				<div>
+					<h5 class="mb-1">${escapeHtml(query.subject)}</h5>
+					<span class="category-badge"><i class="fa-solid fa-tag me-1"></i>${query.category}</span>
+				</div>
+				<span class="query-status-badge ${statusClass}">${query.status}</span>
+			</div>
+		</div>
+		
+		<div class="mb-4">
+			<label class="text-muted small fw-600 mb-2 d-block">YOUR QUERY</label>
+			<div style="background: #f8fafc; padding: 16px; border-radius: 8px; border-left: 3px solid #4f46e5;">
+				<p class="mb-0">${escapeHtml(query.description)}</p>
+				<small class="text-muted d-block mt-2"><i class="fa-regular fa-clock me-1"></i>${query.createdAt}</small>
+			</div>
+		</div>
+		
+		${query.resolutionNotes ? `
+			<div class="mb-4">
+				<label class="text-muted small fw-600 mb-2 d-block">HR RESPONSE</label>
+				<div class="resolution-box">
+					<p class="mb-0">${escapeHtml(query.resolutionNotes)}</p>
+					${query.resolvedAt ? `<small class="text-muted d-block mt-2"><i class="fa-regular fa-clock me-1"></i>Resolved on ${query.resolvedAt}</small>` : ''}
+				</div>
+			</div>
+		` : `
+			<div class="mb-4">
+				<label class="text-muted small fw-600 mb-2 d-block">HR RESPONSE</label>
+				<div style="background: #fef3c7; padding: 16px; border-radius: 8px; text-align: center;">
+					<i class="fa-solid fa-hourglass-half me-2" style="color: #92400e;"></i>
+					<span style="color: #92400e;">Awaiting response from HR team</span>
+				</div>
+			</div>
+		`}
+		
+		<div class="text-muted small">
+			<i class="fa-solid fa-info-circle me-1"></i>
+			Queries are typically resolved within 24-48 business hours.
+		</div>
+	`;
+	
+	viewQueryModal.show();
+}
+
+function showError(message) {
+	const container = document.getElementById('queriesContainer');
+	container.innerHTML = `
+		<div class="emp-card">
+			<div class="emp-card-body text-center py-5">
+				<i class="fa-solid fa-exclamation-triangle text-warning" style="font-size: 48px; display: block; margin-bottom: 15px;"></i>
+				<h6>Error Loading Queries</h6>
+				<p class="text-muted mb-3">${message}</p>
+				<button class="btn btn-primary btn-sm" onclick="loadQueries()">
+					<i class="fa-solid fa-refresh me-1"></i>Try Again
+				</button>
+			</div>
+		</div>
+	`;
+}
+
+function escapeHtml(text) {
+	if (!text) return '';
+	const div = document.createElement('div');
+	div.textContent = text;
+	return div.innerHTML;
+}
+
+function showToast(message, type = 'info') {
+	const alertDiv = document.createElement('div');
+	alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+	alertDiv.style.top = '20px';
+	alertDiv.style.right = '20px';
+	alertDiv.style.zIndex = '9999';
+	alertDiv.style.width = '350px';
+	alertDiv.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+	alertDiv.setAttribute('role', 'alert');
+	alertDiv.innerHTML = `
+		${message}
+		<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+	`;
+	document.body.appendChild(alertDiv);
+	setTimeout(() => alertDiv.remove(), 5000);
+}
+</script>

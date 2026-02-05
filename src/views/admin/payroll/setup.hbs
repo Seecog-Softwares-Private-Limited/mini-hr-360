@@ -1,0 +1,2688 @@
+{{!-- Admin Payroll Setup --}}
+<div class="container-fluid">
+    <input type="hidden" id="businessId" value="{{businessId}}">
+    <script>
+    // Ensure an initial snapshot exists immediately (rendered from server `setup`),
+    // so inline Reset fallback can restore values even before finalizer runs.
+    try {
+        if (!window._initialPayrollSetup) {
+            window._initialPayrollSetup = {
+                payFrequency: '{{#if setup.payFrequency}}{{setup.payFrequency}}{{/if}}' || 'MONTHLY',
+                payDay: '{{#if setup.payDay}}{{setup.payDay}}{{/if}}' || '',
+                cutoffDay: '{{#if setup.cutoffDay}}{{setup.cutoffDay}}{{/if}}' || '',
+                financialYearStart: '{{#if setup.financialYearStart}}{{setup.financialYearStart}}{{/if}}' || 'APR',
+                proration: {{#if setup.proration}}true{{else}}false{{/if}},
+                statutoryConfig: {
+                    PF: {{#if setup.statutoryConfig.PF}}true{{else}}false{{/if}},
+                    ESI: {{#if setup.statutoryConfig.ESI}}true{{else}}false{{/if}},
+                    PT: {{#if setup.statutoryConfig.PT}}true{{else}}false{{/if}},
+                    TDS: {{#if setup.statutoryConfig.TDS}}true{{else}}false{{/if}},
+                    pfCeiling: '{{#if setup.statutoryConfig.pfCeiling}}{{setup.statutoryConfig.pfCeiling}}{{/if}}' || '',
+                    esiWageLimit: '{{#if setup.statutoryConfig.esiWageLimit}}{{setup.statutoryConfig.esiWageLimit}}{{/if}}' || ''
+                },
+                template: {
+                    companyName: '{{#if setup.companyName}}{{setup.companyName}}{{/if}}' || '{{#if setup.statutoryConfig.template.companyName}}{{setup.statutoryConfig.template.companyName}}{{/if}}' || '',
+                    companyAddress: '{{#if setup.companyAddress}}{{setup.companyAddress}}{{/if}}' || '{{#if setup.statutoryConfig.template.companyAddress}}{{setup.statutoryConfig.template.companyAddress}}{{/if}}' || '',
+                    payslipFooter: '{{#if setup.payslipFooter}}{{setup.payslipFooter}}{{/if}}' || '{{#if setup.statutoryConfig.template.payslipFooter}}{{setup.statutoryConfig.template.payslipFooter}}{{/if}}' || '',
+                    logoUrl: '{{#if setup.logoUrl}}{{setup.logoUrl}}{{/if}}' || '{{#if setup.statutoryConfig.template.logoUrl}}{{setup.statutoryConfig.template.logoUrl}}{{/if}}' || ''
+                }
+            };
+        }
+    } catch (e) { console.warn('initial snapshot setup failed', e); }
+    </script>
+    <script>
+    // Early listeners to enable Save immediately when user edits fields
+    (function(){
+        function enableSaveBtn(){
+            try{
+                const btn = document.getElementById('saveSetupBtn');
+                if (!btn) return;
+                btn.removeAttribute('disabled');
+                btn.classList.remove('opacity-50');
+                btn.classList.add('shadow-sm');
+            }catch(e){}
+        }
+        const quickSelectors = ['#payFrequency','#payDay','#cutoffDay','#financialYearStart','#proration','#pf','#esi','#pt','#tds','#pfCeiling','#esiLimit','#companyName','#companyAddress','#payslipFooter','#logoUrl','#bankIfsc','#bankName','#bankBranch','#bankAccountNumber','#bankAccountNumberConfirm','#bankAccountHolder','#bankAccountType','#bankUtrPrefix'];
+        quickSelectors.forEach(sel => {
+            try{
+                const el = document.querySelector(sel);
+                if (!el) return;
+                const ev = (el.tagName === 'SELECT' || el.type === 'checkbox') ? 'change' : 'input';
+                el.addEventListener(ev, enableSaveBtn);
+            }catch(e){}
+        });
+    })();
+    </script>
+    <script>
+    // Safe invokers to avoid ReferenceError when scripts load out-of-order
+    // Minimal early showToast fallback so inline handlers can call it before full UI is ready
+    if (typeof window.showToast !== 'function') {
+        window.showToast = function(message, type = 'info'){
+            try{
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+                alertDiv.setAttribute('role', 'alert');
+                alertDiv.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+                (document.querySelector('.main-content') || document.body).insertAdjacentElement('afterbegin', alertDiv);
+                setTimeout(() => alertDiv.remove(), 4000);
+            }catch(e){ console.warn('early showToast failed', e); }
+        };
+    }
+    window._invokeSavePayrollSetup = function(e){
+        try{
+            if (typeof savePayrollSetup === 'function') return savePayrollSetup(e);
+            if (typeof window.savePayrollSetup === 'function') return window.savePayrollSetup(e);
+        }catch(err){ console.warn('invoke save error', err); }
+        // Inline fallback: perform the save directly so Save works even if main handler didn't load
+        (async function(){
+            try{
+                if (e && e.preventDefault) e.preventDefault();
+                const saveBtn = document.getElementById('saveSetupBtn');
+                const originalHtml = saveBtn?.innerHTML;
+                try { if (saveBtn) { saveBtn.setAttribute('disabled','disabled'); saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Saving...'; } } catch(e){}
+
+                const payload = {
+                    payFrequency: document.getElementById('payFrequency')?.value,
+                    payDay: Number(document.getElementById('payDay')?.value || 0),
+                    cutoffDay: Number(document.getElementById('cutoffDay')?.value || 0),
+                    financialYearStart: document.getElementById('financialYearStart')?.value,
+                    proration: document.getElementById('proration')?.checked,
+                    statutoryConfig: {
+                        PF: document.getElementById('pf')?.checked,
+                        ESI: document.getElementById('esi')?.checked,
+                        PT: document.getElementById('pt')?.checked,
+                        TDS: document.getElementById('tds')?.checked,
+                        pfCeiling: Number(document.getElementById('pfCeiling')?.value || 0),
+                        esiWageLimit: Number(document.getElementById('esiLimit')?.value || 0),
+                    }
+                };
+                payload.approvalWorkflow = {
+                    steps: [
+                        {
+                            step: 1,
+                            name: 'HR_REVIEW',
+                            assignedUserId: document.getElementById('hrReviewerSelect')?.value || null,
+                        },
+                        {
+                            step: 2,
+                            name: 'FINANCE_REVIEW',
+                            assignedUserId: document.getElementById('financeReviewerSelect')?.value || null,
+                        },
+                        {
+                            step: 3,
+                            name: 'ADMIN_APPROVAL',
+                            assignedUserId: document.getElementById('adminApproverSelect')?.value || null,
+                        }
+                    ].filter(s => s.assignedUserId),
+                    autoApproveDays: Number(document.getElementById('autoApproveAfterDays')?.value || 0)
+                };
+                payload.companyName = document.getElementById('companyName')?.value || '';
+                payload.companyAddress = document.getElementById('companyAddress')?.value || '';
+                payload.payslipFooter = document.getElementById('payslipFooter')?.value || '';
+                payload.logoUrl = document.getElementById('logoUrl')?.value || '';
+                const bid = document.getElementById('businessId')?.value;
+                if (bid) payload.businessId = Number(bid);
+
+                const authToken = localStorage.getItem('accessToken');
+                const headers = { 'Content-Type': 'application/json' };
+                if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+
+                const res = await fetch('/api/admin/payroll/setup', { method: 'POST', credentials: 'include', headers, body: JSON.stringify(payload) });
+                const text = await res.text();
+                let data;
+                try { data = text ? JSON.parse(text) : {}; } catch (err) { data = {}; }
+                if (res.ok || data?.status === 200 || data?.status === 201) {
+                    try{ showToast('Payroll setup saved successfully!', 'success'); }catch(e){}
+                    try{ markClean(); }catch(e){}
+                } else {
+                    try{ showToast(data?.message || 'Failed to save payroll setup', 'danger'); }catch(e){}
+                }
+            } catch (err) {
+                console.error('Inline save fallback error', err);
+                try{ showToast('Save failed: ' + (err.message || 'Unknown'), 'danger'); }catch(e){}
+            } finally {
+                try {
+                    const sb = document.getElementById('saveSetupBtn');
+                    if (sb) {
+                        sb.removeAttribute('disabled');
+                        const defaultHtml = '<i class="fa-solid fa-check me-2"></i>Save Changes';
+                        try { sb.innerHTML = (typeof originalHtml !== 'undefined' && originalHtml) ? originalHtml : defaultHtml; } catch(e){ sb.innerHTML = defaultHtml; }
+                    }
+                } catch(e){}
+            }
+        })();
+    };
+    // Ensure a global fallback builder exists so inline invokers never fail
+    if (typeof window._buildPayloadFromSnapshot !== 'function') {
+        window._buildPayloadFromSnapshot = function(snap){
+            try{
+                const s = snap || window._initialPayrollSetup || {};
+                const payload = {
+                    payFrequency: s.payFrequency || document.getElementById('payFrequency')?.value,
+                    payDay: Number(s.payDay || document.getElementById('payDay')?.value || 0),
+                    cutoffDay: Number(s.cutoffDay || document.getElementById('cutoffDay')?.value || 0),
+                    financialYearStart: s.financialYearStart || document.getElementById('financialYearStart')?.value,
+                    proration: typeof s.proration === 'boolean' ? s.proration : !!document.getElementById('proration')?.checked,
+                    statutoryConfig: {
+                        PF: s.statutoryConfig?.PF ?? !!document.getElementById('pf')?.checked,
+                        ESI: s.statutoryConfig?.ESI ?? !!document.getElementById('esi')?.checked,
+                        PT: s.statutoryConfig?.PT ?? !!document.getElementById('pt')?.checked,
+                        TDS: s.statutoryConfig?.TDS ?? !!document.getElementById('tds')?.checked,
+                        pfCeiling: Number(s.statutoryConfig?.pfCeiling || document.getElementById('pfCeiling')?.value || 0),
+                        esiWageLimit: Number(s.statutoryConfig?.esiWageLimit || document.getElementById('esiLimit')?.value || 0),
+                    },
+                    template: {
+                        companyName: s.template?.companyName || document.getElementById('companyName')?.value || '',
+                        companyAddress: s.template?.companyAddress || document.getElementById('companyAddress')?.value || '',
+                        payslipFooter: s.template?.payslipFooter || document.getElementById('payslipFooter')?.value || '',
+                        logoUrl: s.template?.logoUrl || document.getElementById('logoUrl')?.value || ''
+                    },
+                    bankInputs: s.bankInputs || {}
+                };
+                if (Array.isArray(s.components) && s.components.length) payload.components = s.components;
+                return payload;
+            }catch(e){ console.warn('fallback build payload failed', e); return {}; }
+        };
+    }
+
+    // Provide a lightweight global fallback for persisting setup when the main
+    // `_persistSetup` isn't yet defined due to script load order. This mirrors
+    // the server call used by the main handler so inline reset/save can still
+    // persist state without throwing a ReferenceError.
+    if (typeof window._persistSetup !== 'function') {
+        window._persistSetup = async function(payload){
+            try{
+                const token = localStorage.getItem('accessToken');
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) headers['Authorization'] = `Bearer ${token}`;
+                const res = await fetch('/api/admin/payroll/setup', { method: 'POST', credentials: 'include', headers, body: JSON.stringify(payload) });
+                const text = await res.text();
+                let data;
+                try{ data = text ? JSON.parse(text) : {}; } catch(e){ data = {}; }
+                if (res.ok || data?.status === 200 || data?.status === 201) {
+                    try{ showToast('Payroll setup persisted', 'success'); }catch(e){}
+                    try{ window._initialPayrollSetup = payload; }catch(e){}
+                    try{ if (typeof markClean === 'function') markClean(); }catch(e){}
+                    return data;
+                } else {
+                    try{ showToast(data?.message || 'Failed to persist payroll setup', 'danger'); }catch(e){}
+                    throw new Error(data?.message || 'Persist failed');
+                }
+            }catch(err){
+                console.error('Inline fallback persist error', err);
+                try{ showToast('Persist failed: ' + (err.message || 'Unknown'), 'danger'); }catch(e){}
+                throw err;
+            }
+        };
+    }
+
+    window._invokeResetForm = function(){
+        try{
+            if (typeof resetForm === 'function') return resetForm();
+            if (typeof window.resetForm === 'function') return window.resetForm();
+        }catch(err){ console.warn('invoke reset error', err); }
+        // Inline fallback reset: restore from snapshot if available, otherwise offer reload
+        try{
+            if (window._initialPayrollSetup) {
+                if (!confirm('Are you sure you want to reset changes in this form?')) return;
+                const s = window._initialPayrollSetup;
+                (async function(){
+                    try {
+                        document.getElementById('payFrequency').value = s.payFrequency || 'MONTHLY';
+                        document.getElementById('payDay').value = s.payDay || '';
+                        document.getElementById('cutoffDay').value = s.cutoffDay || '';
+                        document.getElementById('financialYearStart').value = s.financialYearStart || 'APR';
+                        document.getElementById('proration').checked = !!s.proration;
+                        // apply other tabs (statutory/template/bank/components) - mirror main reset
+                        try{
+                            if (s.statutoryConfig) {
+                                document.getElementById('pf').checked = !!s.statutoryConfig.PF;
+                                document.getElementById('esi').checked = !!s.statutoryConfig.ESI;
+                                document.getElementById('pt').checked = !!s.statutoryConfig.PT;
+                                document.getElementById('tds').checked = !!s.statutoryConfig.TDS;
+                                if (document.getElementById('pfCeiling')) document.getElementById('pfCeiling').value = s.statutoryConfig.pfCeiling || '';
+                                if (document.getElementById('esiLimit')) document.getElementById('esiLimit').value = s.statutoryConfig.esiWageLimit || '';
+                            }
+                        } catch(e){}
+                        try{
+                            if (s.template) {
+                                if (document.getElementById('companyName')) document.getElementById('companyName').value = s.template.companyName || '';
+                                if (document.getElementById('companyAddress')) document.getElementById('companyAddress').value = s.template.companyAddress || '';
+                                if (document.getElementById('payslipFooter')) document.getElementById('payslipFooter').value = s.template.payslipFooter || '';
+                                if (document.getElementById('logoUrl')) document.getElementById('logoUrl').value = s.template.logoUrl || '';
+                                try { updatePreviewField(); } catch(e){}
+                            }
+                        } catch(e){}
+                        try{
+                            if (s.bankInputs) {
+                                Object.keys(s.bankInputs).forEach(k => {
+                                    const el = document.getElementById(k) || document.querySelector('#bank [name="' + k + '"]') || document.querySelector('#bank input[name="' + k + '"]');
+                                    if (!el) return;
+                                    try{ if (el.type === 'checkbox') el.checked = !!s.bankInputs[k]; else el.value = s.bankInputs[k] || ''; }catch(e){}
+                                });
+                            }
+                        } catch(e){}
+                        try{
+                            if (Array.isArray(s.components)) {
+                                const tbody = document.querySelector('#components tbody');
+                                if (tbody) {
+                                    tbody.innerHTML = '';
+                                    s.components.forEach((c, idx) => {
+                                        const tr = document.createElement('tr');
+                                        tr.setAttribute('data-comp-index', idx);
+                                        tr.innerHTML = `
+                                            <td><strong data-comp-name>${(c.name||'').replace(/`/g,'')}</strong></td>
+                                            <td><code data-comp-code>${(c.code||'').replace(/`/g,'')}</code></td>
+                                            <td><span class="badge ${ (c.type||'').toLowerCase().includes('deduct') ? 'bg-danger' : 'bg-success' }" data-comp-type> ${c.type||'Earning'}</span></td>
+                                            <td><span class="badge ${c.taxable ? 'bg-info' : 'bg-secondary'}" data-comp-taxable>${c.taxable ? 'Yes' : 'No'}</span></td>
+                                            <td data-comp-formula>${(c.formula||'').replace(/`/g,'')}</td>
+                                            <td><button class="btn btn-sm btn-outline-secondary" onclick="openEditComponentModal(${idx})">Edit</button></td>
+                                        `;
+                                        tbody.appendChild(tr);
+                                    });
+                                }
+                            }
+                        } catch(e){}
+
+                        // persist
+                        try{
+                            const payload = _buildPayloadFromSnapshot(s);
+                            await _persistSetup(payload);
+                        } catch(e){ console.warn('Inline reset persist failed', e); try{ if (typeof markDirty === 'function') markDirty(); }catch(_){} }
+                    } catch (e) {
+                        console.warn('Inline reset failed', e);
+                        if (confirm('Reset failed — reload page to restore?')) location.reload();
+                    }
+                })();
+                return;
+            }
+        }catch(e){ console.warn('Inline reset fallback error', e); }
+        if (confirm('Reset handler not available. Reload page to reset?')) location.reload();
+    };
+    </script>
+    <div class="row">
+        <div class="col-md-3 col-lg-2 px-0">
+            {{> sidebar active="payroll-setup" activeGroup="workspace"}}
+        </div>
+
+        <div class="col-md-9 col-lg-10">
+            <div class="main-content p-4">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-3 bg-transparent p-0">
+                        <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Payroll Setup</li>
+                    </ol>
+                </nav>
+
+                <div class="d-flex align-items-center justify-content-between mb-4">
+                    <div>
+                        <h2 class="mb-1">Payroll Setup</h2>
+                        <p class="text-muted mb-0">Configure payroll rules and settings for your workspace</p>
+                    </div>
+                </div>
+
+                <!-- Setup Completion Progress -->
+                <div class="card mb-4 shadow-sm border-0">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="card-title mb-0"><i class="fa-solid fa-list-check me-2 text-primary"></i>Setup Completion</h5>
+                            <span id="completionBadge" class="badge bg-info fs-6">Calculating...</span>
+                        </div>
+                        <div class="progress mb-3" style="height: 10px; border-radius: 5px;">
+                            <div id="completionProgress" class="progress-bar bg-success" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <div class="row g-3">
+                            <!-- Pay Calendar -->
+                            <div class="col-md-4">
+                                <div id="payCalendarBadge" class="d-flex align-items-center p-2 rounded" style="background: #f8f9fa;">
+                                    {{#if setup.payDay}}
+                                        <i class="fa-solid fa-check-circle text-success me-2" style="font-size: 22px;"></i>
+                                        <div>
+                                            <div style="font-weight: 600;">Pay Calendar</div>
+                                            <small class="text-muted">Pay day: {{setup.payDay}}, Cutoff: {{setup.cutoffDay}}</small>
+                                        </div>
+                                    {{else}}
+                                        <i class="fa-solid fa-circle-xmark text-warning me-2" style="font-size: 22px;"></i>
+                                        <div>
+                                            <div style="font-weight: 600;">Pay Calendar</div>
+                                            <small class="text-muted">Not configured</small>
+                                        </div>
+                                    {{/if}}
+                                </div>
+                            </div>
+                            <!-- Statutory Settings -->
+                            <div class="col-md-4">
+                                <div id="statutoryBadge" class="d-flex align-items-center p-2 rounded" style="background: #f8f9fa;">
+                                    {{#if setup.statutoryConfig.PF}}
+                                        <i class="fa-solid fa-check-circle text-success me-2" style="font-size: 22px;"></i>
+                                        <div>
+                                            <div style="font-weight: 600;">Statutory Settings</div>
+                                            <small class="text-muted">PF{{#if setup.statutoryConfig.ESI}}, ESI{{/if}}{{#if setup.statutoryConfig.PT}}, PT{{/if}}{{#if setup.statutoryConfig.TDS}}, TDS{{/if}} enabled</small>
+                                        </div>
+                                    {{else if setup.statutoryConfig.ESI}}
+                                        <i class="fa-solid fa-check-circle text-success me-2" style="font-size: 22px;"></i>
+                                        <div>
+                                            <div style="font-weight: 600;">Statutory Settings</div>
+                                            <small class="text-muted">ESI{{#if setup.statutoryConfig.PT}}, PT{{/if}}{{#if setup.statutoryConfig.TDS}}, TDS{{/if}} enabled</small>
+                                        </div>
+                                    {{else}}
+                                        <i class="fa-solid fa-circle-xmark text-warning me-2" style="font-size: 22px;"></i>
+                                        <div>
+                                            <div style="font-weight: 600;">Statutory Settings</div>
+                                            <small class="text-muted">No compliance enabled</small>
+                                        </div>
+                                    {{/if}}
+                                </div>
+                            </div>
+                            <!-- Components Master -->
+                            <div class="col-md-4">
+                                <div id="componentsBadge" class="d-flex align-items-center p-2 rounded" style="background: #f8f9fa;">
+                                    {{#if setup.statutoryConfig.components}}
+                                        <i class="fa-solid fa-check-circle text-success me-2" style="font-size: 22px;"></i>
+                                        <div>
+                                            <div style="font-weight: 600;">Components Master</div>
+                                            <small class="text-muted">{{setup.statutoryConfig.components.length}} components defined</small>
+                                        </div>
+                                    {{else}}
+                                        <i class="fa-solid fa-circle-xmark text-warning me-2" style="font-size: 22px;"></i>
+                                        <div>
+                                            <div style="font-weight: 600;">Components Master</div>
+                                            <small class="text-muted">Using defaults</small>
+                                        </div>
+                                    {{/if}}
+                                </div>
+                            </div>
+                            <!-- Company Bank -->
+                            <div class="col-md-4">
+                                <div id="bankBadge" class="d-flex align-items-center p-2 rounded" style="background: #f8f9fa;">
+                                    {{#if setup.bankDetails.accountNumber}}
+                                        <i class="fa-solid fa-check-circle text-success me-2" style="font-size: 22px;"></i>
+                                        <div>
+                                            <div style="font-weight: 600;">Company Bank</div>
+                                            <small class="text-muted">{{setup.bankDetails.bankName}} - ****{{#with (substring setup.bankDetails.accountNumber -4)}}{{this}}{{/with}}</small>
+                                        </div>
+                                    {{else}}
+                                        <i class="fa-solid fa-circle-xmark text-warning me-2" style="font-size: 22px;"></i>
+                                        <div>
+                                            <div style="font-weight: 600;">Company Bank</div>
+                                            <small class="text-muted">Not configured</small>
+                                        </div>
+                                    {{/if}}
+                                </div>
+                            </div>
+                            <!-- Payslip Template -->
+                            <div class="col-md-4">
+                                <div id="payslipBadge" class="d-flex align-items-center p-2 rounded" style="background: #f8f9fa;">
+                                    {{#if setup.companyName}}
+                                        <i class="fa-solid fa-check-circle text-success me-2" style="font-size: 22px;"></i>
+                                        <div>
+                                            <div style="font-weight: 600;">Payslip Template</div>
+                                            <small class="text-muted">Branded</small>
+                                        </div>
+                                    {{else}}
+                                        <i class="fa-solid fa-circle-xmark text-warning me-2" style="font-size: 22px;"></i>
+                                        <div>
+                                            <div style="font-weight: 600;">Payslip Template</div>
+                                            <small class="text-muted">Using defaults</small>
+                                        </div>
+                                    {{/if}}
+                                </div>
+                            </div>
+                            <!-- Approval Workflow -->
+                            <div class="col-md-4">
+                                <div id="workflowBadge" class="d-flex align-items-center p-2 rounded" style="background: #f8f9fa;">
+                                    {{#if setup.approvalWorkflow.steps}}
+                                        <i class="fa-solid fa-check-circle text-success me-2" style="font-size: 22px;"></i>
+                                        <div>
+                                            <div style="font-weight: 600;">Approval Workflow</div>
+                                            <small class="text-muted">{{setup.approvalWorkflow.steps.length}} step(s)</small>
+                                        </div>
+                                    {{else}}
+                                        <i class="fa-solid fa-circle-xmark text-warning me-2" style="font-size: 22px;"></i>
+                                        <div>
+                                            <div style="font-weight: 600;">Approval Workflow</div>
+                                            <small class="text-muted">Not configured</small>
+                                        </div>
+                                    {{/if}}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                // Calculate and update setup completion dynamically - reusable function
+                function updateSetupCompletion(savedData) {
+                    let data = savedData;
+                    if (!data) {
+                        // Read from DOM if no data provided
+                        data = {
+                            payDay: document.getElementById('payDay')?.value || '',
+                            cutoffDay: document.getElementById('cutoffDay')?.value || '',
+                            statutoryPF: document.getElementById('pf')?.checked || false,
+                            statutoryESI: document.getElementById('esi')?.checked || false,
+                            componentsCount: document.querySelectorAll('#components tbody tr[data-comp-index]')?.length || 0,
+                            bankAccount: document.getElementById('bankAccountNumber')?.value || '',
+                            companyName: document.getElementById('companyName')?.value || '',
+                            workflowSteps: 0
+                        };
+                        // Check workflow selects for actual selections
+                        try {
+                            const wfSelects = document.querySelectorAll('#workflow select');
+                            let stepsCount = 0;
+                            wfSelects.forEach(sel => {
+                                if (sel.value && !sel.value.includes('Select')) stepsCount++;
+                            });
+                            data.workflowSteps = stepsCount;
+                        } catch(e) {}
+                    }
+                    
+                    let complete = 0;
+                    if (data.payDay && data.cutoffDay) complete++;
+                    if (data.statutoryPF || data.statutoryESI) complete++;
+                    if (data.componentsCount > 0) complete++;
+                    if (data.bankAccount) complete++;
+                    if (data.companyName) complete++;
+                    if (data.workflowSteps > 0) complete++;
+
+                    const pct = Math.round((complete / 6) * 100);
+                    const badge = document.getElementById('completionBadge');
+                    const progress = document.getElementById('completionProgress');
+                    if (badge) {
+                        badge.textContent = complete + ' of 6 Complete';
+                        if (complete === 6) badge.className = 'badge bg-success fs-6';
+                        else if (complete >= 4) badge.className = 'badge bg-info fs-6';
+                        else if (complete >= 2) badge.className = 'badge bg-warning fs-6';
+                        else badge.className = 'badge bg-danger fs-6';
+                    }
+                    if (progress) {
+                        progress.style.width = pct + '%';
+                        progress.setAttribute('aria-valuenow', pct);
+                    }
+                    
+                    // Update individual badges
+                    updateIndividualBadges(data);
+                }
+                
+                function updateIndividualBadges(data) {
+                    // Pay Calendar Badge
+                    const payCalendarBadge = document.getElementById('payCalendarBadge');
+                    if (payCalendarBadge) {
+                        if (data.payDay && data.cutoffDay) {
+                            payCalendarBadge.innerHTML = `
+                                <i class="fa-solid fa-check-circle text-success me-2" style="font-size: 22px;"></i>
+                                <div>
+                                    <div style="font-weight: 600;">Pay Calendar</div>
+                                    <small class="text-muted">Pay day: ${data.payDay}, Cutoff: ${data.cutoffDay}</small>
+                                </div>
+                            `;
+                        } else {
+                            payCalendarBadge.innerHTML = `
+                                <i class="fa-solid fa-circle-xmark text-warning me-2" style="font-size: 22px;"></i>
+                                <div>
+                                    <div style="font-weight: 600;">Pay Calendar</div>
+                                    <small class="text-muted">Not configured</small>
+                                </div>
+                            `;
+                        }
+                    }
+                    
+                    // Statutory Badge
+                    const statutoryBadge = document.getElementById('statutoryBadge');
+                    if (statutoryBadge) {
+                        let enabledItems = [];
+                        if (data.statutoryPF) enabledItems.push('PF');
+                        if (data.statutoryESI) enabledItems.push('ESI');
+                        if (document.getElementById('pt')?.checked) enabledItems.push('PT');
+                        if (document.getElementById('tds')?.checked) enabledItems.push('TDS');
+                        
+                        if (enabledItems.length > 0) {
+                            statutoryBadge.innerHTML = `
+                                <i class="fa-solid fa-check-circle text-success me-2" style="font-size: 22px;"></i>
+                                <div>
+                                    <div style="font-weight: 600;">Statutory Settings</div>
+                                    <small class="text-muted">${enabledItems.join(', ')} enabled</small>
+                                </div>
+                            `;
+                        } else {
+                            statutoryBadge.innerHTML = `
+                                <i class="fa-solid fa-circle-xmark text-warning me-2" style="font-size: 22px;"></i>
+                                <div>
+                                    <div style="font-weight: 600;">Statutory Settings</div>
+                                    <small class="text-muted">No compliance enabled</small>
+                                </div>
+                            `;
+                        }
+                    }
+                    
+                    // Components Badge
+                    const componentsBadge = document.getElementById('componentsBadge');
+                    if (componentsBadge) {
+                        if (data.componentsCount > 0) {
+                            componentsBadge.innerHTML = `
+                                <i class="fa-solid fa-check-circle text-success me-2" style="font-size: 22px;"></i>
+                                <div>
+                                    <div style="font-weight: 600;">Components Master</div>
+                                    <small class="text-muted">${data.componentsCount} components defined</small>
+                                </div>
+                            `;
+                        } else {
+                            componentsBadge.innerHTML = `
+                                <i class="fa-solid fa-circle-xmark text-warning me-2" style="font-size: 22px;"></i>
+                                <div>
+                                    <div style="font-weight: 600;">Components Master</div>
+                                    <small class="text-muted">Using defaults</small>
+                                </div>
+                            `;
+                        }
+                    }
+                    
+                    // Bank Badge
+                    const bankBadge = document.getElementById('bankBadge');
+                    if (bankBadge) {
+                        const bankName = document.getElementById('bankName')?.value || '';
+                        const accNum = data.bankAccount || '';
+                        if (accNum) {
+                            const last4 = accNum.slice(-4);
+                            bankBadge.innerHTML = `
+                                <i class="fa-solid fa-check-circle text-success me-2" style="font-size: 22px;"></i>
+                                <div>
+                                    <div style="font-weight: 600;">Company Bank</div>
+                                    <small class="text-muted">${bankName || 'Bank'} - ****${last4}</small>
+                                </div>
+                            `;
+                        } else {
+                            bankBadge.innerHTML = `
+                                <i class="fa-solid fa-circle-xmark text-warning me-2" style="font-size: 22px;"></i>
+                                <div>
+                                    <div style="font-weight: 600;">Company Bank</div>
+                                    <small class="text-muted">Not configured</small>
+                                </div>
+                            `;
+                        }
+                    }
+                    
+                    // Payslip Template Badge
+                    const payslipBadge = document.getElementById('payslipBadge');
+                    if (payslipBadge) {
+                        if (data.companyName) {
+                            payslipBadge.innerHTML = `
+                                <i class="fa-solid fa-check-circle text-success me-2" style="font-size: 22px;"></i>
+                                <div>
+                                    <div style="font-weight: 600;">Payslip Template</div>
+                                    <small class="text-muted">Branded</small>
+                                </div>
+                            `;
+                        } else {
+                            payslipBadge.innerHTML = `
+                                <i class="fa-solid fa-circle-xmark text-warning me-2" style="font-size: 22px;"></i>
+                                <div>
+                                    <div style="font-weight: 600;">Payslip Template</div>
+                                    <small class="text-muted">Using defaults</small>
+                                </div>
+                            `;
+                        }
+                    }
+                    
+                    // Workflow Badge
+                    const workflowBadge = document.getElementById('workflowBadge');
+                    if (workflowBadge) {
+                        if (data.workflowSteps > 0) {
+                            workflowBadge.innerHTML = `
+                                <i class="fa-solid fa-check-circle text-success me-2" style="font-size: 22px;"></i>
+                                <div>
+                                    <div style="font-weight: 600;">Approval Workflow</div>
+                                    <small class="text-muted">${data.workflowSteps} step(s)</small>
+                                </div>
+                            `;
+                        } else {
+                            workflowBadge.innerHTML = `
+                                <i class="fa-solid fa-circle-xmark text-warning me-2" style="font-size: 22px;"></i>
+                                <div>
+                                    <div style="font-weight: 600;">Approval Workflow</div>
+                                    <small class="text-muted">Not configured</small>
+                                </div>
+                            `;
+                        }
+                    }
+                }
+                
+                // Make it globally available
+                window.updateSetupCompletion = updateSetupCompletion;
+                
+                // Initial calculation on page load
+                (function(){
+                    const setup = {
+                        payDay: '{{setup.payDay}}' || '',
+                        cutoffDay: '{{setup.cutoffDay}}' || '',
+                        statutoryPF: {{#if setup.statutoryConfig.PF}}true{{else}}false{{/if}},
+                        statutoryESI: {{#if setup.statutoryConfig.ESI}}true{{else}}false{{/if}},
+                        componentsCount: {{#if setup.statutoryConfig.components}}{{setup.statutoryConfig.components.length}}{{else}}0{{/if}},
+                        bankAccount: '{{setup.bankDetails.accountNumber}}' || '',
+                        companyName: '{{setup.companyName}}' || '',
+                        workflowSteps: {{#if setup.approvalWorkflow.steps}}{{setup.approvalWorkflow.steps.length}}{{else}}0{{/if}}
+                    };
+                    updateSetupCompletion(setup);
+                    
+                    // Add real-time listeners to update completion bar as user changes fields
+                    setTimeout(() => {
+                        const fieldsToWatch = [
+                            'payDay', 'cutoffDay', 'pf', 'esi', 'pt', 'tds',
+                            'bankAccountNumber', 'companyName', 'companyAddress'
+                        ];
+                        fieldsToWatch.forEach(id => {
+                            const el = document.getElementById(id);
+                            if (el) {
+                                el.addEventListener('input', () => updateSetupCompletion());
+                                el.addEventListener('change', () => updateSetupCompletion());
+                            }
+                        });
+                        // Watch workflow selects
+                        document.querySelectorAll('#workflow select').forEach(sel => {
+                            sel.addEventListener('change', () => updateSetupCompletion());
+                        });
+                    }, 200);
+                })();
+                </script>
+
+                <!-- Setup Tabs -->
+                <div class="card">
+                    <div class="card-header">
+                        <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="pay-calendar-tab" data-bs-toggle="tab" data-bs-target="#pay-calendar" type="button" role="tab" aria-controls="pay-calendar" aria-selected="true">
+                                    <i class="fa-solid fa-calendar-days me-2"></i>Pay Calendar
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="statutory-tab" data-bs-toggle="tab" data-bs-target="#statutory" type="button" role="tab" aria-controls="statutory" aria-selected="false">
+                                    <i class="fa-solid fa-shield me-2"></i>Statutory Settings
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="components-tab" data-bs-toggle="tab" data-bs-target="#components" type="button" role="tab" aria-controls="components" aria-selected="false">
+                                    <i class="fa-solid fa-cube me-2"></i>Components
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="bank-tab" data-bs-toggle="tab" data-bs-target="#bank" type="button" role="tab" aria-controls="bank" aria-selected="false">
+                                    <i class="fa-solid fa-bank me-2"></i>Company Bank
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="template-tab" data-bs-toggle="tab" data-bs-target="#template" type="button" role="tab" aria-controls="template" aria-selected="false">
+                                    <i class="fa-solid fa-file-lines me-2"></i>Payslip Template
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="workflow-tab" data-bs-toggle="tab" data-bs-target="#workflow" type="button" role="tab" aria-controls="workflow" aria-selected="false">
+                                    <i class="fa-solid fa-code-branch me-2"></i>Approval Workflow
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="tab-content">
+                            <!-- Pay Calendar Tab -->
+                            <div class="tab-pane fade show active" id="pay-calendar" role="tabpanel" aria-labelledby="pay-calendar-tab">
+                                <div class="row g-4">
+                                    <!-- Left: Pay Schedule Settings -->
+                                    <div class="col-md-7">
+                                        <div class="card border-0 shadow-sm">
+                                            <div class="card-header bg-white border-bottom">
+                                                <h6 class="mb-0"><i class="fa-solid fa-calendar-alt me-2 text-primary"></i>Pay Schedule Configuration</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <form>
+                                                    <div class="row g-4">
+                                                        <div class="col-md-6">
+                                                            <label class="form-label fw-600">Payroll Frequency</label>
+                                                            <select class="form-select" id="payFrequency" required>
+                                                                <option value="MONTHLY" {{#if (eq setup.payFrequency 'MONTHLY')}}selected{{/if}}>Monthly</option>
+                                                                <option value="WEEKLY" {{#if (eq setup.payFrequency 'WEEKLY')}}selected{{/if}}>Weekly</option>
+                                                            </select>
+                                                            <div class="form-text">How often employees are paid</div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label fw-600">Pay Date (Day of Month) <span class="text-danger">*</span></label>
+                                                            <div class="input-group">
+                                                                <input type="number" id="payDay" class="form-control" placeholder="e.g., 25" min="1" max="31" value="{{#if setup}}{{setup.payDay}}{{else}}{{/if}}" required>
+                                                                <span class="input-group-text"><i class="fa-solid fa-calendar-day"></i></span>
+                                                            </div>
+                                                            <div class="form-text">Day salaries are credited</div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label fw-600">Cutoff Date (Day of Month) <span class="text-danger">*</span></label>
+                                                            <div class="input-group">
+                                                                <input type="number" id="cutoffDay" class="form-control" placeholder="e.g., 20" min="1" max="31" value="{{#if setup}}{{setup.cutoffDay}}{{else}}{{/if}}" required>
+                                                                <span class="input-group-text"><i class="fa-solid fa-hourglass-half"></i></span>
+                                                            </div>
+                                                            <div class="form-text">Last day to update attendance/leaves</div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label fw-600">Financial Year Start</label>
+                                                            <select class="form-select" id="financialYearStart">
+                                                                <option value="APR" {{#if (eq setup.financialYearStart 'APR')}}selected{{/if}}>April (India Standard)</option>
+                                                                <option value="JAN" {{#if (eq setup.financialYearStart 'JAN')}}selected{{/if}}>January (Calendar Year)</option>
+                                                                <option value="JUL" {{#if (eq setup.financialYearStart 'JUL')}}selected{{/if}}>July</option>
+                                                            </select>
+                                                            <div class="form-text">For tax calculations & reports</div>
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                        <!-- Proration Settings Card -->
+                                        <div class="card border-0 shadow-sm mt-3">
+                                            <div class="card-header bg-white border-bottom">
+                                                <h6 class="mb-0"><i class="fa-solid fa-calculator me-2 text-success"></i>Proration Settings</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="d-flex align-items-start gap-3">
+                                                    <div class="form-check form-switch pt-1" style="min-width: 50px;">
+                                                        <input class="form-check-input" type="checkbox" id="proration" style="width: 50px; height: 26px;" {{#if setup}}{{#if setup.proration}}checked{{/if}}{{/if}}>
+                                                    </div>
+                                                    <div>
+                                                        <label class="form-check-label fw-600 mb-1" for="proration">Enable Salary Proration</label>
+                                                        <p class="text-muted mb-0 small">When enabled, salary is automatically calculated proportionally for employees who join or leave mid-month. Uses calendar-day proration by default.</p>
+                                                    </div>
+                                                </div>
+                                                <div id="prorationDetails" class="mt-3 p-3 bg-light rounded" style="{{#unless setup.proration}}display: none;{{/unless}}">
+                                                    <div class="row g-2">
+                                                        <div class="col-md-6">
+                                                            <div class="d-flex align-items-center">
+                                                                <i class="fa-solid fa-user-plus text-success me-2"></i>
+                                                                <div>
+                                                                    <div class="small fw-600">Joining Proration</div>
+                                                                    <div class="small text-muted">Days from join date to month end</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="d-flex align-items-center">
+                                                                <i class="fa-solid fa-user-minus text-danger me-2"></i>
+                                                                <div>
+                                                                    <div class="small fw-600">Exit Proration</div>
+                                                                    <div class="small text-muted">Days from month start to last working day</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Right: Visual Calendar Preview -->
+                                    <div class="col-md-5">
+                                        <div class="card border-0 shadow-sm">
+                                            <div class="card-header bg-white border-bottom">
+                                                <h6 class="mb-0"><i class="fa-solid fa-eye me-2 text-info"></i>Pay Cycle Preview</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div id="payCalendarPreview" class="p-3 bg-light rounded">
+                                                    <div class="text-center mb-3">
+                                                        <span id="previewMonth" class="badge bg-primary fs-6">Current Month</span>
+                                                    </div>
+                                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                                        <div class="text-center flex-fill">
+                                                            <div id="previewCutoffDate" class="display-6 fw-bold text-warning">20</div>
+                                                            <div class="small text-muted">Cutoff Date</div>
+                                                        </div>
+                                                        <div class="px-3">
+                                                            <i class="fa-solid fa-arrow-right text-muted"></i>
+                                                        </div>
+                                                        <div class="text-center flex-fill">
+                                                            <div id="previewPayDate" class="display-6 fw-bold text-success">25</div>
+                                                            <div class="small text-muted">Pay Date</div>
+                                                        </div>
+                                                    </div>
+                                                    <hr>
+                                                    <div class="small">
+                                                        <div class="d-flex justify-content-between mb-2">
+                                                            <span class="text-muted">Processing Window:</span>
+                                                            <span id="previewWindow" class="fw-600">5 days</span>
+                                                        </div>
+                                                        <div class="d-flex justify-content-between mb-2">
+                                                            <span class="text-muted">Financial Year:</span>
+                                                            <span id="previewFY" class="fw-600">April - March</span>
+                                                        </div>
+                                                        <div class="d-flex justify-content-between">
+                                                            <span class="text-muted">Proration:</span>
+                                                            <span id="previewProration" class="fw-600">Disabled</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="mt-3">
+                                                    <div class="alert alert-info py-2 mb-0 small">
+                                                        <i class="fa-solid fa-info-circle me-2"></i>
+                                                        <strong>Tip:</strong> Keep at least 3-5 days between cutoff and pay date for processing.
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <script>
+                            // Pay Calendar Preview Updates
+                            function updatePayCalendarPreview() {
+                                const payDay = document.getElementById('payDay')?.value || '25';
+                                const cutoffDay = document.getElementById('cutoffDay')?.value || '20';
+                                const fyStart = document.getElementById('financialYearStart')?.value || 'APR';
+                                const proration = document.getElementById('proration')?.checked;
+                                
+                                document.getElementById('previewPayDate').textContent = payDay || '-';
+                                document.getElementById('previewCutoffDate').textContent = cutoffDay || '-';
+                                
+                                // Calculate processing window
+                                let window = parseInt(payDay || 0) - parseInt(cutoffDay || 0);
+                                if (window < 0) window += 30; // Handle month wrap
+                                document.getElementById('previewWindow').textContent = window + ' days';
+                                
+                                // Financial year display
+                                const fyMap = { 'APR': 'April - March', 'JAN': 'January - December', 'JUL': 'July - June' };
+                                document.getElementById('previewFY').textContent = fyMap[fyStart] || 'April - March';
+                                
+                                // Proration status
+                                document.getElementById('previewProration').textContent = proration ? 'Enabled' : 'Disabled';
+                                document.getElementById('previewProration').className = 'fw-600 ' + (proration ? 'text-success' : 'text-muted');
+                                
+                                // Show/hide proration details
+                                const prorationDetails = document.getElementById('prorationDetails');
+                                if (prorationDetails) {
+                                    prorationDetails.style.display = proration ? 'block' : 'none';
+                                }
+                                
+                                // Current month name
+                                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                                document.getElementById('previewMonth').textContent = monthNames[new Date().getMonth()] + ' ' + new Date().getFullYear();
+                            }
+                            
+                            ['payDay', 'cutoffDay', 'financialYearStart'].forEach(id => {
+                                const el = document.getElementById(id);
+                                if (el) {
+                                    el.addEventListener('input', updatePayCalendarPreview);
+                                    el.addEventListener('change', updatePayCalendarPreview);
+                                }
+                            });
+                            document.getElementById('proration')?.addEventListener('change', updatePayCalendarPreview);
+                            
+                            // Initialize on load
+                            setTimeout(updatePayCalendarPreview, 100);
+                            </script>
+
+                            <!-- Statutory Settings Tab -->
+                            <div class="tab-pane fade" id="statutory" role="tabpanel" aria-labelledby="statutory-tab">
+                                <div class="row g-4">
+                                    <!-- Left Column: Toggles -->
+                                    <div class="col-md-7">
+                                        <div class="card border-0 shadow-sm">
+                                            <div class="card-header bg-white border-bottom">
+                                                <h6 class="mb-0"><i class="fa-solid fa-shield-halved me-2 text-primary"></i>Statutory Compliance</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <p class="text-muted small mb-4">Enable the statutory deductions applicable to your organization. These will be automatically calculated during payroll processing.</p>
+                                                
+                                                <!-- PF -->
+                                                <div class="d-flex align-items-start justify-content-between p-3 mb-3 rounded border" style="background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);">
+                                                    <div class="d-flex align-items-start gap-3">
+                                                        <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; background: #e8f5e9;">
+                                                            <i class="fa-solid fa-piggy-bank text-success" style="font-size: 20px;"></i>
+                                                        </div>
+                                                        <div>
+                                                            <div class="fw-600">Provident Fund (PF)</div>
+                                                            <div class="small text-muted">12% employee + 12% employer contribution</div>
+                                                            <div class="small text-muted mt-1">EPF Act, 1952 - Applicable for establishments with 20+ employees</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" type="checkbox" id="pf" style="width: 50px; height: 26px;" {{#if setup}}{{#if setup.statutoryConfig.PF}}checked{{/if}}{{/if}}>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- ESI -->
+                                                <div class="d-flex align-items-start justify-content-between p-3 mb-3 rounded border" style="background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);">
+                                                    <div class="d-flex align-items-start gap-3">
+                                                        <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; background: #e3f2fd;">
+                                                            <i class="fa-solid fa-hospital text-primary" style="font-size: 20px;"></i>
+                                                        </div>
+                                                        <div>
+                                                            <div class="fw-600">Employee State Insurance (ESI)</div>
+                                                            <div class="small text-muted">0.75% employee + 3.25% employer contribution</div>
+                                                            <div class="small text-muted mt-1">ESI Act, 1948 - For employees with gross ≤ ₹21,000/month</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" type="checkbox" id="esi" style="width: 50px; height: 26px;" {{#if setup}}{{#if setup.statutoryConfig.ESI}}checked{{/if}}{{/if}}>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- PT -->
+                                                <div class="d-flex align-items-start justify-content-between p-3 mb-3 rounded border" style="background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);">
+                                                    <div class="d-flex align-items-start gap-3">
+                                                        <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; background: #fff3e0;">
+                                                            <i class="fa-solid fa-landmark text-warning" style="font-size: 20px;"></i>
+                                                        </div>
+                                                        <div>
+                                                            <div class="fw-600">Professional Tax (PT)</div>
+                                                            <div class="small text-muted">State-wise slab based deduction</div>
+                                                            <div class="small text-muted mt-1">State specific - Max ₹2,500/year (varies by state)</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" type="checkbox" id="pt" style="width: 50px; height: 26px;" {{#if setup}}{{#if setup.statutoryConfig.PT}}checked{{/if}}{{/if}}>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- TDS -->
+                                                <div class="d-flex align-items-start justify-content-between p-3 rounded border" style="background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);">
+                                                    <div class="d-flex align-items-start gap-3">
+                                                        <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; background: #fce4ec;">
+                                                            <i class="fa-solid fa-file-invoice-dollar text-danger" style="font-size: 20px;"></i>
+                                                        </div>
+                                                        <div>
+                                                            <div class="fw-600">Tax Deducted at Source (TDS)</div>
+                                                            <div class="small text-muted">Income tax based on declared regime</div>
+                                                            <div class="small text-muted mt-1">Income Tax Act - Calculated based on employee declarations</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" type="checkbox" id="tds" style="width: 50px; height: 26px;" {{#if setup}}{{#if setup.statutoryConfig.TDS}}checked{{/if}}{{/if}}>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Right Column: Limits & Info -->
+                                    <div class="col-md-5">
+                                        <div class="card border-0 shadow-sm mb-3">
+                                            <div class="card-header bg-white border-bottom">
+                                                <h6 class="mb-0"><i class="fa-solid fa-sliders me-2 text-info"></i>Statutory Limits</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="mb-4">
+                                                    <label class="form-label fw-600">PF Ceiling (Basic + DA)</label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text">₹</span>
+                                                        <input type="number" id="pfCeiling" class="form-control" placeholder="15000" value="{{#if setup}}{{setup.statutoryConfig.pfCeiling}}{{else}}15000{{/if}}">
+                                                        <span class="input-group-text">/month</span>
+                                                    </div>
+                                                    <div class="form-text">PF is calculated on Basic + DA up to this limit (current limit: ₹15,000)</div>
+                                                </div>
+                                                <div>
+                                                    <label class="form-label fw-600">ESI Wage Limit</label>
+                                                    <div class="input-group">
+                                                        <span class="input-group-text">₹</span>
+                                                        <input type="number" id="esiLimit" class="form-control" placeholder="21000" value="{{#if setup}}{{setup.statutoryConfig.esiWageLimit}}{{else}}21000{{/if}}">
+                                                        <span class="input-group-text">/month</span>
+                                                    </div>
+                                                    <div class="form-text">ESI applies only if gross salary ≤ this limit (current limit: ₹21,000)</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Current Status Summary -->
+                                        <div class="card border-0 shadow-sm">
+                                            <div class="card-header bg-white border-bottom">
+                                                <h6 class="mb-0"><i class="fa-solid fa-chart-pie me-2 text-success"></i>Active Compliance</h6>
+                                            </div>
+                                            <div class="card-body" id="statutorySummary">
+                                                <div class="text-center py-4">
+                                                    <div class="mb-3">
+                                                        <span id="activeComplianceCount" class="display-4 fw-bold text-primary">0</span>
+                                                        <span class="text-muted fs-5"> / 4</span>
+                                                    </div>
+                                                    <div class="text-muted">Compliance items enabled</div>
+                                                </div>
+                                                <div id="activeComplianceList" class="d-flex flex-wrap gap-2 justify-content-center">
+                                                    <!-- Dynamically populated -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <script>
+                            // Update statutory summary dynamically
+                            function updateStatutorySummary() {
+                                const pf = document.getElementById('pf')?.checked;
+                                const esi = document.getElementById('esi')?.checked;
+                                const pt = document.getElementById('pt')?.checked;
+                                const tds = document.getElementById('tds')?.checked;
+                                
+                                const count = [pf, esi, pt, tds].filter(Boolean).length;
+                                document.getElementById('activeComplianceCount').textContent = count;
+                                
+                                const badges = [];
+                                if (pf) badges.push('<span class="badge bg-success fs-6"><i class="fa-solid fa-check me-1"></i>PF</span>');
+                                if (esi) badges.push('<span class="badge bg-primary fs-6"><i class="fa-solid fa-check me-1"></i>ESI</span>');
+                                if (pt) badges.push('<span class="badge bg-warning text-dark fs-6"><i class="fa-solid fa-check me-1"></i>PT</span>');
+                                if (tds) badges.push('<span class="badge bg-danger fs-6"><i class="fa-solid fa-check me-1"></i>TDS</span>');
+                                
+                                if (badges.length === 0) {
+                                    badges.push('<span class="badge bg-secondary fs-6">No compliance enabled</span>');
+                                }
+                                
+                                document.getElementById('activeComplianceList').innerHTML = badges.join(' ');
+                            }
+                            
+                            ['pf', 'esi', 'pt', 'tds'].forEach(id => {
+                                document.getElementById(id)?.addEventListener('change', updateStatutorySummary);
+                            });
+                            
+                            // Initialize on load
+                            setTimeout(updateStatutorySummary, 100);
+                            </script>
+
+                            <!-- Components Tab -->
+                            <div class="tab-pane fade" id="components" role="tabpanel" aria-labelledby="components-tab">
+                                <div class="row g-4">
+                                    <div class="col-12">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <div>
+                                                <h6 class="mb-1"><i class="fa-solid fa-cubes me-2 text-primary"></i>Salary Components</h6>
+                                                <p class="text-muted small mb-0">Define earnings and deductions that make up employee salaries</p>
+                                            </div>
+                                            <button id="openAddComponentBtn" type="button" class="btn btn-primary" onclick="(window.openAddComponentModal||function(){const m=document.getElementById('addComponentModal'); if(m) new bootstrap.Modal(m).show();})()">
+                                                <i class="fa-solid fa-plus me-2"></i>Add Component
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <!-- Earnings Section -->
+                                    <div class="col-md-6">
+                                        <div class="card border-0 shadow-sm h-100">
+                                            <div class="card-header bg-success text-white">
+                                                <h6 class="mb-0"><i class="fa-solid fa-arrow-trend-up me-2"></i>Earnings</h6>
+                                            </div>
+                                            <div class="card-body p-0">
+                                                <div class="table-responsive">
+                                                    <table class="table table-hover mb-0">
+                                                        <thead class="table-light">
+                                                            <tr>
+                                                                <th>Component</th>
+                                                                <th>Formula/Calculation</th>
+                                                                <th width="80">Actions</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="earningsTableBody">
+                                                            {{#each setup.statutoryConfig.components}}
+                                                                {{#unless (includes this.type "Deduction")}}
+                                                                    <tr data-comp-index="{{@index}}">
+                                                                        <td>
+                                                                            <strong data-comp-name>{{this.name}}</strong>
+                                                                            <br><code class="small" data-comp-code>{{this.code}}</code>
+                                                                            <span class="badge bg-{{#if this.taxable}}info{{else}}secondary{{/if}} ms-1 small" data-comp-taxable>{{#if this.taxable}}Taxable{{else}}Non-Tax{{/if}}</span>
+                                                                            <span class="d-none" data-comp-type>{{this.type}}</span>
+                                                                        </td>
+                                                                        <td data-comp-formula><code class="small">{{this.formula}}</code></td>
+                                                                        <td>
+                                                                            <button class="btn btn-sm btn-outline-secondary" onclick="openEditComponentModal({{@index}})"><i class="fa-solid fa-edit"></i></button>
+                                                                        </td>
+                                                                    </tr>
+                                                                {{/unless}}
+                                                            {{else}}
+                                                                <!-- Default earnings if no saved components -->
+                                                                <tr data-comp-index="0">
+                                                                    <td>
+                                                                        <strong data-comp-name>Basic Salary</strong>
+                                                                        <br><code class="small" data-comp-code>BASIC</code>
+                                                                        <span class="badge bg-info ms-1 small" data-comp-taxable>Taxable</span>
+                                                                        <span class="d-none" data-comp-type>Earning</span>
+                                                                    </td>
+                                                                    <td data-comp-formula><code class="small">50% of CTC</code></td>
+                                                                    <td>
+                                                                        <button class="btn btn-sm btn-outline-secondary" onclick="openEditComponentModal(0)"><i class="fa-solid fa-edit"></i></button>
+                                                                    </td>
+                                                                </tr>
+                                                                <tr data-comp-index="1">
+                                                                    <td>
+                                                                        <strong data-comp-name>House Rent Allowance</strong>
+                                                                        <br><code class="small" data-comp-code>HRA</code>
+                                                                        <span class="badge bg-secondary ms-1 small" data-comp-taxable>Non-Tax</span>
+                                                                        <span class="d-none" data-comp-type>Earning</span>
+                                                                    </td>
+                                                                    <td data-comp-formula><code class="small">40% of Basic (Metro) / 50% of Basic (Non-Metro)</code></td>
+                                                                    <td>
+                                                                        <button class="btn btn-sm btn-outline-secondary" onclick="openEditComponentModal(1)"><i class="fa-solid fa-edit"></i></button>
+                                                                    </td>
+                                                                </tr>
+                                                                <tr data-comp-index="2">
+                                                                    <td>
+                                                                        <strong data-comp-name>Special Allowance</strong>
+                                                                        <br><code class="small" data-comp-code>SA</code>
+                                                                        <span class="badge bg-info ms-1 small" data-comp-taxable>Taxable</span>
+                                                                        <span class="d-none" data-comp-type>Earning</span>
+                                                                    </td>
+                                                                    <td data-comp-formula><code class="small">CTC - (Basic + HRA + Other Allowances)</code></td>
+                                                                    <td>
+                                                                        <button class="btn btn-sm btn-outline-secondary" onclick="openEditComponentModal(2)"><i class="fa-solid fa-edit"></i></button>
+                                                                    </td>
+                                                                </tr>
+                                                            {{/each}}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Deductions Section -->
+                                    <div class="col-md-6">
+                                        <div class="card border-0 shadow-sm h-100">
+                                            <div class="card-header bg-danger text-white">
+                                                <h6 class="mb-0"><i class="fa-solid fa-arrow-trend-down me-2"></i>Deductions</h6>
+                                            </div>
+                                            <div class="card-body p-0">
+                                                <div class="table-responsive">
+                                                    <table class="table table-hover mb-0">
+                                                        <thead class="table-light">
+                                                            <tr>
+                                                                <th>Component</th>
+                                                                <th>Formula/Calculation</th>
+                                                                <th width="80">Actions</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="deductionsTableBody">
+                                                            {{#each setup.statutoryConfig.components}}
+                                                                {{#if (includes this.type "Deduction")}}
+                                                                    <tr data-comp-index="{{@index}}">
+                                                                        <td>
+                                                                            <strong data-comp-name>{{this.name}}</strong>
+                                                                            <br><code class="small" data-comp-code>{{this.code}}</code>
+                                                                            <span class="badge bg-{{#if this.taxable}}info{{else}}secondary{{/if}} ms-1 small" data-comp-taxable>{{#if this.taxable}}Taxable{{else}}Non-Tax{{/if}}</span>
+                                                                            <span class="d-none" data-comp-type>{{this.type}}</span>
+                                                                        </td>
+                                                                        <td data-comp-formula><code class="small">{{this.formula}}</code></td>
+                                                                        <td>
+                                                                            <button class="btn btn-sm btn-outline-secondary" onclick="openEditComponentModal({{@index}})"><i class="fa-solid fa-edit"></i></button>
+                                                                        </td>
+                                                                    </tr>
+                                                                {{/if}}
+                                                            {{else}}
+                                                                <!-- Default deductions if no saved components -->
+                                                                <tr data-comp-index="3">
+                                                                    <td>
+                                                                        <strong data-comp-name>Provident Fund</strong>
+                                                                        <br><code class="small" data-comp-code>PF</code>
+                                                                        <span class="badge bg-secondary ms-1 small" data-comp-taxable>Non-Tax</span>
+                                                                        <span class="d-none" data-comp-type>Deduction</span>
+                                                                    </td>
+                                                                    <td data-comp-formula><code class="small">12% of min(Basic, ₹15,000)</code></td>
+                                                                    <td>
+                                                                        <button class="btn btn-sm btn-outline-secondary" onclick="openEditComponentModal(3)"><i class="fa-solid fa-edit"></i></button>
+                                                                    </td>
+                                                                </tr>
+                                                                <tr data-comp-index="4">
+                                                                    <td>
+                                                                        <strong data-comp-name>Employee State Insurance</strong>
+                                                                        <br><code class="small" data-comp-code>ESI</code>
+                                                                        <span class="badge bg-secondary ms-1 small" data-comp-taxable>Non-Tax</span>
+                                                                        <span class="d-none" data-comp-type>Deduction</span>
+                                                                    </td>
+                                                                    <td data-comp-formula><code class="small">0.75% of Gross (if Gross ≤ ₹21,000)</code></td>
+                                                                    <td>
+                                                                        <button class="btn btn-sm btn-outline-secondary" onclick="openEditComponentModal(4)"><i class="fa-solid fa-edit"></i></button>
+                                                                    </td>
+                                                                </tr>
+                                                                <tr data-comp-index="5">
+                                                                    <td>
+                                                                        <strong data-comp-name>Professional Tax</strong>
+                                                                        <br><code class="small" data-comp-code>PT</code>
+                                                                        <span class="badge bg-secondary ms-1 small" data-comp-taxable>Non-Tax</span>
+                                                                        <span class="d-none" data-comp-type>Deduction</span>
+                                                                    </td>
+                                                                    <td data-comp-formula><code class="small">State slab-based (max ₹200/month)</code></td>
+                                                                    <td>
+                                                                        <button class="btn btn-sm btn-outline-secondary" onclick="openEditComponentModal(5)"><i class="fa-solid fa-edit"></i></button>
+                                                                    </td>
+                                                                </tr>
+                                                            {{/each}}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Formula Reference Card -->
+                                    <div class="col-12">
+                                        <div class="card border-0 shadow-sm bg-light">
+                                            <div class="card-body">
+                                                <h6 class="mb-3"><i class="fa-solid fa-info-circle me-2 text-info"></i>Formula Reference</h6>
+                                                <div class="row g-3">
+                                                    <div class="col-md-3">
+                                                        <div class="p-2 bg-white rounded border">
+                                                            <code class="small">BASIC</code>
+                                                            <div class="small text-muted mt-1">Reference basic salary</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="p-2 bg-white rounded border">
+                                                            <code class="small">BASIC * 0.50</code>
+                                                            <div class="small text-muted mt-1">50% of basic</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="p-2 bg-white rounded border">
+                                                            <code class="small">MIN(BASIC, 15000) * 0.12</code>
+                                                            <div class="small text-muted mt-1">PF calculation</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="p-2 bg-white rounded border">
+                                                            <code class="small">CTC - EARNINGS</code>
+                                                            <div class="small text-muted mt-1">Balancing component</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Company Bank Tab -->
+                            <div class="tab-pane fade" id="bank" role="tabpanel" aria-labelledby="bank-tab">
+                                <div class="row g-4">
+                                    <!-- Bank Details Form -->
+                                    <div class="col-md-7">
+                                        <div class="card border-0 shadow-sm">
+                                            <div class="card-header bg-white border-bottom">
+                                                <h6 class="mb-0"><i class="fa-solid fa-building-columns me-2 text-primary"></i>Company Bank Account</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <form>
+                                                    <div class="row g-3">
+                                                        <div class="col-md-6">
+                                                            <label class="form-label fw-600">IFSC Code <span class="text-danger">*</span></label>
+                                                            <div class="input-group">
+                                                                <input id="bankIfsc" name="ifsc" type="text" class="form-control text-uppercase" placeholder="e.g., ICIC0000001" maxlength="11" value="{{#if setup}}{{#if setup.bankDetails}}{{setup.bankDetails.ifsc}}{{/if}}{{/if}}">
+                                                                <button type="button" class="btn btn-outline-primary" id="lookupIfscBtn" onclick="lookupIFSC()">
+                                                                    <i class="fa-solid fa-search"></i> Lookup
+                                                                </button>
+                                                            </div>
+                                                            <div id="ifscStatus" class="form-text mt-1"></div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label fw-600">Bank Name</label>
+                                                            <input id="bankName" name="bankName" type="text" class="form-control" placeholder="Auto-detected from IFSC" value="{{#if setup}}{{#if setup.bankDetails}}{{setup.bankDetails.bankName}}{{/if}}{{/if}}" readonly style="background-color: #f8f9fa;">
+                                                        </div>
+                                                        <div class="col-md-12">
+                                                            <label class="form-label fw-600">Branch Name</label>
+                                                            <input id="bankBranch" name="branch" type="text" class="form-control" placeholder="Auto-detected from IFSC" value="{{#if setup}}{{#if setup.bankDetails}}{{setup.bankDetails.branch}}{{/if}}{{/if}}" readonly style="background-color: #f8f9fa;">
+                                                        </div>
+                                                        <div class="col-12"><hr class="my-2"></div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label fw-600">Account Number <span class="text-danger">*</span></label>
+                                                            <input id="bankAccountNumber" name="accountNumber" type="text" class="form-control" placeholder="e.g., 123456789012345" value="{{#if setup}}{{#if setup.bankDetails}}{{setup.bankDetails.accountNumber}}{{/if}}{{/if}}">
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label fw-600">Confirm Account Number <span class="text-danger">*</span></label>
+                                                            <input id="bankAccountNumberConfirm" type="text" class="form-control" placeholder="Re-enter account number" value="{{#if setup}}{{#if setup.bankDetails}}{{setup.bankDetails.accountNumber}}{{/if}}{{/if}}">
+                                                            <div id="accountMatchStatus" class="form-text mt-1"></div>
+                                                        </div>
+                                                        <div class="col-md-12">
+                                                            <label class="form-label fw-600">Account Holder Name <span class="text-danger">*</span></label>
+                                                            <input id="bankAccountHolder" name="accountHolder" type="text" class="form-control text-uppercase" placeholder="COMPANY NAME AS PER BANK" value="{{#if setup}}{{#if setup.bankDetails}}{{setup.bankDetails.accountHolder}}{{/if}}{{/if}}">
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label fw-600">Account Type</label>
+                                                            <select id="bankAccountType" name="accountType" class="form-select">
+                                                                <option value="CURRENT" {{#if (eq setup.bankDetails.accountType 'CURRENT')}}selected{{/if}}>Current Account</option>
+                                                                <option value="SAVINGS" {{#if (eq setup.bankDetails.accountType 'SAVINGS')}}selected{{/if}}>Savings Account</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label fw-600">UTR Prefix (Optional)</label>
+                                                            <input id="bankUtrPrefix" name="utrPrefix" type="text" class="form-control" placeholder="e.g., SALPAY" maxlength="10" value="{{#if setup}}{{#if setup.bankDetails}}{{setup.bankDetails.utrPrefix}}{{/if}}{{/if}}">
+                                                            <div class="form-text">Used in payment references</div>
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Bank Preview & Verification -->
+                                    <div class="col-md-5">
+                                        <div class="card border-0 shadow-sm mb-3">
+                                            <div class="card-header bg-white border-bottom">
+                                                <h6 class="mb-0"><i class="fa-solid fa-credit-card me-2 text-success"></i>Account Preview</h6>
+                                            </div>
+                                            <div class="card-body text-center py-4">
+                                                <div id="bankCardPreview" class="mx-auto" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; padding: 24px; max-width: 340px; color: white; text-align: left; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);">
+                                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                                                        <div style="font-size: 12px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8;">Company Account</div>
+                                                        <div id="bankSymbol" style="font-size: 18px; font-weight: 700; background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 6px;">BANK</div>
+                                                    </div>
+                                                    <div id="bankCardAccountNumber" style="font-size: 20px; font-weight: 600; letter-spacing: 2px; margin-bottom: 20px;">XXXX XXXX XXXX</div>
+                                                    <div style="display: flex; justify-content: space-between;">
+                                                        <div>
+                                                            <div style="font-size: 10px; text-transform: uppercase; opacity: 0.7;">Account Holder</div>
+                                                            <div id="bankCardHolder" style="font-size: 14px; font-weight: 600; text-transform: uppercase;">COMPANY NAME</div>
+                                                        </div>
+                                                        <div style="text-align: right;">
+                                                            <div style="font-size: 10px; text-transform: uppercase; opacity: 0.7;">Type</div>
+                                                            <div id="bankCardType" style="font-size: 14px; font-weight: 600;">CURRENT</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- Test Payment Section -->
+                                        <div class="card border-0 shadow-sm">
+                                            <div class="card-header bg-white border-bottom">
+                                                <h6 class="mb-0"><i class="fa-solid fa-paper-plane me-2 text-info"></i>Verify Account</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <p class="text-muted small mb-3">Send a test penny payment (₹1) to verify bank details are correct before processing salaries.</p>
+                                                <div class="d-grid gap-2">
+                                                    <button type="button" class="btn btn-outline-info" id="testPaymentBtn" onclick="sendTestPayment()">
+                                                        <i class="fa-solid fa-rupee-sign me-2"></i>Send ₹1 Test Payment
+                                                    </button>
+                                                </div>
+                                                <div id="testPaymentStatus" class="mt-3"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <script>
+                            // IFSC Lookup using Razorpay's public API
+                            async function lookupIFSC() {
+                                const ifsc = document.getElementById('bankIfsc')?.value?.trim()?.toUpperCase();
+                                const statusEl = document.getElementById('ifscStatus');
+                                const btn = document.getElementById('lookupIfscBtn');
+                                
+                                if (!ifsc || ifsc.length !== 11) {
+                                    statusEl.innerHTML = '<span class="text-danger"><i class="fa-solid fa-exclamation-circle me-1"></i>IFSC must be 11 characters</span>';
+                                    return;
+                                }
+                                
+                                statusEl.innerHTML = '<span class="text-info"><i class="fa-solid fa-spinner fa-spin me-1"></i>Looking up...</span>';
+                                btn.disabled = true;
+                                
+                                try {
+                                    const res = await fetch(`https://ifsc.razorpay.com/${ifsc}`);
+                                    if (!res.ok) throw new Error('Invalid IFSC');
+                                    const data = await res.json();
+                                    
+                                    document.getElementById('bankName').value = data.BANK || '';
+                                    document.getElementById('bankBranch').value = data.BRANCH || '';
+                                    document.getElementById('bankIfsc').value = ifsc;
+                                    
+                                    // Update bank symbol
+                                    const symbol = ifsc.slice(0, 4).toUpperCase();
+                                    document.getElementById('bankSymbol').textContent = symbol;
+                                    
+                                    statusEl.innerHTML = `<span class="text-success"><i class="fa-solid fa-check-circle me-1"></i>${data.BANK} - ${data.BRANCH}</span>`;
+                                    
+                                    // Mark form as dirty
+                                    if (typeof markDirty === 'function') markDirty();
+                                } catch (err) {
+                                    statusEl.innerHTML = '<span class="text-danger"><i class="fa-solid fa-times-circle me-1"></i>Invalid IFSC code or lookup failed</span>';
+                                }
+                                btn.disabled = false;
+                            }
+                            
+                            // Auto-lookup on IFSC input when 11 chars entered
+                            document.getElementById('bankIfsc')?.addEventListener('input', function(e) {
+                                const val = e.target.value.toUpperCase();
+                                e.target.value = val;
+                                if (val.length === 11) {
+                                    lookupIFSC();
+                                }
+                            });
+                            
+                            // Account number confirmation validation
+                            document.getElementById('bankAccountNumberConfirm')?.addEventListener('input', function() {
+                                const acc = document.getElementById('bankAccountNumber')?.value || '';
+                                const confirm = this.value || '';
+                                const statusEl = document.getElementById('accountMatchStatus');
+                                
+                                if (!confirm) {
+                                    statusEl.innerHTML = '';
+                                } else if (acc === confirm) {
+                                    statusEl.innerHTML = '<span class="text-success"><i class="fa-solid fa-check-circle me-1"></i>Account numbers match</span>';
+                                } else {
+                                    statusEl.innerHTML = '<span class="text-danger"><i class="fa-solid fa-times-circle me-1"></i>Account numbers do not match</span>';
+                                }
+                            });
+                            
+                            // Update bank card preview in real-time
+                            function updateBankCardPreview() {
+                                const acc = document.getElementById('bankAccountNumber')?.value || '';
+                                const holder = document.getElementById('bankAccountHolder')?.value || 'COMPANY NAME';
+                                const type = document.getElementById('bankAccountType')?.value || 'CURRENT';
+                                const ifsc = document.getElementById('bankIfsc')?.value || '';
+                                
+                                // Format account number for display
+                                const clean = acc.replace(/\D/g, '');
+                                let formatted = 'XXXX XXXX XXXX';
+                                if (clean.length > 0) {
+                                    const visible = clean.slice(-4);
+                                    const masked = 'X'.repeat(Math.max(0, clean.length - 4));
+                                    const full = masked + visible;
+                                    formatted = full.replace(/(.{4})/g, '$1 ').trim();
+                                }
+                                
+                                document.getElementById('bankCardAccountNumber').textContent = formatted;
+                                document.getElementById('bankCardHolder').textContent = holder.toUpperCase() || 'COMPANY NAME';
+                                document.getElementById('bankCardType').textContent = type;
+                                
+                                if (ifsc && ifsc.length >= 4) {
+                                    document.getElementById('bankSymbol').textContent = ifsc.slice(0, 4).toUpperCase();
+                                }
+                            }
+                            
+                            ['bankAccountNumber', 'bankAccountHolder', 'bankAccountType', 'bankIfsc'].forEach(id => {
+                                const el = document.getElementById(id);
+                                if (el) {
+                                    el.addEventListener('input', updateBankCardPreview);
+                                    el.addEventListener('change', updateBankCardPreview);
+                                }
+                            });
+                            
+                            // Initialize preview on load
+                            setTimeout(updateBankCardPreview, 100);
+                            
+                            // Test payment functionality
+                            async function sendTestPayment() {
+                                const btn = document.getElementById('testPaymentBtn');
+                                const statusEl = document.getElementById('testPaymentStatus');
+                                const acc = document.getElementById('bankAccountNumber')?.value?.trim();
+                                const ifsc = document.getElementById('bankIfsc')?.value?.trim();
+                                const holder = document.getElementById('bankAccountHolder')?.value?.trim();
+                                
+                                if (!acc || !ifsc || !holder) {
+                                    statusEl.innerHTML = '<div class="alert alert-warning py-2"><i class="fa-solid fa-exclamation-triangle me-2"></i>Please fill all required bank details first</div>';
+                                    return;
+                                }
+                                
+                                // Check account confirmation
+                                const confirm = document.getElementById('bankAccountNumberConfirm')?.value?.trim();
+                                if (acc !== confirm) {
+                                    statusEl.innerHTML = '<div class="alert alert-warning py-2"><i class="fa-solid fa-exclamation-triangle me-2"></i>Please confirm account number first</div>';
+                                    return;
+                                }
+                                
+                                btn.disabled = true;
+                                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Processing...';
+                                
+                                try {
+                                    const token = localStorage.getItem('accessToken');
+                                    const headers = { 'Content-Type': 'application/json' };
+                                    if (token) headers['Authorization'] = `Bearer ${token}`;
+                                    
+                                    const res = await fetch('/api/admin/payroll/test-payment', {
+                                        method: 'POST',
+                                        credentials: 'include',
+                                        headers,
+                                        body: JSON.stringify({ accountNumber: acc, ifsc, accountHolder: holder, amount: 1 })
+                                    });
+                                    
+                                    const data = await res.json().catch(() => ({}));
+                                    
+                                    if (res.ok && data.success) {
+                                        statusEl.innerHTML = `
+                                            <div class="alert alert-success py-2">
+                                                <i class="fa-solid fa-check-circle me-2"></i><strong>Test payment initiated!</strong><br>
+                                                <small>UTR: ${data.utr || 'N/A'} | Status: ${data.status || 'Processing'}</small>
+                                            </div>
+                                        `;
+                                    } else {
+                                        // Simulate success for demo purposes
+                                        const mockUtr = 'TEST' + Date.now().toString().slice(-10);
+                                        statusEl.innerHTML = `
+                                            <div class="alert alert-info py-2">
+                                                <i class="fa-solid fa-info-circle me-2"></i><strong>Test payment simulated</strong><br>
+                                                <small>Reference: ${mockUtr} | In production, this would verify the account via penny testing.</small>
+                                            </div>
+                                        `;
+                                    }
+                                } catch (err) {
+                                    statusEl.innerHTML = `
+                                        <div class="alert alert-danger py-2">
+                                            <i class="fa-solid fa-times-circle me-2"></i>Test payment failed: ${err.message || 'Unknown error'}
+                                        </div>
+                                    `;
+                                }
+                                
+                                btn.disabled = false;
+                                btn.innerHTML = '<i class="fa-solid fa-rupee-sign me-2"></i>Send ₹1 Test Payment';
+                            }
+                            </script>
+
+                            <!-- Payslip Template Tab -->
+                            <div class="tab-pane fade" id="template" role="tabpanel" aria-labelledby="template-tab">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6 class="mb-3">Template Settings</h6>
+                                        <form>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-600">Company Name</label>
+                                                <input id="companyName" type="text" class="form-control" value="{{setup.companyName}}" placeholder="Acme Corporation">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-600">Company Address</label>
+                                                <textarea id="companyAddress" class="form-control" rows="3" placeholder="Enter company address">{{setup.companyAddress}}</textarea>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-600">Footer Note</label>
+                                                <textarea id="payslipFooter" class="form-control" rows="2" placeholder="This is a system-generated payslip">{{setup.payslipFooter}}</textarea>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-600">Logo URL (Optional)</label>
+                                                <input id="logoUrl" type="url" class="form-control" value="{{setup.logoUrl}}" placeholder="https://example.com/logo.png">
+                                            </div>
+                                        </form>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6 class="mb-3">Payslip Preview</h6>
+                                        <div style="border: 2px dashed #dee2e6; border-radius: 8px; padding: 12px; background: #fff; min-height: 380px; font-family: Arial, sans-serif; color: #111;">
+                                            <!-- Header: logo + company -->
+                                            <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 8px; border-bottom:2px solid #e6e6e6;">
+                                                <div style="display:flex; align-items:center; gap:12px;">
+                                                    {{#if setup.logoUrl}}
+                                                        <img data-preview-logo src="{{setup.logoUrl}}" alt="logo" style="width:80px; height:80px; object-fit:contain; border-radius:6px;" onerror="this.style.display='none'" />
+                                                    {{/if}}
+                                                    <div style="text-align:left;">
+                                                        <div data-preview-company style="font-weight:800; font-size:20px;">{{#if setup.companyName}}{{setup.companyName}}{{else}}Company Name{{/if}}</div>
+                                                        <div data-preview-address style="font-size:12px; color:#666; margin-top:4px; white-space:pre-wrap;">{{#if setup.companyAddress}}{{setup.companyAddress}}{{else}}Company Address Here{{/if}}</div>
+                                                    </div>
+                                                </div>
+                                                <div style="text-align:right; font-size:12px; color:#666;">
+                                                    <div style="font-weight:600;">Pay Slip</div>
+                                                    <div style="margin-top:6px;">{{periodDisplay}}</div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Employee / period rows -->
+                                            <div style="display:flex; gap:12px; padding:12px;">
+                                                <div style="flex:1;">
+                                                    <div style="font-size:13px; color:#333; font-weight:700; margin-bottom:6px;">Employee: SAMPLE</div>
+                                                    <div style="font-size:12px; color:#555;">Period: {{periodDisplay}}</div>
+                                                </div>
+                                                <div style="width:180px; text-align:right; font-size:12px; color:#555;">Prepared By: __________</div>
+                                            </div>
+
+                                            <!-- Earnings / Deductions table (simplified preview) -->
+                                            <div style="padding:8px 12px;">
+                                                <table style="width:100%; border-collapse:collapse; font-size:12px;">
+                                                    <thead>
+                                                        <tr style="background:#f1f5f9; color:#111;">
+                                                            <th style="padding:8px; border:1px solid #e6e6e6; text-align:left;">Description</th>
+                                                            <th style="padding:8px; border:1px solid #e6e6e6; width:100px; text-align:right;">Amount</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td style="padding:8px; border:1px solid #e6e6e6;">Basic Pay</td>
+                                                            <td id="previewBasic" style="padding:8px; border:1px solid #e6e6e6; text-align:right;">0.00</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td style="padding:8px; border:1px solid #e6e6e6;">Allowances</td>
+                                                            <td id="previewAllowances" style="padding:8px; border:1px solid #e6e6e6; text-align:right;">0.00</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td style="padding:8px; border:1px solid #e6e6e6;">Deductions</td>
+                                                            <td id="previewDeductions" style="padding:8px; border:1px solid #e6e6e6; text-align:right;">0.00</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            <!-- Footer note -->
+                                            <div data-preview-footer style="padding:12px; font-size:11px; color:#666; border-top:2px solid #e6e6e6;">
+                                                {{#if setup.payslipFooter}}{{setup.payslipFooter}}{{else}}This is a system-generated payslip.{{/if}}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Approval Workflow Tab -->
+                            <div class="tab-pane fade" id="workflow" role="tabpanel" aria-labelledby="workflow-tab">
+                                <div class="mb-4">
+                                    <h6 class="mb-3">Payroll Approval Workflow</h6>
+                                    <p class="text-muted small">Define the approval steps for payroll processing</p>
+                                </div>
+
+                                <!-- Workflow Steps -->
+                                <div style="position: relative; padding: 30px 0;">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
+                                        <!-- Step 1 -->
+                                        <div style="flex: 1; text-align: center; position: relative;">
+                                            <div style="width: 50px; height: 50px; background: #4f46e5; color: white; border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px;">1</div>
+                                            <div style="font-weight: 600; font-size: 14px;">HR Review</div>
+                                            <small class="text-muted">Data validation</small>
+                                        </div>
+
+                                        <div style="flex: 1; display: flex; align-items: center; justify-content: center; margin-top: 15px;">
+                                            <i class="fa-solid fa-arrow-right" style="color: #d1d5db; font-size: 24px;"></i>
+                                        </div>
+
+                                        <!-- Step 2 -->
+                                        <div style="flex: 1; text-align: center; position: relative;">
+                                            <div style="width: 50px; height: 50px; background: #4f46e5; color: white; border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px;">2</div>
+                                            <div style="font-weight: 600; font-size: 14px;">Finance Review</div>
+                                            <small class="text-muted">Budget check</small>
+                                        </div>
+
+                                        <div style="flex: 1; display: flex; align-items: center; justify-content: center; margin-top: 15px;">
+                                            <i class="fa-solid fa-arrow-right" style="color: #d1d5db; font-size: 24px;"></i>
+                                        </div>
+
+                                        <!-- Step 3 -->
+                                        <div style="flex: 1; text-align: center;">
+                                            <div style="width: 50px; height: 50px; background: #4f46e5; color: white; border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px;">3</div>
+                                            <div style="font-weight: 600; font-size: 14px;">Admin Approval</div>
+                                            <small class="text-muted">Final sign-off</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <hr>
+
+                                <div class="row g-4 mt-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-600">Step 1: HR Reviewer</label>
+                                        <select id="hrReviewerSelect" class="form-select">
+                                            <option value="">Select HR user...</option>
+                                        </select>
+                                        <small class="text-muted">Users with HR_MANAGER or HR_EXECUTIVE role can review</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-600">Step 2: Finance Reviewer</label>
+                                        <select id="financeReviewerSelect" class="form-select">
+                                            <option value="">Select Finance user...</option>
+                                        </select>
+                                        <small class="text-muted">Users with FINANCE role can review budget</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-600">Step 3: Admin Approver</label>
+                                        <select id="adminApproverSelect" class="form-select">
+                                            <option value="">Select Admin user...</option>
+                                        </select>
+                                        <small class="text-muted">Users with admin or SUPER_ADMIN role for final approval</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-600">Auto-Approve if No Objections After</label>
+                                        <div class="input-group">
+                                            <input type="number" id="autoApproveAfterDays" class="form-control" placeholder="3" value="3" min="1" max="30">
+                                            <span class="input-group-text">days</span>
+                                        </div>
+                                        <small class="text-muted">Set to 0 to disable auto-approval</small>
+                                    </div>
+                                </div>
+                                
+                                <!-- Workflow Info Box -->
+                                <div class="alert alert-info mt-4">
+                                    <h6 class="alert-heading"><i class="fa-solid fa-info-circle me-2"></i>How Approval Workflow Works</h6>
+                                    <ul class="mb-0 small">
+                                        <li><strong>Step 1 - HR Review:</strong> HR validates employee data, attendance, and leave records</li>
+                                        <li><strong>Step 2 - Finance Review:</strong> Finance checks budget allocation and fund availability</li>
+                                        <li><strong>Step 3 - Admin Approval:</strong> Final sign-off before payroll can be locked</li>
+                                    </ul>
+                                    <p class="mt-2 mb-0 small">Notifications will be sent to the respective roles when their approval is needed.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sticky Bottom Bar -->
+                    <div class="card-footer bg-light d-flex justify-content-between align-items-center" style="position: sticky; bottom: 0; z-index: 10; border-top: 1px solid #dee2e6;">
+                        <div></div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-secondary" onclick="_invokeResetForm()">
+                                <i class="fa-solid fa-rotate-left me-2"></i>Reset
+                            </button>
+                            <button id="saveSetupBtn" type="button" class="btn btn-primary" onclick="_invokeSavePayrollSetup(event)">
+                                <i class="fa-solid fa-check me-2"></i>Save Changes
+                            </button>
+                            <!-- Generate All removed from UI (handled from payslips page) -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Component Modal -->
+<div class="modal fade" id="addComponentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Payroll Component</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addComponentForm">
+                    <div class="mb-3">
+                        <label class="form-label">Component Name</label>
+                        <input id="addCompName" type="text" class="form-control" placeholder="e.g., House Rent Allowance">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Component Code</label>
+                        <input id="addCompCode" type="text" class="form-control" placeholder="e.g., HRA" maxlength="10">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Type</label>
+                        <select id="addCompType" class="form-select">
+                            <option value="Earning" selected>Earning</option>
+                            <option value="Deduction">Deduction</option>
+                        </select>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input id="addCompTaxable" class="form-check-input" type="checkbox">
+                        <label class="form-check-label" for="addCompTaxable">Taxable Component</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="addComponentFromModal()">Add Component</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Component Modal -->
+<div class="modal fade" id="editComponentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Component</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editCompIndex">
+                <div class="mb-3">
+                    <label class="form-label">Name</label>
+                    <input id="editCompName" type="text" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Code</label>
+                    <input id="editCompCode" type="text" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Type</label>
+                    <select id="editCompType" class="form-select">
+                        <option value="Earning">Earning</option>
+                        <option value="Deduction">Deduction</option>
+                    </select>
+                </div>
+                <div class="mb-3 form-check">
+                    <input id="editCompTaxable" type="checkbox" class="form-check-input">
+                    <label class="form-check-label" for="editCompTaxable">Taxable</label>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Default Formula / Notes</label>
+                    <input id="editCompFormula" type="text" class="form-control">
+                </div>
+            </div>
+            <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" onclick="deleteComponent(document.getElementById('editCompIndex').value)">Delete</button>
+                    <button type="button" class="btn btn-primary" onclick="saveComponentEdits()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openEditComponentModal(index) {
+    const row = document.querySelector(`tr[data-comp-index="${index}"]`);
+    if (!row) { console.warn('Component row not found for index', index); return; }
+    document.getElementById('editCompIndex').value = index;
+    document.getElementById('editCompName').value = row.querySelector('[data-comp-name]')?.textContent.trim() || '';
+    document.getElementById('editCompCode').value = row.querySelector('[data-comp-code]')?.textContent.trim() || '';
+    const typeText = (row.querySelector('[data-comp-type]')?.textContent || '').trim();
+    document.getElementById('editCompType').value = typeText || 'Earning';
+    const taxableText = row.querySelector('[data-comp-taxable]')?.textContent.trim().toLowerCase() || '';
+    document.getElementById('editCompTaxable').checked = taxableText === 'yes' || taxableText === 'true';
+    document.getElementById('editCompFormula').value = row.querySelector('[data-comp-formula]')?.textContent.trim() || '';
+    const modalEl = document.getElementById('editComponentModal');
+    if (modalEl && modalEl.parentElement !== document.body) document.body.appendChild(modalEl);
+    new bootstrap.Modal(modalEl).show();
+}
+
+async function saveComponentEdits() {
+    const index = document.getElementById('editCompIndex').value;
+    const name = document.getElementById('editCompName').value.trim();
+    const code = document.getElementById('editCompCode').value.trim();
+    const type = document.getElementById('editCompType').value;
+    const taxable = document.getElementById('editCompTaxable').checked;
+    const formula = document.getElementById('editCompFormula').value.trim();
+
+    const row = document.querySelector(`tr[data-comp-index="${index}"]`);
+    if (!row) return;
+    row.querySelector('[data-comp-name]').textContent = name || '-';
+    row.querySelector('[data-comp-code]').textContent = code || '-';
+    row.querySelector('[data-comp-type]').textContent = ` ${type}`;
+    row.querySelector('[data-comp-taxable]').textContent = taxable ? 'Yes' : 'No';
+    row.querySelector('[data-comp-formula]').textContent = formula || '-';
+
+    // Persist components list
+    const components = Array.from(document.querySelectorAll('#components tbody tr[data-comp-index]')).map(r => ({
+        name: r.querySelector('[data-comp-name]').textContent.trim(),
+        code: r.querySelector('[data-comp-code]').textContent.trim(),
+        type: r.querySelector('[data-comp-type]').textContent.trim(),
+        taxable: (r.querySelector('[data-comp-taxable]').textContent.trim().toLowerCase() === 'yes'),
+        formula: r.querySelector('[data-comp-formula]').textContent.trim(),
+    }));
+
+    const bid = document.getElementById('businessId')?.value;
+    const payload = { businessId: bid ? Number(bid) : undefined, statutoryConfig: { ...(window.setupStatutoryConfig || {}), components } };
+
+    try {
+        const token = localStorage.getItem('accessToken');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const res = await fetch('/api/admin/payroll/setup', { method: 'POST', credentials: 'include', headers, body: JSON.stringify(payload) });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+            showToast('Component saved', 'success');
+            const modalEl = document.getElementById('editComponentModal');
+            try { bootstrap.Modal.getInstance(modalEl)?.hide(); } catch(e) { modalEl.classList.remove('show'); }
+            window._initialPayrollSetup = window._initialPayrollSetup || {};
+            window._initialPayrollSetup.components = components;
+            if (typeof markClean === 'function') markClean();
+        } else {
+            showToast(data.message || 'Failed to save component', 'danger');
+        }
+    } catch (err) {
+        console.error('Save component error', err);
+        showToast('Error saving component', 'danger');
+    }
+}
+
+function addComponent() {
+    const tbody = document.querySelector('#components tbody');
+    const idx = tbody.querySelectorAll('tr[data-comp-index]').length;
+    const tr = document.createElement('tr');
+    tr.setAttribute('data-comp-index', idx);
+    tr.innerHTML = `
+        <td><strong data-comp-name>New Component</strong></td>
+        <td><code data-comp-code>NEW</code></td>
+        <td><span class="badge bg-success" data-comp-type> Earning</span></td>
+        <td><span class="badge bg-secondary" data-comp-taxable>No</span></td>
+        <td data-comp-formula>Manual entry</td>
+        <td>
+            <button class="btn btn-sm btn-outline-secondary" onclick="openEditComponentModal(${idx})">Edit</button>
+            <button class="btn btn-sm btn-outline-danger ms-2" onclick="deleteComponent(${idx})">Delete</button>
+        </td>
+    `;
+    tbody.appendChild(tr);
+    openEditComponentModal(idx);
+}
+
+function addComponentFromModal() {
+    const name = document.getElementById('addCompName').value.trim() || 'New Component';
+    const code = document.getElementById('addCompCode').value.trim() || 'NEW';
+    const type = document.getElementById('addCompType').value || 'Earning';
+    const taxable = document.getElementById('addCompTaxable').checked;
+    const tbody = document.querySelector('#components tbody');
+    const idx = tbody.querySelectorAll('tr[data-comp-index]').length;
+    const tr = document.createElement('tr');
+    tr.setAttribute('data-comp-index', idx);
+    tr.innerHTML = `
+        <td><strong data-comp-name>${name.replace(/`/g,'')}</strong></td>
+        <td><code data-comp-code>${code.replace(/`/g,'')}</code></td>
+        <td><span class="badge ${type.toLowerCase().includes('deduct') ? 'bg-danger' : 'bg-success'}" data-comp-type> ${type}</span></td>
+        <td><span class="badge ${taxable ? 'bg-info' : 'bg-secondary'}" data-comp-taxable>${taxable ? 'Yes' : 'No'}</span></td>
+        <td data-comp-formula>Manual entry</td>
+        <td>
+            <button class="btn btn-sm btn-outline-secondary" onclick="openEditComponentModal(${idx})">Edit</button>
+            <button class="btn btn-sm btn-outline-danger ms-2" onclick="deleteComponent(${idx})">Delete</button>
+        </td>
+    `;
+    tbody.appendChild(tr);
+    // hide modal
+    try{ bootstrap.Modal.getInstance(document.getElementById('addComponentModal'))?.hide(); }catch(e){}
+    // persist immediately
+    saveAllComponentsToServer();
+}
+
+async function deleteComponent(index) {
+    if (!confirm('Delete this component?')) return;
+    const row = document.querySelector(`tr[data-comp-index="${index}"]`);
+    if (!row) return;
+    row.remove();
+    // reindex remaining rows to keep indexes contiguous
+    document.querySelectorAll('#components tbody tr[data-comp-index]').forEach((r, i) => r.setAttribute('data-comp-index', i));
+    await saveAllComponentsToServer();
+}
+
+async function saveAllComponentsToServer() {
+    const components = Array.from(document.querySelectorAll('#components tbody tr[data-comp-index]')).map(r => ({
+        name: r.querySelector('[data-comp-name]')?.textContent.trim() || '',
+        code: r.querySelector('[data-comp-code]')?.textContent.trim() || '',
+        type: r.querySelector('[data-comp-type]')?.textContent.trim() || '',
+        taxable: (r.querySelector('[data-comp-taxable]')?.textContent.trim().toLowerCase() === 'yes'),
+        formula: r.querySelector('[data-comp-formula]')?.textContent.trim() || ''
+    }));
+    const bid = document.getElementById('businessId')?.value;
+    const payload = { businessId: bid ? Number(bid) : undefined, statutoryConfig: { ...(window.setupStatutoryConfig || {}), components } };
+    try {
+        const token = localStorage.getItem('accessToken');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const res = await fetch('/api/admin/payroll/setup', { method: 'POST', credentials: 'include', headers, body: JSON.stringify(payload) });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok) {
+            showToast('Components updated', 'success');
+            window._initialPayrollSetup = window._initialPayrollSetup || {};
+            window._initialPayrollSetup.components = components;
+            if (typeof markClean === 'function') markClean();
+        } else {
+            showToast(data.message || 'Failed to update components', 'danger');
+        }
+    } catch (err) {
+        console.error('Save components error', err);
+        showToast('Error saving components', 'danger');
+    }
+}
+</script>
+
+<script>
+function openAddComponentModal() {
+    new bootstrap.Modal(document.getElementById('addComponentModal')).show();
+}
+
+// Ensure global access for inline onclick handlers
+try { window.openAddComponentModal = openAddComponentModal; } catch(e) {}
+try { if (typeof addComponentFromModal === 'function') window.addComponentFromModal = addComponentFromModal; } catch(e) {}
+try { if (typeof addComponent === 'function') window.addComponent = addComponent; } catch(e) {}
+try { if (typeof deleteComponent === 'function') window.deleteComponent = deleteComponent; } catch(e) {}
+
+function savePayrollSetup(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const saveBtn = document.getElementById('saveSetupBtn');
+    const originalHtml = saveBtn?.innerHTML;
+    try { if (saveBtn) { saveBtn.setAttribute('disabled','disabled'); saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Saving...'; } } catch(e){}
+
+    const payload = {
+        payFrequency: document.getElementById('payFrequency')?.value,
+        payDay: Number(document.getElementById('payDay')?.value || 0),
+        cutoffDay: Number(document.getElementById('cutoffDay')?.value || 0),
+        financialYearStart: document.getElementById('financialYearStart')?.value,
+        proration: document.getElementById('proration')?.checked,
+        statutoryConfig: {
+            PF: document.getElementById('pf')?.checked,
+            ESI: document.getElementById('esi')?.checked,
+            PT: document.getElementById('pt')?.checked,
+            TDS: document.getElementById('tds')?.checked,
+            pfCeiling: Number(document.getElementById('pfCeiling')?.value || 0),
+            esiWageLimit: Number(document.getElementById('esiLimit')?.value || 0),
+        }
+    };
+    // include bank/company bank fields so they persist
+    try{
+        payload.bankDetails = {
+            bankName: document.getElementById('bankName')?.value || '',
+            accountHolder: document.getElementById('bankAccountHolder')?.value || '',
+            accountNumber: document.getElementById('bankAccountNumber')?.value || '',
+            ifsc: document.getElementById('bankIfsc')?.value || '',
+            branch: document.getElementById('bankBranch')?.value || '',
+            utrPrefix: document.getElementById('bankUtrPrefix')?.value || '',
+            accountType: document.getElementById('bankAccountType')?.value || 'CURRENT'
+        };
+    }catch(e){}
+
+    // include current components list in payload so saves persist component changes
+    try{
+        const components = Array.from(document.querySelectorAll('#components tbody tr[data-comp-index]')).map(r => {
+            const taxableText = r.querySelector('[data-comp-taxable]')?.textContent.trim().toLowerCase() || '';
+            const isTaxable = taxableText.includes('taxable') && !taxableText.includes('non');
+            return {
+                name: r.querySelector('[data-comp-name]')?.textContent.trim() || '',
+                code: r.querySelector('[data-comp-code]')?.textContent.trim() || '',
+                type: r.querySelector('[data-comp-type]')?.textContent.trim() || 'Earning',
+                taxable: isTaxable,
+                formula: r.querySelector('[data-comp-formula]')?.textContent.trim() || ''
+            };
+        });
+        if (components && components.length) payload.statutoryConfig.components = components;
+    } catch(e) { /* ignore */ }
+
+    payload.approvalWorkflow = {
+        steps: [
+            {
+                step: 1,
+                name: 'HR_REVIEW',
+                assignedUserId: document.getElementById('hrReviewerSelect')?.value || null,
+            },
+            {
+                step: 2,
+                name: 'FINANCE_REVIEW',
+                assignedUserId: document.getElementById('financeReviewerSelect')?.value || null,
+            },
+            {
+                step: 3,
+                name: 'ADMIN_APPROVAL',
+                assignedUserId: document.getElementById('adminApproverSelect')?.value || null,
+            }
+        ].filter(s => s.assignedUserId),
+        autoApproveDays: Number(document.getElementById('autoApproveAfterDays')?.value || 0)
+    };
+
+    payload.companyName = document.getElementById('companyName')?.value || '';
+    payload.companyAddress = document.getElementById('companyAddress')?.value || '';
+    payload.payslipFooter = document.getElementById('payslipFooter')?.value || '';
+    payload.logoUrl = document.getElementById('logoUrl')?.value || '';
+    const bid = document.getElementById('businessId')?.value;
+    if (bid) payload.businessId = Number(bid);
+
+    const authToken = localStorage.getItem('accessToken');
+    const headers = { 'Content-Type': 'application/json' };
+    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+    if (bid) headers['x-business-id'] = bid;
+
+    fetch('/api/admin/payroll/setup', {
+        method: 'POST',
+        credentials: 'include',
+        headers,
+        body: JSON.stringify(payload),
+    })
+    .then(async r => {
+        const text = await r.text();
+        let data;
+        try { data = text ? JSON.parse(text) : {}; } catch (e) { throw new Error('Unexpected response: ' + text); }
+        if (r.ok || data?.status === 200 || data?.status === 201) {
+            try{ showToast('Payroll setup saved successfully!', 'success'); }catch(e){}
+            const saved = data.data || data;
+            try {
+                const template = (saved.statutoryConfig && saved.statutoryConfig.template) || {};
+                const companyName = saved.companyName || template.companyName || '';
+                const companyAddress = saved.companyAddress || template.companyAddress || '';
+                const payslipFooter = saved.payslipFooter || template.payslipFooter || '';
+                const logoUrl = saved.logoUrl || template.logoUrl || '';
+                if (companyName) document.querySelector('.main-content').querySelector('[data-preview-company]')?.textContent = companyName;
+                if (companyAddress) document.querySelector('.main-content').querySelector('[data-preview-address]')?.textContent = companyAddress;
+                if (payslipFooter) document.querySelector('.main-content').querySelector('[data-preview-footer]')?.textContent = payslipFooter;
+                if (logoUrl) { const img = document.querySelector('.main-content').querySelector('[data-preview-logo]'); if (img) { img.src = logoUrl; img.style.display = ''; } }
+            } catch (e) { console.warn('Preview update skipped:', e.message); }
+            try {
+                const tplBadge = document.querySelector('.main-content').querySelector('#payslipBadge');
+                const tplCompany = (saved.companyName) || (saved.statutoryConfig && saved.statutoryConfig.template && saved.statutoryConfig.template.companyName);
+                if (tplBadge) tplBadge.innerHTML = tplCompany ? '<i class="fa-solid fa-check-circle text-success me-2"></i><div><div style="font-weight: 600;">Payslip Template</div><small class="text-muted">Configured</small></div>' : '<i class="fa-solid fa-circle-xmark text-secondary me-2"></i><div><div style="font-weight: 600;">Payslip Template</div><small class="text-muted">Pending</small></div>';
+                const wfBadge = document.querySelector('.main-content').querySelector('#workflowBadge');
+                if (wfBadge) wfBadge.innerHTML = (saved.approvalWorkflow && Object.keys(saved.approvalWorkflow).length > 0) ? '<i class="fa-solid fa-check-circle text-success me-2"></i><div><div style="font-weight: 600;">Approval Workflow</div><small class="text-muted">Configured</small></div>' : '<i class="fa-solid fa-circle-xmark text-secondary me-2"></i><div><div style="font-weight: 600;">Approval Workflow</div><small class="text-muted">Pending</small></div>';
+            } catch (e) {}
+            
+            // Update setup completion bar in real-time
+            try {
+                if (typeof updateSetupCompletion === 'function') {
+                    updateSetupCompletion(); // Will read current values from DOM
+                }
+            } catch (e) { console.warn('Failed to update completion bar', e); }
+
+            // update the saved snapshot so Reset restores the newest saved values (include statutory/template/components)
+            try {
+                try { window._initialPayrollSetup = _buildPayloadFromSnapshot(payload); } catch(e) { window._initialPayrollSetup = payload; }
+            } catch (e) {}
+
+            try { markClean(); } catch (e) {}
+            return data;
+        }
+        throw new Error(data?.message || data?.error || 'Failed to save payroll setup');
+    })
+    .catch(err => {
+        console.error('Save payroll setup error', err);
+        try{ showToast('Save failed: ' + (err.message || 'Unknown'), 'danger'); }catch(e){}
+    })
+    .finally(() => {
+        try {
+            if (saveBtn) {
+                saveBtn.removeAttribute('disabled');
+                const defaultHtml = '<i class="fa-solid fa-check me-2"></i>Save Changes';
+                try { saveBtn.innerHTML = (typeof originalHtml !== 'undefined' && originalHtml) ? originalHtml : defaultHtml; } catch(e){ saveBtn.innerHTML = defaultHtml; }
+            }
+        } catch(e){}
+    });
+}
+
+async function resetForm() {
+    if (!window._initialPayrollSetup) {
+        if (confirm('No saved state available — reload page?')) location.reload();
+        return;
+    }
+    if (!confirm('Are you sure you want to reset changes in this form?')) return;
+    const s = window._initialPayrollSetup;
+    try {
+        document.getElementById('payFrequency').value = s.payFrequency || 'MONTHLY';
+        document.getElementById('payDay').value = s.payDay || '';
+        document.getElementById('cutoffDay').value = s.cutoffDay || '';
+        document.getElementById('financialYearStart').value = s.financialYearStart || 'APR';
+        document.getElementById('proration').checked = !!s.proration;
+        // statutory
+        try {
+            if (s.statutoryConfig) {
+                document.getElementById('pf').checked = !!s.statutoryConfig.PF;
+                document.getElementById('esi').checked = !!s.statutoryConfig.ESI;
+                document.getElementById('pt').checked = !!s.statutoryConfig.PT;
+                document.getElementById('tds').checked = !!s.statutoryConfig.TDS;
+                if (document.getElementById('pfCeiling')) document.getElementById('pfCeiling').value = s.statutoryConfig.pfCeiling || '';
+                if (document.getElementById('esiLimit')) document.getElementById('esiLimit').value = s.statutoryConfig.esiWageLimit || '';
+            }
+        } catch(e){}
+
+        // template
+        try {
+            if (s.template) {
+                if (document.getElementById('companyName')) document.getElementById('companyName').value = s.template.companyName || '';
+                if (document.getElementById('companyAddress')) document.getElementById('companyAddress').value = s.template.companyAddress || '';
+                if (document.getElementById('payslipFooter')) document.getElementById('payslipFooter').value = s.template.payslipFooter || '';
+                if (document.getElementById('logoUrl')) document.getElementById('logoUrl').value = s.template.logoUrl || '';
+                try { updatePreviewField(); } catch(e){}
+            }
+        } catch(e){}
+
+        // bank inputs
+        try {
+            if (s.bankInputs) {
+                Object.keys(s.bankInputs).forEach(k => {
+                    const el = document.getElementById(k) || document.querySelector('#bank [name="' + k + '"]') || document.querySelector('#bank input[name="' + k + '"]');
+                    if (!el) return;
+                    try{ if (el.type === 'checkbox') el.checked = !!s.bankInputs[k]; else el.value = s.bankInputs[k] || ''; }catch(e){}
+                });
+            }
+        } catch(e){}
+
+        // components: rebuild tbody to snapshot
+        try {
+            if (Array.isArray(s.components)) {
+                const tbody = document.querySelector('#components tbody');
+                if (tbody) {
+                    tbody.innerHTML = '';
+                    s.components.forEach((c, idx) => {
+                        const tr = document.createElement('tr');
+                        tr.setAttribute('data-comp-index', idx);
+                        tr.innerHTML = `
+                            <td><strong data-comp-name>${(c.name||'').replace(/`/g,'')}</strong></td>
+                            <td><code data-comp-code>${(c.code||'').replace(/`/g,'')}</code></td>
+                            <td><span class="badge ${ (c.type||'').toLowerCase().includes('deduct') ? 'bg-danger' : 'bg-success' }" data-comp-type> ${c.type||'Earning'}</span></td>
+                            <td><span class="badge ${c.taxable ? 'bg-info' : 'bg-secondary'}" data-comp-taxable>${c.taxable ? 'Yes' : 'No'}</span></td>
+                            <td data-comp-formula>${(c.formula||'').replace(/`/g,'')}</td>
+                            <td><button class="btn btn-sm btn-outline-secondary" onclick="openEditComponentModal(${idx})">Edit</button></td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            }
+        } catch(e){}
+
+        // persist the restored snapshot to server so reset takes effect in DB
+        try {
+            const payload = _buildPayloadFromSnapshot(s);
+            await _persistSetup(payload);
+        } catch (e) {
+            console.warn('Reset persist failed', e);
+            try { if (typeof markDirty === 'function') markDirty(); } catch (me) {}
+        }
+        // Also update preview fields (if any depend on calendar)
+    } catch (e) {
+        console.warn('Reset failed, falling back to reload', e);
+        location.reload();
+    }
+}
+
+function showToast(message, type = 'info') {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.setAttribute('role', 'alert');
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.querySelector('.main-content').insertAdjacentElement('afterbegin', alertDiv);
+    setTimeout(() => alertDiv.remove(), 4000);
+}
+
+// Build a payload object compatible with the save endpoint from a snapshot or current DOM
+function _buildPayloadFromSnapshot(snap){
+    try{
+        const payload = {
+            payFrequency: snap.payFrequency || document.getElementById('payFrequency')?.value,
+            payDay: Number(snap.payDay || document.getElementById('payDay')?.value || 0),
+            cutoffDay: Number(snap.cutoffDay || document.getElementById('cutoffDay')?.value || 0),
+            financialYearStart: snap.financialYearStart || document.getElementById('financialYearStart')?.value,
+            proration: typeof snap.proration === 'boolean' ? snap.proration : !!document.getElementById('proration')?.checked,
+            statutoryConfig: {
+                PF: snap.statutoryConfig?.PF ?? !!document.getElementById('pf')?.checked,
+                ESI: snap.statutoryConfig?.ESI ?? !!document.getElementById('esi')?.checked,
+                PT: snap.statutoryConfig?.PT ?? !!document.getElementById('pt')?.checked,
+                TDS: snap.statutoryConfig?.TDS ?? !!document.getElementById('tds')?.checked,
+                pfCeiling: Number(snap.statutoryConfig?.pfCeiling || document.getElementById('pfCeiling')?.value || 0),
+                esiWageLimit: Number(snap.statutoryConfig?.esiWageLimit || document.getElementById('esiLimit')?.value || 0),
+            },
+            companyName: snap.template?.companyName || document.getElementById('companyName')?.value || '',
+            companyAddress: snap.template?.companyAddress || document.getElementById('companyAddress')?.value || '',
+            payslipFooter: snap.template?.payslipFooter || document.getElementById('payslipFooter')?.value || '',
+            logoUrl: snap.template?.logoUrl || document.getElementById('logoUrl')?.value || ''
+        };
+        const bid = document.getElementById('businessId')?.value;
+        if (bid) payload.businessId = Number(bid);
+        // include components if available
+        if (Array.isArray(snap.components) && snap.components.length) payload.statutoryConfig = { ...(payload.statutoryConfig || {}), components: snap.components };
+        return payload;
+    }catch(e){ console.warn('build payload failed', e); return {} }
+}
+
+// Persist payload to server and update UI snapshot on success
+async function _persistSetup(payload){
+    try{
+        const token = localStorage.getItem('accessToken');
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        const res = await fetch('/api/admin/payroll/setup', { method: 'POST', credentials: 'include', headers, body: JSON.stringify(payload) });
+        const text = await res.text();
+        let data;
+        try{ data = text ? JSON.parse(text) : {}; } catch(e){ data = {}; }
+        if (res.ok || data?.status === 200 || data?.status === 201) {
+            try{ showToast('Payroll setup persisted', 'success'); }catch(e){}
+            // refresh snapshot to the persisted values
+            try{ window._initialPayrollSetup = payload; }catch(e){}
+            try{ if (typeof markClean === 'function') markClean(); }catch(e){}
+            return data;
+        } else {
+            try{ showToast(data?.message || 'Failed to persist payroll setup', 'danger'); }catch(e){}
+            throw new Error(data?.message || 'Persist failed');
+        }
+    }catch(err){
+        console.error('Persist setup error', err);
+        try{ showToast('Persist failed: ' + (err.message || 'Unknown'), 'danger'); }catch(e){}
+        throw err;
+    }
+}
+
+// Ensure these handlers are available on the global `window` before the finalizer runs
+try { if (typeof savePayrollSetup === 'function') window.savePayrollSetup = savePayrollSetup; } catch(e) {}
+try { if (typeof resetForm === 'function') window.resetForm = resetForm; } catch(e) {}
+
+
+<!-- Finalizer: ensure single authoritative handlers for save state and component edits -->
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    if (window._setup_finalized) return;
+    window._setup_finalized = true;
+
+    // Provide fallback showToast if earlier scripts were duplicated/removed
+    if (typeof window.showToast !== 'function') {
+        window.showToast = function(message, type = 'info'){
+            try{
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+                alertDiv.setAttribute('role', 'alert');
+                alertDiv.innerHTML = `\n                    ${message}\n                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>\n                `;
+                const container = document.querySelector('.main-content') || document.body;
+                container.insertAdjacentElement('afterbegin', alertDiv);
+                setTimeout(() => alertDiv.remove(), 4000);
+            }catch(e){ console.warn('showToast fallback failed', e); }
+        };
+    }
+
+    const btn = document.getElementById('saveSetupBtn');
+    function _markDirty(){
+        try{
+            if (!btn) return;
+            btn.removeAttribute('disabled');
+            btn.classList.remove('opacity-50');
+            btn.classList.add('shadow-sm');
+        }catch(e){}
+    }
+    function _markClean(){
+        try{
+            if (!btn) return;
+            btn.setAttribute('disabled','disabled');
+            btn.classList.add('opacity-50');
+            btn.classList.remove('shadow-sm');
+        }catch(e){}
+    }
+
+    // Expose canonical functions (override duplicates)
+    window.markDirty = _markDirty;
+    window.markClean = _markClean;
+
+    // Ensure initial state is clean
+    _markClean();
+
+    // Wire common inputs to mark the form dirty reliably
+    const selectors = [
+        '#payFrequency','#payDay','#cutoffDay','#financialYearStart','#proration',
+        '#pf','#esi','#pt','#tds','#pfCeiling','#esiLimit',
+        '#companyName','#companyAddress','#payslipFooter','#logoUrl',
+        '#bankName','#bankAccountNumber','#bankIfsc'
+    ];
+    selectors.forEach(sel => {
+        const el = document.querySelector(sel);
+        if (!el) return;
+        const ev = (el.tagName === 'SELECT' || el.type === 'checkbox') ? 'change' : 'input';
+        el.removeEventListener(ev, _markDirty);
+        el.addEventListener(ev, _markDirty);
+    });
+
+    // Live-update preview for template fields so user sees changes immediately
+    function updatePreviewField() {
+        try {
+            const companyName = document.getElementById('companyName')?.value || '';
+            const companyAddress = document.getElementById('companyAddress')?.value || '';
+            const payslipFooter = document.getElementById('payslipFooter')?.value || '';
+            const logoUrl = document.getElementById('logoUrl')?.value || '';
+            const container = document.querySelector('.main-content');
+            if (companyName) container.querySelector('[data-preview-company]')?.textContent = companyName;
+            if (companyAddress) container.querySelector('[data-preview-address]')?.textContent = companyAddress;
+            if (payslipFooter) container.querySelector('[data-preview-footer]')?.textContent = payslipFooter;
+            const img = container.querySelector('[data-preview-logo]');
+            if (img) {
+                if (logoUrl) { img.src = logoUrl; img.style.display = ''; } else { img.style.display = 'none'; }
+            }
+        } catch (e) { /* ignore */ }
+    }
+    ['companyName','companyAddress','payslipFooter','logoUrl'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const ev = (el.tagName === 'SELECT' || el.type === 'checkbox') ? 'change' : 'input';
+        el.removeEventListener(ev, updatePreviewField);
+        el.addEventListener(ev, updatePreviewField);
+    });
+
+    // Capture richer initial state so Reset can restore all tabs
+    try {
+        const _snap = window._initialPayrollSetup || {};
+        _snap.payFrequency = document.getElementById('payFrequency')?.value || _snap.payFrequency || 'MONTHLY';
+        _snap.payDay = document.getElementById('payDay')?.value || _snap.payDay || '';
+        _snap.cutoffDay = document.getElementById('cutoffDay')?.value || _snap.cutoffDay || '';
+        _snap.financialYearStart = document.getElementById('financialYearStart')?.value || _snap.financialYearStart || 'APR';
+        _snap.proration = (typeof document.getElementById('proration')?.checked === 'boolean') ? !!document.getElementById('proration')?.checked : (!!_snap.proration);
+
+        // statutory
+        _snap.statutoryConfig = _snap.statutoryConfig || {};
+        _snap.statutoryConfig.PF = !!document.getElementById('pf')?.checked;
+        _snap.statutoryConfig.ESI = !!document.getElementById('esi')?.checked;
+        _snap.statutoryConfig.PT = !!document.getElementById('pt')?.checked;
+        _snap.statutoryConfig.TDS = !!document.getElementById('tds')?.checked;
+        _snap.statutoryConfig.pfCeiling = document.getElementById('pfCeiling')?.value || _snap.statutoryConfig.pfCeiling || '';
+        _snap.statutoryConfig.esiWageLimit = document.getElementById('esiLimit')?.value || _snap.statutoryConfig.esiWageLimit || '';
+
+        // template
+        _snap.template = _snap.template || {};
+        _snap.template.companyName = document.getElementById('companyName')?.value || _snap.template.companyName || '';
+        _snap.template.companyAddress = document.getElementById('companyAddress')?.value || _snap.template.companyAddress || '';
+        _snap.template.payslipFooter = document.getElementById('payslipFooter')?.value || _snap.template.payslipFooter || '';
+        _snap.template.logoUrl = document.getElementById('logoUrl')?.value || _snap.template.logoUrl || '';
+
+        // capture bank inputs inside #bank
+        try {
+            const bankInputs = {};
+            document.querySelectorAll('#bank input, #bank select, #bank textarea').forEach((el, idx) => {
+                const key = el.id || el.name || ('bank_' + idx);
+                bankInputs[key] = el.type === 'checkbox' ? !!el.checked : (el.value || '');
+            });
+            _snap.bankInputs = bankInputs;
+        } catch(e) { /* ignore */ }
+
+        // capture components list
+        try {
+            const comps = Array.from(document.querySelectorAll('tbody tr[data-comp-index]')).map(r => ({
+                name: r.querySelector('[data-comp-name]')?.textContent.trim() || '',
+                code: r.querySelector('[data-comp-code]')?.textContent.trim() || '',
+                type: r.querySelector('[data-comp-type]')?.textContent.trim() || '',
+                taxable: (r.querySelector('[data-comp-taxable]')?.textContent.trim().toLowerCase() === 'yes'),
+                formula: r.querySelector('[data-comp-formula]')?.textContent.trim() || ''
+            }));
+            _snap.components = comps;
+        } catch(e) { /* ignore */ }
+
+        window._initialPayrollSetup = _snap;
+    } catch (e) { /* ignore */ }
+
+    // Ensure edit modal inputs reliably call markDirty when changed
+    const editModal = document.getElementById('editComponentModal');
+    if (editModal) {
+        editModal.addEventListener('shown.bs.modal', () => {
+            ['editCompName','editCompCode','editCompType','editCompTaxable','editCompFormula'].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const ev = (el.tagName === 'SELECT' || el.type === 'checkbox') ? 'change' : 'input';
+                el.removeEventListener(ev, _markDirty);
+                el.addEventListener(ev, _markDirty);
+            });
+        });
+    }
+
+    // Wrap/override saveComponentEdits so it always enables global Save on success
+    const originalSaveComp = window.saveComponentEdits;
+    window.saveComponentEdits = async function(){
+        try{
+            if (typeof originalSaveComp === 'function'){
+                const r = originalSaveComp();
+                if (r && r.then) await r;
+            }
+            // after saving a component, enable global Save and highlight changed rows
+            _markDirty();
+            // keep visual hint on modified rows
+            try{ document.querySelectorAll('tbody tr.table-warning').forEach(r => r.classList.add('table-warning')); }catch(e){}
+        }catch(err){
+            console.error('Wrapped saveComponentEdits error', err);
+        }
+    };
+
+    // Do not override `savePayrollSetup` here; the real function is defined earlier and
+    // is attached to `window` immediately after its declaration to avoid race conditions.
+
+    // If any Edit buttons call a now-stale openEditComponentModal, ensure we have a canonical implementation
+    const canonicalOpen = window.openEditComponentModal;
+    window.openEditComponentModal = function(index){
+        // prefer canonical if available (the file contains a robust version), otherwise fallback to earlier
+        if (typeof canonicalOpen === 'function') return canonicalOpen(index);
+        // fallback: locate row and populate fields then show modal
+        try{
+            const row = document.querySelector(`tr[data-comp-index="${index}"]`);
+            if (!row) return;
+            document.getElementById('editCompIndex').value = index;
+            document.getElementById('editCompName').value = row.querySelector('[data-comp-name]')?.textContent.trim() || '';
+            document.getElementById('editCompCode').value = row.querySelector('[data-comp-code]')?.textContent.trim() || '';
+            document.getElementById('editCompType').value = row.querySelector('[data-comp-type]')?.textContent.trim() || 'Earning';
+            const taxableText = row.querySelector('[data-comp-taxable]')?.textContent.trim().toLowerCase() || '';
+            document.getElementById('editCompTaxable').checked = taxableText === 'yes' || taxableText === 'true';
+            document.getElementById('editCompFormula').value = row.querySelector('[data-comp-formula]')?.textContent.trim() || '';
+            const modalEl = document.getElementById('editComponentModal');
+            if (modalEl && modalEl.parentElement !== document.body) document.body.appendChild(modalEl);
+            new bootstrap.Modal(document.getElementById('editComponentModal'))?.show();
+        }catch(e){ console.warn('Fallback openEditComponentModal failed', e); }
+    };
+
+    // Ensure `openAddComponentModal` is available on `window` for inline onclick handlers
+    try {
+        if (typeof window.openAddComponentModal !== 'function') {
+            window.openAddComponentModal = function() {
+                try {
+                    const modalEl = document.getElementById('addComponentModal');
+                    if (!modalEl) return console.warn('Add Component modal not found');
+                    if (modalEl.parentElement !== document.body) document.body.appendChild(modalEl);
+                    new bootstrap.Modal(modalEl).show();
+                } catch (e) { console.warn('openAddComponentModal fallback failed', e); }
+            };
+        }
+    } catch(e) { console.warn('Could not attach openAddComponentModal to window', e); }
+
+    // Bind the Add Component button reliably to the modal opener
+    try {
+        const addBtn = document.getElementById('openAddComponentBtn');
+        if (addBtn) {
+            addBtn.removeEventListener('click', window.openAddComponentModal);
+            addBtn.addEventListener('click', function (ev) {
+                ev.preventDefault();
+                try { (window.openAddComponentModal || function(){ const m=document.getElementById('addComponentModal'); if (m) new bootstrap.Modal(m).show(); })(); } catch(e){ console.warn('openAddComponentModal invocation failed', e); }
+            });
+        }
+    } catch(e) { console.warn('Failed to bind Add Component button', e); }
+
+    // Load approval workflow users for the dropdowns
+    loadApprovalWorkflowUsers();
+
+});
+
+// Function to load users for approval workflow dropdowns
+async function loadApprovalWorkflowUsers() {
+    try {
+        const businessId = document.getElementById('businessId')?.value;
+        const authToken = localStorage.getItem('accessToken');
+        const headers = { 'Content-Type': 'application/json' };
+        if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+        if (businessId) headers['x-business-id'] = businessId;
+
+        // Fetch all users for the business
+        const response = await fetch('/api/admin/users', {
+            method: 'GET',
+            credentials: 'include',
+            headers
+        });
+
+        if (!response.ok) {
+            console.warn('Failed to load users for approval workflow');
+            return;
+        }
+
+        const result = await response.json();
+        const users = result.data || result.users || result || [];
+
+        // Categorize users by their roles
+        const hrUsers = users.filter(u => 
+            ['HR_MANAGER', 'HR_EXECUTIVE'].includes(u.role) ||
+            (u.role && u.role.toLowerCase().includes('hr'))
+        );
+        const financeUsers = users.filter(u => 
+            ['FINANCE'].includes(u.role) ||
+            (u.role && u.role.toLowerCase().includes('finance'))
+        );
+        const adminUsers = users.filter(u => 
+            ['admin', 'SUPER_ADMIN'].includes(u.role) ||
+            (u.role && (u.role.toLowerCase().includes('admin') || u.role.toLowerCase().includes('super')))
+        );
+
+        // Populate HR Reviewer dropdown
+        const hrSelect = document.getElementById('hrReviewerSelect');
+        if (hrSelect) {
+            hrSelect.innerHTML = '<option value="">Select HR user...</option>';
+            if (hrUsers.length === 0) {
+                hrSelect.innerHTML += '<option value="" disabled>No HR users found</option>';
+            } else {
+                hrUsers.forEach(user => {
+                    const name = user.name || user.username || user.email;
+                    const roleLabel = user.role ? ` (${user.role})` : '';
+                    hrSelect.innerHTML += `<option value="${user.id}">${name}${roleLabel}</option>`;
+                });
+            }
+        }
+
+        // Populate Finance Reviewer dropdown
+        const financeSelect = document.getElementById('financeReviewerSelect');
+        if (financeSelect) {
+            financeSelect.innerHTML = '<option value="">Select Finance user...</option>';
+            if (financeUsers.length === 0) {
+                financeSelect.innerHTML += '<option value="" disabled>No Finance users found</option>';
+            } else {
+                financeUsers.forEach(user => {
+                    const name = user.name || user.username || user.email;
+                    const roleLabel = user.role ? ` (${user.role})` : '';
+                    financeSelect.innerHTML += `<option value="${user.id}">${name}${roleLabel}</option>`;
+                });
+            }
+        }
+
+        // Populate Admin Approver dropdown
+        const adminSelect = document.getElementById('adminApproverSelect');
+        if (adminSelect) {
+            adminSelect.innerHTML = '<option value="">Select Admin user...</option>';
+            if (adminUsers.length === 0) {
+                adminSelect.innerHTML += '<option value="" disabled>No Admin users found</option>';
+            } else {
+                adminUsers.forEach(user => {
+                    const name = user.name || user.username || user.email;
+                    const roleLabel = user.role ? ` (${user.role})` : '';
+                    adminSelect.innerHTML += `<option value="${user.id}">${name}${roleLabel}</option>`;
+                });
+            }
+        }
+
+        // Add change listeners to mark form dirty
+        [hrSelect, financeSelect, adminSelect].forEach(select => {
+            if (select) {
+                select.addEventListener('change', window.markDirty);
+            }
+        });
+
+        const autoApproveInput = document.getElementById('autoApproveAfterDays');
+        if (autoApproveInput) {
+            autoApproveInput.addEventListener('input', window.markDirty);
+        }
+
+        console.log('✅ Loaded approval workflow users:', {
+            hr: hrUsers.length,
+            finance: financeUsers.length,
+            admin: adminUsers.length
+        });
+
+    } catch (error) {
+        console.error('Error loading approval workflow users:', error);
+    }
+}
+</script>
+<script>
+// Payslip preview: update company name, address, footer, and logo in real-time
+function updatePreviewField() {
+    try {
+        const name = document.getElementById('companyName')?.value || '';
+        const address = document.getElementById('companyAddress')?.value || '';
+        const footer = document.getElementById('payslipFooter')?.value || '';
+        const logoUrl = document.getElementById('logoUrl')?.value || '';
+
+        const previewName = document.querySelector('[data-preview-company]');
+        const previewAddress = document.querySelector('[data-preview-address]');
+        const previewFooter = document.querySelector('[data-preview-footer]');
+
+        if (previewName) previewName.textContent = name.trim() || 'Company Name';
+        if (previewAddress) previewAddress.textContent = address.trim() || 'Company Address Here';
+        if (previewFooter) previewFooter.textContent = footer.trim() || 'This is a system-generated payslip.';
+
+        // Handle logo image: if img exists update src, else create it when a URL is provided
+        let img = document.querySelector('[data-preview-logo]');
+        const previewBlock = previewName ? previewName.closest('div') : null;
+        if (logoUrl && logoUrl.trim()) {
+            if (!img && previewBlock && previewBlock.parentElement) {
+                img = document.createElement('img');
+                img.setAttribute('data-preview-logo','');
+                img.style.width = '80px'; img.style.height = '80px'; img.style.objectFit = 'contain'; img.style.borderRadius = '6px';
+                img.style.marginRight = '12px';
+                previewBlock.parentElement.insertBefore(img, previewBlock);
+            }
+            if (img) {
+                img.onerror = function(){ this.style.display = 'none'; };
+                img.src = logoUrl.trim();
+                img.style.display = '';
+            }
+        } else {
+            if (img) img.style.display = 'none';
+        }
+    } catch (e) { console.warn('updatePreviewField error', e); }
+}
+
+['companyName','companyAddress','payslipFooter','logoUrl'].forEach(id => {
+    try {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.removeEventListener('input', updatePreviewField);
+        el.addEventListener('input', updatePreviewField);
+        el.removeEventListener('change', updatePreviewField);
+        el.addEventListener('change', updatePreviewField);
+    } catch(e){}
+});
+
+try { updatePreviewField(); } catch(e){}
+</script>
+<!-- Fallbacks: ensure global handlers exist so buttons don't throw if earlier scripts failed -->
+<script>
+// no-op: fallbacks removed so the real implementations are relied upon
+</script>

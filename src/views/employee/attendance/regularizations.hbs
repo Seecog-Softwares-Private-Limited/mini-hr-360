@@ -1,0 +1,245 @@
+<div class="container-fluid">
+    <div class="row">
+        {{> employee-sidebar employee=employee active='attendance_regularizations'}}
+
+        <!-- Main Content -->
+        <div class="col-md-10 emp-main">
+            <div class="emp-page-header">
+                <h1 class="emp-page-title">Regularizations</h1>
+                <p class="text-muted mt-1">View and track your regularization requests</p>
+            </div>
+
+            <!-- Alert Messages -->
+            <div id="alertContainer"></div>
+
+            <!-- Regularization Stats -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-3 col-sm-6">
+                    <div class="emp-card">
+                        <div class="emp-card-body text-center">
+                            <div style="font-size: 32px; color: #f59e0b; margin-bottom: 8px;">
+                                <i class="fa-solid fa-hourglass"></i>
+                            </div>
+                            <div id="pendingCount" style="font-size: 24px; font-weight: 700; color: #1e293b;">-</div>
+                            <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Pending</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="emp-card">
+                        <div class="emp-card-body text-center">
+                            <div style="font-size: 32px; color: #22c55e; margin-bottom: 8px;">
+                                <i class="fa-solid fa-check-circle"></i>
+                            </div>
+                            <div id="approvedCount" style="font-size: 24px; font-weight: 700; color: #1e293b;">-</div>
+                            <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Approved</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="emp-card">
+                        <div class="emp-card-body text-center">
+                            <div style="font-size: 32px; color: #ef4444; margin-bottom: 8px;">
+                                <i class="fa-solid fa-times-circle"></i>
+                            </div>
+                            <div id="rejectedCount" style="font-size: 24px; font-weight: 700; color: #1e293b;">-</div>
+                            <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Rejected</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="emp-card">
+                        <div class="emp-card-body text-center">
+                            <div style="font-size: 32px; color: var(--emp-primary); margin-bottom: 8px;">
+                                <i class="fa-solid fa-file"></i>
+                            </div>
+                            <div id="totalCount" style="font-size: 24px; font-weight: 700; color: #1e293b;">-</div>
+                            <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">Total</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Regularization Requests -->
+            <div class="emp-card">
+                <div class="emp-card-header">
+                    <h5 class="emp-card-title">
+                        <i class="fa-solid fa-list-check" style="color: var(--emp-primary);"></i>
+                        Regularization Requests
+                    </h5>
+                    <a href="/employee/attendance/regularization_form" class="btn emp-btn-primary btn-sm">
+                        <i class="fa-solid fa-plus me-1"></i> New Request
+                    </a>
+                </div>
+                <div class="emp-card-body p-0">
+                    <table class="emp-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Shift</th>
+                                <th>Reason</th>
+                                <th class="text-center">Status</th>
+                                <th style="width: 50px; text-align: center;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="regularizationTableBody">
+                            <tr><td colspan="5" class="text-center text-muted">Loading regularization requests...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let allRegularizations = [];
+
+function showAlert(message, type = 'info') {
+    const alertContainer = document.getElementById('alertContainer');
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show`;
+    alert.role = 'alert';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    alertContainer.appendChild(alert);
+    setTimeout(() => alert.remove(), 5000);
+}
+
+function getStatusBadge(status) {
+    if (!status) return '<span class="emp-badge emp-badge-pending">Unknown</span>';
+    const statusLower = status.toLowerCase();
+    if (statusLower === 'pending') return '<span class="emp-badge emp-badge-pending">Pending</span>';
+    if (statusLower === 'approved') return '<span class="emp-badge emp-badge-approved">Approved</span>';
+    if (statusLower === 'rejected') return '<span class="emp-badge emp-badge-rejected">Rejected</span>';
+    return `<span class="emp-badge emp-badge-secondary">${status}</span>`;
+}
+
+function formatDate(dateString) {
+    if (!dateString) return '-';
+    try {
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return dateString;
+        return date.toISOString().split('T')[0];
+    } catch (e) {
+        return dateString;
+    }
+}
+
+function viewRegularizationDetails(id) {
+    const reg = allRegularizations.find(r => r.id === id);
+    
+    if (!reg) {
+        showAlert('Regularization record not found', 'danger');
+        return;
+    }
+    
+    let details = `
+        <div style="text-align: left; max-height: 400px; overflow-y: auto;">
+            <p><strong>Date:</strong> ${formatDate(reg.date || reg.attendanceDate)}</p>
+            <p><strong>Shift:</strong> ${reg.shift ? `<span style="display:inline-block;padding:6px 10px;border-radius:999px;background:#eef2ff;color:#075985;font-weight:600;">${reg.shift}</span>` : '-'}</p>
+            <p><strong>Reason:</strong> ${reg.reason || reg.type || '-'}</p>
+            <p><strong>Status:</strong> ${getStatusBadge(reg.status)}</p>
+    `;
+    
+    if (reg.status && reg.status.toLowerCase() === 'rejected' && reg.message) {
+        details += `<p><strong>Rejection Reason:</strong></p>
+            <div style="background-color: #fee2e2; border-left: 3px solid #ef4444; padding: 10px; border-radius: 4px; margin: 10px 0;">
+                ${reg.message}
+            </div>`;
+    }
+    
+    details += `</div>`;
+    
+    // Create a modal-like alert with the details
+    const alertContainer = document.getElementById('alertContainer');
+    const alert = document.createElement('div');
+    alert.className = 'alert alert-info alert-dismissible fade show';
+    alert.role = 'alert';
+    alert.innerHTML = `
+        <strong>Regularization Details:</strong>
+        ${details}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    alertContainer.appendChild(alert);
+    setTimeout(() => alert.remove(), 10000);
+}
+
+async function loadRegularizations() {
+    try {
+        const response = await fetch('/employee/attendance/api/regularizations', {
+            method: 'GET',
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`API error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        if (data.success && Array.isArray(data.data)) {
+            const requests = data.data;
+            allRegularizations = requests;
+            
+            // Calculate stats
+            const pending = requests.filter(r => r.status?.toLowerCase() === 'pending').length;
+            const approved = requests.filter(r => r.status?.toLowerCase() === 'approved').length;
+            const rejected = requests.filter(r => r.status?.toLowerCase() === 'rejected').length;
+            const total = requests.length;
+            
+            document.getElementById('pendingCount').textContent = pending;
+            document.getElementById('approvedCount').textContent = approved;
+            document.getElementById('rejectedCount').textContent = rejected;
+            document.getElementById('totalCount').textContent = total;
+            
+            // Populate table
+            const tbody = document.getElementById('regularizationTableBody');
+            tbody.innerHTML = '';
+            
+            if (requests.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = '<td colspan="5" class="text-center text-muted">No regularization requests yet. <a href="/employee/attendance/regularization_form">Create one</a></td>';
+                tbody.appendChild(row);
+            } else {
+                requests.forEach(req => {
+                    const row = document.createElement('tr');
+                    const dateVal = formatDate(req.date || req.attendanceDate);
+                    const hasMessage = req.status?.toLowerCase() === 'rejected' && req.message;
+                    const shiftName = req.shift || '-';
+                    const shiftHtml = req.shift ? `<span style="display:inline-block;padding:6px 10px;border-radius:999px;background:#eef2ff;color:#075985;font-weight:600;">${shiftName}</span>` : '-';
+                    row.innerHTML = `
+                        <td>${dateVal}</td>
+                        <td>${shiftHtml}</td>
+                        <td>${req.reason || req.type || '-'}</td>
+                        <td class="text-center">${getStatusBadge(req.status)}</td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-link" onclick="viewRegularizationDetails(${req.id})" title="View details">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+        } else {
+            throw new Error('Invalid response format');
+        }
+    } catch (error) {
+        console.error('Error loading regularizations:', error);
+        showAlert('Error loading regularizations: ' + error.message, 'danger');
+        const tbody = document.getElementById('regularizationTableBody');
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Failed to load regularization requests</td></tr>';
+    }
+}
+
+// Load data on page load and refresh every 6 seconds for real-time sync
+document.addEventListener('DOMContentLoaded', () => {
+    loadRegularizations();
+    setInterval(loadRegularizations, 6000);
+});
+</script>
+
+<!-- Include Employee Dashboard Real-time Sync Script -->
+<script src="/assets/js/employee-dashboard.js"></script>

@@ -50,3 +50,20 @@ testRouter.post("/test/send", verifyUser, async (req, res) => {
         });
     }
 });
+
+// Debug: return current authenticated user (safe for local/dev use)
+testRouter.get('/whoami', verifyUser, async (req, res) => {
+    try {
+        const safeUser = {
+            id: req.user?.id,
+            firstName: req.user?.firstName,
+            lastName: req.user?.lastName,
+            email: req.user?.email,
+            role: req.user?.role,
+            businessId: req.user?.businessId,
+        };
+        return res.json({ ok: true, data: safeUser });
+    } catch (e) {
+        return res.status(500).json({ ok: false, message: e.message });
+    }
+});

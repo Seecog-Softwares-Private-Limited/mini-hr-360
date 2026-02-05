@@ -23,10 +23,13 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "dev": "DOTENV_CONFIG_PATH=./property.env nodemon -r dotenv/config --experimental-json-modules src/index.js",
-    "start": "DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules src/index.js",
-    "reset-db": "DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules reset-database.js",
-    "sync-db": "DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules database/sync-database.js",
+    "dev": "cross-env DOTENV_CONFIG_PATH=./property.env nodemon -r dotenv/config --experimental-json-modules src/index.js",
+    "start": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules src/index.js",
+    "reset-db": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules reset-database.js",
+    "migrate": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config scripts/run_migrations.js",
+    "test:e2e": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config scripts/e2e_subscription_test.js",
+    "sync-db": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules database/sync-database.js",
+    "screen": "cross-env DOTENV_CONFIG_PATH=./property.env SYNC_DB=true nodemon -r dotenv/config --experimental-json-modules src/index.js",
     "update-departments-business": "node scripts/update-departments-business.js"
   },
   "dependencies": {
@@ -34,10 +37,12 @@
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "cross-env": "^10.1.0",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
     "express-handlebars": "^8.0.3",
     "handlebars": "^4.7.8",
+    "html-pdf-node": "^1.0.7",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
     "mysql2": "^3.15.2",
@@ -45,8 +50,13 @@
     "nodemon": "^3.1.10",
     "pdfkit": "^0.17.2",
     "puppeteer": "^24.31.0",
+    "razorpay": "^2.9.6",
     "sequelize": "^6.37.7",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "cross-env": "^10.1.0",
+    "sequelize-cli": "^6.6.5"
   }
 }
