@@ -59,8 +59,9 @@ const {
   Payslip,
   SalaryStructure,
   EmployeeSalaryAssignment,
-  PayrollSetting
-  
+  PayrollSetting,
+  PayrollApproval,
+  Notification
 } = await import('../src/models/index.js');
 
 
@@ -118,7 +119,9 @@ async function syncDatabase() {
       { model: PayrollRun, name: 'PayrollRun' },
       { model: PayrollRunItem, name: 'PayrollRunItem' },
       { model: Payslip, name: 'Payslip' },
-      { model: PayrollSetting, name: 'PayrollSetting'}
+      { model: PayrollSetting, name: 'PayrollSetting' },
+      { model: PayrollApproval, name: 'PayrollApproval' },
+      { model: Notification, name: 'Notification' }
 
     ];
 
