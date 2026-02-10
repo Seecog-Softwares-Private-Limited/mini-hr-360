@@ -125,6 +125,7 @@ export const getUserNotifications = async (userId, options = {}) => {
 
 /**
  * Get unread notification count for a user
+ * Returns 0 if notifications table does not exist (e.g. before migrations run).
  */
 export const getUnreadCount = async (userId, businessId = null) => {
     const where = {
@@ -136,12 +137,18 @@ export const getUnreadCount = async (userId, businessId = null) => {
             { expiresAt: { [Op.gt]: new Date() } },
         ],
     };
-    
     if (businessId) {
         where.businessId = businessId;
     }
-    
-    return Notification.count({ where });
+    try {
+        return await Notification.count({ where });
+    } catch (err) {
+        const msg = (err && err.message) ? err.message : '';
+        if (msg.includes("doesn't exist") || (err.parent && (err.parent.code === 'ER_NO_SUCH_TABLE'))) {
+            return 0;
+        }
+        throw err;
+    }
 };
 
 /**

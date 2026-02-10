@@ -94,10 +94,8 @@ async function runMigration() {
     }
     console.error(error);
     process.exit(1);
-  } finally {
-    await sequelize.close();
-    console.log('\n🔌 Database connection closed');
   }
+  // Do not close sequelize - runner owns the shared connection
 }
 
 runMigration();

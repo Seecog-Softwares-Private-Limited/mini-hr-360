@@ -200,7 +200,11 @@ export const resolveEmployeesForAssignment = async ({ businessId, scopeType, sco
     if (!scopeValue) throw new Error('scopeValue is required for DESIGNATION scope');
     return Employee.findAll({ where: { businessId, empDesignation: scopeValue } });
   }
-  throw new Error('Invalid scopeType');
+  if (scopeType === 'ALL') {
+    // Assign to all active employees in the business
+    return Employee.findAll({ where: { businessId, empStatus: 'ACTIVE' } });
+  }
+  throw new Error('Invalid scopeType. Must be EMPLOYEE, DEPARTMENT, DESIGNATION, or ALL');
 };
 
 export const createAssignments = async ({
@@ -424,7 +428,7 @@ export const recalculateDay = async ({ businessId, employeeId, date, source = 'A
   // - If no punch → show as NOT_MARKED (blank/empty state) - even if on approved leave
   // - Special cases (HOLIDAY, WEEKOFF) override when no punch
   let status = 'NOT_MARKED';  // Default: no action taken yet
-  
+
   if (!hasAnyPunch) {
     // No punches at all - keep as NOT_MARKED initially
     // Special cases: only override if there's explicit marking and no punch
@@ -598,12 +602,12 @@ export const getDashboard = async ({ businessId, date }) => {
   const d = toDateOnly(date || new Date());
   await ensureDailySummariesForDate({ businessId, date: d });
 
-  const summaries = await AttendanceDailySummary.findAll({ 
+  const summaries = await AttendanceDailySummary.findAll({
     where: { businessId, date: d },
     include: [
-      { 
-        model: Employee, 
-        as: 'employee', 
+      {
+        model: Employee,
+        as: 'employee',
         attributes: ['id', 'empName', 'empId', 'empDepartment', 'empDesignation'],
         include: [
           {
@@ -620,7 +624,7 @@ export const getDashboard = async ({ businessId, date }) => {
       }
     ]
   });
-  
+
   const counts = summaries.reduce(
     (acc, s) => {
       acc.total += 1;
@@ -644,9 +648,9 @@ export const getAttendanceLogs = async ({ businessId, date, department = null, s
   const logs = await AttendanceDailySummary.findAll({
     where,
     include: [
-      { 
-        model: Employee, 
-        as: 'employee', 
+      {
+        model: Employee,
+        as: 'employee',
         attributes: ['id', 'empName', 'empId', 'empDepartment', 'empDesignation'],
         include: [
           {
@@ -818,7 +822,7 @@ export const listLocks = async ({ businessId }) => {
   });
 };
 
-export const unlockPeriod = async ({ businessId, period, unlockNote  }) => {
+export const unlockPeriod = async ({ businessId, period, unlockNote }) => {
   if (!businessId || !period) throw new Error('businessId and period are required');
   const { startStr, endStr } = startEndOfMonth(period);
 

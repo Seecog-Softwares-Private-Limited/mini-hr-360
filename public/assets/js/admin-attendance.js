@@ -32,17 +32,17 @@ function showAlert(message, type = 'info') {
 function setupAutoRefresh(loadFunction, intervalMs = 10000) {
   // Call function immediately
   loadFunction();
-  
+
   // Clear any existing interval for this function
   if (refreshIntervals[loadFunction.name]) {
     clearInterval(refreshIntervals[loadFunction.name]);
   }
-  
+
   // Set up new interval
   refreshIntervals[loadFunction.name] = setInterval(() => {
     loadFunction().catch(e => console.error('Auto-refresh error:', e));
   }, intervalMs);
-  
+
   console.log(`Auto-refresh started for ${loadFunction.name} (${intervalMs}ms)`);
 }
 
@@ -62,21 +62,21 @@ async function apiCall(endpoint, method = 'GET', body = null) {
       credentials: 'same-origin'
     };
     if (body) options.body = JSON.stringify(body);
-    
+
     const response = await fetch(API_BASE + endpoint, options);
-    
+
     // Check if response is actually JSON
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
       throw new Error(`Expected JSON but got ${contentType}. HTTP ${response.status}`);
     }
-    
+
     const data = await response.json();
-    
+
     if (!response.ok) {
       throw new Error(data.message || `API Error: ${response.status}`);
     }
-    
+
     return data.data || data;
   } catch (error) {
     console.error('API Error:', error);
@@ -102,12 +102,12 @@ async function loadPolicies() {
 function renderPolicies() {
   const tbody = document.getElementById('policiesTableBody');
   if (!tbody) return;
-  
+
   if (allPolicies.length === 0) {
     tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No policies. Add one to get started.</td></tr>';
     return;
   }
-  
+
   tbody.innerHTML = allPolicies.map((p, i) => {
     const meta = p.rulesJson?._meta || {};
     const effectiveFrom = meta.effectiveFrom || '-';
@@ -147,21 +147,21 @@ function editPolicy(id) {
     showAlert('Policy not found', 'danger');
     return;
   }
-  
+
   const form = document.getElementById('policyForm');
   if (!form) return;
-  
+
   const nameField = form.querySelector('[name="name"]');
   const descriptionField = form.querySelector('[name="description"]');
   const effectiveFromField = form.querySelector('[name="effectiveFrom"]');
   const statusField = form.querySelector('[name="status"]');
   const meta = policy.rulesJson?._meta || {};
-  
+
   if (nameField) nameField.value = policy.name || '';
   if (descriptionField) descriptionField.value = meta.description || '';
   if (effectiveFromField) effectiveFromField.value = meta.effectiveFrom || '';
   if (statusField) statusField.value = policy.status || 'ACTIVE';
-  
+
   const modal = document.getElementById('modalPolicy');
   if (modal) new bootstrap.Modal(modal).show();
 }
@@ -169,18 +169,18 @@ function editPolicy(id) {
 async function savePolicy() {
   const form = document.getElementById('policyForm');
   if (!form) return;
-  
+
   const nameField = form.querySelector('[name="name"]');
   const descriptionField = form.querySelector('[name="description"]');
   const effectiveFromField = form.querySelector('[name="effectiveFrom"]');
   const statusField = form.querySelector('[name="status"]');
-  
+
   const name = nameField?.value?.trim();
   if (!name) {
     showAlert('Policy name is required', 'warning');
     return;
   }
-  
+
   try {
     const payload = {
       name,
@@ -188,7 +188,7 @@ async function savePolicy() {
       effectiveFrom: effectiveFromField?.value || null,
       status: statusField?.value || 'ACTIVE'
     };
-    
+
     if (editingId) {
       await apiCall(`/policies/${editingId}`, 'PATCH', payload);
       showAlert('Policy updated successfully', 'success');
@@ -196,10 +196,10 @@ async function savePolicy() {
       await apiCall('/policies', 'POST', payload);
       showAlert('Policy created successfully', 'success');
     }
-    
+
     const modalEl = document.getElementById('modalPolicy');
     if (modalEl) bootstrap.Modal.getInstance(modalEl)?.hide();
-    
+
     editingId = null;
     editingType = null;
     await loadPolicies();
@@ -210,7 +210,7 @@ async function savePolicy() {
 
 async function deletePolicy(id) {
   if (!confirm('Are you sure you want to delete this policy?')) return;
-  
+
   try {
     await apiCall(`/policies/${id}`, 'DELETE');
     showAlert('Policy deleted successfully', 'success');
@@ -244,12 +244,12 @@ async function loadShifts() {
 function renderShifts() {
   const tbody = document.getElementById('shiftsTableBody');
   if (!tbody) return;
-  
+
   if (allShifts.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No shifts. Add one to get started.</td></tr>';
     return;
   }
-  
+
   const getBreak = (s) => {
     const mins = s.breakRuleJson?.fixedBreakMinutes ?? s.breakRuleJson?.breakDurationMinutes ?? null;
     return mins !== null && mins !== undefined && mins !== '' ? `${mins} min` : '-';
@@ -288,22 +288,22 @@ function editShift(id) {
     showAlert('Shift not found', 'danger');
     return;
   }
-  
+
   const form = document.getElementById('shiftForm');
   if (!form) return;
-  
+
   const nameField = form.querySelector('[name="name"]');
   const startTimeField = form.querySelector('[name="startTime"]');
   const endTimeField = form.querySelector('[name="endTime"]');
   const breakDurationField = form.querySelector('[name="breakDuration"]');
   const statusField = form.querySelector('[name="status"]');
-  
+
   if (nameField) nameField.value = shift.name || '';
   if (startTimeField) startTimeField.value = shift.startTime || '';
   if (endTimeField) endTimeField.value = shift.endTime || '';
   if (breakDurationField) breakDurationField.value = shift.breakRuleJson?.fixedBreakMinutes ?? '';
   if (statusField) statusField.value = shift.status || 'ACTIVE';
-  
+
   const modal = document.getElementById('modalShift');
   if (modal) new bootstrap.Modal(modal).show();
 }
@@ -311,22 +311,22 @@ function editShift(id) {
 async function saveShift() {
   const form = document.getElementById('shiftForm');
   if (!form) return;
-  
+
   const nameField = form.querySelector('[name="name"]');
   const startTimeField = form.querySelector('[name="startTime"]');
   const endTimeField = form.querySelector('[name="endTime"]');
   const breakDurationField = form.querySelector('[name="breakDuration"]');
   const statusField = form.querySelector('[name="status"]');
-  
+
   const name = nameField?.value?.trim();
   const startTime = startTimeField?.value?.trim();
   const endTime = endTimeField?.value?.trim();
-  
+
   if (!name || !startTime || !endTime) {
     showAlert('All fields are required', 'warning');
     return;
   }
-  
+
   try {
     const payload = {
       name,
@@ -337,7 +337,7 @@ async function saveShift() {
         fixedBreakMinutes: breakDurationField?.value ? Number(breakDurationField.value) : 0,
       },
     };
-    
+
     if (editingId) {
       await apiCall(`/shifts/${editingId}`, 'PATCH', payload);
       showAlert('Shift updated successfully', 'success');
@@ -345,10 +345,10 @@ async function saveShift() {
       await apiCall('/shifts', 'POST', payload);
       showAlert('Shift created successfully', 'success');
     }
-    
+
     const modalEl = document.getElementById('modalShift');
     if (modalEl) bootstrap.Modal.getInstance(modalEl)?.hide();
-    
+
     editingId = null;
     editingType = null;
     await loadShifts();
@@ -359,7 +359,7 @@ async function saveShift() {
 
 async function deleteShift(id) {
   if (!confirm('Are you sure you want to delete this shift?')) return;
-  
+
   try {
     await apiCall(`/shifts/${id}`, 'DELETE');
     showAlert('Shift deleted successfully', 'success');
@@ -377,6 +377,93 @@ function updateShiftDropdowns() {
       select.innerHTML += `<option value="${s.id}">${s.name}</option>`;
     });
   });
+}
+
+async function updateEmployeeDropdowns() {
+  try {
+    const response = await fetch(`/api/v1/employees`);
+    if (!response.ok) throw new Error('Failed to fetch employees');
+    const result = await response.json();
+    const employees = result.data || result || [];
+
+    const select = document.querySelector('select[name="employeeIds"]');
+    if (select) {
+      select.innerHTML = '';
+      employees.forEach(emp => {
+        const option = document.createElement('option');
+        option.value = emp.id;
+        option.textContent = `${emp.empName || emp.name || ''} (${emp.empId || emp.id})`.trim();
+        select.appendChild(option);
+      });
+      if (employees.length === 0) {
+        const option = document.createElement('option');
+        option.textContent = 'No employees available';
+        option.disabled = true;
+        select.appendChild(option);
+      }
+    }
+  } catch (e) {
+    console.error('Error loading employees:', e);
+    showAlert('Error loading employees: ' + e.message, 'warning');
+  }
+}
+
+async function updateDepartmentDropdowns() {
+  try {
+    const response = await fetch(`/api/v1/departments`);
+    if (!response.ok) throw new Error('Failed to fetch departments');
+    const result = await response.json();
+    const departments = result.data || result || [];
+
+    const select = document.querySelector('#departmentSelection select[name="scopeValue"]');
+    if (select) {
+      select.innerHTML = '<option value="">Select Department</option>';
+      departments.forEach(dept => {
+        const option = document.createElement('option');
+        option.value = dept.deptName || dept.name || dept.id;
+        option.textContent = dept.deptName || dept.name || `Department ${dept.id}`;
+        select.appendChild(option);
+      });
+      if (departments.length === 0) {
+        const option = document.createElement('option');
+        option.textContent = 'No departments available';
+        option.disabled = true;
+        select.appendChild(option);
+      }
+    }
+  } catch (e) {
+    console.error('Error loading departments:', e);
+    showAlert('Error loading departments: ' + e.message, 'warning');
+  }
+}
+
+async function updateDesignationDropdowns() {
+  try {
+    const response = await fetch(`/api/v1/designations`);
+    if (!response.ok) throw new Error('Failed to fetch designations');
+    const result = await response.json();
+    const designations = result.data || result || [];
+
+    const select = document.querySelector('#designationSelection select[name="scopeValue"]');
+    if (select) {
+      select.innerHTML = '<option value="">Select Designation</option>';
+      designations.forEach(desig => {
+        const option = document.createElement('option');
+        option.value = desig.desigName || desig.name || desig.id;
+        option.textContent = desig.desigName || desig.name || `Designation ${desig.id}`;
+        select.appendChild(option);
+      });
+      if (designations.length === 0) {
+        const option = document.createElement('option');
+        option.textContent = 'No designations available';
+        option.disabled = true;
+        select.appendChild(option);
+      }
+    }
+  } catch (e) {
+    console.error('Error loading designations:', e);
+    showAlert('Error loading designations: ' + e.message, 'warning');
+  }
 }
 
 function filterShifts() {
@@ -402,12 +489,12 @@ async function loadHolidays() {
 function renderHolidays() {
   const tbody = document.getElementById('holidaysTableBody');
   if (!tbody) return;
-  
+
   if (allHolidays.length === 0) {
     tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No holidays. Add one to get started.</td></tr>';
     return;
   }
-  
+
   tbody.innerHTML = allHolidays.map((h, i) => `
     <tr>
       <td>${i + 1}</td>
@@ -442,18 +529,18 @@ function editHoliday(id) {
     showAlert('Holiday not found', 'danger');
     return;
   }
-  
+
   const form = document.getElementById('holidayForm');
   if (!form) return;
-  
+
   const nameField = form.querySelector('[name="name"]');
   const dateField = form.querySelector('[name="date"]');
   const regionField = form.querySelector('[name="region"]');
-  
+
   if (nameField) nameField.value = holiday.name || '';
   if (dateField) dateField.value = holiday.date || '';
   if (regionField) regionField.value = holiday.region || 'National';
-  
+
   const modal = document.getElementById('modalHoliday');
   if (modal) new bootstrap.Modal(modal).show();
 }
@@ -461,26 +548,26 @@ function editHoliday(id) {
 async function saveHoliday() {
   const form = document.getElementById('holidayForm');
   if (!form) return;
-  
+
   const nameField = form.querySelector('[name="name"]');
   const dateField = form.querySelector('[name="date"]');
   const regionField = form.querySelector('[name="region"]');
-  
+
   const name = nameField?.value?.trim();
   const date = dateField?.value?.trim();
-  
+
   if (!name || !date) {
     showAlert('Name and date are required', 'warning');
     return;
   }
-  
+
   try {
     const payload = {
       name,
       date,
       region: regionField?.value || 'National'
     };
-    
+
     if (editingId) {
       await apiCall(`/holidays/${editingId}`, 'PATCH', payload);
       showAlert('Holiday updated successfully', 'success');
@@ -488,10 +575,10 @@ async function saveHoliday() {
       await apiCall('/holidays', 'POST', payload);
       showAlert('Holiday created successfully', 'success');
     }
-    
+
     const modalEl = document.getElementById('modalHoliday');
     if (modalEl) bootstrap.Modal.getInstance(modalEl)?.hide();
-    
+
     editingId = null;
     editingType = null;
     await loadHolidays();
@@ -502,7 +589,7 @@ async function saveHoliday() {
 
 async function deleteHoliday(id) {
   if (!confirm('Are you sure you want to delete this holiday?')) return;
-  
+
   try {
     await apiCall(`/holidays/${id}`, 'DELETE');
     showAlert('Holiday deleted successfully', 'success');
@@ -527,7 +614,7 @@ async function loadAssignments() {
     if (tbody) {
       tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3"><i class="fa-solid fa-spinner fa-spin me-2"></i>Loading assignments...</td></tr>';
     }
-    
+
     allAssignments = await apiCall('/assignments');
     if (!Array.isArray(allAssignments)) allAssignments = [];
     renderAssignments();
@@ -544,18 +631,18 @@ async function loadAssignments() {
 function renderAssignments() {
   const tbody = document.getElementById('assignmentsTableBody');
   if (!tbody) return;
-  
+
   if (allAssignments.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">No assignments found. <a href="#" onclick="openAddAssignmentModal(); return false;">Create one</a></td></tr>';
     return;
   }
-  
+
   tbody.innerHTML = allAssignments.map((a, i) => {
     const empName = a.employee?.empName || 'N/A';
     const shiftName = a.shift?.name || '-';
     const effectiveFrom = a.effectiveFrom ? new Date(a.effectiveFrom).toLocaleDateString() : '-';
     const effectiveTo = a.effectiveTo ? new Date(a.effectiveTo).toLocaleDateString() : '-';
-    
+
     // Determine status based on dates
     const today = new Date().toISOString().split('T')[0];
     let statusBadge = '<span class="badge bg-secondary">Inactive</span>';
@@ -566,7 +653,7 @@ function renderAssignments() {
         statusBadge = '<span class="badge bg-info">Pending</span>';
       }
     }
-    
+
     return `
       <tr>
         <td><strong>${i + 1}</strong></td>
@@ -599,6 +686,10 @@ function openAddAssignmentModal() {
   if (form) form.reset();
   updatePolicyDropdowns();
   updateShiftDropdowns();
+  updateEmployeeDropdowns();
+  updateDepartmentDropdowns();
+  updateDesignationDropdowns();
+  toggleAssignmentFields(); // Initialize field visibility
   const modal = document.getElementById('modalAssignment');
   if (modal) new bootstrap.Modal(modal).show();
 }
@@ -621,59 +712,100 @@ function editAssignment(id) {
     showAlert('Assignment not found', 'danger');
     return;
   }
-  
+
   const form = document.getElementById('assignmentForm');
   if (!form) return;
-  
+
   const policyIdField = form.querySelector('[name="policyId"]');
   const shiftIdField = form.querySelector('[name="shiftId"]');
   const effectiveFromField = form.querySelector('[name="effectiveFrom"]');
   const effectiveToField = form.querySelector('[name="effectiveTo"]');
-  
+
   if (policyIdField) policyIdField.value = assignment.policyId || assignment.policy?.id || '';
   if (shiftIdField) shiftIdField.value = assignment.shiftId || assignment.shift?.id || '';
   if (effectiveFromField) effectiveFromField.value = assignment.effectiveFrom ? assignment.effectiveFrom.split('T')[0] : '';
   if (effectiveToField) effectiveToField.value = assignment.effectiveTo ? assignment.effectiveTo.split('T')[0] : '';
-  
+
   const modal = document.getElementById('modalAssignment');
   if (modal) new bootstrap.Modal(modal).show();
+}
+
+function toggleAssignmentFields() {
+  const scopeType = document.querySelector('[name="scopeType"]')?.value || 'EMPLOYEE';
+  const employeeSelection = document.getElementById('employeeSelection');
+  const departmentSelection = document.getElementById('departmentSelection');
+  const designationSelection = document.getElementById('designationSelection');
+
+  // Hide all selections
+  employeeSelection.style.display = 'none';
+  departmentSelection.style.display = 'none';
+  designationSelection.style.display = 'none';
+
+  // Clear selections
+  document.querySelector('[name="employeeIds"]').value = '';
+  document.querySelectorAll('[name="scopeValue"]').forEach(el => el.value = '');
+
+  // Show relevant selection based on scope type
+  if (scopeType === 'EMPLOYEE') {
+    employeeSelection.style.display = 'block';
+  } else if (scopeType === 'DEPARTMENT') {
+    departmentSelection.style.display = 'block';
+  } else if (scopeType === 'DESIGNATION') {
+    designationSelection.style.display = 'block';
+  }
+  // ALL scope type doesn't need any selection fields
 }
 
 async function saveAssignment() {
   const form = document.getElementById('assignmentForm');
   if (!form) return;
-  
+
   const policyIdField = form.querySelector('[name="policyId"]');
   const shiftIdField = form.querySelector('[name="shiftId"]');
   const effectiveFromField = form.querySelector('[name="effectiveFrom"]');
   const effectiveToField = form.querySelector('[name="effectiveTo"]');
-  
+  const scopeTypeField = form.querySelector('[name="scopeType"]');
+
   const policyId = policyIdField?.value?.trim();
   const shiftId = shiftIdField?.value?.trim();
   const effectiveFrom = effectiveFromField?.value?.trim();
-  
+  const scopeType = scopeTypeField?.value || 'EMPLOYEE';
+
   if (!policyId || !shiftId || !effectiveFrom) {
     showAlert('Policy, Shift, and Effective From are required', 'warning');
     return;
   }
-  
-  try {
-    const idsRaw = (form.querySelector('[name="employeeIds"]')?.value || '').trim();
-    const employeeIds = idsRaw
-      ? idsRaw.split(',').map((x) => Number(x.trim())).filter((n) => Number.isFinite(n) && n > 0)
-      : [];
 
+  try {
     const payload = {
       policyId: parseInt(policyId),
       shiftId: parseInt(shiftId),
       effectiveFrom,
       effectiveTo: effectiveToField?.value || null,
       weekoffPatternJson: {},
-      scopeType: 'EMPLOYEE',
+      scopeType,
       scopeValue: null,
-      employeeIds
+      employeeIds: []
     };
-    
+
+    // Handle different scope types
+    if (scopeType === 'EMPLOYEE') {
+      const selectedOptions = form.querySelector('[name="employeeIds"]');
+      const employeeIds = Array.from(selectedOptions.selectedOptions).map(opt => Number(opt.value)).filter(n => n > 0);
+      if (!employeeIds.length) {
+        showAlert('Please select at least one employee', 'warning');
+        return;
+      }
+      payload.employeeIds = employeeIds;
+    } else if (scopeType === 'DEPARTMENT' || scopeType === 'DESIGNATION') {
+      const scopeValue = form.querySelector('[name="scopeValue"]')?.value?.trim();
+      if (!scopeValue) {
+        showAlert(`Please select a ${scopeType.toLowerCase()}`, 'warning');
+        return;
+      }
+      payload.scopeValue = scopeValue;
+    }
+
     if (editingId) {
       await apiCall(`/assignments/${editingId}`, 'PATCH', payload);
       showAlert('Assignment updated successfully', 'success');
@@ -681,21 +813,22 @@ async function saveAssignment() {
       await apiCall('/assignments', 'POST', payload);
       showAlert('Assignment created successfully', 'success');
     }
-    
+
     const modalEl = document.getElementById('modalAssignment');
     if (modalEl) bootstrap.Modal.getInstance(modalEl)?.hide();
-    
+
     editingId = null;
     editingType = null;
     await loadAssignments();
   } catch (e) {
     console.error(e);
+    showAlert('Error saving assignment: ' + (e.message || 'Unknown error'), 'danger');
   }
 }
 
 async function deleteAssignment(id) {
   if (!confirm('Are you sure you want to delete this assignment?')) return;
-  
+
   try {
     await apiCall(`/assignments/${id}`, 'DELETE');
     showAlert('Assignment deleted successfully', 'success');
@@ -720,10 +853,10 @@ async function loadLogs() {
     if (tbody) {
       tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-3"><i class="fa-solid fa-spinner fa-spin me-2"></i>Loading logs...</td></tr>';
     }
-    
+
     const dateInput = document.getElementById('logDate');
     const date = dateInput?.value || new Date().toISOString().split('T')[0];
-    
+
     const logs = await apiCall(`/logs?date=${date}`);
     renderLogs(Array.isArray(logs) ? logs : []);
   } catch (e) {
@@ -739,38 +872,38 @@ async function loadLogs() {
 function renderLogs(logs) {
   const tbody = document.getElementById('logsTableBody');
   if (!tbody) return;
-  
+
   // Store logs for filtering
   window.allLogs = logs || [];
-  
+
   if (!logs || logs.length === 0) {
     tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-3"><i class="fa-solid fa-inbox"></i> No logs found for this date</td></tr>';
     const countEl = document.getElementById('logsCount');
     if (countEl) countEl.textContent = '0 records';
     return;
   }
-  
+
   const fmtTime = (d) => (d ? new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-');
   const fmtIp = (ip) => ip && ip !== '-' ? ip : 'Local';
 
   tbody.innerHTML = logs.map((log, i) => {
-    const badgeClass = log.status === 'PRESENT' ? 'bg-success' : 
-                       log.status === 'ABSENT' ? 'bg-danger' :
-                       log.status === 'LATE' ? 'bg-warning text-dark' :
-                       log.status === 'HALF_DAY' ? 'bg-info' :
-                       log.status === 'LEAVE' ? 'bg-primary' :
-                       log.status === 'NOT_MARKED' ? 'bg-secondary' :
-                       'bg-secondary';
-    
+    const badgeClass = log.status === 'PRESENT' ? 'bg-success' :
+      log.status === 'ABSENT' ? 'bg-danger' :
+        log.status === 'LATE' ? 'bg-warning text-dark' :
+          log.status === 'HALF_DAY' ? 'bg-info' :
+            log.status === 'LEAVE' ? 'bg-primary' :
+              log.status === 'NOT_MARKED' ? 'bg-secondary' :
+                'bg-secondary';
+
     // Get IP from punch meta if available, otherwise use 'Local'
     let ipAddr = 'Local';
     if (log.metaJson) {
       try {
         const meta = typeof log.metaJson === 'string' ? JSON.parse(log.metaJson) : log.metaJson;
         if (meta?.ip) ipAddr = meta.ip;
-      } catch (e) {}
+      } catch (e) { }
     }
-    
+
     return `
       <tr>
         <td><strong>${i + 1}</strong></td>
@@ -795,11 +928,11 @@ function renderLogs(logs) {
       </tr>
     `;
   }).join('');
-  
+
   // Update count
   const countEl = document.getElementById('logsCount');
   if (countEl) countEl.textContent = `${logs.length} record${logs.length !== 1 ? 's' : ''}`;
-  
+
   // Update last update time
   const timeEl = document.getElementById('logsLastUpdate');
   if (timeEl) {
@@ -812,13 +945,13 @@ async function downloadLogs() {
   try {
     const dateInput = document.getElementById('logDate');
     const date = dateInput?.value || new Date().toISOString().split('T')[0];
-    
+
     const logs = await apiCall(`/logs?date=${date}`);
     if (!Array.isArray(logs) || logs.length === 0) {
       showAlert('No logs to export', 'warning');
       return;
     }
-    
+
     // Create CSV
     const headers = ['Sr.', 'Employee', 'Date', 'Punch In', 'Punch Out', 'Status', 'Source'];
     const rows = logs.map((log, i) => [
@@ -830,12 +963,12 @@ async function downloadLogs() {
       log.status || '',
       log.source || 'AUTO'
     ]);
-    
+
     const csv = [
       headers.join(','),
       ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
     ].join('\n');
-    
+
     // Download
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -844,7 +977,7 @@ async function downloadLogs() {
     a.download = `attendance-logs-${date}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
-    
+
     showAlert('Logs exported successfully', 'success');
   } catch (e) {
     console.error(e);
@@ -870,12 +1003,12 @@ async function loadRegularizations() {
 function renderRegularizations(regs) {
   const tbody = document.getElementById('regularizationsTableBody');
   if (!tbody) return;
-  
+
   if (!regs || regs.length === 0) {
     tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No regularization requests</td></tr>';
     return;
   }
-  
+
   tbody.innerHTML = regs.map((r, i) => `
     <tr>
       <td>${i + 1}</td>
@@ -896,7 +1029,7 @@ function renderRegularizations(regs) {
 
 async function approveRegularization(id) {
   if (!confirm('Approve this regularization request?')) return;
-  
+
   try {
     await apiCall(`/regularizations/${id}/approve`, 'PATCH', { actionNote: 'Approved by admin' });
     showAlert('Regularization approved', 'success');
@@ -909,7 +1042,7 @@ async function approveRegularization(id) {
 async function rejectRegularization(id) {
   const reason = prompt('Reason for rejection:');
   if (reason === null) return;
-  
+
   try {
     await apiCall(`/regularizations/${id}/reject`, 'PATCH', { actionNote: reason || 'Rejected by admin' });
     showAlert('Regularization rejected', 'success');
@@ -921,12 +1054,12 @@ async function rejectRegularization(id) {
 
 function viewRegularization(id) {
   const reg = allRegularizations.find(r => r.id === id);
-  
+
   if (!reg) {
     showAlert('Regularization record not found', 'danger');
     return;
   }
-  
+
   const details = `
     <div style="text-align: left;">
       <p><strong>Employee:</strong> ${reg.employee?.empName || 'N/A'} (${reg.employee?.empId || reg.employeeId || 'N/A'})</p>
@@ -938,7 +1071,7 @@ function viewRegularization(id) {
       ${reg.checkoutTime ? `<p><strong>Check-out Time:</strong> ${reg.checkoutTime}</p>` : ''}
     </div>
   `;
-  
+
   showAlert(details, 'info');
 }
 
@@ -950,15 +1083,15 @@ async function generateReport() {
     const reportType = document.querySelector('input[name="reportType"]:checked')?.value || 'summary';
     const startDate = document.querySelector('input[name="startDate"]')?.value;
     const endDate = document.querySelector('input[name="endDate"]')?.value;
-    
+
     if (!startDate || !endDate) {
       showAlert('Start date and end date are required', 'warning');
       return;
     }
-    
+
     // Placeholder report generation
     showAlert(`Report generated for ${reportType} from ${startDate} to ${endDate}`, 'success');
-    
+
     // You can fetch actual report data here and display it
   } catch (e) {
     console.error(e);
@@ -997,14 +1130,14 @@ async function lockAttendance(event) {
   event?.preventDefault();
   const periodInput = document.querySelector('input[name="period"]');
   const period = periodInput?.value?.trim();
-  
+
   if (!period) {
     showAlert('Period (YYYY-MM format) is required', 'warning');
     return;
   }
-  
+
   if (!confirm(`Lock attendance for period ${period}?`)) return;
-  
+
   try {
     await apiCall('/lock', 'POST', { period });
     showAlert('Attendance period locked successfully', 'success');
@@ -1018,10 +1151,10 @@ async function lockAttendance(event) {
 async function unlockAttendance(periodFromBtn = null) {
   const period = periodFromBtn || prompt('Enter period to unlock (YYYY-MM format):');
   if (!period) return;
-  
+
   const note = prompt('Reason for unlock:') || '';
   if (!confirm(`Unlock attendance for period ${period}?`)) return;
-  
+
   try {
     await apiCall('/unlock', 'POST', { period, unlockNote: note });
     showAlert('Attendance period unlocked successfully', 'success');
@@ -1036,13 +1169,13 @@ async function unlockAttendance(periodFromBtn = null) {
 async function loadDashboard() {
   try {
     const data = await apiCall('/dashboard');
-    
+
     // Update KPI cards
     const presentCard = document.querySelector('[data-kpi="present"]');
     const absentCard = document.querySelector('[data-kpi="absent"]');
     const lateCard = document.querySelector('[data-kpi="late"]');
     const onLeaveCard = document.querySelector('[data-kpi="onLeave"]');
-    
+
     // Backend returns { date, counts: { PRESENT/ABSENT/LATE/LEAVE/... }, pendingRegularizations, summaries }
     const counts = data?.counts || {};
     if (presentCard) presentCard.textContent = counts.PRESENT || 0;
@@ -1101,7 +1234,7 @@ async function loadDashboardAttendanceTable() {
           shiftTime = `${shift.startTime || ''} - ${shift.endTime || ''}`;
         }
       }
-      
+
       // Status styling with icons
       const getStatusBadge = (status) => {
         const badges = {
@@ -1119,11 +1252,11 @@ async function loadDashboardAttendanceTable() {
 
       // Row highlight based on status
       const rowClass = r.status === 'PRESENT' ? '' :
-                       r.status === 'ABSENT' ? 'table-danger' :
-                       r.status === 'LATE' ? 'table-warning' :
-                       r.status === 'LEAVE' ? 'table-info' :
-                       r.status === 'NOT_MARKED' ? '' : '';  // No highlight for NOT_MARKED or unknown
-      
+        r.status === 'ABSENT' ? 'table-danger' :
+          r.status === 'LATE' ? 'table-warning' :
+            r.status === 'LEAVE' ? 'table-info' :
+              r.status === 'NOT_MARKED' ? '' : '';  // No highlight for NOT_MARKED or unknown
+
       return `
         <tr class="${rowClass}">
           <td><strong>${i + 1}</strong></td>
@@ -1185,9 +1318,9 @@ async function loadDashboardAttendanceTable() {
 
 document.addEventListener('DOMContentLoaded', () => {
   const page = window.location.pathname;
-  
+
   console.log('Loading page:', page);
-  
+
   if (page.includes('/admin/attendance/policies')) {
     setupAutoRefresh(loadPolicies, 8000); // Refresh every 8 seconds
   } else if (page.includes('/admin/attendance/shifts')) {
@@ -1201,7 +1334,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupAutoRefresh(loadAssignments, 8000);
   } else if (page.includes('/admin/attendance/logs')) {
     setupAutoRefresh(loadLogs, 5000); // Refresh every 5 seconds for real-time logs
-    
+
     // Add event listener for date change
     const dateInput = document.getElementById('logDate');
     if (dateInput) {
@@ -1225,7 +1358,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupAutoRefresh(loadDashboard, 5000); // KPIs
     setupAutoRefresh(loadDashboardAttendanceTable, 5000); // table
   }
-  
+
   // Cleanup on page unload to prevent memory leaks
   window.addEventListener('beforeunload', () => {
     Object.keys(refreshIntervals).forEach(key => {
@@ -1240,7 +1373,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function viewEmployeeAttendanceDetails(summaryId, employeeId, date) {
   // For now, show a basic view. In future, you could expand this to a modal
   showAlert(`Viewing attendance details for employee ${employeeId} on ${date}`, 'info');
-  
+
   // Optionally: fetch and display full details in a modal
   // You could extend this to show punch-in/out times, break duration, late minutes, etc.
 }
@@ -1249,13 +1382,13 @@ function viewEmployeeAttendanceDetails(summaryId, employeeId, date) {
 function openEditAttendanceModal(summaryId, employeeId, date) {
   editingId = summaryId;
   editingType = 'attendance';
-  
+
   // Navigate to the manual edit page or open a modal for editing
   // For now, we'll navigate to a dedicated edit page (you can create this later)
   // Or show a modal with punch editing capabilities
-  
+
   showAlert(`Opening edit modal for attendance on ${date}`, 'info');
-  
+
   // TODO: Implement full modal with punch editing
   // const modal = document.getElementById('modalEditAttendance');
   // if (modal) new bootstrap.Modal(modal).show();
@@ -1301,20 +1434,20 @@ function filterLogs() {
   const search = (document.getElementById('logSearch')?.value || '').toLowerCase();
   const status = document.getElementById('logStatus')?.value || '';
   const tbody = document.getElementById('logsTableBody');
-  
+
   if (!tbody || !window.allLogs) return;
-  
+
   const filtered = window.allLogs.filter(log => {
-    const matchSearch = !search || 
+    const matchSearch = !search ||
       (log.employee?.empName || '').toLowerCase().includes(search) ||
       (log.employee?.empId || '').toLowerCase().includes(search) ||
       (log.metaJson && typeof log.metaJson === 'object' && log.metaJson?.ip?.includes(search));
-    
+
     const matchStatus = !status || log.status === status;
-    
+
     return matchSearch && matchStatus;
   });
-  
+
   renderLogs(filtered);
 }
 
@@ -1386,10 +1519,10 @@ async function loadReports() {
 function populateReportsFilters() {
   const departments = [...new Set(allReports.map(r => r.department))];
   const employees = [...new Set(allReports.map(r => r.employee))];
-  
+
   const deptSelect = document.getElementById('departmentFilter');
   const empSelect = document.getElementById('employeeFilter');
-  
+
   departments.forEach(dept => {
     if (dept && !deptSelect.querySelector(`option[value="${dept}"]`)) {
       const option = document.createElement('option');
@@ -1398,7 +1531,7 @@ function populateReportsFilters() {
       deptSelect.appendChild(option);
     }
   });
-  
+
   employees.forEach(emp => {
     if (emp && !empSelect.querySelector(`option[value="${emp}"]`)) {
       const option = document.createElement('option');
@@ -1414,14 +1547,14 @@ function filterReports() {
   const emp = document.getElementById('employeeFilter')?.value || '';
   const startDate = document.getElementById('startDateFilter')?.value || '';
   const endDate = document.getElementById('endDateFilter')?.value || '';
-  
+
   const filtered = allReports.filter(r => {
     const deptMatch = !dept || r.department === dept;
     const empMatch = !emp || r.employee === emp;
     const dateMatch = (!startDate || r.date >= startDate) && (!endDate || r.date <= endDate);
     return deptMatch && empMatch && dateMatch;
   });
-  
+
   renderReports(filtered);
 }
 
@@ -1432,34 +1565,34 @@ function sortReports(field) {
     reportsSortField = field;
     reportsSortDirection = 'asc';
   }
-  
+
   const sorted = [...allReports].sort((a, b) => {
     const aVal = a[field] || '';
     const bVal = b[field] || '';
-    
+
     if (typeof aVal === 'string') {
-      return reportsSortDirection === 'asc' 
-        ? aVal.localeCompare(bVal) 
+      return reportsSortDirection === 'asc'
+        ? aVal.localeCompare(bVal)
         : bVal.localeCompare(aVal);
     } else {
-      return reportsSortDirection === 'asc' 
-        ? aVal - bVal 
+      return reportsSortDirection === 'asc'
+        ? aVal - bVal
         : bVal - aVal;
     }
   });
-  
+
   renderReports(sorted);
 }
 
 function renderReports(reports) {
   const tbody = document.getElementById('reportsTableBody');
   if (!tbody) return;
-  
+
   if (!reports || reports.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No reports found</td></tr>';
     return;
   }
-  
+
   tbody.innerHTML = reports.map(r => `
     <tr>
       <td>${r.employee} (${r.employeeId})</td>
@@ -1503,7 +1636,7 @@ function downloadReport() {
   filtered.forEach(r => {
     csv += `"${r.employee}","${r.department}","${r.date}","${r.status}","${r.checkin}","${r.checkout}","${r.workHours}"\n`;
   });
-  
+
   const blob = new Blob([csv], { type: 'text/csv' });
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement('a');

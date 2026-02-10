@@ -1614,7 +1614,7 @@
         // Helper: detect if current page is login or register
         function isAuthPage() {
             const p = window.location.pathname.toLowerCase();
-            return p === '/login' || p === '/register' || p.endsWith('/login') || p.endsWith('/register');
+            return p === '/' || p === '/login' || p === '/register' || p.endsWith('/login') || p.endsWith('/register');
         }
         
         // Helper function to make API calls (minimal fixes only)
@@ -1696,8 +1696,8 @@
         function checkAuth() {
             const currentPath = window.location.pathname;
             
-            // Allow login/register pages without checking - server middleware will handle redirects
-            if (currentPath === '/login' || currentPath === '/register' || 
+            // Allow landing, login, register without checking - server middleware will handle redirects
+            if (currentPath === '/' || currentPath === '/login' || currentPath === '/register' || 
                 currentPath.includes('/login') || currentPath.includes('/register')) {
                 return;
             }
@@ -1756,7 +1756,7 @@
         
         // Initialize auth check (only on protected pages)
         const currentPath = window.location.pathname;
-        if (currentPath !== '/login' && currentPath !== '/register' && !window.authChecked) {
+        if (currentPath !== '/' && currentPath !== '/login' && currentPath !== '/register' && !window.authChecked) {
             window.authChecked = true;
             checkAuth();
         }

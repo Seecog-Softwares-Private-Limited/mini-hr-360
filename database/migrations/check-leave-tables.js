@@ -103,10 +103,8 @@ async function checkTables() {
       console.error('   SQL Error:', error.parent.sqlMessage);
       console.error('   SQL:', error.parent.sql);
     }
-  } finally {
-    await sequelize.close();
-    console.log('\n🔌 Database connection closed');
   }
+  // Do not close sequelize - migration runner owns the shared connection
 }
 
 checkTables();
