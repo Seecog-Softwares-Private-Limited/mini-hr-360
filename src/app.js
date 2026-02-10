@@ -180,7 +180,9 @@ import notificationRoutes from './routes/notification.routes.js';
 
 
 // ---------- Frontend pages ----------
-app.get('/', (req, res) => res.redirect('/login'));
+app.get('/', (req, res) => {
+    res.render('landing', { title: 'mini-hr-360', pageClass: 'landing' });
+});
 
 app.get('/login', (req, res) => res.render('login', { title: 'mini-hr-360', pageClass: 'auth' }));
 app.get('/register', (req, res) => res.render('register', { title: 'mini-hr-360', pageClass: 'auth' }));
