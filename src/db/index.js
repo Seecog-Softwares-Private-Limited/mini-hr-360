@@ -25,7 +25,7 @@ console.log("DB_HOST : ", process.env.DB_HOST);
 //Stage
 const DB_HOST = 'ls-322b13a438adc6602193777abc66dd7f1b391154.cd0w8y80q80x.ap-south-1.rds.amazonaws.com';  // GoDaddy: 'localhost'; local can be '127.0.0.1'
 const DB_PORT = Number(3306);
-const DB_NAME = 'saas_whatsapp_manager';
+const DB_NAME = 'mini_hr_360';
 const DB_USER = 'dbmasteruser';
 const DB_PASSWORD = '&s0rpr,(G2+1sv7rT3MGKa{c:-j<ebN:';
 const CREATE_DB_IF_MISSING = (process.env.CREATE_DB_IF_MISSING || 'false') === 'true';
