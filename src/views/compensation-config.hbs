@@ -1,0 +1,558 @@
+{{!-- Compensation Configuration Page --}}
+<div class="container-fluid">
+  <div class="row">
+    {{!-- Sidebar --}}
+    <div class="col-md-3 col-lg-2 px-0">
+      {{> sidebar}}
+    </div>
+
+    {{!-- Main content --}}
+    <div class="col-md-9 col-lg-10">
+      <div class="main-content p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h2 class="mb-0">
+              <i class="fas fa-cog text-primary me-2"></i>Compensation Configuration
+            </h2>
+            <small class="text-muted">Configure salary structure and deduction rules for Bangalore, Karnataka</small>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+              <i class="fas fa-sliders-h me-2"></i>Salary Structure Settings
+            </h5>
+          </div>
+          <div class="card-body">
+            <form id="compensationConfigForm">
+              {{!-- CTC Breakdown Configuration --}}
+              <div class="row mb-4">
+                <div class="col-12">
+                  <h6 class="text-primary mb-3">
+                    <i class="fas fa-percentage me-2"></i>CTC Breakdown (Bangalore Standard)
+                  </h6>
+                </div>
+                
+                <div class="col-md-4">
+                  <label class="form-label">
+                    <i class="fas fa-building text-warning me-1"></i>Basic Salary (% of CTC)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    id="basicSalaryPercent"
+                    class="form-control"
+                    value="40"
+                    min="0"
+                    max="100"
+                  />
+                  <small class="text-muted">Standard: 40-50% of CTC</small>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">
+                    <i class="fas fa-home text-info me-1"></i>HRA (% of Basic)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    id="hraPercent"
+                    class="form-control"
+                    value="50"
+                    min="0"
+                    max="100"
+                  />
+                  <small class="text-muted">Standard: 40-50% of Basic</small>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">
+                    <i class="fas fa-chart-line text-warning me-1"></i>DA (% of Basic)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    id="daPercent"
+                    class="form-control"
+                    value="0"
+                    min="0"
+                    max="100"
+                  />
+                  <small class="text-muted">Dearness Allowance</small>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">
+                    <i class="fas fa-car text-success me-1"></i>Conveyance Allowance (Fixed ₹)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    id="conveyanceFixed"
+                    class="form-control"
+                    value=""
+                    min="0"
+                    placeholder="1600"
+                  />
+                  <small class="text-muted">Standard: ₹1,600/month (tax-free). Enter 0 to exclude.</small>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">
+                    <i class="fas fa-heartbeat text-danger me-1"></i>Medical Allowance (Fixed ₹)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    id="medicalFixed"
+                    class="form-control"
+                    value=""
+                    min="0"
+                    placeholder="1250"
+                  />
+                  <small class="text-muted">Standard: ₹1,250/month. Enter 0 to exclude.</small>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">
+                    <i class="fas fa-star text-warning me-1"></i>Special Allowance (% of CTC)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    id="specialAllowancePercent"
+                    class="form-control"
+                    value="0"
+                    min="0"
+                    max="100"
+                  />
+                  <small class="text-muted">Remaining balance after other components</small>
+                </div>
+              </div>
+
+              <hr>
+
+              {{!-- Deduction Configuration --}}
+              <div class="row mb-4">
+                <div class="col-12">
+                  <h6 class="text-danger mb-3">
+                    <i class="fas fa-minus-circle me-2"></i>Deduction Settings
+                  </h6>
+                </div>
+
+                <div class="col-md-6">
+                  <div class="form-check form-switch mb-3">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      id="enablePF"
+                      checked
+                    />
+                    <label class="form-check-label" for="enablePF">
+                      <strong>
+                        <i class="fas fa-piggy-bank text-primary me-2"></i>Enable Provident Fund (PF)
+                      </strong>
+                    </label>
+                    <small class="d-block text-muted ms-4">
+                      Employee: 12% of Basic (max ₹1,800)<br>
+                      Employer: 12% of Basic (max ₹1,800)
+                    </small>
+                  </div>
+
+                  <div class="form-check form-switch mb-3">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      id="enableESI"
+                      checked
+                    />
+                    <label class="form-check-label" for="enableESI">
+                      <strong>
+                        <i class="fas fa-shield-alt text-success me-2"></i>Enable Employee State Insurance (ESI)
+                      </strong>
+                    </label>
+                    <small class="d-block text-muted ms-4">
+                      Applicable if Gross ≤ ₹21,000<br>
+                      Employee: 0.75% of Gross<br>
+                      Employer: 3.25% of Gross
+                    </small>
+                  </div>
+
+                  <div class="form-check form-switch mb-3">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      id="enableProfessionalTax"
+                      checked
+                    />
+                    <label class="form-check-label" for="enableProfessionalTax">
+                      <strong>
+                        <i class="fas fa-file-invoice text-warning me-2"></i>Enable Professional Tax (Karnataka)
+                      </strong>
+                    </label>
+                    <small class="d-block text-muted ms-4">
+                      ₹0 if gross ≤ ₹11,000<br>
+                      ₹150 if gross > ₹11,000 and ≤ ₹15,000<br>
+                      ₹200 if gross > ₹15,000
+                    </small>
+                  </div>
+
+                  <div class="form-check form-switch mb-3">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      id="enableGratuity"
+                      checked
+                    />
+                    <label class="form-check-label" for="enableGratuity">
+                      <strong>
+                        <i class="fas fa-gift text-info me-2"></i>Enable Gratuity Calculation
+                      </strong>
+                    </label>
+                    <small class="d-block text-muted ms-4">
+                      4.81% of Basic Salary (employer cost)
+                    </small>
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <div class="card bg-light">
+                    <div class="card-body">
+                      <h6 class="text-primary mb-3">
+                        <i class="fas fa-info-circle me-2"></i>Configuration Notes
+                      </h6>
+                      <ul class="mb-0 small">
+                        <li>PF is mandatory for organizations with 20+ employees</li>
+                        <li>ESI is applicable if gross salary ≤ ₹21,000</li>
+                        <li>Professional Tax is mandatory in Karnataka</li>
+                        <li>Gratuity is payable after 5 years of service</li>
+                        <li>All percentages are based on Bangalore, Karnataka standards</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <hr>
+
+              {{!-- Additional Settings --}}
+              <div class="row mb-4">
+                <div class="col-12">
+                  <h6 class="text-info mb-3">
+                    <i class="fas fa-cog me-2"></i>Additional Settings
+                  </h6>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">
+                    <i class="fas fa-rupee-sign text-success me-1"></i>PF Cap Threshold (₹)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    id="pfCapThreshold"
+                    class="form-control"
+                    value="15000"
+                    min="0"
+                  />
+                  <small class="text-muted">Basic salary threshold for PF cap</small>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">
+                    <i class="fas fa-rupee-sign text-success me-1"></i>PF Max Contribution (₹)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    id="pfMaxContribution"
+                    class="form-control"
+                    value="1800"
+                    min="0"
+                  />
+                  <small class="text-muted">Maximum PF contribution per month</small>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">
+                    <i class="fas fa-rupee-sign text-success me-1"></i>ESI Threshold (₹)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    id="esiThreshold"
+                    class="form-control"
+                    value="21000"
+                    min="0"
+                  />
+                  <small class="text-muted">Gross salary threshold for ESI applicability</small>
+                </div>
+              </div>
+
+              <div class="d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-secondary" id="resetConfigBtn">
+                  <i class="fas fa-undo me-2"></i>Reset to Defaults
+                </button>
+                <button type="submit" class="btn btn-primary">
+                  <i class="fas fa-save me-2"></i>Save Configuration
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        {{!-- Preview Section --}}
+        <div class="card mt-4">
+          <div class="card-header bg-info text-white">
+            <h5 class="mb-0">
+              <i class="fas fa-eye me-2"></i>Configuration Preview
+            </h5>
+          </div>
+          <div class="card-body">
+            <p class="text-muted">Enter a sample CTC to see how the salary structure will be calculated:</p>
+            <div class="row">
+              <div class="col-md-4">
+                <label class="form-label">Sample CTC (Annual ₹)</label>
+                <input
+                  type="number"
+                  id="previewCtc"
+                  class="form-control"
+                  placeholder="Enter CTC"
+                  value="600000"
+                />
+              </div>
+              <div class="col-md-8">
+                <button type="button" class="btn btn-outline-primary mt-4" id="previewBtn">
+                  <i class="fas fa-calculator me-2"></i>Calculate Preview
+                </button>
+              </div>
+            </div>
+            <div id="previewResults" class="mt-4" style="display: none;">
+              <div class="row">
+                <div class="col-md-6">
+                  <h6 class="text-success">Earnings:</h6>
+                  <ul class="list-unstyled" id="previewEarnings"></ul>
+                </div>
+                <div class="col-md-6">
+                  <h6 class="text-danger">Deductions:</h6>
+                  <ul class="list-unstyled" id="previewDeductions"></ul>
+                </div>
+              </div>
+              <hr>
+              <div class="text-center">
+                <h5 class="text-primary">
+                  Net Take-Home: <span id="previewNet" class="text-success">₹0.00</span>
+                </h5>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Load saved configuration
+  function loadConfiguration() {
+    const config = JSON.parse(localStorage.getItem('compensationConfig') || '{}');
+    
+    // Set default values if not present (use 'in' operator to check for property existence, not falsy values)
+    if (!('basicSalaryPercent' in config)) config.basicSalaryPercent = 40;
+    if (!('hraPercent' in config)) config.hraPercent = 50;
+    if (!('daPercent' in config)) config.daPercent = 0;
+    if (!('conveyanceFixed' in config)) config.conveyanceFixed = 1600;
+    if (!('medicalFixed' in config)) config.medicalFixed = 1250;
+    if (!('specialAllowancePercent' in config)) config.specialAllowancePercent = 0;
+    if (config.enablePF === undefined) config.enablePF = true;
+    if (config.enableESI === undefined) config.enableESI = true;
+    if (config.enableProfessionalTax === undefined) config.enableProfessionalTax = true;
+    if (config.enableGratuity === undefined) config.enableGratuity = true;
+    if (!('pfCapThreshold' in config)) config.pfCapThreshold = 15000;
+    if (!('pfMaxContribution' in config)) config.pfMaxContribution = 1800;
+    if (!('esiThreshold' in config)) config.esiThreshold = 21000;
+
+    // Populate form (allow 0 values)
+    document.getElementById('basicSalaryPercent').value = config.basicSalaryPercent;
+    document.getElementById('hraPercent').value = config.hraPercent;
+    document.getElementById('daPercent').value = config.daPercent;
+    document.getElementById('conveyanceFixed').value = config.conveyanceFixed !== undefined ? config.conveyanceFixed : 1600;
+    document.getElementById('medicalFixed').value = config.medicalFixed !== undefined ? config.medicalFixed : 1250;
+    document.getElementById('specialAllowancePercent').value = config.specialAllowancePercent;
+    document.getElementById('enablePF').checked = config.enablePF;
+    document.getElementById('enableESI').checked = config.enableESI;
+    document.getElementById('enableProfessionalTax').checked = config.enableProfessionalTax;
+    document.getElementById('enableGratuity').checked = config.enableGratuity;
+    document.getElementById('pfCapThreshold').value = config.pfCapThreshold;
+    document.getElementById('pfMaxContribution').value = config.pfMaxContribution;
+    document.getElementById('esiThreshold').value = config.esiThreshold;
+
+    return config;
+  }
+
+  // Save configuration
+  function saveConfiguration() {
+    const config = {
+      basicSalaryPercent: parseFloat(document.getElementById('basicSalaryPercent').value) || 0,
+      hraPercent: parseFloat(document.getElementById('hraPercent').value) || 0,
+      daPercent: parseFloat(document.getElementById('daPercent').value) || 0,
+      conveyanceFixed: parseFloat(document.getElementById('conveyanceFixed').value) || 0, // Allow 0
+      medicalFixed: parseFloat(document.getElementById('medicalFixed').value) || 0, // Allow 0
+      specialAllowancePercent: parseFloat(document.getElementById('specialAllowancePercent').value) || 0,
+      enablePF: document.getElementById('enablePF').checked,
+      enableESI: document.getElementById('enableESI').checked,
+      enableProfessionalTax: document.getElementById('enableProfessionalTax').checked,
+      enableGratuity: document.getElementById('enableGratuity').checked,
+      pfCapThreshold: parseFloat(document.getElementById('pfCapThreshold').value) || 0,
+      pfMaxContribution: parseFloat(document.getElementById('pfMaxContribution').value) || 0,
+      esiThreshold: parseFloat(document.getElementById('esiThreshold').value) || 0
+    };
+
+    localStorage.setItem('compensationConfig', JSON.stringify(config));
+    return config;
+  }
+
+  // Get configuration
+  function getConfiguration() {
+    return JSON.parse(localStorage.getItem('compensationConfig') || '{}');
+  }
+
+  // Calculate preview
+  function calculatePreview() {
+    const ctc = parseFloat(document.getElementById('previewCtc').value);
+    if (!ctc || ctc <= 0) {
+      alert('Please enter a valid CTC');
+      return;
+    }
+
+    const config = saveConfiguration();
+    const results = calculateFromCTC(ctc, config);
+
+    // Display results
+    const earningsList = document.getElementById('previewEarnings');
+    const deductionsList = document.getElementById('previewDeductions');
+    const netSalary = document.getElementById('previewNet');
+    const previewResults = document.getElementById('previewResults');
+
+    earningsList.innerHTML = `
+      <li>Basic Salary: <strong>₹${results.basicSalary.toLocaleString('en-IN', {maximumFractionDigits: 2})}</strong></li>
+      <li>HRA: <strong>₹${results.hra.toLocaleString('en-IN', {maximumFractionDigits: 2})}</strong></li>
+      <li>DA: <strong>₹${results.da.toLocaleString('en-IN', {maximumFractionDigits: 2})}</strong></li>
+      <li>Conveyance: <strong>₹${results.conveyance.toLocaleString('en-IN', {maximumFractionDigits: 2})}</strong></li>
+      <li>Medical: <strong>₹${results.medical.toLocaleString('en-IN', {maximumFractionDigits: 2})}</strong></li>
+      <li>Special Allowance: <strong>₹${results.specialAllowance.toLocaleString('en-IN', {maximumFractionDigits: 2})}</strong></li>
+      <li><strong>Gross Salary: ₹${results.grossSalary.toLocaleString('en-IN', {maximumFractionDigits: 2})}</strong></li>
+    `;
+
+    let deductionsHtml = '';
+    if (config.enablePF) {
+      deductionsHtml += `<li>PF (Employee): <strong>₹${results.pfEmployee.toLocaleString('en-IN', {maximumFractionDigits: 2})}</strong></li>`;
+    }
+    if (config.enableESI) {
+      deductionsHtml += `<li>ESI (Employee): <strong>₹${results.esiEmployee.toLocaleString('en-IN', {maximumFractionDigits: 2})}</strong></li>`;
+    }
+    if (config.enableProfessionalTax) {
+      deductionsHtml += `<li>Professional Tax: <strong>₹${results.professionalTax.toLocaleString('en-IN', {maximumFractionDigits: 2})}</strong></li>`;
+    }
+    deductionsHtml += `<li><strong>Total Deductions: ₹${results.totalDeductions.toLocaleString('en-IN', {maximumFractionDigits: 2})}</strong></li>`;
+    
+    deductionsList.innerHTML = deductionsHtml;
+    netSalary.textContent = `₹${results.netSalary.toLocaleString('en-IN', {maximumFractionDigits: 2})}`;
+    previewResults.style.display = 'block';
+  }
+
+  // Calculate from CTC (shared function)
+  function calculateFromCTC(ctc, config) {
+    const monthlyCtc = ctc / 12;
+    
+    // Basic Salary
+    const basicSalary = monthlyCtc * (config.basicSalaryPercent / 100);
+    
+    // HRA
+    const hra = basicSalary * (config.hraPercent / 100);
+    
+    // DA
+    const da = basicSalary * (config.daPercent / 100);
+    
+    // Fixed allowances (allow 0 values - use !== undefined check)
+    const conveyance = config.conveyanceFixed !== undefined ? config.conveyanceFixed : 1600;
+    const medical = config.medicalFixed !== undefined ? config.medicalFixed : 1250;
+    
+    // Special Allowance (remaining balance)
+    const allocated = basicSalary + hra + da + conveyance + medical;
+    const specialAllowance = monthlyCtc - allocated;
+    
+    // Gross Salary
+    const grossSalary = basicSalary + hra + da + conveyance + medical + specialAllowance;
+    
+    // Deductions
+    let pfEmployee = 0;
+    let esiEmployee = 0;
+    let professionalTax = 0;
+    
+    if (config.enablePF) {
+      const pfRate = 0.12;
+      pfEmployee = basicSalary * pfRate;
+      if (basicSalary > config.pfCapThreshold) {
+        pfEmployee = config.pfMaxContribution;
+      }
+    }
+    
+    if (config.enableESI && grossSalary <= config.esiThreshold) {
+      esiEmployee = grossSalary * 0.0075; // 0.75%
+    }
+    
+    if (config.enableProfessionalTax) {
+      if (grossSalary > 15000) {
+        professionalTax = 200;
+      } else if (grossSalary > 11000) {
+        professionalTax = 150;
+      } else {
+        professionalTax = 0;
+      }
+    }
+    
+    const totalDeductions = pfEmployee + esiEmployee + professionalTax;
+    const netSalary = grossSalary - totalDeductions;
+    
+    return {
+      basicSalary,
+      hra,
+      da,
+      conveyance,
+      medical,
+      specialAllowance,
+      grossSalary,
+      pfEmployee,
+      esiEmployee,
+      professionalTax,
+      totalDeductions,
+      netSalary
+    };
+  }
+
+  // Make calculateFromCTC available globally
+  window.calculateFromCTC = calculateFromCTC;
+  window.getCompensationConfig = getConfiguration;
+
+  // Event listeners
+  document.getElementById('compensationConfigForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    saveConfiguration();
+    alert('Configuration saved successfully!');
+  });
+
+  document.getElementById('resetConfigBtn').addEventListener('click', function() {
+    if (confirm('Reset to default values?')) {
+      localStorage.removeItem('compensationConfig');
+      loadConfiguration();
+      alert('Configuration reset to defaults!');
+    }
+  });
+
+  document.getElementById('previewBtn').addEventListener('click', calculatePreview);
+
+  // Load configuration on page load
+  loadConfiguration();
+</script>

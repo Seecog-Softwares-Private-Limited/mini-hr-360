@@ -39,7 +39,7 @@ import PayrollRun from './PayrollRun.js';
 import PayrollRunItem from './PayrollRunItem.js';
 import Payslip from './Payslip.js';
 import SalaryStructure from './SalaryStructure.js';
-import EmployeeSalaryAssignment from './payroll.EmployeeSalaryAssignment.js';
+import EmployeeSalaryAssignmentOld from './payroll.EmployeeSalaryAssignment.js';
 import PayrollSetting from './payrollSetting.js';
 import PayrollSetup from './PayrollSetup.js';
 import EmployeeSalaryStructure from './EmployeeSalaryStructure.js';
@@ -200,15 +200,18 @@ PayrollRun.hasMany(Payslip, { foreignKey: 'payrollRunId' });
 
 
 
-SalaryStructure.hasMany(EmployeeSalaryAssignment, {
+SalaryStructure.hasMany(EmployeeSalaryAssignmentOld, {
   foreignKey: 'salaryStructureId',
   as: 'employeeSalaryAssignments',
 });
 
-EmployeeSalaryAssignment.belongsTo(SalaryStructure, {
+EmployeeSalaryAssignmentOld.belongsTo(SalaryStructure, {
   foreignKey: 'salaryStructureId',
   as: 'salaryStructure',
 });
+
+// Create alias for backward compatibility
+const EmployeeSalaryAssignment = EmployeeSalaryAssignmentOld;
 
 
 
@@ -394,6 +397,134 @@ Notification.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 Business.hasMany(Notification, { foreignKey: 'businessId', as: 'notifications' });
 Notification.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
 
+// ========== ENTERPRISE PAYROLL ENGINE ASSOCIATIONS ==========
+import SalaryTemplate from './SalaryTemplate.js';
+import TemplateComponent from './TemplateComponent.js';
+import EmployeeSalaryAssignmentNew from './EmployeeSalaryAssignment.js';
+import SalaryRevisionHistory from './SalaryRevisionHistory.js';
+import VariablePayDefinition from './VariablePayDefinition.js';
+import ComplianceWarning from './ComplianceWarning.js';
+import StateTaxSlab from './StateTaxSlab.js';
+
+// SalaryTemplate -> TemplateComponent (One-to-Many)
+SalaryTemplate.hasMany(TemplateComponent, {
+  foreignKey: 'templateId',
+  as: 'components',
+});
+TemplateComponent.belongsTo(SalaryTemplate, {
+  foreignKey: 'templateId',
+  as: 'template',
+});
+
+// Employee -> EmployeeSalaryAssignment (One-to-Many) - Enterprise Payroll
+Employee.hasMany(EmployeeSalaryAssignmentNew, {
+  foreignKey: 'employeeId',
+  as: 'enterpriseSalaryAssignments',
+});
+EmployeeSalaryAssignmentNew.belongsTo(Employee, {
+  foreignKey: 'employeeId',
+  as: 'employee',
+});
+
+// SalaryTemplate -> EmployeeSalaryAssignment (One-to-Many)
+SalaryTemplate.hasMany(EmployeeSalaryAssignmentNew, {
+  foreignKey: 'templateId',
+  as: 'assignments',
+});
+EmployeeSalaryAssignmentNew.belongsTo(SalaryTemplate, {
+  foreignKey: 'templateId',
+  as: 'template',
+});
+
+// EmployeeSalaryAssignment -> SalaryRevisionHistory (One-to-Many)
+EmployeeSalaryAssignmentNew.hasMany(SalaryRevisionHistory, {
+  foreignKey: 'assignmentId',
+  as: 'revisions',
+});
+SalaryRevisionHistory.belongsTo(EmployeeSalaryAssignmentNew, {
+  foreignKey: 'assignmentId',
+  as: 'assignment',
+});
+
+// Employee -> SalaryRevisionHistory (One-to-Many)
+Employee.hasMany(SalaryRevisionHistory, {
+  foreignKey: 'employeeId',
+  as: 'salaryRevisions',
+});
+SalaryRevisionHistory.belongsTo(Employee, {
+  foreignKey: 'employeeId',
+  as: 'employee',
+});
+
+// Employee -> VariablePayDefinition (One-to-Many)
+Employee.hasMany(VariablePayDefinition, {
+  foreignKey: 'employeeId',
+  as: 'variablePays',
+});
+VariablePayDefinition.belongsTo(Employee, {
+  foreignKey: 'employeeId',
+  as: 'employee',
+});
+
+// Employee -> ComplianceWarning (One-to-Many)
+Employee.hasMany(ComplianceWarning, {
+  foreignKey: 'employeeId',
+  as: 'complianceWarnings',
+});
+ComplianceWarning.belongsTo(Employee, {
+  foreignKey: 'employeeId',
+  as: 'employee',
+});
+
+// SalaryTemplate -> ComplianceWarning (One-to-Many)
+SalaryTemplate.hasMany(ComplianceWarning, {
+  foreignKey: 'templateId',
+  as: 'complianceWarnings',
+});
+ComplianceWarning.belongsTo(SalaryTemplate, {
+  foreignKey: 'templateId',
+  as: 'template',
+});
+
+// User -> SalaryTemplate (createdBy)
+User.hasMany(SalaryTemplate, {
+  foreignKey: 'createdBy',
+  as: 'createdTemplates',
+});
+SalaryTemplate.belongsTo(User, {
+  foreignKey: 'createdBy',
+  as: 'creator',
+});
+
+// User -> EmployeeSalaryAssignment (createdBy) - Enterprise Payroll
+User.hasMany(EmployeeSalaryAssignmentNew, {
+  foreignKey: 'createdBy',
+  as: 'createdEnterpriseSalaryAssignments',
+});
+EmployeeSalaryAssignmentNew.belongsTo(User, {
+  foreignKey: 'createdBy',
+  as: 'creator',
+});
+
+// User -> SalaryRevisionHistory (createdBy)
+User.hasMany(SalaryRevisionHistory, {
+  foreignKey: 'createdBy',
+  as: 'salaryRevisions',
+});
+SalaryRevisionHistory.belongsTo(User, {
+  foreignKey: 'createdBy',
+  as: 'creator',
+});
+
+// User -> ComplianceWarning (resolvedBy)
+User.hasMany(ComplianceWarning, {
+  foreignKey: 'resolvedBy',
+  as: 'resolvedWarnings',
+});
+ComplianceWarning.belongsTo(User, {
+  foreignKey: 'resolvedBy',
+  as: 'resolver',
+});
 
 export {
   AttendancePolicy,
@@ -447,5 +578,13 @@ export {
   // Payroll Approval Workflow
   PayrollApproval,
   Notification,
+  // Enterprise Payroll Engine
+  SalaryTemplate,
+  TemplateComponent,
+  EmployeeSalaryAssignmentNew as EmployeeSalaryAssignmentEnterprise,
+  SalaryRevisionHistory,
+  VariablePayDefinition,
+  ComplianceWarning,
+  StateTaxSlab,
 };
 

@@ -1,0 +1,409 @@
+{{!-- Central Payroll Configuration Hub --}}
+<div class="container-fluid">
+  <div class="row">
+    {{!-- Sidebar --}}
+    <div class="col-md-3 col-lg-2 px-0">
+      {{> sidebar}}
+    </div>
+
+    {{!-- Main content --}}
+    <div class="col-md-9 col-lg-10">
+      <div class="main-content p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h2 class="mb-0">
+              <i class="fas fa-cogs text-primary me-2"></i>Payroll Configuration
+            </h2>
+            <small class="text-muted">Central hub for all payroll and compensation settings</small>
+          </div>
+        </div>
+
+        {{!-- Quick Info Cards --}}
+        <div class="row mb-4">
+          <div class="col-md-6 mb-3">
+            <div class="card border-primary h-100">
+              <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                  <i class="fas fa-layer-group me-2"></i>Salary Templates (Recommended)
+                </h5>
+              </div>
+              <div class="card-body">
+                <p class="text-muted">Enterprise-grade payroll engine with rule-based calculations, compliance, and audit trails.</p>
+                <ul class="list-unstyled mb-3">
+                  <li><i class="fas fa-check text-success me-2"></i>Multiple templates for different employee types</li>
+                  <li><i class="fas fa-check text-success me-2"></i>State-based professional tax</li>
+                  <li><i class="fas fa-check text-success me-2"></i>HRA metro/non-metro configuration</li>
+                  <li><i class="fas fa-check text-success me-2"></i>True Cost to Company calculations</li>
+                  <li><i class="fas fa-check text-success me-2"></i>Compliance guardrails</li>
+                  <li><i class="fas fa-check text-success me-2"></i>Versioning and audit trails</li>
+                </ul>
+                <a href="/salary-templates" class="btn btn-primary w-100">
+                  <i class="fas fa-arrow-right me-2"></i>Manage Templates
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <div class="card border-info h-100">
+              <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                  <i class="fas fa-sliders-h me-2"></i>Basic Configuration (Legacy)
+                </h5>
+              </div>
+              <div class="card-body">
+                <p class="text-muted">Simple configuration for basic salary calculations. Stored in browser localStorage.</p>
+                <ul class="list-unstyled mb-3">
+                  <li><i class="fas fa-check text-info me-2"></i>Quick setup for small teams</li>
+                  <li><i class="fas fa-check text-info me-2"></i>Basic CTC breakdown</li>
+                  <li><i class="fas fa-check text-info me-2"></i>Enable/disable deductions</li>
+                  <li><i class="fas fa-check text-info me-2"></i>Fixed allowances (Conveyance, Medical)</li>
+                  <li><i class="fas fa-exclamation-triangle text-warning me-2"></i>No versioning or audit trail</li>
+                  <li><i class="fas fa-exclamation-triangle text-warning me-2"></i>Browser-specific (localStorage)</li>
+                </ul>
+                <a href="/compensation-config" class="btn btn-info w-100">
+                  <i class="fas fa-arrow-right me-2"></i>Open Basic Config
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {{!-- Configuration Guide --}}
+        <div class="card mb-4">
+          <div class="card-header bg-light">
+            <h5 class="mb-0">
+              <i class="fas fa-question-circle text-primary me-2"></i>Which Configuration Should I Use?
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6">
+                <h6 class="text-success">
+                  <i class="fas fa-thumbs-up me-2"></i>Use Salary Templates If:
+                </h6>
+                <ul>
+                  <li>You have multiple employee types (Full-time, Contract, Intern, etc.)</li>
+                  <li>You need compliance and audit trails</li>
+                  <li>You operate in multiple states (state-based tax)</li>
+                  <li>You need True Cost to Company visibility</li>
+                  <li>You want versioning and change history</li>
+                  <li>You have 50+ employees</li>
+                  <li>You need finance-grade accuracy</li>
+                </ul>
+              </div>
+              <div class="col-md-6">
+                <h6 class="text-info">
+                  <i class="fas fa-info-circle me-2"></i>Use Basic Configuration If:
+                </h6>
+                <ul>
+                  <li>You have a small team (< 20 employees)</li>
+                  <li>You only need simple CTC breakdown</li>
+                  <li>You don't need versioning or audit trails</li>
+                  <li>You operate in a single state</li>
+                  <li>You want quick setup without complexity</li>
+                  <li>You're just testing the system</li>
+                </ul>
+              </div>
+            </div>
+            <div class="alert alert-warning mt-3 mb-0">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              <strong>Recommendation:</strong> Use Salary Templates for production environments. Basic Configuration is suitable for testing or very small teams.
+            </div>
+          </div>
+        </div>
+
+        {{!-- Quick Settings --}}
+        <div class="card">
+          <div class="card-header bg-light">
+            <h5 class="mb-0">
+              <i class="fas fa-bolt text-warning me-2"></i>Quick Settings
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-4 mb-3">
+                <div class="card border-success h-100">
+                  <div class="card-body text-center">
+                    <i class="fas fa-file-invoice-dollar fa-3x text-success mb-3"></i>
+                    <h6>Default Templates</h6>
+                    <p class="text-muted small mb-3">View and manage default salary templates</p>
+                    <a href="/salary-templates" class="btn btn-sm btn-outline-success">
+                      <i class="fas fa-eye me-1"></i>View Templates
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-4 mb-3">
+                <div class="card border-primary h-100">
+                  <div class="card-body text-center">
+                    <i class="fas fa-plus-circle fa-3x text-primary mb-3"></i>
+                    <h6>Create Template</h6>
+                    <p class="text-muted small mb-3">Create a new salary structure template</p>
+                    <a href="/salary-templates" class="btn btn-sm btn-outline-primary" onclick="document.querySelector('[data-bs-target=\'#createTemplateModal\']')?.click(); return false;">
+                      <i class="fas fa-plus me-1"></i>New Template
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-4 mb-3">
+                <div class="card border-info h-100">
+                  <div class="card-body text-center">
+                    <i class="fas fa-calculator fa-3x text-info mb-3"></i>
+                    <h6>Preview Calculator</h6>
+                    <p class="text-muted small mb-3">Test salary calculations with sample CTC</p>
+                    <button class="btn btn-sm btn-outline-info" onclick="openPreviewModal()">
+                      <i class="fas fa-calculator me-1"></i>Open Calculator
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {{!-- Current Configuration Summary --}}
+        <div class="card mt-4">
+          <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0">
+              <i class="fas fa-info-circle me-2"></i>Current Configuration Summary
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6">
+                <h6 class="text-primary">Salary Templates Status</h6>
+                <div id="templatesStatus" class="mb-3">
+                  <div class="spinner-border spinner-border-sm text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <h6 class="text-info">Basic Configuration Status</h6>
+                <div id="basicConfigStatus" class="mb-3">
+                  <div id="basicConfigInfo"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{!-- Preview Calculator Modal --}}
+<div class="modal fade" id="previewCalculatorModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">
+          <i class="fas fa-calculator me-2"></i>Salary Preview Calculator
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Select Template</label>
+            <select class="form-select" id="previewTemplateSelect">
+              <option value="">Select Template...</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Employee State</label>
+            <select class="form-select" id="previewEmployeeState">
+              <option value="Karnataka">Karnataka</option>
+              <option value="Maharashtra">Maharashtra</option>
+              <option value="Tamil Nadu">Tamil Nadu</option>
+              <option value="Delhi">Delhi</option>
+              <option value="West Bengal">West Bengal</option>
+            </select>
+          </div>
+        </div>
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label class="form-label">Annual CTC (₹)</label>
+            <input type="number" class="form-control" id="previewCtcInput" placeholder="600000" value="600000" />
+          </div>
+          <div class="col-md-6 d-flex align-items-end">
+            <button class="btn btn-primary w-100" onclick="calculatePreview()">
+              <i class="fas fa-calculator me-2"></i>Calculate
+            </button>
+          </div>
+        </div>
+        <div id="previewResults" style="display: none;">
+          <hr>
+          <div id="previewContent"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Load templates status
+  async function loadTemplatesStatus() {
+    try {
+      const response = await fetch('/api/v1/payroll/templates');
+      const data = await response.json();
+      
+      if (data.success && data.data) {
+        const templates = data.data;
+        const activeTemplates = templates.filter(t => t.isActive);
+        
+        document.getElementById('templatesStatus').innerHTML = `
+          <p class="mb-1"><strong>Active Templates:</strong> ${activeTemplates.length}</p>
+          <p class="mb-1"><strong>Total Templates:</strong> ${templates.length}</p>
+          <ul class="list-unstyled mb-0 small">
+            ${activeTemplates.slice(0, 3).map(t => `<li><i class="fas fa-check-circle text-success me-1"></i>${t.name}</li>`).join('')}
+            ${activeTemplates.length > 3 ? `<li class="text-muted">+ ${activeTemplates.length - 3} more...</li>` : ''}
+          </ul>
+        `;
+      } else {
+        document.getElementById('templatesStatus').innerHTML = '<p class="text-muted">No templates found</p>';
+      }
+    } catch (error) {
+      document.getElementById('templatesStatus').innerHTML = '<p class="text-danger">Error loading templates</p>';
+    }
+  }
+
+  // Load basic config status
+  function loadBasicConfigStatus() {
+    try {
+      const config = JSON.parse(localStorage.getItem('compensationConfig') || '{}');
+      
+      if (Object.keys(config).length > 0) {
+        document.getElementById('basicConfigInfo').innerHTML = `
+          <p class="mb-1"><strong>Status:</strong> <span class="text-success">Configured</span></p>
+          <p class="mb-1"><strong>Basic Salary:</strong> ${config.basicSalaryPercent || 40}%</p>
+          <p class="mb-1"><strong>HRA:</strong> ${config.hraPercent || 50}%</p>
+          <p class="mb-1"><strong>PF:</strong> ${config.enablePF ? 'Enabled' : 'Disabled'}</p>
+          <p class="mb-1"><strong>ESI:</strong> ${config.enableESI ? 'Enabled' : 'Disabled'}</p>
+        `;
+      } else {
+        document.getElementById('basicConfigInfo').innerHTML = '<p class="text-muted">Not configured (using defaults)</p>';
+      }
+    } catch (error) {
+      document.getElementById('basicConfigInfo').innerHTML = '<p class="text-danger">Error loading config</p>';
+    }
+  }
+
+  // Open preview modal
+  function openPreviewModal() {
+    const modal = new bootstrap.Modal(document.getElementById('previewCalculatorModal'));
+    modal.show();
+    loadPreviewTemplates();
+  }
+
+  // Load templates for preview
+  async function loadPreviewTemplates() {
+    try {
+      const response = await fetch('/api/v1/payroll/templates');
+      const data = await response.json();
+      
+      const select = document.getElementById('previewTemplateSelect');
+      select.innerHTML = '<option value="">Select Template...</option>';
+      
+      if (data.success && data.data) {
+        data.data.filter(t => t.isActive).forEach(template => {
+          const option = document.createElement('option');
+          option.value = template.id;
+          option.textContent = `${template.name} (v${template.version})`;
+          select.appendChild(option);
+        });
+      }
+    } catch (error) {
+      console.error('Error loading templates:', error);
+    }
+  }
+
+  // Calculate preview
+  async function calculatePreview() {
+    const templateId = document.getElementById('previewTemplateSelect').value;
+    const ctc = parseFloat(document.getElementById('previewCtcInput').value);
+    const employeeState = document.getElementById('previewEmployeeState').value;
+    
+    if (!templateId) {
+      alert('Please select a template');
+      return;
+    }
+    
+    if (!ctc || ctc <= 0) {
+      alert('Please enter a valid CTC');
+      return;
+    }
+    
+    try {
+      const response = await fetch('/api/v1/payroll/templates/calculate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          templateId: parseInt(templateId),
+          ctc: ctc,
+          employeeState: employeeState,
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (data.success && data.data) {
+        const calculated = data.data;
+        const components = calculated.components || {};
+        
+        let earningsHtml = '<h6 class="text-success">Earnings:</h6><ul class="list-unstyled">';
+        let deductionsHtml = '<h6 class="text-danger">Deductions:</h6><ul class="list-unstyled">';
+        
+        // Earnings
+        if (components.BASIC) earningsHtml += `<li>Basic: <strong>₹${components.BASIC.toFixed(2)}</strong></li>`;
+        if (components.HRA) earningsHtml += `<li>HRA: <strong>₹${components.HRA.toFixed(2)}</strong></li>`;
+        if (components.SPECIAL_ALLOWANCE) earningsHtml += `<li>Special Allowance: <strong>₹${components.SPECIAL_ALLOWANCE.toFixed(2)}</strong></li>`;
+        earningsHtml += `<li><strong>Gross: ₹${calculated.earnings.toFixed(2)}</strong></li></ul>`;
+        
+        // Deductions
+        if (components.PF_EMP) deductionsHtml += `<li>PF (Employee): <strong>₹${components.PF_EMP.toFixed(2)}</strong></li>`;
+        if (components.ESI_EMP) deductionsHtml += `<li>ESI (Employee): <strong>₹${components.ESI_EMP.toFixed(2)}</strong></li>`;
+        if (components.PROFESSIONAL_TAX) deductionsHtml += `<li>Professional Tax: <strong>₹${components.PROFESSIONAL_TAX.toFixed(2)}</strong></li>`;
+        deductionsHtml += `<li><strong>Total Deductions: ₹${calculated.deductions.toFixed(2)}</strong></li></ul>`;
+        
+        // Employer Cost
+        let employerHtml = '<h6 class="text-info">Employer Contributions:</h6><ul class="list-unstyled">';
+        if (components.PF_ER) employerHtml += `<li>PF (Employer): <strong>₹${components.PF_ER.toFixed(2)}</strong></li>`;
+        if (components.ESI_ER) employerHtml += `<li>ESI (Employer): <strong>₹${components.ESI_ER.toFixed(2)}</strong></li>`;
+        if (components.GRATUITY) employerHtml += `<li>Gratuity: <strong>₹${components.GRATUITY.toFixed(2)}</strong></li>`;
+        employerHtml += `<li><strong>Monthly Employer Cost: ₹${calculated.employerContributions.toFixed(2)}</strong></li>`;
+        employerHtml += `<li><strong>True Cost to Company (Annual): ₹${calculated.totalEmployerCost.toFixed(2)}</strong></li></ul>`;
+        
+        document.getElementById('previewContent').innerHTML = `
+          <div class="row">
+            <div class="col-md-4">${earningsHtml}</div>
+            <div class="col-md-4">${deductionsHtml}</div>
+            <div class="col-md-4">${employerHtml}</div>
+          </div>
+          <hr>
+          <div class="text-center">
+            <h5 class="text-primary">
+              Net Take-Home: <span class="text-success">₹${calculated.net.toFixed(2)}</span>
+            </h5>
+          </div>
+        `;
+        
+        document.getElementById('previewResults').style.display = 'block';
+      } else {
+        alert('Error calculating preview: ' + (data.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error calculating preview');
+    }
+  }
+
+  // Load status on page load
+  loadTemplatesStatus();
+  loadBasicConfigStatus();
+</script>

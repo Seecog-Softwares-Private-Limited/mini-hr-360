@@ -68,57 +68,108 @@
         </form>
 
         {{!-- Employees table --}}
-        <div class="card">
+        <div class="card employees-card">
           <div class="card-body p-0">
-            <div class="table-responsive">
-              <table class="table table-striped mb-0">
-                <thead class="table-light">
+            {{!-- Desktop Table View --}}
+            <div class="table-responsive d-none d-md-block">
+              <table class="table employees-table mb-0">
+                <thead>
                   <tr>
-                    <th>#</th>
-                    <th>Emp ID</th>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Phone</th>
-                    <th>Designation</th>
-                    <th>Department</th>
-                    <th>DOJ</th>
-                    <th>Actions</th>
+                    <th class="text-center" style="width: 50px;">
+                      <i class="fas fa-hashtag text-muted"></i>
+                    </th>
+                    <th>
+                      <i class="fas fa-id-badge text-primary me-2"></i>Emp ID
+                    </th>
+                    <th>
+                      <i class="fas fa-user text-primary me-2"></i>Name
+                    </th>
+                    <th>
+                      <i class="fas fa-envelope text-primary me-2"></i>Email
+                    </th>
+                    <th>
+                      <i class="fas fa-phone text-primary me-2"></i>Phone
+                    </th>
+                    <th>
+                      <i class="fas fa-briefcase text-primary me-2"></i>Designation
+                    </th>
+                    <th>
+                      <i class="fas fa-building text-primary me-2"></i>Department
+                    </th>
+                    <th>
+                      <i class="fas fa-calendar-alt text-primary me-2"></i>DOJ
+                    </th>
+                    <th class="text-center" style="width: 200px;">
+                      <i class="fas fa-cog text-primary me-2"></i>Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {{#if employees.length}}
                     {{#each employees}}
-                      <tr>
-                        <td>{{inc @index}}</td>
-                        <td>{{empId}}</td>
+                      <tr class="employee-row">
+                        <td class="text-center text-muted fw-bold">{{inc @index}}</td>
                         <td>
-                          <div style="display:flex;align-items:center;gap:10px;">
-                                <div style="width:36px;height:36px;border-radius:8px;background:#eef2ff;display:flex;align-items:center;justify-content:center;color:#075985;font-weight:700;">{{initial}}</div>
+                          <span class="emp-id-badge">{{empId}}</span>
+                        </td>
+                        <td>
+                          <div class="d-flex align-items-center gap-2">
+                            <div class="employee-avatar">
+                              <span>{{initial}}</span>
+                            </div>
                             <div>
-                              <div style="font-weight:700;">{{empName}}</div>
-                              <div style="font-size:12px;color:#64748b;">{{empId}}</div>
+                              <div class="fw-bold text-dark">{{empName}}</div>
+                              <small class="text-muted">{{empId}}</small>
                             </div>
                           </div>
                         </td>
-                        <td>{{empEmail}}</td>
-                        <td>{{empPhone}}</td>
-                        <td>{{empDesignation}}</td>
-                        <td>{{empDepartment}}</td>
-                        <td>{{empDateOfJoining}}</td>
                         <td>
-                          <div style="display:flex;gap:8px;align-items:center;">
-                            <div style="min-width:120px;text-align:center;">
+                          <div class="d-flex align-items-center gap-2">
+                            <i class="fas fa-envelope text-muted"></i>
+                            <span>{{empEmail}}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div class="d-flex align-items-center gap-2">
+                            <i class="fas fa-phone text-muted"></i>
+                            <span>{{empPhone}}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div class="d-flex align-items-center gap-2">
+                            <i class="fas fa-briefcase text-info"></i>
+                            <span class="designation-badge">{{empDesignation}}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div class="d-flex align-items-center gap-2">
+                            <i class="fas fa-building text-warning"></i>
+                            <span class="department-badge">{{empDepartment}}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div class="d-flex align-items-center gap-2">
+                            <i class="fas fa-calendar-alt text-success"></i>
+                            <span>{{empDateOfJoining}}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div class="d-flex align-items-center gap-2 justify-content-center">
                                 {{#if shiftName}}
-                                    <span style="display:inline-block;padding:6px 10px;border-radius:999px;background:#eef2ff;color:#075985;font-weight:600;">{{shiftName}}</span>
-                                    <div style="font-size:11px;color:#94a3b8;margin-top:4px;">{{shiftStartTime}} - {{shiftEndTime}}</div>
+                              <div class="shift-badge me-2">
+                                <i class="fas fa-clock me-1"></i>
+                                <span>{{shiftName}}</span>
+                                <small class="d-block">{{shiftStartTime}} - {{shiftEndTime}}</small>
+                              </div>
                                 {{else}}
-                                    <span style="font-size:13px;color:#94a3b8;">Unassigned</span>
+                              <span class="badge bg-secondary me-2">
+                                <i class="fas fa-exclamation-circle me-1"></i>Unassigned
+                              </span>
                                 {{/if}}
-                            </div>
-                            <div class="btn-group btn-group-sm" role="group">
+                            <div class="action-buttons">
                             <button
                               type="button"
-                              class="btn btn-outline-secondary view-employee-btn"
+                                class="btn btn-sm btn-action btn-view view-employee-btn"
                               data-id="{{id}}"
                               title="View Employee"
                             >
@@ -126,7 +177,7 @@
                             </button>
                             <button
                               type="button"
-                              class="btn btn-outline-primary edit-employee-btn"
+                                class="btn btn-sm btn-action btn-edit edit-employee-btn"
                               data-id="{{id}}"
                               title="Edit Employee"
                             >
@@ -134,25 +185,119 @@
                             </button>
                             <button
                               type="button"
-                              class="btn btn-outline-danger delete-employee-btn"
+                                class="btn btn-sm btn-action btn-delete delete-employee-btn"
                               data-id="{{id}}"
                               title="Delete Employee"
                             >
                               <i class="fas fa-trash"></i>
                             </button>
+                            </div>
                           </div>
                         </td>
                       </tr>
                     {{/each}}
                   {{else}}
                     <tr>
-                      <td colspan="9" class="text-center py-3">
-                        No employees found.
+                      <td colspan="9" class="text-center py-5">
+                        <div class="empty-state">
+                          <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                          <p class="text-muted mb-0">No employees found.</p>
+                        </div>
                       </td>
                     </tr>
                   {{/if}}
                 </tbody>
               </table>
+            </div>
+
+            {{!-- Mobile Card View --}}
+            <div class="d-md-none">
+              {{#if employees.length}}
+                <div class="employee-cards-container">
+                  {{#each employees}}
+                    <div class="employee-card-mobile">
+                      <div class="employee-card-header">
+                        <div class="d-flex align-items-center gap-3">
+                          <div class="employee-avatar-large">
+                            <span>{{initial}}</span>
+                          </div>
+                          <div class="flex-grow-1">
+                            <h6 class="mb-1 fw-bold">{{empName}}</h6>
+                            <span class="emp-id-badge">{{empId}}</span>
+                          </div>
+                          <div class="action-buttons-mobile">
+                            <button
+                              type="button"
+                              class="btn btn-sm btn-action btn-view view-employee-btn"
+                              data-id="{{id}}"
+                              title="View"
+                            >
+                              <i class="fas fa-eye"></i>
+                            </button>
+                            <button
+                              type="button"
+                              class="btn btn-sm btn-action btn-edit edit-employee-btn"
+                              data-id="{{id}}"
+                              title="Edit"
+                            >
+                              <i class="fas fa-edit"></i>
+                            </button>
+                            <button
+                              type="button"
+                              class="btn btn-sm btn-action btn-delete delete-employee-btn"
+                              data-id="{{id}}"
+                              title="Delete"
+                            >
+                              <i class="fas fa-trash"></i>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="employee-card-body">
+                        <div class="employee-info-item">
+                          <i class="fas fa-envelope text-primary"></i>
+                          <span>{{empEmail}}</span>
+                        </div>
+                        <div class="employee-info-item">
+                          <i class="fas fa-phone text-success"></i>
+                          <span>{{empPhone}}</span>
+                        </div>
+                        <div class="employee-info-item">
+                          <i class="fas fa-briefcase text-info"></i>
+                          <span class="designation-badge">{{empDesignation}}</span>
+                        </div>
+                        <div class="employee-info-item">
+                          <i class="fas fa-building text-warning"></i>
+                          <span class="department-badge">{{empDepartment}}</span>
+                        </div>
+                        <div class="employee-info-item">
+                          <i class="fas fa-calendar-alt text-danger"></i>
+                          <span>{{empDateOfJoining}}</span>
+                        </div>
+                        {{#if shiftName}}
+                          <div class="employee-info-item">
+                            <i class="fas fa-clock text-purple"></i>
+                            <div>
+                              <span class="shift-badge-mobile">{{shiftName}}</span>
+                              <small class="d-block text-muted">{{shiftStartTime}} - {{shiftEndTime}}</small>
+                            </div>
+                          </div>
+                        {{else}}
+                          <div class="employee-info-item">
+                            <i class="fas fa-exclamation-circle text-muted"></i>
+                            <span class="badge bg-secondary">Unassigned</span>
+                          </div>
+                        {{/if}}
+                      </div>
+                    </div>
+                  {{/each}}
+                </div>
+              {{else}}
+                <div class="empty-state-mobile text-center py-5">
+                  <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                  <p class="text-muted mb-0">No employees found.</p>
+                </div>
+              {{/if}}
             </div>
           </div>
         </div>
@@ -175,6 +320,45 @@
         </div>
 
         <div class="modal-body">
+          {{!-- Progress Indicator --}}
+          <div class="form-progress mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <small class="text-muted">
+                <span id="completedFieldsCount">0</span> of 
+                <span id="totalRequiredFields">0</span> required fields completed
+              </small>
+              <small class="text-muted" id="completedTabsCount">0/6 tabs</small>
+            </div>
+            <div class="progress" style="height: 6px;">
+              <div 
+                class="progress-bar bg-success" 
+                role="progressbar" 
+                id="formProgressBar"
+                style="width: 0%"
+                aria-valuenow="0"
+                aria-valuemin="0"
+                aria-valuemax="100"
+              ></div>
+            </div>
+          </div>
+
+          {{!-- Validation Summary --}}
+          <div class="alert alert-info d-none" id="validationSummary" role="alert">
+            <div class="d-flex align-items-start">
+              <i class="fas fa-info-circle me-2 mt-1"></i>
+              <div class="flex-grow-1">
+                <strong>Complete required fields to save:</strong>
+                <ul class="mb-0 mt-2" id="validationErrorsList"></ul>
+              </div>
+              <button 
+                type="button" 
+                class="btn-close" 
+                onclick="this.closest('.alert').classList.add('d-none')"
+                aria-label="Close"
+              ></button>
+            </div>
+          </div>
+
           {{!-- Tabs header (6 sections) --}}
           <ul class="nav nav-tabs" id="addEmployeeTabs" role="tablist">
             <li class="nav-item" role="presentation">
@@ -693,162 +877,561 @@
             {{!-- TAB 3: COMPENSATION --}}
             <div class="tab-pane fade" id="tab-comp" role="tabpanel">
               <div class="row g-3">
+                {{!-- Template Selection Section --}}
+                <div class="col-12">
+                  <div class="card bg-light mb-3">
+                    <div class="card-body">
+                      <div class="row align-items-end">
+                        <div class="col-md-6">
+                          <label class="form-label">
+                            <i class="fas fa-layer-group text-primary me-1"></i>Salary Template <span class="text-danger">*</span>
+                          </label>
+                          <select class="form-select" id="salaryTemplateSelect" required>
+                            <option value="">Select Template...</option>
+                          </select>
+                          <small class="text-muted">Choose a salary structure template</small>
+                        </div>
+                        <div class="col-md-6 text-end">
+                          <a href="/salary-templates" class="btn btn-sm btn-outline-primary" target="_blank">
+                            <i class="fas fa-plus me-1"></i>Manage Templates
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {{!-- Salary Structure Section --}}
+                <div class="col-12">
+                  <h6 class="mb-3">
+                    <i class="fas fa-money-bill-wave text-primary me-2"></i>Salary Structure
+                  </h6>
+                </div>
+
                 <div class="col-md-4">
                   <label class="form-label">
-                    CTC (₹ - Annual) <span class="text-danger">*</span>
+                    <i class="fas fa-rupee-sign text-success me-1"></i>CTC (₹ - Annual) <span class="text-danger">*</span>
                   </label>
                   <input
                     type="number"
                     step="0.01"
                     name="empCtc"
-                    class="form-control"
+                    id="empCtc"
+                    class="form-control compensation-input"
                     required
+                    placeholder="Enter annual CTC"
                   />
+                  <small class="text-muted">Cost to Company (Annual)</small>
                 </div>
+
                 <div class="col-md-4">
-                  <label class="form-label">Gross Salary (Monthly)</label>
+                  <label class="form-label">
+                    <i class="fas fa-map-marker-alt text-warning me-1"></i>Work Location (State)
+                  </label>
+                  <select class="form-select" id="employeeState" name="employeeState">
+                    <option value="">Select State</option>
+                    {{#each states}}
+                    <option value="{{name}}">{{name}}</option>
+                    {{/each}}
+                  </select>
+                  <small class="text-muted">For professional tax calculation</small>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">
+                    <i class="fas fa-calculator text-info me-1"></i>Gross Salary (Monthly) <span class="text-muted">(Auto-calculated)</span>
+                  </label>
                   <input
                     type="number"
                     step="0.01"
                     name="grossSalaryMonthly"
+                    id="grossSalaryMonthly"
                     class="form-control"
+                    readonly
+                    style="background-color: #f8f9fa;"
                   />
+                  <small class="text-muted">Sum of all allowances</small>
                 </div>
+
                 <div class="col-md-4">
-                  <label class="form-label">Basic Salary</label>
+                  <label class="form-label">
+                    <i class="fas fa-building text-warning me-1"></i>Basic Salary <span class="text-danger">*</span>
+                  </label>
                   <input
                     type="number"
                     step="0.01"
                     name="basicSalary"
-                    class="form-control"
+                    id="basicSalary"
+                    class="form-control compensation-input"
+                    required
+                    placeholder="Enter basic salary"
                   />
+                  <small class="text-muted">Usually 40-50% of CTC</small>
+                </div>
+
+                <div class="col-12">
+                  <hr />
+                  <h6 class="mb-3">
+                    <i class="fas fa-gift text-primary me-2"></i>Allowances & Benefits
+                  </h6>
                 </div>
 
                 <div class="col-md-4">
-                  <label class="form-label">House Rent Allowance (HRA)</label>
+                  <label class="form-label">
+                    <i class="fas fa-home text-info me-1"></i>House Rent Allowance (HRA)
+                  </label>
                   <input
                     type="number"
                     step="0.01"
                     name="hra"
-                    class="form-control"
+                    id="hra"
+                    class="form-control compensation-input"
+                    placeholder="0.00"
+                    value="0"
                   />
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label">Conveyance Allowance</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    name="conveyanceAllowance"
-                    class="form-control"
-                  />
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label">Medical Allowance</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    name="medicalAllowance"
-                    class="form-control"
-                  />
+                  <small class="text-muted">Usually 40-50% of Basic</small>
                 </div>
 
                 <div class="col-md-4">
-                  <label class="form-label">Special Allowance / Other</label>
+                  <label class="form-label">
+                    <i class="fas fa-car text-success me-1"></i>Conveyance Allowance
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    name="conveyanceAllowance"
+                    id="conveyanceAllowance"
+                    class="form-control compensation-input"
+                    placeholder="0.00"
+                    value=""
+                  />
+                  <small class="text-muted">Standard: ₹1,600/month (tax-free). Enter 0 to exclude.</small>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">
+                    <i class="fas fa-heartbeat text-danger me-1"></i>Medical Allowance
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    name="medicalAllowance"
+                    id="medicalAllowance"
+                    class="form-control compensation-input"
+                    placeholder="0.00"
+                    value=""
+                  />
+                  <small class="text-muted">Standard: ₹1,250/month (tax-free). Enter 0 to exclude.</small>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">
+                    <i class="fas fa-chart-line text-warning me-1"></i>Dearness Allowance (DA)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    name="dearnessAllowance"
+                    id="dearnessAllowance"
+                    class="form-control compensation-input"
+                    placeholder="0.00"
+                    value="0"
+                  />
+                  <small class="text-muted">Cost of living adjustment</small>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">
+                    <i class="fas fa-plane text-primary me-1"></i>Leave Travel Allowance (LTA)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    name="lta"
+                    id="lta"
+                    class="form-control compensation-input"
+                    placeholder="0.00"
+                    value="0"
+                  />
+                  <small class="text-muted">Annual travel allowance</small>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">
+                    <i class="fas fa-utensils text-info me-1"></i>Food Allowance
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    name="foodAllowance"
+                    id="foodAllowance"
+                    class="form-control compensation-input"
+                    placeholder="0.00"
+                    value="0"
+                  />
+                  <small class="text-muted">Meal coupons/allowance</small>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">
+                    <i class="fas fa-wifi text-success me-1"></i>Internet/Phone Allowance
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    name="internetPhoneAllowance"
+                    id="internetPhoneAllowance"
+                    class="form-control compensation-input"
+                    placeholder="0.00"
+                    value="0"
+                  />
+                  <small class="text-muted">Communication allowance</small>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">
+                    <i class="fas fa-star text-warning me-1"></i>Special Allowance / Other
+                  </label>
                   <input
                     type="number"
                     step="0.01"
                     name="specialAllowance"
-                    class="form-control"
+                    id="specialAllowance"
+                    class="form-control compensation-input"
+                    placeholder="0.00"
+                    value="0"
                   />
+                  <small class="text-muted">Flexible component</small>
                 </div>
+
                 <div class="col-md-4">
-                  <label class="form-label">Performance Bonus</label>
+                  <label class="form-label">
+                    <i class="fas fa-trophy text-danger me-1"></i>Performance Bonus
+                  </label>
                   <input
                     type="number"
                     step="0.01"
                     name="performanceBonus"
-                    class="form-control"
+                    id="performanceBonus"
+                    class="form-control compensation-input"
+                    placeholder="0.00"
+                    value="0"
                   />
+                  <small class="text-muted">Annual performance bonus</small>
                 </div>
+
                 <div class="col-md-4">
-                  <label class="form-label">Variable Pay</label>
+                  <label class="form-label">
+                    <i class="fas fa-chart-bar text-primary me-1"></i>Variable Pay
+                  </label>
                   <input
                     type="number"
                     step="0.01"
                     name="variablePay"
-                    class="form-control"
+                    id="variablePay"
+                    class="form-control compensation-input"
+                    placeholder="0.00"
+                    value="0"
                   />
+                  <small class="text-muted">Variable component</small>
                 </div>
 
                 <div class="col-md-4">
-                  <label class="form-label">Overtime Eligibility</label>
-                  <select name="overtimeEligible" class="form-select">
-                    <option value="false">No</option>
-                    <option value="true">Yes</option>
-                  </select>
-                </div>
-                <div class="col-md-4">
                   <label class="form-label">
-                    Shift Allowance / Night Allowance
+                    <i class="fas fa-moon text-info me-1"></i>Shift Allowance / Night Allowance
                   </label>
                   <input
                     type="number"
                     step="0.01"
                     name="shiftAllowance"
-                    class="form-control"
+                    id="shiftAllowance"
+                    class="form-control compensation-input"
+                    placeholder="0.00"
+                    value="0"
                   />
+                  <small class="text-muted">For shift workers</small>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">
+                    <i class="fas fa-clock text-success me-1"></i>Overtime Eligibility
+                  </label>
+                  <select name="overtimeEligible" id="overtimeEligible" class="form-select">
+                    <option value="false">No</option>
+                    <option value="true">Yes</option>
+                  </select>
+                  <small class="text-muted">Eligible for overtime pay</small>
                 </div>
 
                 <div class="col-12">
                   <hr />
-                  <h6>Deductions</h6>
+                  <h6 class="mb-3">
+                    <i class="fas fa-minus-circle text-danger me-2"></i>Deductions (Auto-calculated as per Bangalore, Karnataka rules)
+                  </h6>
                 </div>
 
                 <div class="col-md-3">
-                  <label class="form-label">PF</label>
+                  <label class="form-label">
+                    <i class="fas fa-piggy-bank text-primary me-1"></i>PF (Employee) <span class="text-muted">(Auto)</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    name="pfEmployee"
+                    id="pfEmployee"
+                    class="form-control"
+                    readonly
+                    style="background-color: #f8f9fa;"
+                  />
+                  <small class="text-muted">12% of Basic (max ₹1,800)</small>
+                </div>
+
+                <div class="col-md-3">
+                  <label class="form-label">
+                    <i class="fas fa-building text-info me-1"></i>PF (Employer) <span class="text-muted">(Auto)</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    name="pfEmployer"
+                    id="pfEmployer"
+                    class="form-control"
+                    readonly
+                    style="background-color: #f8f9fa;"
+                  />
+                  <small class="text-muted">12% of Basic (max ₹1,800)</small>
+                </div>
+
+                <div class="col-md-3">
+                  <label class="form-label">
+                    <i class="fas fa-piggy-bank text-primary me-1"></i>PF Total <span class="text-muted">(Auto)</span>
+                  </label>
                   <input
                     type="number"
                     step="0.01"
                     name="pfDeduction"
+                    id="pfDeduction"
                     class="form-control"
+                    readonly
+                    style="background-color: #f8f9fa; font-weight: 600;"
                   />
+                  <small class="text-muted">24% of Basic (max ₹3,600)</small>
                 </div>
+
                 <div class="col-md-3">
-                  <label class="form-label">ESI</label>
+                  <label class="form-label">
+                    <i class="fas fa-shield-alt text-success me-1"></i>ESI (Employee) <span class="text-muted">(Auto)</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    name="esiEmployee"
+                    id="esiEmployee"
+                    class="form-control"
+                    readonly
+                    style="background-color: #f8f9fa;"
+                  />
+                  <small class="text-muted">0.75% of Gross (if ≤ ₹21,000)</small>
+                </div>
+
+                <div class="col-md-3">
+                  <label class="form-label">
+                    <i class="fas fa-shield-alt text-success me-1"></i>ESI Total <span class="text-muted">(Auto)</span>
+                  </label>
                   <input
                     type="number"
                     step="0.01"
                     name="esiDeduction"
+                    id="esiDeduction"
                     class="form-control"
+                    readonly
+                    style="background-color: #f8f9fa; font-weight: 600;"
                   />
+                  <small class="text-muted">4% of Gross (if ≤ ₹21,000)</small>
                 </div>
+
                 <div class="col-md-3">
-                  <label class="form-label">Professional Tax</label>
+                  <label class="form-label">
+                    <i class="fas fa-file-invoice text-warning me-1"></i>Professional Tax <span class="text-muted">(Auto)</span>
+                  </label>
                   <input
                     type="number"
                     step="0.01"
                     name="professionalTax"
+                    id="professionalTax"
                     class="form-control"
+                    readonly
+                    style="background-color: #f8f9fa;"
                   />
+                  <small class="text-muted">Karnataka slab-based</small>
                 </div>
+
                 <div class="col-md-3">
-                  <label class="form-label">TDS</label>
+                  <label class="form-label">
+                    <i class="fas fa-percent text-danger me-1"></i>TDS / Income Tax
+                  </label>
                   <input
                     type="number"
                     step="0.01"
                     name="tdsDeduction"
-                    class="form-control"
+                    id="tdsDeduction"
+                    class="form-control compensation-input"
+                    placeholder="0.00"
+                    value="0"
                   />
+                  <small class="text-muted">Tax deducted at source</small>
+                </div>
+
+                <div class="col-md-3">
+                  <label class="form-label">
+                    <i class="fas fa-gift text-info me-1"></i>Gratuity <span class="text-muted">(Auto)</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    name="gratuity"
+                    id="gratuity"
+                    class="form-control"
+                    readonly
+                    style="background-color: #f8f9fa;"
+                  />
+                  <small class="text-muted">4.81% of Basic (employer cost)</small>
+                </div>
+
+                <div class="col-12">
+                  <hr />
+                  <h6 class="mb-3">
+                    <i class="fas fa-calculator text-primary me-2"></i>Salary Summary
+                  </h6>
                 </div>
 
                 <div class="col-md-4">
-                  <label class="form-label">Net Salary (In-hand)</label>
+                  <label class="form-label">
+                    <i class="fas fa-arrow-up text-success me-1"></i>Total Gross Salary (Monthly)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    name="totalGrossSalary"
+                    id="totalGrossSalary"
+                    class="form-control"
+                    readonly
+                    style="background-color: #d4edda; font-weight: 700; font-size: 16px;"
+                  />
+                  <small class="text-success">Sum of all allowances</small>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">
+                    <i class="fas fa-arrow-down text-danger me-1"></i>Total Deductions (Monthly)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    name="totalDeductions"
+                    id="totalDeductions"
+                    class="form-control"
+                    readonly
+                    style="background-color: #f8d7da; font-weight: 700; font-size: 16px;"
+                  />
+                  <small class="text-danger">Sum of all deductions</small>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">
+                    <i class="fas fa-hand-holding-usd text-primary me-1"></i>Net Salary (In-hand) <span class="text-muted">(Auto)</span>
+                  </label>
                   <input
                     type="number"
                     step="0.01"
                     name="netSalary"
+                    id="netSalary"
                     class="form-control"
+                    readonly
+                    style="background-color: #cfe2ff; font-weight: 700; font-size: 18px; color: #0d6efd;"
                   />
+                  <small class="text-primary fw-bold">Take-home salary</small>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">
+                    <i class="fas fa-building text-info me-1"></i>Total Employer Cost (Annual) <span class="text-muted">(Auto)</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    name="employerCostTotal"
+                    id="employerCostTotal"
+                    class="form-control"
+                    readonly
+                    style="background-color: #e0e7ff; font-weight: 700; font-size: 16px; color: #6366f1;"
+                  />
+                  <small class="text-info fw-bold">CTC + Employer Contributions</small>
+                </div>
+
+                {{!-- Compliance Warnings --}}
+                <div class="col-12 mt-3" id="compensationWarnings" style="display: none;">
+                  <div class="card border-warning">
+                    <div class="card-header bg-warning text-dark">
+                      <h6 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Compliance Warnings
+                      </h6>
+                    </div>
+                    <div class="card-body" id="compensationWarningsList">
+                      {{!-- Warnings will be displayed here --}}
+                    </div>
+                  </div>
+                </div>
+
+                {{!-- Calculation Summary Card --}}
+                <div class="col-12 mt-3">
+                  <div class="card border-primary">
+                    <div class="card-header bg-primary text-white">
+                      <h6 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Calculation Summary (Bangalore, Karnataka Rules)
+                      </h6>
+                    </div>
+                    <div class="card-body">
+                      <div class="row">
+                        <div class="col-md-6">
+                          <h6 class="text-primary">Earnings Breakdown:</h6>
+                          <ul class="list-unstyled" id="earningsBreakdown">
+                            <li><i class="fas fa-check text-success me-2"></i>Basic Salary: <span id="summaryBasic">₹0.00</span></li>
+                            <li><i class="fas fa-check text-success me-2"></i>HRA: <span id="summaryHRA">₹0.00</span></li>
+                            <li><i class="fas fa-check text-success me-2"></i>Other Allowances: <span id="summaryOther">₹0.00</span></li>
+                            <li><strong>Total Gross: <span id="summaryGross">₹0.00</span></strong></li>
+                          </ul>
+                        </div>
+                        <div class="col-md-6">
+                          <h6 class="text-danger">Deductions Breakdown:</h6>
+                          <ul class="list-unstyled" id="deductionsBreakdown">
+                            <li><i class="fas fa-minus text-danger me-2"></i>PF (Employee): <span id="summaryPF">₹0.00</span></li>
+                            <li><i class="fas fa-minus text-danger me-2"></i>ESI (Employee): <span id="summaryESI">₹0.00</span></li>
+                            <li><i class="fas fa-minus text-danger me-2"></i>Professional Tax: <span id="summaryPT">₹0.00</span></li>
+                            <li><i class="fas fa-minus text-danger me-2"></i>TDS: <span id="summaryTDS">₹0.00</span></li>
+                            <li><strong>Total Deductions: <span id="summaryTotalDed">₹0.00</span></strong></li>
+                          </ul>
+                        </div>
+                      </div>
+                      <hr>
+                      <div class="row">
+                        <div class="col-md-6 text-center">
+                          <h5 class="text-primary mb-0">
+                            Net Take-Home: <span id="summaryNet" class="text-success">₹0.00</span>
+                          </h5>
+                          <small class="text-muted">Monthly in-hand salary after all deductions</small>
+                        </div>
+                        <div class="col-md-6 text-center">
+                          <h5 class="text-info mb-0">
+                            Total Employer Cost: <span id="summaryEmployerCost" class="text-info fw-bold">₹0.00</span>
+                          </h5>
+                          <small class="text-muted">Annual CTC + Employer Contributions</small>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1285,8 +1868,16 @@
             class="btn btn-primary d-none"
             type="submit"
             id="wizardSaveBtn"
+            disabled
+            data-bs-toggle="tooltip"
+            data-bs-placement="top"
+            data-bs-html="true"
+            data-bs-title=""
+            aria-label="Save Employee (disabled: complete required fields)"
           >
+            <i class="fas fa-save me-2"></i>
             Save Employee
+            <span class="ms-2" id="saveButtonBadge"></span>
           </button>
         </div>
       </form>
@@ -1507,12 +2098,55 @@
         const hasStar = !!label.querySelector(".text-danger");
         if (!hasStar) return;
 
-        // Find the closest control in the same field container
+        // Find the associated control - try multiple strategies
+        let control = null;
+        
+        // Strategy 1: Find by label's "for" attribute
+        const forAttr = label.getAttribute("for");
+        if (forAttr) {
+          control = root.querySelector(`#${CSS.escape(forAttr)}`);
+        }
+        
+        // Strategy 2: Find in the same container (most common case)
+        if (!control) {
         const fieldWrap = label.closest(".col, .col-12, .col-md-12, .col-md-6, .col-md-4, .col-md-3, .col-lg-6, .col-lg-4, .mb-3, .row") || label.parentElement;
-        if (!fieldWrap) return;
-
-        const control = fieldWrap.querySelector("input, select, textarea");
-        if (!control) return;
+          if (fieldWrap) {
+            control = fieldWrap.querySelector("input, select, textarea");
+          }
+        }
+        
+        // Strategy 3: Find next sibling
+        if (!control) {
+          let next = label.nextElementSibling;
+          while (next && !control) {
+            if (next.matches("input, select, textarea")) {
+              control = next;
+            } else {
+              control = next.querySelector("input, select, textarea");
+            }
+            if (control) break;
+            next = next.nextElementSibling;
+          }
+        }
+        
+        // Strategy 4: Find in parent's next sibling
+        if (!control && label.parentElement) {
+          let next = label.parentElement.nextElementSibling;
+          while (next && !control) {
+            if (next.matches("input, select, textarea")) {
+              control = next;
+            } else {
+              control = next.querySelector("input, select, textarea");
+            }
+            if (control) break;
+            next = next.nextElementSibling;
+          }
+        }
+        
+        if (!control) {
+          console.warn('Could not find control for required label:', label.textContent);
+          return;
+        }
 
         // Mark as required (idempotent)
         control.required = true;
@@ -1553,6 +2187,236 @@
       return -1;
     }
 
+    function getTabName(index) {
+      const tabNames = [
+        'Personal Details',
+        'Professional Details', 
+        'Compensation',
+        'Education & Qualification',
+        'Experience',
+        'Documents & KYC'
+      ];
+      return tabNames[index] || `Tab ${index + 1}`;
+    }
+
+    function getFieldLabel(field) {
+      const fieldWrap = field.closest('.col-md-4, .col-md-6, .col-12, .col-md-3, .col-md-8');
+      if (fieldWrap) {
+        const label = fieldWrap.querySelector('label');
+        if (label) {
+          return label.textContent.replace(/\s*\*\s*$/, '').trim();
+        }
+      }
+      return field.name || field.id || 'Field';
+    }
+
+    function collectValidationDetails() {
+      const details = {
+        totalRequired: 0,
+        completed: 0,
+        incompleteTabs: [],
+        incompleteFields: []
+      };
+      
+      // Ensure all required fields are marked before collecting
+      if (modalEl) markAsteriskRequired(modalEl);
+      
+      steps.forEach((stepId, index) => {
+        const pane = document.getElementById(stepId);
+        if (!pane) return;
+        
+        // Find all required fields - check both native required and asterisk-marked
+        const requiredFields = Array.from(
+          pane.querySelectorAll("input[required], select[required], textarea[required], [data-required-by-asterisk='true']")
+        ).filter(el => {
+          // Double-check visibility
+          if (!isElementVisible(el)) return false;
+          // Ensure it's actually required (either has required attribute or data attribute)
+          return el.hasAttribute('required') || el.dataset.requiredByAsterisk === 'true';
+        });
+        
+        details.totalRequired += requiredFields.length;
+        
+        const incomplete = requiredFields.filter(field => {
+          const hasValue = controlHasValue(field);
+          return !hasValue;
+        });
+        
+        if (incomplete.length > 0) {
+          details.incompleteTabs.push({
+            index: index + 1,
+            name: getTabName(index),
+            count: incomplete.length
+          });
+          
+          incomplete.forEach(field => {
+            const label = getFieldLabel(field);
+            details.incompleteFields.push({
+              tab: getTabName(index),
+              field: label
+            });
+          });
+        }
+        
+        details.completed += (requiredFields.length - incomplete.length);
+      });
+      
+      return details;
+    }
+
+    function updateSaveButtonTooltip(button, details) {
+      if (!button) return;
+      
+      let tooltipText = '';
+      
+      if (details.incompleteTabs.length === 0) {
+        tooltipText = 'All required fields completed. Ready to save!';
+        button.setAttribute('aria-label', 'Save Employee (ready)');
+        const badge = document.getElementById('saveButtonBadge');
+        if (badge) {
+          badge.innerHTML = '<span class="badge bg-success">Ready</span>';
+        }
+      } else {
+        const tabsList = details.incompleteTabs
+          .map(t => `Tab ${t.index}: ${t.name} (${t.count} field${t.count > 1 ? 's' : ''})`)
+          .join('<br>');
+        
+        tooltipText = `
+          <strong>Complete required fields:</strong><br>
+          ${tabsList}<br>
+          <small class="text-muted mt-1 d-block">${details.completed}/${details.totalRequired} fields completed</small>
+        `;
+        
+        button.setAttribute('aria-label', 
+          `Save Employee (disabled: ${details.totalRequired - details.completed} required fields remaining)`);
+        
+        const badge = document.getElementById('saveButtonBadge');
+        if (badge) {
+          const remaining = details.totalRequired - details.completed;
+          badge.innerHTML = `<span class="badge bg-warning text-dark">${remaining} remaining</span>`;
+        }
+      }
+      
+      // Update Bootstrap tooltip - simple approach to avoid "Illegal invocation" error
+      // Just update the attribute and let Bootstrap handle it naturally
+      const plainText = tooltipText.replace(/<[^>]*>/g, '').replace(/\n/g, ' ');
+      button.setAttribute('title', plainText);
+      button.setAttribute('data-bs-title', plainText);
+      
+      // Update tooltip instance if it exists, otherwise it will be created on hover
+      if (window.bootstrap && bootstrap.Tooltip) {
+        const tooltipInstance = bootstrap.Tooltip.getInstance(button);
+        if (tooltipInstance) {
+          // Use _setContent method directly or just update the title
+          try {
+            // Update the internal content
+            if (tooltipInstance._config) {
+              tooltipInstance._config.title = plainText;
+            }
+          } catch (e) {
+            // If that fails, dispose and let it recreate on next hover
+            try {
+              tooltipInstance.dispose();
+            } catch (disposeError) {
+              // Ignore dispose errors
+            }
+          }
+        }
+      }
+    }
+
+    function updateProgressIndicator(details) {
+      const progressBar = document.getElementById('formProgressBar');
+      const completedCount = document.getElementById('completedFieldsCount');
+      const totalCount = document.getElementById('totalRequiredFields');
+      const tabsCount = document.getElementById('completedTabsCount');
+      
+      // Ensure we have valid details
+      if (!details || details.totalRequired === undefined) {
+        console.warn('Invalid validation details:', details);
+        return;
+      }
+      
+      if (progressBar && details.totalRequired > 0) {
+        const percentage = Math.min(100, Math.max(0, (details.completed / details.totalRequired) * 100));
+        progressBar.style.width = `${percentage}%`;
+        progressBar.setAttribute('aria-valuenow', percentage);
+        progressBar.classList.remove('bg-success', 'bg-warning');
+        if (percentage === 100) {
+          progressBar.classList.add('bg-success');
+        } else if (percentage > 0) {
+          progressBar.classList.add('bg-warning');
+        }
+      }
+      
+      if (completedCount) {
+        completedCount.textContent = details.completed || 0;
+      }
+      if (totalCount) {
+        totalCount.textContent = details.totalRequired || 0;
+      }
+      
+      if (tabsCount) {
+        const completedTabs = steps.length - details.incompleteTabs.length;
+        tabsCount.textContent = `${completedTabs}/${steps.length} tabs`;
+      }
+    }
+
+    function updateValidationSummary(details) {
+      const summary = document.getElementById('validationSummary');
+      const errorsList = document.getElementById('validationErrorsList');
+      
+      if (!summary || !errorsList) return;
+      
+      if (details.incompleteTabs.length === 0) {
+        summary.classList.add('d-none');
+        return;
+      }
+      
+      summary.classList.remove('d-none');
+      errorsList.innerHTML = details.incompleteTabs.map(tab => 
+        `<li><strong>Tab ${tab.index}: ${tab.name}</strong> - ${tab.count} required field${tab.count > 1 ? 's' : ''} missing</li>`
+      ).join('');
+    }
+
+    function updateTabIndicators(details) {
+      steps.forEach((stepId, index) => {
+        const tabButton = document.querySelector(`[data-bs-target="#${stepId}"]`);
+        if (!tabButton) return;
+        
+        const tabInfo = details.incompleteTabs.find(t => t.index === index + 1);
+        if (tabInfo) {
+          tabButton.classList.add('incomplete');
+          tabButton.classList.remove('complete');
+        } else {
+          // Check if this tab has any required fields
+          const pane = document.getElementById(stepId);
+          if (pane) {
+            const requiredFields = Array.from(
+              pane.querySelectorAll("input[required], select[required], textarea[required], [data-required-by-asterisk='true']")
+            ).filter(el => isElementVisible(el));
+            
+            if (requiredFields.length > 0) {
+              const allComplete = requiredFields.every(field => controlHasValue(field));
+              if (allComplete) {
+                tabButton.classList.add('complete');
+                tabButton.classList.remove('incomplete');
+              } else {
+                tabButton.classList.remove('complete');
+                tabButton.classList.remove('incomplete');
+              }
+            } else {
+              tabButton.classList.remove('complete');
+              tabButton.classList.remove('incomplete');
+            }
+          } else {
+            tabButton.classList.remove('complete');
+            tabButton.classList.remove('incomplete');
+          }
+        }
+      });
+    }
+
     function updateWizardValidity() {
       if (!nextBtn || !saveBtn) return;
       // Ensure asterisk-required mapping exists before validating
@@ -1561,10 +2425,26 @@
       const currentOk = validateTab(currentStep);
       const allOk = findFirstInvalidStep() === -1;
 
-      // Next: current tab only
+      // Collect validation details for enhanced feedback
+      // IMPORTANT: Re-mark required fields before collecting details to ensure all fields are detected
+      if (modalEl) markAsteriskRequired(modalEl);
+      const validationDetails = collectValidationDetails();
+      
+      // Update button states
       nextBtn.disabled = !currentOk;
-      // Save: all tabs
       saveBtn.disabled = !allOk;
+      
+      // Update tooltip with specific feedback
+      updateSaveButtonTooltip(saveBtn, validationDetails);
+      
+      // Update progress indicator
+      updateProgressIndicator(validationDetails);
+      
+      // Show validation summary
+      updateValidationSummary(validationDetails);
+      
+      // Update tab indicators
+      updateTabIndicators(validationDetails);
     }
 
     function goToStep(index) {
@@ -1620,22 +2500,679 @@
         markAsteriskRequired(modalEl);
         updateWizardButtons();
         updateWizardValidity();
+        
+        // Initialize tooltips for Save button
+        if (window.bootstrap && saveBtn) {
+          const existingTooltip = bootstrap.Tooltip.getInstance(saveBtn);
+          if (!existingTooltip) {
+            new bootstrap.Tooltip(saveBtn);
+          }
+        }
       });
 
-      // Live validation while user edits
-      modalEl.addEventListener("input", function (e) {
+      // Validation only on blur (when user leaves a field) - as requested
+      modalEl.addEventListener("blur", function (e) {
         const t = e.target;
         if (t && (t.matches("input, select, textarea"))) {
-          // remove invalid state as user edits
+          // Remove invalid state if field now has value
           if (t.classList.contains("is-invalid") && controlHasValue(t)) {
             t.classList.remove("is-invalid");
           }
+          // Small delay to ensure value is updated, then update validation
+          setTimeout(() => {
           updateWizardValidity();
+          }, 100);
+        }
+      }, true); // Use capture phase to catch blur events
+      
+      // Also update on change for select elements (dropdowns)
+      modalEl.addEventListener("change", function (e) {
+        const t = e.target;
+        if (t && t.matches("select")) {
+          // Update validation when dropdown changes
+          setTimeout(() => {
+            updateWizardValidity();
+          }, 100);
         }
       });
-      modalEl.addEventListener("change", function () {
+    }
+
+    // =======================================
+    // Compensation Calculation Module
+    // Auto-calculates PF, ESIS, Professional Tax as per Bangalore, Karnataka rules
+    // Uses configuration from localStorage
+    // =======================================
+    
+    // Get compensation configuration
+    function getCompensationConfig() {
+      const defaultConfig = {
+        basicSalaryPercent: 40,
+        hraPercent: 50,
+        daPercent: 0,
+        conveyanceFixed: 1600,
+        medicalFixed: 1250,
+        specialAllowancePercent: 0,
+        enablePF: true,
+        enableESI: true,
+        enableProfessionalTax: true,
+        enableGratuity: true,
+        pfCapThreshold: 15000,
+        pfMaxContribution: 1800,
+        esiThreshold: 21000
+      };
+      
+      try {
+        const saved = localStorage.getItem('compensationConfig');
+        if (saved) {
+          return { ...defaultConfig, ...JSON.parse(saved) };
+        }
+      } catch (e) {
+        console.error('Error loading compensation config:', e);
+      }
+      
+      return defaultConfig;
+    }
+
+    // Calculate from CTC using template (Enterprise Payroll Engine)
+    async function calculateFromCTC(ctc) {
+      if (!ctc || ctc <= 0) return;
+      
+      const templateId = document.getElementById('salaryTemplateSelect')?.value;
+      const employeeState = document.getElementById('employeeState')?.value || 'Karnataka';
+      
+      // If template is selected, use enterprise payroll engine
+      if (templateId) {
+        try {
+          const response = await apiCall('/payroll/templates/calculate', {
+            method: 'POST',
+            body: JSON.stringify({
+              templateId: parseInt(templateId),
+              ctc: ctc,
+              employeeState: employeeState,
+            }),
+          });
+
+          if (response.success && response.data) {
+            const calculated = response.data;
+            fillFieldsFromTemplate(calculated);
+            displayComplianceWarnings(calculated.compliance);
+            displayEmployerCost(calculated);
+            return;
+          }
+        } catch (error) {
+          console.error('Error calculating from template:', error);
+          // Fall back to basic calculation
+        }
+      }
+      
+      // Fallback to basic calculation if no template or error
+      calculateFromCTCBasic(ctc);
+    }
+
+    // Basic calculation (fallback)
+    function calculateFromCTCBasic(ctc) {
+      const config = getCompensationConfig();
+      const monthlyCtc = ctc / 12;
+      
+      // Calculate Basic Salary
+      const basicSalary = monthlyCtc * (config.basicSalaryPercent / 100);
+      
+      // Calculate HRA
+      const hra = basicSalary * (config.hraPercent / 100);
+      
+      // Calculate DA
+      const da = basicSalary * (config.daPercent / 100);
+      
+      // Fixed allowances - respect user input (including 0)
+      const conveyanceField = document.getElementById('conveyanceAllowance');
+      const medicalField = document.getElementById('medicalAllowance');
+      
+      // Get current values - if field has any value (including 0), use it
+      // Only auto-fill if field is completely empty
+      let conveyance = 0;
+      let medical = 0;
+      
+      if (conveyanceField) {
+        const val = conveyanceField.value.trim();
+        if (val === '' || val === null || val === undefined) {
+          // Field is empty, auto-fill with config value (allow 0)
+          conveyance = config.conveyanceFixed !== undefined ? config.conveyanceFixed : 1600;
+        } else {
+          // User has entered a value (including 0), respect it
+          conveyance = parseFloat(val) || 0;
+        }
+      } else {
+        // Use config value (allow 0)
+        conveyance = config.conveyanceFixed !== undefined ? config.conveyanceFixed : 1600;
+      }
+      
+      if (medicalField) {
+        const val = medicalField.value.trim();
+        if (val === '' || val === null || val === undefined) {
+          // Field is empty, auto-fill with config value (allow 0)
+          medical = config.medicalFixed !== undefined ? config.medicalFixed : 1250;
+        } else {
+          // User has entered a value (including 0), respect it
+          medical = parseFloat(val) || 0;
+        }
+      } else {
+        // Use config value (allow 0)
+        medical = config.medicalFixed !== undefined ? config.medicalFixed : 1250;
+      }
+      
+      // Special Allowance (remaining balance to match CTC)
+      const allocated = basicSalary + hra + da + conveyance + medical;
+      const specialAllowance = Math.max(0, monthlyCtc - allocated);
+      
+      // Auto-fill fields
+      const basicSalaryField = document.getElementById('basicSalary');
+      const hraField = document.getElementById('hra');
+      const dearnessAllowanceField = document.getElementById('dearnessAllowance');
+      const specialAllowanceField = document.getElementById('specialAllowance');
+      
+      if (basicSalaryField) basicSalaryField.value = basicSalary.toFixed(2);
+      if (hraField) hraField.value = hra.toFixed(2);
+      if (dearnessAllowanceField) dearnessAllowanceField.value = da.toFixed(2);
+      
+      // Only auto-fill conveyance/medical if field is empty
+      // If user has entered 0, keep it as 0
+      // Use config values when field is empty
+      if (conveyanceField) {
+        const currentVal = conveyanceField.value.trim();
+        if (currentVal === '' || currentVal === null || currentVal === undefined) {
+          // Field is empty, use calculated value from config
+          conveyanceField.value = conveyance.toFixed(2);
+        } else {
+          // User has entered a value (including 0), keep it
+          conveyanceField.value = parseFloat(currentVal || 0).toFixed(2);
+        }
+      }
+      
+      if (medicalField) {
+        const currentVal = medicalField.value.trim();
+        if (currentVal === '' || currentVal === null || currentVal === undefined) {
+          // Field is empty, use calculated value from config
+          medicalField.value = medical.toFixed(2);
+        } else {
+          // User has entered a value (including 0), keep it
+          medicalField.value = parseFloat(currentVal || 0).toFixed(2);
+        }
+      }
+      
+      if (specialAllowanceField) specialAllowanceField.value = specialAllowance.toFixed(2);
+      
+      // Trigger calculation after auto-fill
+      setTimeout(() => {
+        calculateCompensation();
+        // Update validation after fields are filled
         updateWizardValidity();
+      }, 100);
+    }
+
+    // Fill fields from template calculation
+    function fillFieldsFromTemplate(calculated) {
+      const components = calculated.components || {};
+      
+      // Map component codes to field IDs
+      const fieldMapping = {
+        'BASIC': 'basicSalary',
+        'HRA': 'hra',
+        'DA': 'dearnessAllowance',
+        'CONVEYANCE': 'conveyanceAllowance',
+        'MEDICAL': 'medicalAllowance',
+        'SPECIAL_ALLOWANCE': 'specialAllowance',
+        'PF_EMP': 'pfEmployee',
+        'PF_EMPLOYER': 'pfEmployer',
+        'PF_DEDUCTION': 'pfDeduction',
+        'ESI_EMP': 'esiEmployee',
+        'ESI_DEDUCTION': 'esiDeduction',
+        'PROFESSIONAL_TAX': 'professionalTax',
+        'GRATUITY': 'gratuity',
+        'GROSS': 'grossSalaryMonthly',
+        'NET': 'netSalary',
+      };
+
+      // Fill all mapped fields
+      Object.entries(fieldMapping).forEach(([code, fieldId]) => {
+        const field = document.getElementById(fieldId);
+        if (field && components[code] !== undefined) {
+          field.value = parseFloat(components[code]).toFixed(2);
+        }
       });
+
+      // Update summary fields
+      const totalGrossField = document.getElementById('totalGrossSalary');
+      const totalDeductionsField = document.getElementById('totalDeductions');
+      
+      if (totalGrossField && calculated.earnings) {
+        totalGrossField.value = calculated.earnings.toFixed(2);
+      }
+      if (totalDeductionsField && calculated.deductions) {
+        totalDeductionsField.value = calculated.deductions.toFixed(2);
+      }
+
+      // Update summary card
+      updateCompensationSummary({
+        basicSalary: components.BASIC || 0,
+        hra: components.HRA || 0,
+        otherAllowances: (components.SPECIAL_ALLOWANCE || 0) + (components.CONVEYANCE || 0) + (components.MEDICAL || 0) + (components.DA || 0),
+        grossSalaryMonthly: calculated.earnings || 0,
+        pfEmployee: components.PF_EMP || 0,
+        esiEmployee: components.ESI_EMP || 0,
+        professionalTax: components.PROFESSIONAL_TAX || 0,
+        tdsDeduction: parseFloat(document.getElementById('tdsDeduction')?.value || 0),
+        totalDeductions: calculated.deductions || 0,
+        netSalary: calculated.net || 0,
+      });
+      
+      // Trigger validation update after fields are filled
+      setTimeout(() => {
+        updateWizardValidity();
+      }, 100);
+    }
+
+    // Display compliance warnings
+    function displayComplianceWarnings(compliance) {
+      const warningsContainer = document.getElementById('compensationWarnings');
+      if (!warningsContainer) return;
+
+      if (!compliance || !compliance.warnings || compliance.warnings.length === 0) {
+        warningsContainer.style.display = 'none';
+        return;
+      }
+
+      warningsContainer.style.display = 'block';
+      const warningsList = warningsContainer.querySelector('#compensationWarningsList') || warningsContainer;
+      
+      warningsList.innerHTML = compliance.warnings.map(w => {
+        const alertClass = w.severity === 'error' ? 'danger' : w.severity === 'warning' ? 'warning' : 'info';
+        return `
+          <div class="alert alert-${alertClass} alert-sm mb-2">
+            <i class="fas fa-exclamation-triangle me-2"></i>${escapeHtml(w.message)}
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Display employer cost
+    function displayEmployerCost(calculated) {
+      const employerCostField = document.getElementById('employerCostTotal');
+      if (employerCostField && calculated.totalEmployerCost) {
+        employerCostField.value = calculated.totalEmployerCost.toFixed(2);
+      }
+
+      // Update summary card
+      const summaryEmployerCost = document.getElementById('summaryEmployerCost');
+      if (summaryEmployerCost && calculated.totalEmployerCost) {
+        summaryEmployerCost.textContent = formatCurrency(calculated.totalEmployerCost);
+      }
+    }
+    
+    function calculateCompensation() {
+      // Get all input values
+      const basicSalary = parseFloat(document.getElementById('basicSalary')?.value || 0);
+      const hra = parseFloat(document.getElementById('hra')?.value || 0);
+      const conveyanceAllowance = parseFloat(document.getElementById('conveyanceAllowance')?.value || 0);
+      const medicalAllowance = parseFloat(document.getElementById('medicalAllowance')?.value || 0);
+      const dearnessAllowance = parseFloat(document.getElementById('dearnessAllowance')?.value || 0);
+      const lta = parseFloat(document.getElementById('lta')?.value || 0);
+      const foodAllowance = parseFloat(document.getElementById('foodAllowance')?.value || 0);
+      const internetPhoneAllowance = parseFloat(document.getElementById('internetPhoneAllowance')?.value || 0);
+      const specialAllowance = parseFloat(document.getElementById('specialAllowance')?.value || 0);
+      const performanceBonus = parseFloat(document.getElementById('performanceBonus')?.value || 0);
+      const variablePay = parseFloat(document.getElementById('variablePay')?.value || 0);
+      const shiftAllowance = parseFloat(document.getElementById('shiftAllowance')?.value || 0);
+      const tdsDeduction = parseFloat(document.getElementById('tdsDeduction')?.value || 0);
+      const empCtc = parseFloat(document.getElementById('empCtc')?.value || 0);
+
+      // Calculate Gross Salary (Monthly) - Sum of all allowances
+      const grossSalaryMonthly = basicSalary + hra + conveyanceAllowance + medicalAllowance + 
+                                 dearnessAllowance + (lta / 12) + foodAllowance + internetPhoneAllowance + 
+                                 specialAllowance + (performanceBonus / 12) + (variablePay / 12) + shiftAllowance;
+
+      // Update Gross Salary field
+      const grossSalaryField = document.getElementById('grossSalaryMonthly');
+      if (grossSalaryField) {
+        grossSalaryField.value = grossSalaryMonthly.toFixed(2);
+      }
+
+      // Get configuration
+      const config = getCompensationConfig();
+      
+      // ========== PF Calculation (Provident Fund) ==========
+      let pfEmployee = 0;
+      let pfEmployer = 0;
+      let pfTotal = 0;
+      
+      if (config.enablePF) {
+        // Employee PF: 12% of Basic Salary (capped at configured max)
+        // Employer PF: 12% of Basic Salary (capped at configured max)
+        const pfEmployeeRate = 0.12; // 12%
+        const pfEmployerRate = 0.12; // 12%
+        const pfCap = config.pfCapThreshold !== undefined ? config.pfCapThreshold : 15000;
+        const pfMaxEmployee = config.pfMaxContribution !== undefined ? config.pfMaxContribution : 1800;
+        const pfMaxEmployer = config.pfMaxContribution !== undefined ? config.pfMaxContribution : 1800;
+
+        pfEmployee = basicSalary * pfEmployeeRate;
+        pfEmployer = basicSalary * pfEmployerRate;
+        
+        // Apply cap if basic salary exceeds threshold
+        if (basicSalary > pfCap) {
+          pfEmployee = pfMaxEmployee;
+          pfEmployer = pfMaxEmployer;
+        }
+        
+        pfTotal = pfEmployee + pfEmployer;
+      }
+      
+      // Update PF fields
+      const pfEmployeeField = document.getElementById('pfEmployee');
+      const pfEmployerField = document.getElementById('pfEmployer');
+      const pfDeductionField = document.getElementById('pfDeduction');
+      
+      if (pfEmployeeField) pfEmployeeField.value = pfEmployee.toFixed(2);
+      if (pfEmployerField) pfEmployerField.value = pfEmployer.toFixed(2);
+      if (pfDeductionField) pfDeductionField.value = pfTotal.toFixed(2);
+
+      // ========== ESI Calculation (Employee State Insurance) ==========
+      let esiEmployee = 0;
+      let esiEmployer = 0;
+      let esiTotal = 0;
+
+      if (config.enableESI) {
+        // ESI is applicable only if Gross Salary ≤ threshold
+        const esiThreshold = config.esiThreshold !== undefined ? config.esiThreshold : 21000;
+        const esiEmployeeRate = 0.0075; // 0.75%
+        const esiEmployerRate = 0.0325; // 3.25%
+        const esiTotalRate = 0.04; // 4%
+
+        if (grossSalaryMonthly <= esiThreshold) {
+          esiEmployee = grossSalaryMonthly * esiEmployeeRate;
+          esiEmployer = grossSalaryMonthly * esiEmployerRate;
+          esiTotal = grossSalaryMonthly * esiTotalRate;
+        }
+      }
+
+      // Update ESI fields
+      const esiEmployeeField = document.getElementById('esiEmployee');
+      const esiDeductionField = document.getElementById('esiDeduction');
+      
+      if (esiEmployeeField) esiEmployeeField.value = esiEmployee.toFixed(2);
+      if (esiDeductionField) esiDeductionField.value = esiTotal.toFixed(2);
+
+      // ========== Professional Tax Calculation (Karnataka) ==========
+      let professionalTax = 0;
+      
+      if (config.enableProfessionalTax) {
+        // Karnataka Professional Tax Slabs:
+        // ₹0 if gross ≤ ₹11,000
+        // ₹150 if gross > ₹11,000 and ≤ ₹15,000
+        // ₹200 if gross > ₹15,000
+        if (grossSalaryMonthly > 15000) {
+          professionalTax = 200;
+        } else if (grossSalaryMonthly > 11000) {
+          professionalTax = 150;
+        } else {
+          professionalTax = 0;
+        }
+      }
+
+      // Update Professional Tax field
+      const professionalTaxField = document.getElementById('professionalTax');
+      if (professionalTaxField) {
+        professionalTaxField.value = professionalTax.toFixed(2);
+      }
+
+      // ========== Gratuity Calculation ==========
+      let gratuity = 0;
+      
+      if (config.enableGratuity) {
+        // Gratuity: 4.81% of Basic Salary (employer cost, not deducted from employee)
+        const gratuityRate = 0.0481; // 4.81%
+        gratuity = basicSalary * gratuityRate;
+      }
+      
+      const gratuityField = document.getElementById('gratuity');
+      if (gratuityField) {
+        gratuityField.value = gratuity.toFixed(2);
+      }
+
+      // ========== Total Deductions ==========
+      // Total deductions = PF (Employee) + ESI (Employee) + Professional Tax + TDS
+      const totalDeductions = pfEmployee + esiEmployee + professionalTax + tdsDeduction;
+      
+      const totalDeductionsField = document.getElementById('totalDeductions');
+      if (totalDeductionsField) {
+        totalDeductionsField.value = totalDeductions.toFixed(2);
+      }
+
+      // ========== Net Salary (In-hand) ==========
+      // Net Salary = Gross Salary - Total Deductions
+      const netSalary = grossSalaryMonthly - totalDeductions;
+      
+      const netSalaryField = document.getElementById('netSalary');
+      if (netSalaryField) {
+        netSalaryField.value = netSalary.toFixed(2);
+      }
+
+      // ========== Update Summary Card ==========
+      updateCompensationSummary({
+        basicSalary,
+        hra,
+        otherAllowances: conveyanceAllowance + medicalAllowance + dearnessAllowance + (lta / 12) + 
+                         foodAllowance + internetPhoneAllowance + specialAllowance + 
+                         (performanceBonus / 12) + (variablePay / 12) + shiftAllowance,
+        grossSalaryMonthly,
+        pfEmployee,
+        esiEmployee,
+        professionalTax,
+        tdsDeduction,
+        totalDeductions,
+        netSalary
+      });
+      
+      // Trigger validation update after compensation calculation
+      setTimeout(() => {
+        updateWizardValidity();
+      }, 50);
+    }
+
+    function updateCompensationSummary(data) {
+      // Format currency
+      const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('en-IN', {
+          style: 'currency',
+          currency: 'INR',
+          maximumFractionDigits: 2
+        }).format(amount);
+      };
+
+      // Update earnings breakdown
+      const summaryBasic = document.getElementById('summaryBasic');
+      const summaryHRA = document.getElementById('summaryHRA');
+      const summaryOther = document.getElementById('summaryOther');
+      const summaryGross = document.getElementById('summaryGross');
+      
+      if (summaryBasic) summaryBasic.textContent = formatCurrency(data.basicSalary);
+      if (summaryHRA) summaryHRA.textContent = formatCurrency(data.hra);
+      if (summaryOther) summaryOther.textContent = formatCurrency(data.otherAllowances);
+      if (summaryGross) summaryGross.textContent = formatCurrency(data.grossSalaryMonthly);
+
+      // Update deductions breakdown
+      const summaryPF = document.getElementById('summaryPF');
+      const summaryESI = document.getElementById('summaryESI');
+      const summaryPT = document.getElementById('summaryPT');
+      const summaryTDS = document.getElementById('summaryTDS');
+      const summaryTotalDed = document.getElementById('summaryTotalDed');
+      
+      if (summaryPF) summaryPF.textContent = formatCurrency(data.pfEmployee);
+      if (summaryESI) summaryESI.textContent = formatCurrency(data.esiEmployee);
+      if (summaryPT) summaryPT.textContent = formatCurrency(data.professionalTax);
+      if (summaryTDS) summaryTDS.textContent = formatCurrency(data.tdsDeduction);
+      if (summaryTotalDed) summaryTotalDed.textContent = formatCurrency(data.totalDeductions);
+
+      // Update net salary
+      const summaryNet = document.getElementById('summaryNet');
+      if (summaryNet) summaryNet.textContent = formatCurrency(data.netSalary);
+    }
+
+    // API call helper
+    async function apiCall(endpoint, options = {}) {
+      const defaultOptions = {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      };
+
+      const config = { ...defaultOptions, ...options };
+      if (config.body && typeof config.body === 'object') {
+        config.body = JSON.stringify(config.body);
+      }
+
+      const response = await fetch(`/api/v1${endpoint}`, config);
+      return await response.json();
+    }
+
+    // Load salary templates
+    async function loadSalaryTemplates() {
+      try {
+        const response = await apiCall('/payroll/templates');
+        const templates = response.data || [];
+        const select = document.getElementById('salaryTemplateSelect');
+        
+        if (select) {
+          // Clear existing options except first
+          select.innerHTML = '<option value="">Select Template...</option>';
+          
+          templates.forEach(template => {
+            const option = document.createElement('option');
+            option.value = template.id;
+            option.textContent = `${template.name} (v${template.version})`;
+            select.appendChild(option);
+          });
+
+          // Check if template was pre-selected from sessionStorage
+          const selectedTemplateId = sessionStorage.getItem('selectedTemplateId');
+          if (selectedTemplateId) {
+            select.value = selectedTemplateId;
+            sessionStorage.removeItem('selectedTemplateId');
+          }
+        }
+      } catch (error) {
+        console.error('Error loading templates:', error);
+      }
+    }
+
+    // Attach event listeners to all compensation input fields
+    function initCompensationCalculations() {
+      // Load templates
+      loadSalaryTemplates();
+
+      // Template selection change
+      const templateSelect = document.getElementById('salaryTemplateSelect');
+      if (templateSelect) {
+        templateSelect.addEventListener('change', function() {
+          const ctc = parseFloat(document.getElementById('empCtc')?.value || 0);
+          if (ctc > 0 && this.value) {
+            calculateFromCTC(ctc);
+          }
+        });
+      }
+
+      // State change
+      const stateSelect = document.getElementById('employeeState');
+      if (stateSelect) {
+        stateSelect.addEventListener('change', function() {
+          const ctc = parseFloat(document.getElementById('empCtc')?.value || 0);
+          if (ctc > 0) {
+            calculateFromCTC(ctc);
+          }
+        });
+      }
+
+      const compensationInputs = document.querySelectorAll('.compensation-input');
+      compensationInputs.forEach(input => {
+        input.addEventListener('input', calculateCompensation);
+        input.addEventListener('change', calculateCompensation);
+      });
+
+      // CTC input - auto-calculate and fill all fields
+      const ctcInput = document.getElementById('empCtc');
+      if (ctcInput) {
+        ctcInput.addEventListener('input', function() {
+          const ctc = parseFloat(this.value);
+          if (ctc && ctc > 0) {
+            calculateFromCTC(ctc);
+          }
+        });
+        ctcInput.addEventListener('blur', function() {
+          const ctc = parseFloat(this.value);
+          if (ctc && ctc > 0) {
+            calculateFromCTC(ctc);
+          }
+        });
+      }
+
+      // Allow users to manually set conveyance/medical to 0
+      // Prevent auto-fill from overriding user's 0 value
+      const conveyanceField = document.getElementById('conveyanceAllowance');
+      const medicalField = document.getElementById('medicalAllowance');
+      
+      if (conveyanceField) {
+        conveyanceField.addEventListener('change', function() {
+          // If user sets to 0, mark it so auto-fill doesn't override
+          if (this.value === '0' || this.value === '0.00') {
+            this.setAttribute('data-user-set-zero', 'true');
+          } else {
+            this.removeAttribute('data-user-set-zero');
+          }
+        });
+      }
+      
+      if (medicalField) {
+        medicalField.addEventListener('change', function() {
+          // If user sets to 0, mark it so auto-fill doesn't override
+          if (this.value === '0' || this.value === '0.00') {
+            this.setAttribute('data-user-set-zero', 'true');
+          } else {
+            this.removeAttribute('data-user-set-zero');
+          }
+        });
+      }
+
+      // Also calculate when modal opens (in case values are pre-filled)
+      const modal = document.getElementById('addEmployeeModal');
+      if (modal) {
+        modal.addEventListener('shown.bs.modal', function() {
+          loadSalaryTemplates();
+          setTimeout(calculateCompensation, 100);
+        });
+      }
+    }
+
+    // Utility function for currency formatting
+    function formatCurrency(amount) {
+      return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits: 2
+      }).format(amount);
+    }
+
+    // Utility function for HTML escaping
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Initialize compensation calculations when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initCompensationCalculations);
+    } else {
+      initCompensationCalculations();
     }
 
     // =======================================
@@ -1910,6 +3447,12 @@
         el.checked = !!value;
       } else {
         el.value = value != null ? value : "";
+      }
+
+      // Trigger change event to update validation
+      if (el.dispatchEvent) {
+        const changeEvent = new Event('change', { bubbles: true });
+        el.dispatchEvent(changeEvent);
       }
 
       // Special handling for gender field to update custom dropdown display
@@ -2392,22 +3935,30 @@
         ]);
 
         renderKeyValueList("viewCompensationDetails", [
-          ["CTC (₹ - Annual)", emp.empCtc],
-          ["Gross Salary (Monthly)", emp.grossSalaryMonthly],
-          ["Basic Salary", emp.basicSalary],
-          ["HRA", emp.hra],
-          ["Conveyance Allowance", emp.conveyanceAllowance],
-          ["Medical Allowance", emp.medicalAllowance],
-          ["Special Allowance", emp.specialAllowance],
-          ["Performance Bonus", emp.performanceBonus],
-          ["Variable Pay", emp.variablePay],
+          ["CTC (Annual)", emp.empCtc ? `₹${parseFloat(emp.empCtc).toLocaleString('en-IN')}` : "N/A"],
+          ["Gross Salary (Monthly)", emp.grossSalaryMonthly ? `₹${parseFloat(emp.grossSalaryMonthly).toLocaleString('en-IN')}` : "N/A"],
+          ["Basic Salary", emp.basicSalary ? `₹${parseFloat(emp.basicSalary).toLocaleString('en-IN')}` : "N/A"],
+          ["HRA", emp.hra ? `₹${parseFloat(emp.hra).toLocaleString('en-IN')}` : "N/A"],
+          ["Conveyance Allowance", emp.conveyanceAllowance ? `₹${parseFloat(emp.conveyanceAllowance).toLocaleString('en-IN')}` : "N/A"],
+          ["Medical Allowance", emp.medicalAllowance ? `₹${parseFloat(emp.medicalAllowance).toLocaleString('en-IN')}` : "N/A"],
+          ["DA", emp.dearnessAllowance ? `₹${parseFloat(emp.dearnessAllowance).toLocaleString('en-IN')}` : "N/A"],
+          ["LTA", emp.lta ? `₹${parseFloat(emp.lta).toLocaleString('en-IN')}` : "N/A"],
+          ["Food Allowance", emp.foodAllowance ? `₹${parseFloat(emp.foodAllowance).toLocaleString('en-IN')}` : "N/A"],
+          ["Internet/Phone Allowance", emp.internetPhoneAllowance ? `₹${parseFloat(emp.internetPhoneAllowance).toLocaleString('en-IN')}` : "N/A"],
+          ["Special Allowance", emp.specialAllowance ? `₹${parseFloat(emp.specialAllowance).toLocaleString('en-IN')}` : "N/A"],
+          ["Performance Bonus", emp.performanceBonus ? `₹${parseFloat(emp.performanceBonus).toLocaleString('en-IN')}` : "N/A"],
+          ["Variable Pay", emp.variablePay ? `₹${parseFloat(emp.variablePay).toLocaleString('en-IN')}` : "N/A"],
+          ["Shift Allowance", emp.shiftAllowance ? `₹${parseFloat(emp.shiftAllowance).toLocaleString('en-IN')}` : "N/A"],
           ["Overtime Eligible", emp.overtimeEligible ? "Yes" : "No"],
-          ["Shift Allowance", emp.shiftAllowance],
-          ["PF Deduction", emp.pfDeduction],
-          ["ESI Deduction", emp.esiDeduction],
-          ["Professional Tax", emp.professionalTax],
-          ["TDS Deduction", emp.tdsDeduction],
-          ["Net Salary", emp.netSalary],
+          ["PF (Employee)", emp.pfEmployee ? `₹${parseFloat(emp.pfEmployee).toLocaleString('en-IN')}` : "N/A"],
+          ["PF (Employer)", emp.pfEmployer ? `₹${parseFloat(emp.pfEmployer).toLocaleString('en-IN')}` : "N/A"],
+          ["PF Total", emp.pfDeduction ? `₹${parseFloat(emp.pfDeduction).toLocaleString('en-IN')}` : "N/A"],
+          ["ESI (Employee)", emp.esiEmployee ? `₹${parseFloat(emp.esiEmployee).toLocaleString('en-IN')}` : "N/A"],
+          ["ESI Total", emp.esiDeduction ? `₹${parseFloat(emp.esiDeduction).toLocaleString('en-IN')}` : "N/A"],
+          ["Professional Tax", emp.professionalTax ? `₹${parseFloat(emp.professionalTax).toLocaleString('en-IN')}` : "N/A"],
+          ["TDS", emp.tdsDeduction ? `₹${parseFloat(emp.tdsDeduction).toLocaleString('en-IN')}` : "N/A"],
+          ["Gratuity", emp.gratuity ? `₹${parseFloat(emp.gratuity).toLocaleString('en-IN')}` : "N/A"],
+          ["Net Salary (In-hand)", emp.netSalary ? `₹${parseFloat(emp.netSalary).toLocaleString('en-IN')}` : "N/A"],
         ]);
 
         const eduContainer = document.getElementById("viewEducationList");
@@ -2642,8 +4193,27 @@ if (expContainer) {
           emp.overtimeEligible ? "true" : "false"
         );
         fillBaseField("shiftAllowance", emp.shiftAllowance);
+        // Additional compensation fields
+        fillBaseField("dearnessAllowance", emp.dearnessAllowance);
+        fillBaseField("lta", emp.lta);
+        fillBaseField("foodAllowance", emp.foodAllowance);
+        fillBaseField("internetPhoneAllowance", emp.internetPhoneAllowance);
+        fillBaseField("pfEmployee", emp.pfEmployee);
+        fillBaseField("pfEmployer", emp.pfEmployer);
         fillBaseField("pfDeduction", emp.pfDeduction);
+        fillBaseField("esiEmployee", emp.esiEmployee);
         fillBaseField("esiDeduction", emp.esiDeduction);
+        fillBaseField("professionalTax", emp.professionalTax);
+        fillBaseField("tdsDeduction", emp.tdsDeduction);
+        fillBaseField("gratuity", emp.gratuity);
+        fillBaseField("netSalary", emp.netSalary);
+        
+        // Trigger calculation after filling fields
+        setTimeout(() => {
+          if (typeof calculateCompensation === 'function') {
+            calculateCompensation();
+          }
+        }, 200);
         fillBaseField("professionalTax", emp.professionalTax);
         fillBaseField("tdsDeduction", emp.tdsDeduction);
         fillBaseField("netSalary", emp.netSalary);
@@ -2656,6 +4226,17 @@ if (expContainer) {
 
         const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
         modal.show();
+        
+        // Update validation after modal is shown and all fields are populated
+        modalEl.addEventListener('shown.bs.modal', function updateValidationAfterEdit() {
+          setTimeout(() => {
+            // Force re-mark required fields
+            markAsteriskRequired(modalEl);
+            updateWizardValidity();
+          }, 100);
+          // Remove listener after first use
+          modalEl.removeEventListener('shown.bs.modal', updateValidationAfterEdit);
+        }, { once: true });
       } catch (error) {
         alert(error.message);
       }
@@ -2715,3 +4296,862 @@ if (expContainer) {
     });
   })();
 </script>
+
+<style>
+  /* ========== Employees Table Styling ========== */
+  .employees-card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.08);
+    overflow: hidden;
+  }
+
+  /* Desktop Table Styles */
+  .employees-table {
+    margin: 0;
+  }
+
+  .employees-table thead {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 2px solid rgba(99, 102, 241, 0.1);
+  }
+
+  .employees-table thead th {
+    padding: 16px 12px;
+    font-weight: 700;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #475569;
+    border-bottom: 2px solid rgba(99, 102, 241, 0.1);
+    white-space: nowrap;
+  }
+
+  .employees-table thead th i {
+    font-size: 14px;
+    margin-right: 6px;
+  }
+
+  .employees-table tbody tr {
+    transition: all 0.2s ease;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.05);
+  }
+
+  .employees-table tbody tr:hover {
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.04) 0%, rgba(139, 92, 246, 0.02) 100%);
+    transform: translateX(2px);
+    box-shadow: -2px 0 8px rgba(99, 102, 241, 0.1);
+  }
+
+  .employees-table tbody td {
+    padding: 16px 12px;
+    vertical-align: middle;
+    font-size: 14px;
+  }
+
+  /* Employee Avatar */
+  .employee-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+    flex-shrink: 0;
+  }
+
+  .employee-avatar-large {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 18px;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+    flex-shrink: 0;
+  }
+
+  /* Badges */
+  .emp-id-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(99, 102, 241, 0.1);
+    color: #6366f1;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+  }
+
+  .designation-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    font-weight: 600;
+    font-size: 12px;
+  }
+
+  .department-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+    font-weight: 600;
+    font-size: 12px;
+  }
+
+  .shift-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+    color: #6366f1;
+    font-weight: 600;
+    font-size: 11px;
+    text-align: center;
+    min-width: 100px;
+  }
+
+  .shift-badge small {
+    display: block;
+    font-size: 10px;
+    color: #94a3b8;
+    margin-top: 2px;
+  }
+
+  /* Action Buttons */
+  .action-buttons {
+    display: flex;
+    gap: 6px;
+  }
+
+  .btn-action {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+  }
+
+  .btn-action i {
+    font-size: 13px;
+  }
+
+  .btn-view {
+    background: rgba(100, 116, 139, 0.1);
+    color: #64748b;
+    border-color: rgba(100, 116, 139, 0.2);
+  }
+
+  .btn-view:hover {
+    background: #64748b;
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+  }
+
+  .btn-edit {
+    background: rgba(99, 102, 241, 0.1);
+    color: #6366f1;
+    border-color: rgba(99, 102, 241, 0.2);
+  }
+
+  .btn-edit:hover {
+    background: #6366f1;
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  }
+
+  .btn-delete {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.2);
+  }
+
+  .btn-delete:hover {
+    background: #ef4444;
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  }
+
+  /* Empty State */
+  .empty-state {
+    padding: 40px 20px;
+  }
+
+  .empty-state i {
+    opacity: 0.5;
+  }
+
+  /* ========== Mobile Card View ========== */
+  .employee-cards-container {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .employee-card-mobile {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+    overflow: hidden;
+    transition: all 0.2s ease;
+  }
+
+  .employee-card-mobile:active {
+    transform: scale(0.98);
+  }
+
+  .employee-card-header {
+    padding: 16px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.02) 100%);
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  }
+
+  .employee-card-body {
+    padding: 16px;
+  }
+
+  .employee-info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.05);
+  }
+
+  .employee-info-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .employee-info-item i {
+    width: 20px;
+    text-align: center;
+    font-size: 16px;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  .employee-info-item span {
+    flex: 1;
+    font-size: 14px;
+    color: #0f172a;
+  }
+
+  .shift-badge-mobile {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+    color: #6366f1;
+    font-weight: 600;
+    font-size: 12px;
+  }
+
+  .action-buttons-mobile {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .action-buttons-mobile .btn-action {
+    width: 32px;
+    height: 32px;
+  }
+
+  .empty-state-mobile {
+    padding: 60px 20px;
+  }
+
+  .empty-state-mobile i {
+    opacity: 0.5;
+  }
+
+  /* Text Purple for shift icon */
+  .text-purple {
+    color: #8b5cf6;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 991.98px) {
+    .employees-table thead th,
+    .employees-table tbody td {
+      font-size: 13px;
+      padding: 12px 8px;
+    }
+  }
+
+  @media (max-width: 575.98px) {
+    .employee-card-header {
+      padding: 12px;
+    }
+
+    .employee-card-body {
+      padding: 12px;
+    }
+
+    .employee-info-item {
+      padding: 10px 0;
+      font-size: 13px;
+    }
+
+    .employee-avatar-large {
+      width: 48px;
+      height: 48px;
+      font-size: 16px;
+    }
+  }
+
+  /* Smooth scroll for table */
+  .table-responsive {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Custom scrollbar for table */
+  .table-responsive::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  .table-responsive::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.05);
+    border-radius: 4px;
+  }
+
+  .table-responsive::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.3);
+    border-radius: 4px;
+  }
+
+  .table-responsive::-webkit-scrollbar-thumb:hover {
+    background: rgba(99, 102, 241, 0.5);
+  }
+
+  /* ========== Enhanced Form Validation UI ========== */
+  
+  /* Required Field Indicator */
+  .form-label .text-danger {
+    color: #dc3545 !important;
+    font-weight: 600;
+    margin-left: 2px;
+  }
+
+  /* Disabled Button with Clear Visual State */
+  .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    position: relative;
+  }
+
+  .btn:disabled:hover {
+    opacity: 0.6;
+  }
+
+  /* Progress Bar Animation */
+  .progress-bar {
+    transition: width 0.3s ease;
+  }
+
+  .form-progress {
+    background: #f8f9fa;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+  }
+
+  /* Validation Summary Styling */
+  #validationSummary {
+    border-left: 4px solid #0dcaf0;
+    background-color: #e7f3ff;
+    border-radius: 6px;
+  }
+
+  #validationSummary ul {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  #validationSummary li {
+    padding: 4px 0;
+    font-size: 0.9rem;
+  }
+
+  /* Tab Status Indicators */
+  .nav-link {
+    position: relative;
+  }
+
+  .nav-link.incomplete::after {
+    content: '';
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 8px;
+    height: 8px;
+    background-color: #dc3545;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  .nav-link.complete::after {
+    content: '✓';
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    color: #28a745;
+    font-size: 12px;
+    font-weight: bold;
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  /* Field Validation States */
+  .form-control.is-invalid {
+    border-color: #dc3545;
+    padding-right: calc(1.5em + 0.75rem);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath d='m5.8 3.6 .4.4.4-.4m0 4.8-.4-.4-.4.4'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+  }
+
+  .form-control.is-valid {
+    border-color: #28a745;
+    padding-right: calc(1.5em + 0.75rem);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%2328a745' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+  }
+
+  /* Save Button Badge */
+  #saveButtonBadge .badge {
+    font-size: 0.75rem;
+    padding: 0.25em 0.5em;
+  }
+
+  /* ========== World-Class Add Employee Modal Styling ========== */
+  
+  /* Modal Container */
+  #addEmployeeModal .modal-dialog {
+    max-width: 1200px;
+    margin: 1.75rem auto;
+  }
+
+  #addEmployeeModal .modal-content {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+  }
+
+  /* Modal Header */
+  #addEmployeeModal .modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 24px 32px;
+    border-bottom: none;
+    position: relative;
+  }
+
+  #addEmployeeModal .modal-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 100%);
+  }
+
+  #addEmployeeModal .modal-title {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  #addEmployeeModal .modal-title::before {
+    content: '👤';
+    font-size: 28px;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+  }
+
+  #addEmployeeModal .btn-close {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    opacity: 1;
+    padding: 8px;
+    transition: all 0.2s ease;
+  }
+
+  #addEmployeeModal .btn-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+  }
+
+  /* Modal Body */
+  #addEmployeeModal .modal-body {
+    padding: 32px;
+    background: #fafbfc;
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+  }
+
+  /* Progress Indicator Enhancement */
+  #addEmployeeModal .form-progress {
+    background: white;
+    padding: 20px 24px;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
+  }
+
+  #addEmployeeModal .form-progress small {
+    font-weight: 600;
+    color: #4b5563;
+    font-size: 13px;
+  }
+
+  #addEmployeeModal .progress {
+    height: 8px;
+    border-radius: 10px;
+    background: #f3f4f6;
+    overflow: hidden;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+
+  #addEmployeeModal .progress-bar {
+    border-radius: 10px;
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Validation Summary */
+  #addEmployeeModal #validationSummary {
+    border-left: 4px solid #3b82f6;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+  }
+
+  #addEmployeeModal #validationSummary strong {
+    color: #1e40af;
+    font-size: 14px;
+  }
+
+  #addEmployeeModal #validationSummary ul {
+    margin-top: 12px;
+  }
+
+  #addEmployeeModal #validationSummary li {
+    color: #1e3a8a;
+    font-size: 13px;
+    line-height: 1.8;
+  }
+
+  /* Tabs Styling */
+  #addEmployeeModal .nav-tabs {
+    border-bottom: 2px solid #e5e7eb;
+    margin-bottom: 32px;
+    padding: 0 4px;
+  }
+
+  #addEmployeeModal .nav-tabs .nav-link {
+    border: none;
+    border-bottom: 3px solid transparent;
+    padding: 16px 24px;
+    margin: 0 4px;
+    color: #6b7280;
+    font-weight: 600;
+    font-size: 14px;
+    border-radius: 8px 8px 0 0;
+    transition: all 0.3s ease;
+    position: relative;
+    background: transparent;
+  }
+
+  #addEmployeeModal .nav-tabs .nav-link:hover {
+    color: #4b5563;
+    background: #f9fafb;
+    border-bottom-color: #d1d5db;
+  }
+
+  #addEmployeeModal .nav-tabs .nav-link.active {
+    color: #667eea;
+    background: linear-gradient(180deg, rgba(102, 126, 234, 0.1) 0%, transparent 100%);
+    border-bottom-color: #667eea;
+    font-weight: 700;
+  }
+
+  #addEmployeeModal .nav-tabs .nav-link.incomplete::after {
+    content: '';
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 8px;
+    height: 8px;
+    background: #ef4444;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+    }
+    70% {
+      box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    }
+  }
+
+  #addEmployeeModal .nav-tabs .nav-link.complete::after {
+    content: '✓';
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    color: #10b981;
+    font-size: 14px;
+    font-weight: bold;
+    background: rgba(16, 185, 129, 0.1);
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+  }
+
+  /* Form Fields */
+  #addEmployeeModal .form-label {
+    font-weight: 600;
+    color: #374151;
+    font-size: 13px;
+    margin-bottom: 8px;
+    letter-spacing: 0.2px;
+  }
+
+  #addEmployeeModal .form-label .text-danger {
+    color: #ef4444 !important;
+    font-weight: 700;
+    margin-left: 2px;
+  }
+
+  #addEmployeeModal .form-control,
+  #addEmployeeModal .form-select {
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    background: white;
+  }
+
+  #addEmployeeModal .form-control:focus,
+  #addEmployeeModal .form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    outline: none;
+  }
+
+  #addEmployeeModal .form-control:hover,
+  #addEmployeeModal .form-select:hover {
+    border-color: #d1d5db;
+  }
+
+  #addEmployeeModal .form-control.is-invalid {
+    border-color: #ef4444;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23ef4444'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath d='m5.8 3.6 .4.4.4-.4m0 4.8-.4-.4-.4.4'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 40px;
+  }
+
+  #addEmployeeModal .form-control.is-valid {
+    border-color: #10b981;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%2310b981' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 40px;
+  }
+
+  /* Section Headers */
+  #addEmployeeModal .modal-body hr {
+    border: none;
+    border-top: 2px solid #e5e7eb;
+    margin: 32px 0;
+  }
+
+  #addEmployeeModal .modal-body h6 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #f3f4f6;
+    letter-spacing: -0.3px;
+  }
+
+  /* Modal Footer */
+  #addEmployeeModal .modal-footer {
+    background: white;
+    border-top: 1px solid #e5e7eb;
+    padding: 20px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  #addEmployeeModal .modal-footer .btn {
+    padding: 12px 32px;
+    font-weight: 600;
+    font-size: 14px;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+    letter-spacing: 0.3px;
+  }
+
+  #addEmployeeModal .modal-footer .btn-secondary {
+    background: #f3f4f6;
+    border: 2px solid #e5e7eb;
+    color: #6b7280;
+  }
+
+  #addEmployeeModal .modal-footer .btn-secondary:hover {
+    background: #e5e7eb;
+    border-color: #d1d5db;
+    color: #4b5563;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  #addEmployeeModal .modal-footer .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+
+  #addEmployeeModal .modal-footer .btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  }
+
+  #addEmployeeModal .modal-footer .btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: #9ca3af;
+    box-shadow: none;
+  }
+
+  /* Custom Scrollbar for Modal Body */
+  #addEmployeeModal .modal-body::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  #addEmployeeModal .modal-body::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    border-radius: 10px;
+  }
+
+  #addEmployeeModal .modal-body::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 10px;
+  }
+
+  #addEmployeeModal .modal-body::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    #addEmployeeModal .modal-dialog {
+      margin: 0.5rem;
+      max-width: calc(100% - 1rem);
+    }
+
+    #addEmployeeModal .modal-body {
+      padding: 20px;
+    }
+
+    #addEmployeeModal .modal-header {
+      padding: 20px;
+    }
+
+    #addEmployeeModal .modal-title {
+      font-size: 20px;
+    }
+
+    #addEmployeeModal .nav-tabs .nav-link {
+      padding: 12px 16px;
+      font-size: 12px;
+    }
+  }
+
+  /* Smooth Animations */
+  #addEmployeeModal .tab-pane {
+    animation: fadeIn 0.3s ease-in;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Input Group Enhancements */
+  #addEmployeeModal .row.g-3 > [class*="col-"] {
+    margin-bottom: 8px;
+  }
+
+  /* Icon Enhancements */
+  #addEmployeeModal .fas,
+  #addEmployeeModal .far {
+    color: #667eea;
+  }
+</style>

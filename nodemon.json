@@ -1,0 +1,21 @@
+{
+  "watch": [
+    "src",
+    "public",
+    "database"
+  ],
+  "ext": "js,json,hbs,css,html",
+  "ignore": [
+    "node_modules",
+    "*.log",
+    "*.pdf",
+    "uploads",
+    "storage",
+    "GeneratedPdf"
+  ],
+  "exec": "node -r dotenv/config --experimental-json-modules src/index.js",
+  "env": {
+    "DOTENV_CONFIG_PATH": "./property.env"
+  },
+  "delay": 500
+}

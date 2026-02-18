@@ -20,6 +20,8 @@ const app = express();
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 
 // ---------- Handlebars ----------
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
 app.engine(
     'hbs',
     engine({
@@ -31,6 +33,8 @@ app.engine(
             path.join(__dirname, 'views/partials'),
             path.join(__dirname, 'views/partials/leave'),
         ],
+        // Disable caching in development for live reload
+        cache: !isDevelopment,
         helpers: {
             // used in tables
             inc(value) {
@@ -106,6 +110,11 @@ app.engine(
 app.set('view engine', 'hbs');
 app.set('views', path.join(__dirname, 'views'));
 
+// Disable view caching in development
+if (isDevelopment) {
+    app.set('view cache', false);
+}
+
 // ---------- Middleware ----------
 app.use(
     cors({
@@ -177,6 +186,7 @@ import { employeePayrollRouter } from './routes/employeePayroll.routes.js';
 import { adminProfileRouter } from './routes/adminProfile.routes.js';
 import adminPayrollPagesRouter from './routes/admin.payroll.pages.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
+import payrollTemplateRouter from './routes/payrollTemplate.routes.js';
 
 
 // ---------- Frontend pages ----------
@@ -252,9 +262,15 @@ app.get('/clear-storage', (req, res) => {
   `);
 });
 
-// Static
-app.use(express.static('public'));
-app.use('/storage', express.static('storage'));
+// Static files - disable caching in development
+const staticOptions = isDevelopment ? {
+    maxAge: 0,
+    etag: false,
+    lastModified: false
+} : {};
+
+app.use(express.static('public', staticOptions));
+app.use('/storage', express.static('storage', staticOptions));
 
 // ---------- API routes ----------
 app.use('/api/v1/users', userRoutes);
@@ -294,6 +310,7 @@ app.use('/api/leave-types', leaveTypesRoutes);
 app.use('/api/leave-requests', leaveRequestsRoutes);
 app.use('/api/admin/payroll', payrollRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/payroll', payrollTemplateRouter);
 
 
 // HR & Docs
@@ -304,6 +321,32 @@ app.use('/api/v1/countries', countryRoutes);
 app.use('/api/v1/states', stateRoutes);
 app.use('/api/v1/business-addresses', businessAddressRoutes);
 app.get('/email-templates', verifyUser, renderEmailTemplatesPage);
+
+// Compensation Configuration Page
+app.get('/payroll-configuration', verifyUser, (req, res) => {
+  res.render('payroll-configuration', {
+    title: 'Payroll Configuration',
+    active: 'payroll-configuration',
+  });
+});
+
+app.get('/compensation-config', verifyUser, (req, res) => {
+  res.render('compensation-config', {
+    title: 'Compensation Configuration',
+    pageClass: '',
+    user: req.user
+  });
+});
+
+// Salary Templates Management Page
+app.get('/salary-templates', verifyUser, (req, res) => {
+  res.render('salary-templates', {
+    title: 'Salary Templates',
+    pageClass: '',
+    user: req.user,
+    active: 'salary-templates'
+  });
+});
 
 // API routes under /api/v1/email-templates
 app.use('/', emailTemplateRoutes);

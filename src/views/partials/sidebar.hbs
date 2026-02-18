@@ -1,216 +1,276 @@
-<div class="sidebar p-3">
-  <div class="sidebar-brand mb-3">
-    <div class="brand-mark">
-      <i class="fa-solid fa-people-group"></i>
-    </div>
-    <div class="brand-text">
-      <div class="brand-title">mini-hr-360</div>
-      <div class="brand-subtitle">BUSINESS MANAGEMENT</div>
+{{!-- Enterprise-Grade Sidebar Navigation --}}
+<div class="sidebar-enterprise" id="mainSidebar">
+  {{!-- Sidebar Toggle (Desktop) --}}
+  <button class="sidebar-toggle-btn d-none d-lg-block" id="sidebarToggle" aria-label="Toggle sidebar">
+    <i class="fas fa-chevron-left"></i>
+  </button>
+
+  {{!-- Workspace Switcher --}}
+  <div class="sidebar-workspace">
+    <div class="dropdown">
+      <button class="workspace-dropdown-btn" type="button" id="workspaceDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="fas fa-building"></i>
+        <span class="workspace-text">Workspace</span>
+        <i class="fas fa-chevron-down workspace-arrow"></i>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="workspaceDropdown">
+        <li><a class="dropdown-item" href="/business"><i class="fas fa-building me-2"></i>My Businesses</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item" href="#"><i class="fas fa-plus me-2"></i>Switch Workspace</a></li>
+      </ul>
     </div>
   </div>
 
-  <div class="sidebar-profile mb-3">
-    <div class="profile-avatar">
-      <i class="fa-solid fa-user"></i>
+  {{!-- User Profile (Minimal) --}}
+  <div class="sidebar-user">
+    <div class="user-avatar">
+      <i class="fas fa-user"></i>
     </div>
-    <div class="profile-meta">
-      <div class="profile-name">
+    <div class="user-info">
+      <div class="user-name">
         {{#if user.firstName}}{{user.firstName}}{{else}}User{{/if}}
         {{#if user.lastName}} {{user.lastName}}{{/if}}
       </div>
-      <div class="profile-role">
+      <div class="user-role">
         {{#if user.role}}
           {{#if (eq user.role 'HR_MANAGER')}}HR Manager{{else if (eq user.role 'HR_EXECUTIVE')}}HR Executive{{else if (eq user.role 'FINANCE')}}Finance{{else if (eq user.role 'admin')}}Administrator{{else if (eq user.role 'SUPER_ADMIN')}}Super Admin{{else}}{{user.role}}{{/if}}
-        {{else}}ADMINISTRATOR{{/if}}
+        {{else}}Administrator{{/if}}
       </div>
     </div>
   </div>
 
-  <!-- Notification Bell for HR/Finance - shows pending approvals -->
-  <div id="notificationBell" class="notification-bell mb-3" style="display: none;">
-    <a href="#" onclick="showNotifications(); return false;" class="d-flex align-items-center text-decoration-none text-dark p-2 rounded" style="background: #fff3cd; border: 1px solid #ffc107;">
-      <i class="fa-solid fa-bell me-2" style="color: #856404;"></i>
-      <span id="notificationText" style="font-size: 13px; color: #856404;">Loading...</span>
-      <span id="notificationBadge" class="badge bg-danger ms-auto" style="display: none;">0</span>
+  {{!-- Notification Bell (HR/Finance) --}}
+  <div id="notificationBell" class="sidebar-notification" style="display: none;">
+    <a href="#" onclick="showNotifications(); return false;" class="notification-link">
+      <i class="fas fa-bell"></i>
+      <span class="notification-text">Loading...</span>
+      <span id="notificationBadge" class="notification-badge" style="display: none;">0</span>
     </a>
   </div>
 
-  <nav class="nav flex-column">
-
-    <div class="menu-toggle mt-1" onclick="toggleMenu('workspace-submenu')">
-      <div class="nav-link {{#if (eq activeGroup 'workspace')}}active{{/if}}">
-        <i class="fa-solid fa-briefcase"></i>
-        Workspace
-        <i class="fas fa-chevron-down float-end"></i>
-      </div>
-    </div>
-
-    <div class="submenu show" id="workspace-submenu">
-      <a class="nav-link {{#if (eq active 'dashboard')}}active{{/if}}" href="/dashboard">
-        <i class="fas fa-tachometer-alt"></i> Dashboard
-      </a>
-      <a class="nav-link {{#if (eq active 'business')}}active{{/if}}" href="/business">
-        <i class="fas fa-building"></i> My Businesses
-      </a>
-      <a class="nav-link {{#if (eq active 'employees')}}active{{/if}}" href="/employees">
-        <i class="fas fa-user-tie"></i> Employee Management
-      </a>
-
-
-
-      <!-- Leave Management Submenu -->
-      <div class="submenu-toggle" onclick="toggleMenu('leave-submenu')">
-        <div
-          class="nav-link submenu-parent {{#if (or (eq active 'leaveRequests') (or (eq active 'leaveTypes') (eq active 'leaveBalances')))}}active{{/if}}">
-          <i class="fas fa-calendar-alt"></i>
-          Leave Management
-          <i
-            class="fas fa-chevron-down submenu-arrow {{#if (or (eq active 'leaveRequests') (or (eq active 'leaveTypes') (eq active 'leaveBalances')))}}open{{/if}}"></i>
-        </div>
-      </div>
-      <div
-        class="nested-submenu {{#if (or (eq active 'leaveRequests') (or (eq active 'leaveTypes') (eq active 'leaveBalances')))}}show{{/if}}"
-        id="leave-submenu">
-        <a class="nav-link {{#if (eq active 'leaveRequests')}}active{{/if}}" href="/leave-requests">
-          <i class="fas fa-clipboard-list"></i> Leave Requests
-        </a>
-        <a class="nav-link {{#if (eq active 'leaveTypes')}}active{{/if}}" href="/leave-requests/leave-types">
-          <i class="fas fa-tags"></i> Leave Types
-        </a>
-        <a class="nav-link {{#if (eq active 'leaveBalances')}}active{{/if}}" href="/leave-requests/leave-balances">
-          <i class="fas fa-balance-scale"></i> Leave Balances
-        </a>
-      </div>
-
-      <!-- Attendance Submenu -->
-      <div class="submenu-toggle mt-2" onclick="toggleMenu('attendance-submenu')">
-        <div class="nav-link submenu-parent {{#if (or (eq active 'attendance-dashboard') (or (eq active 'attendance-policies') (or (eq active 'attendance-shifts') (or (eq active 'attendance-holidays') (or (eq active 'attendance-assignments') (or (eq active 'attendance-logs') (or (eq active 'attendance-regularizations') (or (eq active 'attendance-reports') (eq active 'attendance-lock')))))))))}}active{{/if}}">
-          <i class="fas fa-clock"></i>
-          Attendance
-          <i class="fas fa-chevron-down submenu-arrow {{#if (or (eq active 'attendance-dashboard') (or (eq active 'attendance-policies') (or (eq active 'attendance-shifts') (or (eq active 'attendance-holidays') (or (eq active 'attendance-assignments') (or (eq active 'attendance-logs') (or (eq active 'attendance-regularizations') (or (eq active 'attendance-reports') (eq active 'attendance-lock')))))))))}}open{{/if}}"></i>
-        </div>
-      </div>
-      <div class="nested-submenu {{#if (or (eq active 'attendance-dashboard') (or (eq active 'attendance-policies') (or (eq active 'attendance-shifts') (or (eq active 'attendance-holidays') (or (eq active 'attendance-assignments') (or (eq active 'attendance-logs') (or (eq active 'attendance-regularizations') (or (eq active 'attendance-reports') (eq active 'attendance-lock')))))))))}}show{{/if}}" id="attendance-submenu">
-        <div class="sidebar-group px-3 pt-2 pb-2 text-uppercase small text-muted">Overview</div>
-        <a class="nav-link {{#if (eq active 'attendance-dashboard')}}active{{/if}}" href="/admin/attendance">
-          <i class="fas fa-tachometer-alt"></i> Dashboard
-        </a>
-
-        <div class="sidebar-group px-3 pt-3 pb-2 text-uppercase small text-muted">Manage</div>
-        <a class="nav-link {{#if (eq active 'attendance-policies')}}active{{/if}}" href="/admin/attendance/policies">
-          <i class="fas fa-file-contract"></i> Policies
-        </a>
-        <a class="nav-link {{#if (eq active 'attendance-shifts')}}active{{/if}}" href="/admin/attendance/shifts">
-          <i class="fas fa-clock"></i> Shifts
-        </a>
-        <a class="nav-link {{#if (eq active 'attendance-holidays')}}active{{/if}}" href="/admin/attendance/holidays">
-          <i class="fas fa-calendar-day"></i> Holidays
-        </a>
-        <a class="nav-link {{#if (eq active 'attendance-assignments')}}active{{/if}}" href="/admin/attendance/assignments">
-          <i class="fas fa-user-tag"></i> Assignments
-        </a>
-
-        <div class="sidebar-group px-3 pt-3 pb-2 text-uppercase small text-muted">Operations</div>
-        <a class="nav-link {{#if (eq active 'attendance-logs')}}active{{/if}}" href="/admin/attendance/logs">
-          <i class="fas fa-book"></i> Logs
-        </a>
-        <a class="nav-link {{#if (eq active 'attendance-regularizations')}}active{{/if}}" href="/admin/attendance/regularizations">
-          <i class="fas fa-pen-ruler"></i> Regularizations
-        </a>
-        <a class="nav-link {{#if (eq active 'attendance-reports')}}active{{/if}}" href="/admin/attendance/reports">
-          <i class="fas fa-chart-line"></i> Reports
-        </a>
-        <a class="nav-link {{#if (eq active 'attendance-lock')}}active{{/if}}" href="/admin/attendance/lock">
-          <i class="fas fa-lock"></i> Lock
-        </a>
-      </div>
-
-      <!-- Payroll Management Submenu -->
-      <div class="submenu-toggle mt-2" onclick="toggleMenu('payroll-submenu')">
-        <div class="nav-link submenu-parent {{#if (or (eq active 'payroll-setup') (or (eq active 'payroll-structures') (or (eq active 'payroll-runs') (or (eq active 'payroll-register') (or (eq active 'payroll-payslips') (or (eq active 'payroll-statutory') (eq active 'payroll-queries')))))))}}active{{/if}}">
-          <i class="fas fa-money-bill-wave"></i>
-          Payroll Management
-          <i class="fas fa-chevron-down submenu-arrow {{#if (or (eq active 'payroll-setup') (or (eq active 'payroll-structures') (or (eq active 'payroll-runs') (or (eq active 'payroll-register') (or (eq active 'payroll-payslips') (or (eq active 'payroll-statutory') (eq active 'payroll-queries')))))))}}open{{/if}}"></i>
-        </div>
-      </div>
-      <div class="nested-submenu {{#if (or (eq active 'payroll-setup') (or (eq active 'payroll-structures') (or (eq active 'payroll-runs') (or (eq active 'payroll-register') (or (eq active 'payroll-payslips') (or (eq active 'payroll-statutory') (eq active 'payroll-queries')))))))}}show{{/if}}" id="payroll-submenu">
-        <div class="sidebar-group px-3 pt-2 pb-2 text-uppercase small text-muted">Configuration</div>
-        <a class="nav-link {{#if (eq active 'payroll-setup')}}active{{/if}}" href="/admin/payroll/setup">
-          <i class="fas fa-cogs"></i> Payroll Setup
-        </a>
-        <a class="nav-link {{#if (eq active 'payroll-structures')}}active{{/if}}" href="/admin/payroll/structures">
-          <i class="fas fa-sitemap"></i> Salary Structures
-        </a>
-
-        <div class="sidebar-group px-3 pt-3 pb-2 text-uppercase small text-muted">Operations</div>
-        <a class="nav-link {{#if (eq active 'payroll-runs')}}active{{/if}}" href="/admin/payroll/runs">
-          <i class="fas fa-play-circle"></i> Payroll Runs
-        </a>
-        <a class="nav-link {{#if (eq active 'payroll-register')}}active{{/if}}" href="/admin/payroll/register">
-          <i class="fas fa-list"></i> Payroll Register
-        </a>
-        <a class="nav-link {{#if (eq active 'payroll-payslips')}}active{{/if}}" href="/admin/payroll/payslips">
-          <i class="fas fa-file-invoice-dollar"></i> Payslips
-        </a>
-
-        <div class="sidebar-group px-3 pt-3 pb-2 text-uppercase small text-muted">Compliance</div>
-        <a class="nav-link {{#if (eq active 'payroll-statutory')}}active{{/if}}" href="/admin/payroll/statutory">
-          <i class="fas fa-balance-scale"></i> Statutory Reports
-        </a>
-        <a class="nav-link {{#if (eq active 'payroll-queries')}}active{{/if}}" href="/admin/payroll/queries">
-          <i class="fas fa-comments"></i> Payroll Queries
-        </a>
-      </div>
-
-      <a class="nav-link {{#if (eq active 'documents')}}active{{/if}}" href="/documents">
-        <i class="fas fa-file-signature"></i> Generate Documents
-      </a>
-
-      <hr />
-      <a class="nav-link {{#if (eq active 'documentTypes')}}active{{/if}}" href="/document-types">
-        <i class="fas fa-layer-group"></i> Document Templates
-      </a>
-      <a class="nav-link {{#if (eq active 'emailTemplates')}}active{{/if}}" href="/email-templates">
-        <i class="fas fa-envelope-open-text"></i> Email Templates
-      </a>
-      <a class="nav-link {{#if (eq active 'departments')}}active{{/if}}" href="/departments">
-        <i class="fa-solid fa-building-columns"></i> Manage Departments
-      </a>
-      <a class="nav-link {{#if (eq active 'designations')}}active{{/if}}" href="/designations">
-        <i class="fa-solid fa-id-badge"></i> Manage Designations
-      </a>
-      <a class="nav-link {{#if (eq active 'businessAddresses')}}active{{/if}}" href="/business-addresses">
-        <i class="fas fa-map-marker-alt"></i> Manage Business Addresses
-      </a>
-      <a class="nav-link {{#if (eq active 'team')}}active{{/if}}" href="/admin/team">
-        <i class="fas fa-users-cog"></i> Team & Roles
-      </a>
-    </div>
-
-    <div class="sidebar-item mt-1">
-      <a class="nav-link {{#if (eq active 'billing')}}active{{/if}}" href="/billing">
-        <i class="fa-solid fa-crown"></i>
-        Billing &amp; Plan
-      </a>
-    </div>
-
-    <div class="sidebar-item">
-      <a class="nav-link {{#if (eq active 'profile')}}active{{/if}}" href="/admin/profile">
-        <i class="fa-solid fa-user-circle"></i>
-        My Profile
-      </a>
-    </div>
-
-    <div class="sidebar-divider"></div>
-
-    <a class="nav-link" href="#" onclick="logout(); return false;">
-      <i class="fas fa-sign-out-alt"></i>
-      Logout
+  {{!-- Quick Action CTA --}}
+  <div class="sidebar-cta">
+    <a href="/employees" class="cta-button">
+      <i class="fas fa-plus"></i>
+      <span class="cta-text">Add Employee</span>
     </a>
+  </div>
+
+  {{!-- Navigation Menu --}}
+  <nav class="sidebar-nav">
+    {{!-- Dashboard --}}
+    <div class="nav-section">
+      <a class="nav-item {{#if (eq active 'dashboard')}}active{{/if}}" href="/dashboard" data-bs-toggle="tooltip" data-bs-placement="right" title="Dashboard">
+        <i class="nav-icon fas fa-tachometer-alt"></i>
+        <span class="nav-label">Dashboard</span>
+      </a>
+    </div>
+
+    {{!-- Workforce Section --}}
+    <div class="nav-section">
+      <div class="section-label">Workforce</div>
+      
+      <a class="nav-item {{#if (eq active 'employees')}}active{{/if}}" href="/employees" data-bs-toggle="tooltip" data-bs-placement="right" title="Employees">
+        <i class="nav-icon fas fa-user-tie"></i>
+        <span class="nav-label">Employees</span>
+      </a>
+
+      <a class="nav-item {{#if (eq active 'attendance-dashboard')}}active{{/if}}" href="/admin/attendance" data-bs-toggle="tooltip" data-bs-placement="right" title="Attendance">
+        <i class="nav-icon fas fa-clock"></i>
+        <span class="nav-label">Attendance</span>
+      </a>
+
+      {{!-- Leave Collapsible --}}
+      <div class="nav-group">
+        {{#if (or (eq active 'leaveRequests') (eq active 'leaveTypes') (eq active 'leaveBalances'))}}
+        <button class="nav-item nav-group-toggle active" data-bs-toggle="collapse" data-bs-target="#leaveSubmenu" aria-expanded="true">
+        {{else}}
+        <button class="nav-item nav-group-toggle" data-bs-toggle="collapse" data-bs-target="#leaveSubmenu" aria-expanded="false">
+        {{/if}}
+          <i class="nav-icon fas fa-calendar-alt"></i>
+          <span class="nav-label">Leave</span>
+          <i class="nav-arrow fas fa-chevron-down"></i>
+        </button>
+        {{#if (or (eq active 'leaveRequests') (eq active 'leaveTypes') (eq active 'leaveBalances'))}}
+        <div class="nav-group-menu collapse show" id="leaveSubmenu">
+        {{else}}
+        <div class="nav-group-menu collapse" id="leaveSubmenu">
+        {{/if}}
+          <a class="nav-item nav-item-child {{#if (eq active 'leaveRequests')}}active{{/if}}" href="/leave-requests">
+            <i class="nav-icon fas fa-clipboard-list"></i>
+            <span class="nav-label">Leave Requests</span>
+          </a>
+          <a class="nav-item nav-item-child {{#if (eq active 'leaveTypes')}}active{{/if}}" href="/leave-requests/leave-types">
+            <i class="nav-icon fas fa-tags"></i>
+            <span class="nav-label">Leave Types</span>
+          </a>
+          <a class="nav-item nav-item-child {{#if (eq active 'leaveBalances')}}active{{/if}}" href="/leave-requests/leave-balances">
+            <i class="nav-icon fas fa-balance-scale"></i>
+            <span class="nav-label">Leave Balances</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    {{!-- Payroll Section --}}
+    <div class="nav-section">
+      <div class="section-label">Payroll</div>
+
+      {{!-- Payroll Operations --}}
+      <div class="nav-group">
+        {{#if (or (eq active 'payroll-runs') (eq active 'payroll-register') (eq active 'payroll-payslips'))}}
+        <button class="nav-item nav-group-toggle active" data-bs-toggle="collapse" data-bs-target="#payrollOperationsSubmenu" aria-expanded="true">
+        {{else}}
+        <button class="nav-item nav-group-toggle" data-bs-toggle="collapse" data-bs-target="#payrollOperationsSubmenu" aria-expanded="false">
+        {{/if}}
+          <i class="nav-icon fas fa-play-circle"></i>
+          <span class="nav-label">Operations</span>
+          <i class="nav-arrow fas fa-chevron-down"></i>
+        </button>
+        {{#if (or (eq active 'payroll-runs') (eq active 'payroll-register') (eq active 'payroll-payslips'))}}
+        <div class="nav-group-menu collapse show" id="payrollOperationsSubmenu">
+        {{else}}
+        <div class="nav-group-menu collapse" id="payrollOperationsSubmenu">
+        {{/if}}
+          <a class="nav-item nav-item-child {{#if (eq active 'payroll-runs')}}active{{/if}}" href="/admin/payroll/runs">
+            <i class="nav-icon fas fa-play-circle"></i>
+            <span class="nav-label">Payroll Runs</span>
+          </a>
+          <a class="nav-item nav-item-child {{#if (eq active 'payroll-register')}}active{{/if}}" href="/admin/payroll/register">
+            <i class="nav-icon fas fa-list"></i>
+            <span class="nav-label">Payroll Register</span>
+          </a>
+          <a class="nav-item nav-item-child {{#if (eq active 'payroll-payslips')}}active{{/if}}" href="/admin/payroll/payslips">
+            <i class="nav-icon fas fa-file-invoice-dollar"></i>
+            <span class="nav-label">Payslips</span>
+          </a>
+        </div>
+      </div>
+
+      {{!-- Payroll Structure --}}
+      <div class="nav-group">
+        {{#if (or (eq active 'payroll-structures') (eq active 'payroll-configuration') (eq active 'salary-templates') (eq active 'compensation-config'))}}
+        <button class="nav-item nav-group-toggle active" data-bs-toggle="collapse" data-bs-target="#payrollStructureSubmenu" aria-expanded="true">
+        {{else}}
+        <button class="nav-item nav-group-toggle" data-bs-toggle="collapse" data-bs-target="#payrollStructureSubmenu" aria-expanded="false">
+        {{/if}}
+          <i class="nav-icon fas fa-sitemap"></i>
+          <span class="nav-label">Structure</span>
+          <i class="nav-arrow fas fa-chevron-down"></i>
+        </button>
+        {{#if (or (eq active 'payroll-structures') (eq active 'payroll-configuration') (eq active 'salary-templates') (eq active 'compensation-config'))}}
+        <div class="nav-group-menu collapse show" id="payrollStructureSubmenu">
+        {{else}}
+        <div class="nav-group-menu collapse" id="payrollStructureSubmenu">
+        {{/if}}
+          <a class="nav-item nav-item-child {{#if (eq active 'payroll-structures')}}active{{/if}}" href="/admin/payroll/structures">
+            <i class="nav-icon fas fa-sitemap"></i>
+            <span class="nav-label">Salary Structures</span>
+          </a>
+          <a class="nav-item nav-item-child {{#if (eq active 'payroll-configuration')}}active{{/if}}" href="/payroll-configuration">
+            <i class="nav-icon fas fa-cogs"></i>
+            <span class="nav-label">Compensation Configuration</span>
+          </a>
+        </div>
+      </div>
+
+      {{!-- Payroll Compliance --}}
+      <div class="nav-group">
+        {{#if (or (eq active 'payroll-statutory') (eq active 'payroll-queries'))}}
+        <button class="nav-item nav-group-toggle active" data-bs-toggle="collapse" data-bs-target="#payrollComplianceSubmenu" aria-expanded="true">
+        {{else}}
+        <button class="nav-item nav-group-toggle" data-bs-toggle="collapse" data-bs-target="#payrollComplianceSubmenu" aria-expanded="false">
+        {{/if}}
+          <i class="nav-icon fas fa-balance-scale"></i>
+          <span class="nav-label">Compliance</span>
+          <i class="nav-arrow fas fa-chevron-down"></i>
+        </button>
+        {{#if (or (eq active 'payroll-statutory') (eq active 'payroll-queries'))}}
+        <div class="nav-group-menu collapse show" id="payrollComplianceSubmenu">
+        {{else}}
+        <div class="nav-group-menu collapse" id="payrollComplianceSubmenu">
+        {{/if}}
+          <a class="nav-item nav-item-child {{#if (eq active 'payroll-statutory')}}active{{/if}}" href="/admin/payroll/statutory">
+            <i class="nav-icon fas fa-balance-scale"></i>
+            <span class="nav-label">Statutory Reports</span>
+          </a>
+          <a class="nav-item nav-item-child {{#if (eq active 'payroll-queries')}}active{{/if}}" href="/admin/payroll/queries">
+            <i class="nav-icon fas fa-comments"></i>
+            <span class="nav-label">Payroll Queries</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    {{!-- Organization Section --}}
+    <div class="nav-section">
+      <div class="section-label">Organization</div>
+      
+      <a class="nav-item {{#if (eq active 'departments')}}active{{/if}}" href="/departments" data-bs-toggle="tooltip" data-bs-placement="right" title="Departments">
+        <i class="nav-icon fas fa-building-columns"></i>
+        <span class="nav-label">Departments</span>
+      </a>
+      <a class="nav-item {{#if (eq active 'designations')}}active{{/if}}" href="/designations" data-bs-toggle="tooltip" data-bs-placement="right" title="Designations">
+        <i class="nav-icon fas fa-id-badge"></i>
+        <span class="nav-label">Designations</span>
+      </a>
+      <a class="nav-item {{#if (eq active 'businessAddresses')}}active{{/if}}" href="/business-addresses" data-bs-toggle="tooltip" data-bs-placement="right" title="Business Addresses">
+        <i class="nav-icon fas fa-map-marker-alt"></i>
+        <span class="nav-label">Business Addresses</span>
+      </a>
+    </div>
+
+    {{!-- Documents Section --}}
+    <div class="nav-section">
+      <div class="section-label">Documents</div>
+      
+      <a class="nav-item {{#if (eq active 'documents')}}active{{/if}}" href="/documents" data-bs-toggle="tooltip" data-bs-placement="right" title="Generate Documents">
+        <i class="nav-icon fas fa-file-signature"></i>
+        <span class="nav-label">Generate Documents</span>
+      </a>
+      <a class="nav-item {{#if (eq active 'documentTypes')}}active{{/if}}" href="/document-types" data-bs-toggle="tooltip" data-bs-placement="right" title="Document Templates">
+        <i class="nav-icon fas fa-layer-group"></i>
+        <span class="nav-label">Document Templates</span>
+      </a>
+      <a class="nav-item {{#if (eq active 'emailTemplates')}}active{{/if}}" href="/email-templates" data-bs-toggle="tooltip" data-bs-placement="right" title="Email Templates">
+        <i class="nav-icon fas fa-envelope-open-text"></i>
+        <span class="nav-label">Email Templates</span>
+      </a>
+    </div>
+
+    {{!-- System Section (Bottom) --}}
+    <div class="nav-section nav-section-bottom">
+      <div class="section-label">System</div>
+      
+      <a class="nav-item {{#if (eq active 'billing')}}active{{/if}}" href="/billing" data-bs-toggle="tooltip" data-bs-placement="right" title="Billing & Plan">
+        <i class="nav-icon fas fa-crown"></i>
+        <span class="nav-label">Billing & Plan</span>
+      </a>
+      <a class="nav-item {{#if (eq active 'salary-templates')}}active{{/if}}" href="/salary-templates" data-bs-toggle="tooltip" data-bs-placement="right" title="Salary Templates">
+        <i class="nav-icon fas fa-layer-group"></i>
+        <span class="nav-label">Salary Templates</span>
+      </a>
+      <a class="nav-item {{#if (eq active 'team')}}active{{/if}}" href="/admin/team" data-bs-toggle="tooltip" data-bs-placement="right" title="Team & Roles">
+        <i class="nav-icon fas fa-users-cog"></i>
+        <span class="nav-label">Team & Roles</span>
+      </a>
+      <a class="nav-item {{#if (eq active 'profile')}}active{{/if}}" href="/admin/profile" data-bs-toggle="tooltip" data-bs-placement="right" title="My Profile">
+        <i class="nav-icon fas fa-user-circle"></i>
+        <span class="nav-label">My Profile</span>
+      </a>
+    </div>
   </nav>
+
+  {{!-- Logout (Isolated) --}}
+  <div class="sidebar-footer">
+    <a class="nav-item nav-item-logout" href="#" onclick="logout(); return false;" data-bs-toggle="tooltip" data-bs-placement="right" title="Logout">
+      <i class="nav-icon fas fa-sign-out-alt"></i>
+      <span class="nav-label">Logout</span>
+    </a>
+  </div>
 </div>
 
-<!-- Notification Modal -->
+{{!-- Notification Modal --}}
 <div class="modal fade" id="notificationModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-scrollable">
     <div class="modal-content">
@@ -234,113 +294,549 @@
 </div>
 
 <style>
-  .notification-bell {
+  /* Enterprise Sidebar CSS Variables */
+  :root {
+    --sidebar-bg: #0F172A;
+    --sidebar-hover: #111827;
+    --accent: #6366F1;
+    --accent-soft: rgba(99, 102, 241, 0.14);
+    --text-primary: #E5E7EB;
+    --text-secondary: #9CA3AF;
+    --divider: rgba(255, 255, 255, 0.06);
+  }
+
+  /* Import Inter Font */
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+  /* Sidebar Container */
+  .sidebar-enterprise {
+    width: 260px;
+    height: 100vh;
+    background: var(--sidebar-bg);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 1040;
+    transition: width 0.18s ease;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  .sidebar-enterprise.collapsed {
+    width: 72px;
+  }
+
+  /* Sidebar Toggle Button */
+  .sidebar-toggle-btn {
+    position: absolute;
+    top: 16px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: 1px solid var(--divider);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
+    transition: all 0.18s ease;
+    z-index: 10;
   }
-  .notification-bell:hover {
-    opacity: 0.9;
+
+  .sidebar-toggle-btn:hover {
+    background: var(--sidebar-hover);
+    color: var(--text-primary);
+    border-color: var(--divider);
   }
-  .notification-item {
-    padding: 12px;
-    border-bottom: 1px solid #eee;
+
+  .sidebar-enterprise.collapsed .sidebar-toggle-btn i {
+    transform: rotate(180deg);
+  }
+
+  /* Workspace Switcher */
+  .sidebar-workspace {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid var(--divider);
+  }
+
+  .workspace-dropdown-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 14.5px;
+    font-weight: 500;
     cursor: pointer;
+    transition: color 0.18s ease;
   }
-  .notification-item:hover {
-    background: #f8f9fa;
+
+  .workspace-dropdown-btn:hover {
+    color: var(--text-primary);
   }
-  .notification-item.unread {
-    background: #fff8e1;
+
+  .workspace-dropdown-btn i:first-child {
+    color: var(--accent);
+    font-size: 16px;
   }
-  .notification-item .time {
+
+  .workspace-arrow {
+    margin-left: auto;
     font-size: 11px;
-    color: #888;
+    color: var(--text-secondary);
+    transition: transform 0.18s ease;
   }
-  .sidebar-item-disabled {
-    opacity: 0.5;
-    pointer-events: none;
+
+  .workspace-dropdown-btn[aria-expanded="true"] .workspace-arrow {
+    transform: rotate(180deg);
+  }
+
+  .sidebar-enterprise.collapsed .workspace-text,
+  .sidebar-enterprise.collapsed .workspace-arrow {
+    display: none;
+  }
+
+  /* User Profile */
+  .sidebar-user {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--divider);
+  }
+
+  .user-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: var(--accent-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .user-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .user-name {
+    font-size: 14.5px;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.4;
+  }
+
+  .user-role {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    margin-top: 2px;
+  }
+
+  .sidebar-enterprise.collapsed .user-info {
+    display: none;
+  }
+
+  /* Notification */
+  .sidebar-notification {
+    padding: 0 16px 16px;
+  }
+
+  .notification-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: rgba(251, 191, 36, 0.1);
+    border: 1px solid rgba(251, 191, 36, 0.2);
+    border-radius: 8px;
+    color: #FBBF24;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.18s ease;
+  }
+
+  .notification-link:hover {
+    background: rgba(251, 191, 36, 0.15);
+    color: #FCD34D;
+  }
+
+  .notification-badge {
+    margin-left: auto;
+    background: #EF4444;
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+  }
+
+  .sidebar-enterprise.collapsed .notification-text {
+    display: none;
+  }
+
+  /* CTA Button */
+  .sidebar-cta {
+    padding: 0 16px 16px;
+  }
+
+  .cta-button {
+    width: 100%;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14.5px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.18s ease;
+  }
+
+  .cta-button:hover {
+    background: #5855EB;
+    color: white;
+  }
+
+  .sidebar-enterprise.collapsed .cta-text {
+    display: none;
+  }
+
+  .sidebar-enterprise.collapsed .cta-button {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border-radius: 10px;
+  }
+
+  /* Navigation */
+  .sidebar-nav {
+    flex: 1;
+    padding: 8px 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  /* Section Label */
+  .section-label {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    padding: 16px 20px 8px;
+    margin-top: 8px;
+  }
+
+  .nav-section:first-child .section-label {
+    margin-top: 0;
+  }
+
+  .sidebar-enterprise.collapsed .section-label {
+    display: none;
+  }
+
+  /* Nav Item */
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 20px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 14.5px;
+    font-weight: 500;
+    border-radius: 0;
+    transition: all 0.18s ease;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+    position: relative;
+  }
+
+  .nav-item:hover {
+    background: var(--sidebar-hover);
+    color: var(--text-primary);
+  }
+
+  .nav-item.active {
+    background: var(--accent-soft);
+    color: var(--text-primary);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+  }
+
+  .nav-icon {
+    width: 20px;
+    text-align: center;
+    font-size: 16px;
+    color: var(--text-secondary);
+    transition: color 0.18s ease;
+  }
+
+  .nav-item:hover .nav-icon,
+  .nav-item.active .nav-icon {
+    color: var(--text-primary);
+  }
+
+  .nav-label {
+    flex: 1;
+  }
+
+  .sidebar-enterprise.collapsed .nav-label {
+    display: none;
+  }
+
+  .sidebar-enterprise.collapsed .nav-item {
+    justify-content: center;
+    padding: 10px;
+  }
+
+  /* Nav Group (Collapsible) */
+  .nav-group-toggle {
+    position: relative;
+  }
+
+  .nav-arrow {
+    font-size: 11px;
+    color: var(--text-secondary);
+    transition: transform 0.18s ease, color 0.18s ease;
+    margin-left: auto;
+  }
+
+  .nav-group-toggle[aria-expanded="true"] .nav-arrow {
+    transform: rotate(180deg);
+  }
+
+  .nav-group-toggle:hover .nav-arrow,
+  .nav-group-toggle.active .nav-arrow {
+    color: var(--text-primary);
+  }
+
+  .sidebar-enterprise.collapsed .nav-arrow {
+    display: none;
+  }
+
+  /* Nav Group Menu (Children) */
+  .nav-group-menu {
+    padding-left: 0;
+  }
+
+  .nav-item-child {
+    padding-left: 52px;
+    font-size: 14px;
+  }
+
+  .sidebar-enterprise.collapsed .nav-group-menu {
+    display: none !important;
+  }
+
+  /* Section Bottom */
+  .nav-section-bottom {
+    margin-top: auto;
+    padding-top: 24px;
+    border-top: 1px solid var(--divider);
+  }
+
+  /* Logout */
+  .sidebar-footer {
+    padding: 16px;
+    border-top: 1px solid var(--divider);
+  }
+
+  .nav-item-logout {
+    color: #EF4444;
+  }
+
+  .nav-item-logout:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: #F87171;
+  }
+
+  .nav-item-logout .nav-icon {
+    color: #EF4444;
+  }
+
+  .nav-item-logout:hover .nav-icon {
+    color: #F87171;
+  }
+
+  /* Scrollbar */
+  .sidebar-enterprise::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .sidebar-enterprise::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .sidebar-enterprise::-webkit-scrollbar-thumb {
+    background: var(--divider);
+    border-radius: 3px;
+  }
+
+  .sidebar-enterprise::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  /* Mobile Styles */
+  @media (max-width: 991.98px) {
+    .sidebar-enterprise {
+      transform: translateX(-100%);
+      box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .sidebar-enterprise.show {
+      transform: translateX(0);
+    }
+
+    .sidebar-enterprise.collapsed {
+      width: 260px;
+    }
+  }
+
+  /* Tablet Auto-Collapse */
+  @media (min-width: 992px) and (max-width: 1199.98px) {
+    .sidebar-enterprise {
+      width: 72px;
+    }
+
+    .sidebar-enterprise .nav-label,
+    .sidebar-enterprise .workspace-text,
+    .sidebar-enterprise .user-info,
+    .sidebar-enterprise .section-label,
+    .sidebar-enterprise .cta-text,
+    .sidebar-enterprise .notification-text {
+      display: none;
+    }
+
+    .sidebar-enterprise .nav-item {
+      justify-content: center;
+      padding: 10px;
+    }
+
+    .sidebar-enterprise .cta-button {
+      width: 44px;
+      height: 44px;
+      padding: 0;
+    }
   }
 </style>
 
 <script>
-  // Role-based sidebar visibility
+  // Sidebar Toggle Functionality
   document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.getElementById('mainSidebar');
+    const toggleBtn = document.getElementById('sidebarToggle');
+    const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+
+    // Initialize collapsed state
+    if (isCollapsed && sidebar) {
+      sidebar.classList.add('collapsed');
+    }
+
+    // Toggle sidebar
+    if (toggleBtn && sidebar) {
+      toggleBtn.addEventListener('click', function() {
+        sidebar.classList.toggle('collapsed');
+        const isNowCollapsed = sidebar.classList.contains('collapsed');
+        localStorage.setItem('sidebarCollapsed', isNowCollapsed);
+        
+        // Initialize tooltips when expanded
+        if (!isNowCollapsed) {
+          initializeTooltips();
+        }
+      });
+    }
+
+    // Remember collapse state for submenus
+    const collapseElements = document.querySelectorAll('[data-bs-toggle="collapse"]');
+    collapseElements.forEach(element => {
+      const target = element.getAttribute('data-bs-target');
+      const isExpanded = localStorage.getItem(`collapse_${target}`) === 'true';
+      
+      if (isExpanded && target) {
+        const collapse = new bootstrap.Collapse(document.querySelector(target), {
+          toggle: false
+        });
+        collapse.show();
+      }
+
+      element.addEventListener('click', function() {
+        const target = this.getAttribute('data-bs-target');
+        const collapseEl = document.querySelector(target);
+        if (collapseEl) {
+          const collapse = bootstrap.Collapse.getInstance(collapseEl);
+          if (collapse) {
+            const isExpanded = collapseEl.classList.contains('show');
+            localStorage.setItem(`collapse_${target}`, isExpanded);
+          }
+        }
+      });
+    });
+
+    // Initialize Bootstrap tooltips
+    function initializeTooltips() {
+      const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+      });
+    }
+
+    // Initialize tooltips on load (only if sidebar is collapsed)
+    if (sidebar && sidebar.classList.contains('collapsed')) {
+      initializeTooltips();
+    }
+
+    // Role-based sidebar visibility (preserve existing logic)
     const userRole = localStorage.getItem('userRole') || '{{user.role}}' || 'admin';
-    console.log('[Sidebar] User role:', userRole);
-    
-    // Define which sections each role can access
     const rolePermissions = {
       'admin': { all: true },
       'SUPER_ADMIN': { all: true },
       'shop_owner': { all: true },
       'HR_MANAGER': {
-        dashboard: true,
-        business: false,
-        employees: true,
-        leaves: true,
-        attendance: true,
-        payroll: true,
-        payrollSetup: false,      // HR can view payroll but not setup
-        payrollStructures: false, // HR cannot manage salary structures
-        documents: true,
-        templates: false,         // HR cannot manage templates
-        departments: false,
-        designations: false,
-        businessAddresses: false,
-        team: false,
-        billing: false,
-        profile: true,
+        dashboard: true, business: false, employees: true, leaves: true, attendance: true,
+        payroll: true, payrollSetup: false, payrollStructures: false, documents: true,
+        templates: false, departments: false, designations: false, businessAddresses: false,
+        team: false, billing: false, profile: true,
       },
       'HR_EXECUTIVE': {
-        dashboard: true,
-        business: false,
-        employees: true,
-        leaves: true,
-        attendance: true,
-        payroll: true,
-        payrollSetup: false,
-        payrollStructures: false,
-        documents: true,
-        templates: false,
-        departments: false,
-        designations: false,
-        businessAddresses: false,
-        team: false,
-        billing: false,
-        profile: true,
+        dashboard: true, business: false, employees: true, leaves: true, attendance: true,
+        payroll: true, payrollSetup: false, payrollStructures: false, documents: true,
+        templates: false, departments: false, designations: false, businessAddresses: false,
+        team: false, billing: false, profile: true,
       },
       'FINANCE': {
-        dashboard: true,
-        business: false,
-        employees: false,
-        leaves: false,
-        attendance: false,
-        payroll: true,
-        payrollSetup: false,      // Finance can review but not setup
-        payrollStructures: false,
-        documents: false,
-        templates: false,
-        departments: false,
-        designations: false,
-        businessAddresses: false,
-        team: false,
-        billing: true,
-        profile: true,
+        dashboard: true, business: false, employees: false, leaves: false, attendance: false,
+        payroll: true, payrollSetup: false, payrollStructures: false, documents: false,
+        templates: false, departments: false, designations: false, businessAddresses: false,
+        team: false, billing: true, profile: true,
       },
       'MANAGER': {
-        dashboard: true,
-        business: false,
-        employees: false,
-        leaves: true,
-        attendance: true,
-        payroll: false,
-        documents: false,
-        templates: false,
-        departments: false,
-        designations: false,
-        businessAddresses: false,
-        team: false,
-        billing: false,
-        profile: true,
+        dashboard: true, business: false, employees: false, leaves: true, attendance: true,
+        payroll: false, documents: false, templates: false, departments: false,
+        designations: false, businessAddresses: false, team: false, billing: false, profile: true,
       },
     };
     
@@ -356,113 +852,54 @@
       }
     }
     
-    // Apply visibility based on role (if not full admin)
+    // Apply visibility based on role
     if (!isFullAdmin) {
-      // Helper function to hide element
       const hideElement = (selector) => {
         const el = document.querySelector(selector);
         if (el) el.classList.add('d-none');
       };
       
-      // Helper to hide element and its parent container if needed
       const hideLink = (href) => {
         const link = document.querySelector(`a[href="${href}"]`);
         if (link) {
           link.classList.add('d-none');
-          // Also hide parent sidebar-item if it exists
-          const parent = link.closest('.sidebar-item');
+          const parent = link.closest('.nav-group');
           if (parent) parent.classList.add('d-none');
         }
       };
       
-      // Hide My Businesses
-      if (!permissions.business) {
-        hideLink('/business');
-      }
-      
-      // Hide Employee Management
-      if (!permissions.employees) {
-        hideLink('/employees');
-      }
-      
-      // Hide Leave Management section
+      if (!permissions.business) hideLink('/business');
+      if (!permissions.employees) hideLink('/employees');
       if (!permissions.leaves) {
-        // Hide the submenu toggle and the nested submenu
-        const leaveToggle = document.querySelector('[onclick="toggleMenu(\'leave-submenu\')"]');
-        if (leaveToggle) leaveToggle.classList.add('d-none');
-        const leaveSubmenu = document.getElementById('leave-submenu');
-        if (leaveSubmenu) leaveSubmenu.classList.add('d-none');
+        hideElement('[data-bs-target="#leaveSubmenu"]');
+        hideElement('#leaveSubmenu');
       }
-      
-      // Hide Attendance section
-      if (!permissions.attendance) {
-        const attToggle = document.querySelector('[onclick="toggleMenu(\'attendance-submenu\')"]');
-        if (attToggle) attToggle.classList.add('d-none');
-        const attSubmenu = document.getElementById('attendance-submenu');
-        if (attSubmenu) attSubmenu.classList.add('d-none');
-      }
-      
-      // Hide Payroll section entirely
+      if (!permissions.attendance) hideLink('/admin/attendance');
       if (!permissions.payroll) {
-        const payrollToggle = document.querySelector('[onclick="toggleMenu(\'payroll-submenu\')"]');
-        if (payrollToggle) payrollToggle.classList.add('d-none');
-        const payrollSubmenu = document.getElementById('payroll-submenu');
-        if (payrollSubmenu) payrollSubmenu.classList.add('d-none');
+        hideElement('[data-bs-target="#payrollOperationsSubmenu"]');
+        hideElement('#payrollOperationsSubmenu');
+        hideElement('[data-bs-target="#payrollStructureSubmenu"]');
+        hideElement('#payrollStructureSubmenu');
+        hideElement('[data-bs-target="#payrollComplianceSubmenu"]');
+        hideElement('#payrollComplianceSubmenu');
       } else {
-        // Payroll is allowed, but hide setup/structures if not permitted
-        if (!permissions.payrollSetup) {
-          hideLink('/admin/payroll/setup');
-        }
-        if (!permissions.payrollStructures) {
-          hideLink('/admin/payroll/structures');
-        }
+        if (!permissions.payrollSetup) hideLink('/admin/payroll/setup');
+        if (!permissions.payrollStructures) hideLink('/admin/payroll/structures');
       }
-      
-      // Hide Generate Documents
-      if (!permissions.documents) {
-        hideLink('/documents');
-      }
-      
-      // Hide Document Templates
+      if (!permissions.documents) hideLink('/documents');
       if (!permissions.templates) {
         hideLink('/document-types');
-      }
-      
-      // Hide Email Templates
-      if (!permissions.templates) {
         hideLink('/email-templates');
       }
-      
-      // Hide Manage Departments
-      if (!permissions.departments) {
-        hideLink('/departments');
-      }
-      
-      // Hide Manage Designations
-      if (!permissions.designations) {
-        hideLink('/designations');
-      }
-      
-      // Hide Business Addresses
-      if (!permissions.businessAddresses) {
-        hideLink('/business-addresses');
-      }
-      
-      // Hide Team & Roles
-      if (!permissions.team) {
-        hideLink('/admin/team');
-      }
-      
-      // Hide Billing
-      if (!permissions.billing) {
-        hideLink('/billing');
-      }
-      
-      console.log('[Sidebar] Applied role restrictions for:', userRole);
+      if (!permissions.departments) hideLink('/departments');
+      if (!permissions.designations) hideLink('/designations');
+      if (!permissions.businessAddresses) hideLink('/business-addresses');
+      if (!permissions.team) hideLink('/admin/team');
+      if (!permissions.billing) hideLink('/billing');
     }
   });
   
-  // Load notification count
+  // Notification functions (preserve existing)
   async function loadNotificationCount() {
     try {
       const response = await apiCall('/notifications/count');
@@ -485,7 +922,6 @@
     }
   }
   
-  // Show notifications modal
   async function showNotifications() {
     const modal = new bootstrap.Modal(document.getElementById('notificationModal'));
     modal.show();
@@ -520,7 +956,6 @@
     }
   }
   
-  // Handle notification click
   async function handleNotificationClick(id, link) {
     try {
       await apiCall(`/notifications/${id}/read`, { method: 'PUT' });
@@ -533,18 +968,16 @@
     }
   }
   
-  // Mark all notifications as read
   async function markAllNotificationsRead() {
     try {
       await apiCall('/notifications/read-all', { method: 'PUT' });
       loadNotificationCount();
-      showNotifications(); // Refresh list
+      showNotifications();
     } catch (e) {
       console.error('Error marking all as read:', e);
     }
   }
   
-  // Format notification time
   function formatNotificationTime(dateStr) {
     const date = new Date(dateStr);
     const now = new Date();
@@ -560,7 +993,6 @@
     return date.toLocaleDateString();
   }
   
-  // Escape HTML helper
   function escapeHtml(text) {
     if (!text) return '';
     const div = document.createElement('div');

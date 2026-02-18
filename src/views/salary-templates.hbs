@@ -1,0 +1,728 @@
+{{!-- Salary Template Management Page --}}
+<div class="container-fluid">
+  <div class="row">
+    {{!-- Sidebar --}}
+    <div class="col-md-3 col-lg-2 px-0">
+      {{> sidebar}}
+    </div>
+
+    {{!-- Main content --}}
+    <div class="col-md-9 col-lg-10">
+      <div class="main-content p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h2 class="mb-0">
+              <i class="fas fa-layer-group text-primary me-2"></i>Salary Templates
+            </h2>
+            <small class="text-muted">Manage salary structure templates for different employee types</small>
+          </div>
+          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTemplateModal">
+            <i class="fas fa-plus me-2"></i>Create Template
+          </button>
+        </div>
+
+        {{!-- Templates Grid --}}
+        <div class="row" id="templatesContainer">
+          <div class="col-12 text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{!-- Create/Edit Template Modal --}}
+<div class="modal fade" id="createTemplateModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">
+          <i class="fas fa-layer-group me-2"></i><span id="templateModalTitle">Create Salary Template</span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="templateForm">
+        <div class="modal-body">
+          <input type="hidden" id="templateId" name="id" />
+
+          {{!-- Template Basic Info --}}
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label">
+                <i class="fas fa-tag text-primary me-1"></i>Template Name <span class="text-danger">*</span>
+              </label>
+              <input type="text" class="form-control" id="templateName" name="name" required />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">
+                <i class="fas fa-calendar text-info me-1"></i>Effective From <span class="text-danger">*</span>
+              </label>
+              <input type="date" class="form-control" id="templateEffectiveFrom" name="effectiveFrom" required />
+            </div>
+            <div class="col-12">
+              <label class="form-label">
+                <i class="fas fa-align-left text-secondary me-1"></i>Description
+              </label>
+              <textarea class="form-control" id="templateDescription" name="description" rows="2"></textarea>
+            </div>
+            <div class="col-md-4">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="templateAutoBalance" name="autoBalanceSpecialAllowance" checked />
+                <label class="form-check-label" for="templateAutoBalance">
+                  <i class="fas fa-balance-scale text-success me-1"></i>Auto-balance Special Allowance
+                </label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">
+                <i class="fas fa-filter text-warning me-1"></i>Applicable to Grade
+              </label>
+              <input type="text" class="form-control" id="templateGrade" name="applicableToGrade" placeholder="Optional" />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">
+                <i class="fas fa-building text-info me-1"></i>Applicable to Department
+              </label>
+              <input type="text" class="form-control" id="templateDepartment" name="applicableToDepartment" placeholder="Optional" />
+            </div>
+          </div>
+
+          <hr>
+
+          {{!-- Components Section --}}
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0">
+              <i class="fas fa-puzzle-piece text-primary me-2"></i>Salary Components
+            </h6>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="addComponentBtn">
+              <i class="fas fa-plus me-1"></i>Add Component
+            </button>
+          </div>
+
+          <div id="componentsContainer" class="mb-3">
+            {{!-- Components will be added here dynamically --}}
+          </div>
+
+          {{!-- Compliance Warnings --}}
+          <div id="templateWarnings" class="alert alert-warning" style="display: none;">
+            <h6><i class="fas fa-exclamation-triangle me-2"></i>Compliance Warnings</h6>
+            <ul id="warningsList" class="mb-0"></ul>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-info" id="validateTemplateBtn">
+            <i class="fas fa-check-circle me-2"></i>Validate Template
+          </button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-2"></i>Save Template
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{{!-- Component Row Template (Hidden) --}}
+<template id="componentRowTemplate">
+  <div class="component-row card mb-3" data-component-index="">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start mb-3">
+        <h6 class="mb-0">
+          <i class="fas fa-cog text-primary me-2"></i>Component <span class="component-number"></span>
+        </h6>
+        <button type="button" class="btn btn-sm btn-outline-danger remove-component-btn">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label">Component Name <span class="text-danger">*</span></label>
+          <input type="text" class="form-control component-name" required placeholder="e.g., Basic Salary" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Component Code <span class="text-danger">*</span></label>
+          <input type="text" class="form-control component-code" required placeholder="BASIC" style="text-transform: uppercase;" />
+          <small class="text-muted">Unique uppercase code</small>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Type <span class="text-danger">*</span></label>
+          <select class="form-select component-type" required>
+            <option value="earning">Earning</option>
+            <option value="deduction">Deduction</option>
+            <option value="employer_contribution">Employer Contribution</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Calculation Type <span class="text-danger">*</span></label>
+          <select class="form-select calculation-type" required>
+            <option value="fixed">Fixed Amount</option>
+            <option value="percent_of_ctc">% of CTC</option>
+            <option value="percent_of_basic">% of Basic</option>
+            <option value="percent_of_gross">% of Gross</option>
+            <option value="formula">Formula</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Value</label>
+          <input type="number" step="0.01" class="form-control component-value" placeholder="0.00" />
+          <small class="text-muted">Amount or percentage</small>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Formula Expression</label>
+          <input type="text" class="form-control formula-expression" placeholder="e.g., MIN(0.12*BASIC, 1800)" />
+          <small class="text-muted">Use component codes (BASIC, HRA, GROSS, CTC)</small>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Display Order</label>
+          <input type="number" class="form-control display-order" value="0" />
+        </div>
+        <div class="col-md-12">
+          <div class="row">
+            <div class="col-md-2">
+              <div class="form-check">
+                <input class="form-check-input is-taxable" type="checkbox" checked />
+                <label class="form-check-label">Taxable</label>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="form-check">
+                <input class="form-check-input affects-pf" type="checkbox" />
+                <label class="form-check-label">Affects PF</label>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="form-check">
+                <input class="form-check-input affects-esi" type="checkbox" />
+                <label class="form-check-label">Affects ESI</label>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="form-check">
+                <input class="form-check-input is-statutory" type="checkbox" />
+                <label class="form-check-label">Statutory</label>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="form-check">
+                <input class="form-check-input is-locked" type="checkbox" />
+                <label class="form-check-label">Locked</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+{{!-- Template Preview Modal --}}
+<div class="modal fade" id="previewTemplateModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-info text-white">
+        <h5 class="modal-title">
+          <i class="fas fa-eye me-2"></i>Template Preview
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Enter CTC (Annual ₹) to preview</label>
+          <input type="number" class="form-control" id="previewCtcInput" value="600000" />
+        </div>
+        <div id="previewResults" style="display: none;">
+          <div class="row">
+            <div class="col-md-6">
+              <h6 class="text-success">Earnings:</h6>
+              <ul class="list-unstyled" id="previewEarnings"></ul>
+            </div>
+            <div class="col-md-6">
+              <h6 class="text-danger">Deductions:</h6>
+              <ul class="list-unstyled" id="previewDeductions"></ul>
+            </div>
+          </div>
+          <hr>
+          <div class="text-center">
+            <h5 class="text-primary">
+              Net Take-Home: <span id="previewNet" class="text-success">₹0.00</span>
+            </h5>
+            <p class="text-muted mb-0">Total Employer Cost: <span id="previewEmployerCost" class="fw-bold">₹0.00</span></p>
+          </div>
+          <div id="previewCompliance" class="mt-3"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" id="calculatePreviewBtn">
+          <i class="fas fa-calculator me-2"></i>Calculate
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .template-card {
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+  .template-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  }
+  .component-row {
+    border-left: 3px solid #6366f1;
+  }
+  .component-row.earning {
+    border-left-color: #22c55e;
+  }
+  .component-row.deduction {
+    border-left-color: #ef4444;
+  }
+  .component-row.employer_contribution {
+    border-left-color: #8b5cf6;
+  }
+</style>
+
+<script>
+  let componentIndex = 0;
+  let currentTemplateId = null;
+  let templates = [];
+
+  // API call helper
+  async function apiCall(endpoint, options = {}) {
+    const defaultOptions = {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    };
+
+    const config = { ...defaultOptions, ...options };
+    if (config.body && typeof config.body === 'object') {
+      config.body = JSON.stringify(config.body);
+    }
+
+    const response = await fetch(`/api/v1${endpoint}`, config);
+    return await response.json();
+  }
+
+  // Load templates on page load
+  document.addEventListener('DOMContentLoaded', function() {
+    loadTemplates();
+    setupEventListeners();
+  });
+
+  // Load all templates
+  async function loadTemplates() {
+    try {
+      const response = await apiCall('/payroll/templates');
+      templates = response.data || [];
+      renderTemplates(templates);
+    } catch (error) {
+      console.error('Error loading templates:', error);
+      showAlert('Error loading templates', 'danger');
+    }
+  }
+
+  // Render templates grid
+  function renderTemplates(templatesList) {
+    const container = document.getElementById('templatesContainer');
+    
+    if (!templatesList || templatesList.length === 0) {
+      container.innerHTML = `
+        <div class="col-12 text-center py-5">
+          <i class="fas fa-layer-group fa-3x text-muted mb-3"></i>
+          <p class="text-muted">No templates found. Create your first template!</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = templatesList.map(template => `
+      <div class="col-md-6 col-lg-4 mb-4">
+        <div class="template-card card h-100" data-template-id="${template.id}">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <h5 class="card-title mb-0">${escapeHtml(template.name)}</h5>
+              <span class="badge bg-primary">v${template.version}</span>
+            </div>
+            <p class="text-muted small mb-3">${escapeHtml(template.description || 'No description')}</p>
+            <div class="mb-3">
+              <small class="text-muted d-block">
+                <i class="fas fa-calendar me-1"></i>Effective: ${template.effectiveFrom}
+                ${template.effectiveTo ? ` - ${template.effectiveTo}` : ' (Active)'}
+              </small>
+              <small class="text-muted d-block mt-1">
+                <i class="fas fa-puzzle-piece me-1"></i>${template.components?.length || 0} components
+              </small>
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-sm btn-outline-primary preview-template-btn" data-template-id="${template.id}">
+                <i class="fas fa-eye me-1"></i>Preview
+              </button>
+              <button class="btn btn-sm btn-outline-info edit-template-btn" data-template-id="${template.id}">
+                <i class="fas fa-edit me-1"></i>Edit
+              </button>
+              <button class="btn btn-sm btn-outline-success use-template-btn" data-template-id="${template.id}">
+                <i class="fas fa-check me-1"></i>Use
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    // Attach event listeners
+    attachTemplateEventListeners();
+  }
+
+  // Setup event listeners
+  function setupEventListeners() {
+    // Add component button
+    document.getElementById('addComponentBtn')?.addEventListener('click', addComponentRow);
+
+    // Remove component buttons (delegated)
+    document.getElementById('componentsContainer')?.addEventListener('click', function(e) {
+      if (e.target.closest('.remove-component-btn')) {
+        e.target.closest('.component-row').remove();
+        updateComponentNumbers();
+      }
+    });
+
+    // Template form submit
+    document.getElementById('templateForm')?.addEventListener('submit', saveTemplate);
+
+    // Validate template button
+    document.getElementById('validateTemplateBtn')?.addEventListener('click', validateTemplate);
+
+    // Preview calculate button
+    document.getElementById('calculatePreviewBtn')?.addEventListener('click', calculatePreview);
+
+    // Calculation type change
+    document.getElementById('componentsContainer')?.addEventListener('change', function(e) {
+      if (e.target.classList.contains('calculation-type')) {
+        const row = e.target.closest('.component-row');
+        const valueInput = row.querySelector('.component-value');
+        const formulaInput = row.querySelector('.formula-expression');
+        
+        if (e.target.value === 'formula') {
+          valueInput.disabled = true;
+          formulaInput.required = true;
+        } else {
+          valueInput.disabled = false;
+          formulaInput.required = false;
+        }
+      }
+    });
+  }
+
+  // Attach template card event listeners
+  function attachTemplateEventListeners() {
+    document.querySelectorAll('.preview-template-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const templateId = this.getAttribute('data-template-id');
+        previewTemplate(templateId);
+      });
+    });
+
+    document.querySelectorAll('.edit-template-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const templateId = this.getAttribute('data-template-id');
+        editTemplate(templateId);
+      });
+    });
+
+    document.querySelectorAll('.use-template-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const templateId = this.getAttribute('data-template-id');
+        useTemplate(templateId);
+      });
+    });
+  }
+
+  // Add component row
+  function addComponentRow() {
+    const container = document.getElementById('componentsContainer');
+    const template = document.getElementById('componentRowTemplate');
+    const clone = template.content.cloneNode(true);
+    
+    const row = clone.querySelector('.component-row');
+    row.setAttribute('data-component-index', componentIndex++);
+    row.querySelector('.component-number').textContent = componentIndex;
+    
+    container.appendChild(clone);
+    updateComponentNumbers();
+  }
+
+  // Update component numbers
+  function updateComponentNumbers() {
+    document.querySelectorAll('.component-row').forEach((row, index) => {
+      row.querySelector('.component-number').textContent = index + 1;
+    });
+  }
+
+  // Save template
+  async function saveTemplate(e) {
+    e.preventDefault();
+    
+    const formData = {
+      name: document.getElementById('templateName').value,
+      description: document.getElementById('templateDescription').value,
+      effectiveFrom: document.getElementById('templateEffectiveFrom').value,
+      autoBalanceSpecialAllowance: document.getElementById('templateAutoBalance').checked,
+      applicableToGrade: document.getElementById('templateGrade').value || null,
+      applicableToDepartment: document.getElementById('templateDepartment').value || null,
+      components: collectComponents(),
+    };
+
+    if (currentTemplateId) {
+      formData.id = currentTemplateId;
+    }
+
+    try {
+      const response = await apiCall('/payroll/templates', {
+        method: 'POST',
+        body: JSON.stringify(formData),
+      });
+
+      if (response.success) {
+        showAlert('Template saved successfully!', 'success');
+        bootstrap.Modal.getInstance(document.getElementById('createTemplateModal')).hide();
+        loadTemplates();
+        resetTemplateForm();
+      } else {
+        showAlert(response.error || 'Error saving template', 'danger');
+      }
+    } catch (error) {
+      console.error('Error saving template:', error);
+      showAlert('Error saving template', 'danger');
+    }
+  }
+
+  // Collect components from form
+  function collectComponents() {
+    const components = [];
+    document.querySelectorAll('.component-row').forEach(row => {
+      const component = {
+        componentName: row.querySelector('.component-name').value,
+        componentCode: row.querySelector('.component-code').value.toUpperCase(),
+        componentType: row.querySelector('.component-type').value,
+        calculationType: row.querySelector('.calculation-type').value,
+        value: parseFloat(row.querySelector('.component-value').value) || null,
+        formulaExpression: row.querySelector('.formula-expression').value || null,
+        isTaxable: row.querySelector('.is-taxable').checked,
+        affectsPf: row.querySelector('.affects-pf').checked,
+        affectsEsi: row.querySelector('.affects-esi').checked,
+        isStatutory: row.querySelector('.is-statutory').checked,
+        isLocked: row.querySelector('.is-locked').checked,
+        displayOrder: parseInt(row.querySelector('.display-order').value) || 0,
+      };
+      components.push(component);
+    });
+    return components;
+  }
+
+  // Validate template
+  async function validateTemplate() {
+    const components = collectComponents();
+    
+    // Basic validation
+    if (components.length === 0) {
+      showAlert('Please add at least one component', 'warning');
+      return;
+    }
+
+    // Check for duplicate codes
+    const codes = components.map(c => c.componentCode);
+    const duplicates = codes.filter((code, index) => codes.indexOf(code) !== index);
+    if (duplicates.length > 0) {
+      showAlert(`Duplicate component codes: ${[...new Set(duplicates)].join(', ')}`, 'warning');
+      return;
+    }
+
+    showAlert('Template validation passed!', 'success');
+  }
+
+  // Preview template
+  async function previewTemplate(templateId) {
+    const modal = new bootstrap.Modal(document.getElementById('previewTemplateModal'));
+    modal.show();
+    
+    // Store template ID for calculation
+    document.getElementById('previewTemplateModal').setAttribute('data-template-id', templateId);
+  }
+
+  // Calculate preview
+  async function calculatePreview() {
+    const templateId = document.getElementById('previewTemplateModal').getAttribute('data-template-id');
+    const ctc = parseFloat(document.getElementById('previewCtcInput').value);
+
+    if (!ctc || ctc <= 0) {
+      showAlert('Please enter a valid CTC', 'warning');
+      return;
+    }
+
+    try {
+      const response = await apiCall('/payroll/templates/calculate', {
+        method: 'POST',
+        body: JSON.stringify({
+          templateId: parseInt(templateId),
+          ctc: ctc,
+          employeeState: 'Karnataka',
+        }),
+      });
+
+      if (response.success) {
+        displayPreviewResults(response.data);
+      } else {
+        showAlert(response.error || 'Error calculating preview', 'danger');
+      }
+    } catch (error) {
+      console.error('Error calculating preview:', error);
+      showAlert('Error calculating preview', 'danger');
+    }
+  }
+
+  // Display preview results
+  function displayPreviewResults(data) {
+    const resultsDiv = document.getElementById('previewResults');
+    resultsDiv.style.display = 'block';
+
+    // Earnings
+    const earningsList = document.getElementById('previewEarnings');
+    const earnings = Object.entries(data.components)
+      .filter(([code, value]) => {
+        // This is simplified - in real implementation, check component type
+        return !['PF_EMP', 'ESI_EMP', 'PROFESSIONAL_TAX', 'NET', 'GROSS'].includes(code);
+      })
+      .map(([code, value]) => `<li><strong>${code}:</strong> ₹${value.toLocaleString('en-IN', {maximumFractionDigits: 2})}</li>`)
+      .join('');
+    earningsList.innerHTML = earnings;
+
+    // Deductions
+    const deductionsList = document.getElementById('previewDeductions');
+    const deductions = [
+      data.components.PF_EMP,
+      data.components.ESI_EMP,
+      data.components.PROFESSIONAL_TAX,
+    ].filter(v => v > 0)
+      .map((value, idx) => {
+        const codes = ['PF_EMP', 'ESI_EMP', 'PROFESSIONAL_TAX'];
+        return `<li><strong>${codes[idx]}:</strong> ₹${value.toLocaleString('en-IN', {maximumFractionDigits: 2})}</li>`;
+      })
+      .join('');
+    deductionsList.innerHTML = deductions || '<li class="text-muted">No deductions</li>';
+
+    // Net salary
+    document.getElementById('previewNet').textContent = 
+      `₹${data.net.toLocaleString('en-IN', {maximumFractionDigits: 2})}`;
+
+    // Employer cost
+    document.getElementById('previewEmployerCost').textContent = 
+      `₹${data.totalEmployerCost.toLocaleString('en-IN', {maximumFractionDigits: 2})}`;
+
+    // Compliance warnings
+    const complianceDiv = document.getElementById('previewCompliance');
+    if (data.compliance && data.compliance.warnings && data.compliance.warnings.length > 0) {
+      const warningsHtml = data.compliance.warnings.map(w => `
+        <div class="alert alert-${w.severity === 'error' ? 'danger' : w.severity === 'warning' ? 'warning' : 'info'} alert-sm">
+          <i class="fas fa-exclamation-triangle me-2"></i>${escapeHtml(w.message)}
+        </div>
+      `).join('');
+      complianceDiv.innerHTML = warningsHtml;
+    } else {
+      complianceDiv.innerHTML = '<div class="alert alert-success alert-sm"><i class="fas fa-check-circle me-2"></i>No compliance issues</div>';
+    }
+  }
+
+  // Edit template
+  async function editTemplate(templateId) {
+    const template = templates.find(t => t.id === parseInt(templateId));
+    if (!template) {
+      showAlert('Template not found', 'danger');
+      return;
+    }
+
+    currentTemplateId = template.id;
+    document.getElementById('templateModalTitle').textContent = 'Edit Template';
+    document.getElementById('templateName').value = template.name;
+    document.getElementById('templateDescription').value = template.description || '';
+    document.getElementById('templateEffectiveFrom').value = template.effectiveFrom;
+    document.getElementById('templateAutoBalance').checked = template.autoBalanceSpecialAllowance;
+    document.getElementById('templateGrade').value = template.applicableToGrade || '';
+    document.getElementById('templateDepartment').value = template.applicableToDepartment || '';
+
+    // Clear existing components
+    document.getElementById('componentsContainer').innerHTML = '';
+
+    // Add components
+    if (template.components && template.components.length > 0) {
+      template.components.forEach(comp => {
+        addComponentRow();
+        const lastRow = document.querySelector('.component-row:last-child');
+        lastRow.querySelector('.component-name').value = comp.componentName;
+        lastRow.querySelector('.component-code').value = comp.componentCode;
+        lastRow.querySelector('.component-type').value = comp.componentType;
+        lastRow.querySelector('.calculation-type').value = comp.calculationType;
+        lastRow.querySelector('.component-value').value = comp.value || '';
+        lastRow.querySelector('.formula-expression').value = comp.formulaExpression || '';
+        lastRow.querySelector('.display-order').value = comp.displayOrder || 0;
+        lastRow.querySelector('.is-taxable').checked = comp.isTaxable;
+        lastRow.querySelector('.affects-pf').checked = comp.affectsPf;
+        lastRow.querySelector('.affects-esi').checked = comp.affectsEsi;
+        lastRow.querySelector('.is-statutory').checked = comp.isStatutory;
+        lastRow.querySelector('.is-locked').checked = comp.isLocked;
+      });
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById('createTemplateModal'));
+    modal.show();
+  }
+
+  // Use template (opens employee form)
+  function useTemplate(templateId) {
+    // Store in sessionStorage for employee form
+    sessionStorage.setItem('selectedTemplateId', templateId);
+    showAlert('Template selected! Go to Add Employee to use it.', 'success');
+    // Optionally redirect to employees page
+    // window.location.href = '/employees';
+  }
+
+  // Reset template form
+  function resetTemplateForm() {
+    document.getElementById('templateForm').reset();
+    document.getElementById('componentsContainer').innerHTML = '';
+    document.getElementById('templateModalTitle').textContent = 'Create Salary Template';
+    currentTemplateId = null;
+    componentIndex = 0;
+  }
+
+  // Utility functions
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3`;
+    alertDiv.style.zIndex = '9999';
+    alertDiv.innerHTML = `
+      ${escapeHtml(message)}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alertDiv);
+    setTimeout(() => alertDiv.remove(), 5000);
+  }
+
+  // Initialize effective from date to today
+  document.getElementById('templateEffectiveFrom').value = new Date().toISOString().split('T')[0];
+</script>

@@ -23,8 +23,8 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "dev": "cross-env DOTENV_CONFIG_PATH=./property.env nodemon -r dotenv/config --experimental-json-modules src/index.js",
-    "start": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules src/index.js",
+    "dev": "cross-env NODE_ENV=development DOTENV_CONFIG_PATH=./property.env nodemon -r dotenv/config --experimental-json-modules src/index.js",
+    "start": "cross-env NODE_ENV=production DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules src/index.js",
     "reset-db": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules reset-database.js",
     "migrate": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config scripts/run_migrations.js",
     "test:e2e": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config scripts/e2e_subscription_test.js",
@@ -40,6 +40,7 @@
     "cross-env": "^10.1.0",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
+    "expr-eval": "^2.0.2",
     "express-handlebars": "^8.0.3",
     "handlebars": "^4.7.8",
     "html-pdf-node": "^1.0.7",
