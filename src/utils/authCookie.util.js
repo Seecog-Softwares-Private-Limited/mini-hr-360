@@ -1,9 +1,23 @@
 /**
  * Shared cookie options for auth tokens.
  * Express `maxAge` is in milliseconds.
+ *
+ * Cookies with `secure: true` are ignored by browsers on plain HTTP.
+ * Derive from APP_URL so http://IP deployments still work.
  */
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
+function isSecureCookieContext() {
+  const appUrl = String(process.env.APP_URL || '').toLowerCase();
+  if (appUrl.startsWith('https://')) return true;
+  if (appUrl.startsWith('http://')) return false;
+  return process.env.NODE_ENV === 'production';
+}
+
+function cookieSameSite() {
+  return isSecureCookieContext() ? 'none' : 'lax';
+}
 
 export function cookieMaxAgeMs(refreshExpUnix) {
   if (refreshExpUnix) {
@@ -16,8 +30,8 @@ export function cookieMaxAgeMs(refreshExpUnix) {
 export function buildAuthCookieOptions(refreshExpUnix) {
   return {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    secure: isSecureCookieContext(),
+    sameSite: cookieSameSite(),
     maxAge: cookieMaxAgeMs(refreshExpUnix),
     path: '/',
   };
@@ -26,8 +40,8 @@ export function buildAuthCookieOptions(refreshExpUnix) {
 export function buildClearAuthCookieOptions() {
   return {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    secure: isSecureCookieContext(),
+    sameSite: cookieSameSite(),
     path: '/',
     expires: new Date(0),
     maxAge: 0,
