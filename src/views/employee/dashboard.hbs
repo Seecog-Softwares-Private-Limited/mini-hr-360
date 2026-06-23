@@ -6,97 +6,181 @@
             <!-- Hero -->
             <div class="emp-hero">
                 <div class="row align-items-center position-relative" style="z-index:1;">
-                    <div class="col-md-8">
-                        <div class="emp-hero-greeting">{{overview.greeting}} {{employee.firstName}} 👋</div>
+                    <div class="col-lg-8">
+                        <div class="emp-hero-greeting">{{overview.greeting}}, {{employee.firstName}} 👋</div>
                         <p class="emp-hero-sub mb-0">
-                            You worked <strong>{{overview.workedDaysThisMonth}}</strong> days this month
-                            {{#if overview.attendanceRate}} · <strong>{{overview.attendanceRate}}%</strong> attendance{{/if}}
+                            Your home for attendance, leave, pay, and daily tasks.
+                            {{#if business.name}}<span class="opacity-75">· {{business.name}}</span>{{/if}}
                         </p>
-                        <div class="emp-hero-stats">
-                            <div class="emp-hero-stat">
-                                <i class="fa-solid fa-money-bill-wave me-1"></i>
-                                Salary in <strong>{{overview.salaryInDays}}</strong> day{{#unless (eq overview.salaryInDays 1)}}s{{/unless}}
-                            </div>
-                            {{#if employee.shiftName}}
-                            <div class="emp-hero-stat">
-                                <i class="fa-solid fa-clock me-1"></i>
-                                {{employee.shiftName}} · {{employee.shiftStartTime}}–{{employee.shiftEndTime}}
-                            </div>
-                            {{/if}}
-                        </div>
                     </div>
-                    <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                        <a href="/employee/attendance/today" class="btn btn-light btn-sm fw-bold me-2">
-                            <i class="fa-solid fa-fingerprint me-1"></i> Clock In/Out
-                        </a>
-                        <a href="/employee/leaves/apply" class="btn btn-outline-light btn-sm fw-bold">
-                            <i class="fa-solid fa-plus me-1"></i> Apply Leave
-                        </a>
+                    <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+                        <span class="emp-hero-date">
+                            <i class="fa-solid fa-calendar-day me-1"></i>
+                            <span id="empHomeDate">{{overview.today}}</span>
+                        </span>
                     </div>
                 </div>
             </div>
 
-            <!-- KPI Cards -->
-            <div class="emp-kpi-grid">
-                <a href="/employee/attendance/calendar" class="emp-kpi-card">
-                    <div class="emp-kpi-icon" style="background: linear-gradient(135deg, #f97316, #ea580c);">
-                        <i class="fa-solid fa-fire"></i>
-                    </div>
-                    <div class="emp-kpi-value" data-kpi="streak">{{overview.attendanceStreak}}</div>
-                    <div class="emp-kpi-label">Attendance Streak</div>
-                    <div class="emp-kpi-hint">Consecutive present days</div>
+            <!-- Quick Actions -->
+            <div class="emp-quick-actions" role="toolbar" aria-label="Quick actions">
+                <a href="/employee/attendance/today" class="emp-quick-action emp-quick-action-primary">
+                    <i class="fa-solid fa-fingerprint"></i>
+                    <span>Clock In/Out</span>
                 </a>
-
-                <a href="/employee/payroll/payslips" class="emp-kpi-card">
-                    <div class="emp-kpi-icon" style="background: linear-gradient(135deg, #22c55e, #16a34a);">
-                        <i class="fa-solid fa-indian-rupee-sign"></i>
-                    </div>
-                    <div class="emp-kpi-value" data-kpi="salaryDays">{{overview.salaryInDays}}d</div>
-                    <div class="emp-kpi-label">Upcoming Salary</div>
-                    <div class="emp-kpi-hint">
-                        {{#if overview.estimatedMonthlySalary}}~₹{{overview.estimatedMonthlySalary}} · {{/if}}Pay day {{overview.payDay}}
-                    </div>
+                <a href="/employee/leaves/apply" class="emp-quick-action">
+                    <i class="fa-solid fa-calendar-plus"></i>
+                    <span>Apply Leave</span>
                 </a>
-
-                <a href="/employee/leaves" class="emp-kpi-card">
-                    <div class="emp-kpi-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
-                        <i class="fa-solid fa-umbrella-beach"></i>
-                    </div>
-                    <div class="emp-kpi-value" data-kpi="leaveBalance">{{overview.remainingLeave}}</div>
-                    <div class="emp-kpi-label">Remaining Leave</div>
-                    <div class="emp-kpi-hint">Days available across types</div>
+                <a href="/employee/payroll/payslips" class="emp-quick-action">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                    <span>Payslips</span>
                 </a>
-
-                <a href="/employee/leaves?status=PENDING" class="emp-kpi-card">
-                    <div class="emp-kpi-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
-                        <i class="fa-solid fa-hourglass-half"></i>
-                    </div>
-                    <div class="emp-kpi-value" data-kpi="pendingApprovals">{{overview.pendingApprovals}}</div>
-                    <div class="emp-kpi-label">Pending Approvals</div>
-                    <div class="emp-kpi-hint">Leaves & regularizations</div>
+                <a href="/employee/attendance/regularization_form" class="emp-quick-action">
+                    <i class="fa-solid fa-pen-ruler"></i>
+                    <span>Regularize</span>
                 </a>
-
-                <a href="/employee/work/tasks" class="emp-kpi-card">
-                    <div class="emp-kpi-icon" style="background: linear-gradient(135deg, #0ea5e9, #0284c7);">
-                        <i class="fa-solid fa-list-check"></i>
-                    </div>
-                    <div class="emp-kpi-value" data-kpi="tasks">{{overview.tasksSummary.pending}}</div>
-                    <div class="emp-kpi-label">Tasks</div>
-                    <div class="emp-kpi-hint">Coming soon</div>
+                <a href="/employee/payroll/queries" class="emp-quick-action">
+                    <i class="fa-solid fa-circle-question"></i>
+                    <span>Payroll Query</span>
+                </a>
+                <a href="/employee/attendance/calendar" class="emp-quick-action">
+                    <i class="fa-solid fa-calendar"></i>
+                    <span>Calendar</span>
                 </a>
             </div>
 
-            <div class="row g-4">
-                <!-- Announcements -->
-                <div class="col-lg-4">
-                    <div class="emp-card h-100">
-                        <div class="emp-card-header">
-                            <h5 class="emp-card-title">
-                                <i class="fa-solid fa-bullhorn" style="color: var(--emp-primary);"></i>
-                                Announcements
-                            </h5>
+            <!-- Home Widgets -->
+            <div class="emp-home-grid">
+                <!-- Today Attendance -->
+                <article class="emp-home-widget" id="widget-attendance">
+                    <div class="emp-home-widget-header">
+                        <h3><i class="fa-solid fa-fingerprint" style="color:#0ea5e9;"></i> Today Attendance</h3>
+                        <a href="/employee/attendance/today" class="emp-home-view-all">View All <i class="fa-solid fa-arrow-right"></i></a>
+                    </div>
+                    <div class="emp-home-widget-body" id="widget-attendance-body">
+                        <div class="emp-widget-status emp-widget-status-{{overview.todayAttendance.statusClass}}" data-attendance-status>
+                            {{overview.todayAttendance.statusLabel}}
                         </div>
-                        <div class="emp-card-body" id="announcementsFeed">
+                        <div class="emp-widget-metrics">
+                            <div class="emp-widget-metric">
+                                <span class="label">Clock in</span>
+                                <strong data-attendance-in>{{#if overview.todayAttendance.clockIn}}{{overview.todayAttendance.clockIn}}{{else}}—{{/if}}</strong>
+                            </div>
+                            <div class="emp-widget-metric">
+                                <span class="label">Clock out</span>
+                                <strong data-attendance-out>{{#if overview.todayAttendance.clockOut}}{{overview.todayAttendance.clockOut}}{{else}}—{{/if}}</strong>
+                            </div>
+                            <div class="emp-widget-metric">
+                                <span class="label">Worked</span>
+                                <strong data-attendance-worked>{{overview.todayAttendance.workDuration}}</strong>
+                            </div>
+                        </div>
+                        {{#if overview.todayAttendance.shift}}
+                        <div class="emp-widget-hint">
+                            <i class="fa-solid fa-clock me-1"></i>
+                            {{overview.todayAttendance.shift.name}} · {{overview.todayAttendance.shift.startTime}}–{{overview.todayAttendance.shift.endTime}}
+                        </div>
+                        {{/if}}
+                        {{#unless overview.todayAttendance.clockIn}}
+                        <a href="/employee/attendance/today" class="emp-widget-cta">
+                            <i class="fa-solid fa-arrow-right-to-bracket me-1"></i> Clock in now
+                        </a>
+                        {{/unless}}
+                    </div>
+                </article>
+
+                <!-- Leave Balance -->
+                <article class="emp-home-widget" id="widget-leaves">
+                    <div class="emp-home-widget-header">
+                        <h3><i class="fa-solid fa-umbrella-beach" style="color:#8b5cf6;"></i> Leave Balance</h3>
+                        <a href="/employee/leaves" class="emp-home-view-all">View All <i class="fa-solid fa-arrow-right"></i></a>
+                    </div>
+                    <div class="emp-home-widget-body" id="widget-leaves-body">
+                        {{#if overview.leaveBalances.length}}
+                        <div class="emp-leave-total">
+                            <span class="emp-leave-total-value" data-leave-total>{{overview.remainingLeave}}</span>
+                            <span class="emp-leave-total-label">days available</span>
+                        </div>
+                        <div class="emp-leave-breakdown" id="leaveBalanceList">
+                            {{#each overview.leaveBalances}}
+                            <div class="emp-leave-row">
+                                <span class="emp-leave-dot" style="background:{{this.color}};"></span>
+                                <span class="emp-leave-name">{{this.name}}</span>
+                                <strong class="emp-leave-days" data-leave-type="{{this.id}}">{{this.available}}</strong>
+                            </div>
+                            {{/each}}
+                        </div>
+                        {{else}}
+                        <div class="emp-widget-empty">
+                            <i class="fa-solid fa-umbrella-beach"></i>
+                            <p>No leave balances yet</p>
+                            <a href="/employee/leaves" class="btn emp-btn-secondary btn-sm">View leaves</a>
+                        </div>
+                        {{/if}}
+                    </div>
+                </article>
+
+                <!-- Upcoming Salary -->
+                <article class="emp-home-widget" id="widget-salary">
+                    <div class="emp-home-widget-header">
+                        <h3><i class="fa-solid fa-indian-rupee-sign" style="color:#22c55e;"></i> Upcoming Salary</h3>
+                        <a href="/employee/payroll/payslips" class="emp-home-view-all">View All <i class="fa-solid fa-arrow-right"></i></a>
+                    </div>
+                    <div class="emp-home-widget-body">
+                        <div class="emp-salary-countdown">
+                            <span class="emp-salary-days" data-salary-days>{{overview.salaryInDays}}</span>
+                            <span class="emp-salary-days-label">day{{#unless (eq overview.salaryInDays 1)}}s{{/unless}} to payday</span>
+                        </div>
+                        <div class="emp-widget-hint">
+                            Pay day: <strong>{{overview.payDay}}</strong> of each month
+                        </div>
+                        {{#if overview.estimatedMonthlySalary}}
+                        <div class="emp-salary-estimate">
+                            Est. monthly <strong data-salary-estimate>₹{{overview.estimatedMonthlySalary}}</strong>
+                        </div>
+                        {{/if}}
+                        <a href="/employee/payroll/salary-details" class="emp-widget-cta subtle">
+                            View salary details <i class="fa-solid fa-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </article>
+
+                <!-- Tasks -->
+                <article class="emp-home-widget" id="widget-tasks">
+                    <div class="emp-home-widget-header">
+                        <h3><i class="fa-solid fa-list-check" style="color:#3b82f6;"></i> Tasks</h3>
+                        <a href="/employee/work/tasks" class="emp-home-view-all">View All <i class="fa-solid fa-arrow-right"></i></a>
+                    </div>
+                    <div class="emp-home-widget-body" id="widget-tasks-body">
+                        {{#if overview.tasksSummary.total}}
+                        <div class="emp-tasks-summary">
+                            <div class="emp-tasks-stat">
+                                <span class="value" data-tasks-pending>{{overview.tasksSummary.pending}}</span>
+                                <span class="label">Pending</span>
+                            </div>
+                            <div class="emp-tasks-stat">
+                                <span class="value" data-tasks-completed>{{overview.tasksSummary.completed}}</span>
+                                <span class="label">Done</span>
+                            </div>
+                        </div>
+                        {{else}}
+                        <div class="emp-widget-empty">
+                            <i class="fa-solid fa-list-check"></i>
+                            <p>No tasks assigned yet</p>
+                            <span class="badge bg-light text-muted border">Coming soon</span>
+                        </div>
+                        {{/if}}
+                    </div>
+                </article>
+
+                <!-- Announcements -->
+                <article class="emp-home-widget emp-home-widget-wide" id="widget-announcements">
+                    <div class="emp-home-widget-header">
+                        <h3><i class="fa-solid fa-bullhorn" style="color:#f59e0b;"></i> Announcements</h3>
+                    </div>
+                    <div class="emp-home-widget-body" id="announcementsFeed">
+                        {{#if overview.announcements.length}}
                             {{#each overview.announcements}}
                             <div class="emp-feed-item">
                                 <div class="emp-feed-icon" style="background: rgba(14,165,233,0.12); color: var(--emp-primary);">
@@ -108,104 +192,15 @@
                                 </div>
                             </div>
                             {{/each}}
+                        {{else}}
+                        <div class="emp-widget-empty">
+                            <i class="fa-solid fa-bullhorn"></i>
+                            <p>No announcements right now</p>
                         </div>
+                        {{/if}}
                     </div>
-                </div>
-
-                <!-- Team Birthdays -->
-                <div class="col-lg-4">
-                    <div class="emp-card h-100">
-                        <div class="emp-card-header">
-                            <h5 class="emp-card-title">
-                                <i class="fa-solid fa-cake-candles" style="color: #ec4899;"></i>
-                                Team Birthdays
-                            </h5>
-                        </div>
-                        <div class="emp-card-body" id="birthdaysFeed">
-                            {{#if overview.teamBirthdays.length}}
-                                {{#each overview.teamBirthdays}}
-                                <div class="emp-birthday-item">
-                                    <div class="emp-birthday-avatar">{{this.name.[0]}}</div>
-                                    <div>
-                                        <div class="fw-bold" style="font-size:14px;">{{this.name}}</div>
-                                        <div class="text-muted" style="font-size:12px;">{{this.department}} · {{this.day}}th this month</div>
-                                    </div>
-                                </div>
-                                {{/each}}
-                            {{else}}
-                                <div class="text-center py-4 text-muted">
-                                    <i class="fa-solid fa-cake-candles fa-2x mb-2 opacity-50"></i>
-                                    <p class="mb-0 small">No birthdays this month</p>
-                                </div>
-                            {{/if}}
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Recent Requests -->
-                <div class="col-lg-4">
-                    <div class="emp-card h-100">
-                        <div class="emp-card-header">
-                            <h5 class="emp-card-title">
-                                <i class="fa-solid fa-history" style="color: var(--emp-primary);"></i>
-                                Recent Leaves
-                            </h5>
-                            <a href="/employee/leaves" class="btn emp-btn-secondary btn-sm">View all</a>
-                        </div>
-                        <div class="emp-card-body p-0">
-                            {{#if recentRequests.length}}
-                            <table class="emp-table mb-0">
-                                <tbody>
-                                    {{#each recentRequests}}
-                                    <tr>
-                                        <td>
-                                            <div style="font-weight:600;font-size:14px;">{{this.leaveType}}</div>
-                                            <small class="text-muted">{{this.startDate}} – {{this.endDate}}</small>
-                                        </td>
-                                        <td class="text-end">
-                                            <span class="emp-badge {{#if (eq this.status 'PENDING')}}emp-badge-pending{{/if}}{{#if (eq this.status 'APPROVED')}}emp-badge-approved{{/if}}{{#if (eq this.status 'REJECTED')}}emp-badge-rejected{{/if}}{{#if (eq this.status 'CANCELED')}}emp-badge-canceled{{/if}}">
-                                                {{this.status}}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                    {{/each}}
-                                </tbody>
-                            </table>
-                            {{else}}
-                            <div class="text-center py-4 text-muted">
-                                <p class="mb-2">No recent requests</p>
-                                <a href="/employee/leaves/apply" class="btn emp-btn-primary btn-sm">Apply Leave</a>
-                            </div>
-                            {{/if}}
-                        </div>
-                    </div>
-                </div>
+                </article>
             </div>
-
-            <!-- Leave Balances -->
-            {{#if leaveStats.balances.length}}
-            <div class="emp-card mt-4">
-                <div class="emp-card-header">
-                    <h5 class="emp-card-title">
-                        <i class="fa-solid fa-wallet" style="color: var(--emp-primary);"></i>
-                        Leave Balances
-                    </h5>
-                </div>
-                <div class="emp-card-body">
-                    <div class="row g-3">
-                        {{#each leaveStats.balances}}
-                        <div class="col-md-2 col-sm-4 col-6">
-                            <div class="leave-balance-card">
-                                <div class="leave-balance-type" style="color: {{this.color}};">{{this.leaveTypeName}}</div>
-                                <div class="leave-balance-value" style="color: {{this.color}};">{{this.available}}</div>
-                                <div class="leave-balance-label">Available</div>
-                            </div>
-                        </div>
-                        {{/each}}
-                    </div>
-                </div>
-            </div>
-            {{/if}}
         </div>
     </div>
 </div>

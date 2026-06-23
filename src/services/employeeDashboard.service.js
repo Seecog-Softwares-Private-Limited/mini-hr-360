@@ -7,7 +7,7 @@ import {
   PayrollSetting,
 } from '../models/index.js';
 import { getLeaveStats } from './leave.service.js';
-import { getCalendar } from './attendance.service.js';
+import { getCalendar, getToday } from './attendance.service.js';
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -69,13 +69,101 @@ function computeReputation({ streak, attendanceRate, pendingLeaves, tenureMonths
   return Math.max(0, Math.min(100, score));
 }
 
+function formatClockTime(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function formatWorkDuration(minutes) {
+  const m = Number(minutes) || 0;
+  const h = Math.floor(m / 60);
+  const rem = m % 60;
+  if (h === 0) return `${rem}m`;
+  return `${h}h ${rem}m`;
+}
+
+function formatAttendanceStatus(status) {
+  const labels = {
+    NOT_MARKED: 'Not marked',
+    PRESENT: 'Present',
+    LATE: 'Late',
+    ABSENT: 'Absent',
+    HALF_DAY: 'Half day',
+    LEAVE: 'On leave',
+    HOLIDAY: 'Holiday',
+    WEEKOFF: 'Week off',
+  };
+  return labels[status] || status || 'Not marked';
+}
+
+function attendanceStatusClass(status) {
+  const map = {
+    NOT_MARKED: 'not-marked',
+    PRESENT: 'present',
+    LATE: 'late',
+    ABSENT: 'absent',
+    HALF_DAY: 'half-day',
+    LEAVE: 'leave',
+    HOLIDAY: 'holiday',
+    WEEKOFF: 'weekoff',
+  };
+  return map[status] || 'not-marked';
+}
+
+export async function getTodayAttendanceWidget(employee) {
+  const today = new Date().toISOString().split('T')[0];
+  try {
+    const { summary, punches, assignment } = await getToday({
+      businessId: employee.businessId,
+      employeeId: employee.id,
+      date: today,
+    });
+    const isWorking = Boolean(summary?.firstInAt && !summary?.lastOutAt);
+    return {
+      date: today,
+      status: summary?.status || 'NOT_MARKED',
+      statusLabel: formatAttendanceStatus(summary?.status),
+      statusClass: attendanceStatusClass(summary?.status || 'NOT_MARKED'),
+      clockIn: formatClockTime(summary?.firstInAt),
+      clockOut: formatClockTime(summary?.lastOutAt),
+      workMinutes: summary?.workMinutes || 0,
+      workDuration: formatWorkDuration(summary?.workMinutes),
+      isWorking,
+      punchCount: punches?.length || 0,
+      shift: assignment?.shift
+        ? {
+            name: assignment.shift.name,
+            startTime: assignment.shift.startTime,
+            endTime: assignment.shift.endTime,
+          }
+        : null,
+    };
+  } catch {
+    return {
+      date: today,
+      status: 'NOT_MARKED',
+      statusLabel: 'Not marked',
+      statusClass: 'not-marked',
+      clockIn: null,
+      clockOut: null,
+      workMinutes: 0,
+      workDuration: '0m',
+      isWorking: false,
+      punchCount: 0,
+      shift: null,
+    };
+  }
+}
+
 export async function getEmployeeDashboardOverview(employee) {
   const businessId = employee.businessId;
   const now = new Date();
   const month = now.toISOString().slice(0, 7);
   const today = now.toISOString().split('T')[0];
 
-  const [leaveStats, monthSummaries, pendingLeaves, pendingRegularizations, payrollSetting, teamBirthdays] =
+  const [leaveStats, monthSummaries, pendingLeaves, pendingRegularizations, payrollSetting, teamBirthdays, todayAttendance] =
     await Promise.all([
       getLeaveStats(employee.id, businessId),
       getCalendar({ businessId, employeeId: employee.id, month }),
@@ -83,6 +171,7 @@ export async function getEmployeeDashboardOverview(employee) {
       AttendanceRegularization.count({ where: { employeeId: employee.id, status: 'PENDING' } }),
       PayrollSetting.findOne({ where: { businessId } }),
       getTeamBirthdays(businessId, employee.id),
+      getTodayAttendanceWidget(employee),
     ]);
 
   const workedDays = monthSummaries.filter(
@@ -134,6 +223,15 @@ export async function getEmployeeDashboardOverview(employee) {
     announcements: getAnnouncements(employee, payday.days),
     tasksSummary: { pending: 0, completed: 0, total: 0 },
     today,
+    todayAttendance,
+    leaveBalances: (leaveStats.balances || []).map((b) => ({
+      id: b.leaveTypeId,
+      name: b.leaveTypeName,
+      available: Number(b.available || 0),
+      used: Number(b.used || 0),
+      total: Number(b.allocated || 0),
+      color: b.color || '#6366f1',
+    })),
   };
 }
 
