@@ -204,6 +204,7 @@ import { adminProfileRouter } from './routes/adminProfile.routes.js';
 import adminPayrollPagesRouter from './routes/admin.payroll.pages.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 import workspaceRoutes from './routes/workspace.routes.js';
+import dashboardRoutes from './routes/dashboard.routes.js';
 
 
 // ---------- Frontend pages ----------
@@ -286,6 +287,7 @@ app.use('/storage', express.static('storage'));
 // ---------- API routes ----------
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/workspaces', workspaceRoutes);
+app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/business', businessRouter);
 
 app.get('/api/v1/health', (req, res) =>
