@@ -1,0 +1,122 @@
+<header class="app-topbar" role="banner">
+  <div class="topbar-left">
+    <button type="button" class="topbar-menu-btn" id="topbarMenuBtn" aria-label="Toggle navigation">
+      <i class="fa-solid fa-bars"></i>
+    </button>
+    <div class="topbar-heading">
+      <div class="topbar-title">{{title}}</div>
+      <div class="topbar-breadcrumb" id="topbarWorkspaceName"></div>
+    </div>
+  </div>
+
+  <div class="topbar-right">
+    <button type="button" class="topbar-icon-btn" id="topbarNotificationsBtn" aria-label="Notifications" title="Notifications">
+      <i class="fa-solid fa-bell"></i>
+      <span class="topbar-badge" id="topbarNotificationBadge" style="display: none;">0</span>
+    </button>
+
+    <div class="profile-menu" id="profileMenu">
+      <button
+        type="button"
+        class="topbar-user profile-menu-trigger"
+        id="profileMenuTrigger"
+        aria-haspopup="menu"
+        aria-expanded="false"
+        aria-controls="profileMenuDropdown"
+        aria-label="Account menu"
+      >
+        <div class="topbar-user-avatar" id="profileMenuAvatar" aria-hidden="true">
+          {{#if user.firstName}}{{substring user.firstName 0 1}}{{else}}U{{/if}}{{#if user.lastName}}{{substring user.lastName 0 1}}{{/if}}
+        </div>
+        <div class="topbar-user-meta d-none d-md-block">
+          <div class="topbar-user-name" id="profileMenuName">
+            {{#if user.firstName}}{{user.firstName}}{{else}}User{{/if}}{{#if user.lastName}} {{user.lastName}}{{/if}}
+          </div>
+          <div class="topbar-user-role" id="profileMenuRoleLabel">
+            {{#if user.role}}{{user.role}}{{else}}Administrator{{/if}}
+          </div>
+        </div>
+        <i class="fa-solid fa-chevron-down profile-menu-chevron d-none d-md-block" aria-hidden="true"></i>
+      </button>
+
+      <div
+        class="profile-menu-dropdown"
+        id="profileMenuDropdown"
+        role="menu"
+        aria-labelledby="profileMenuTrigger"
+        hidden
+      >
+        <div class="profile-menu-header">
+          <div class="profile-menu-header-avatar" aria-hidden="true">
+            {{#if user.firstName}}{{substring user.firstName 0 1}}{{else}}U{{/if}}{{#if user.lastName}}{{substring user.lastName 0 1}}{{/if}}
+          </div>
+          <div class="profile-menu-header-meta">
+            <div class="profile-menu-header-name">
+              {{#if user.firstName}}{{user.firstName}}{{else}}User{{/if}}{{#if user.lastName}} {{user.lastName}}{{/if}}
+            </div>
+            {{#if user.email}}
+            <div class="profile-menu-header-email">{{user.email}}</div>
+            {{/if}}
+            <span class="profile-menu-role-badge" id="profileMenuRoleBadge" data-role="{{#if user.role}}{{user.role}}{{else}}Administrator{{/if}}">{{#if user.role}}{{user.role}}{{else}}Administrator{{/if}}</span>
+          </div>
+        </div>
+
+        <div class="profile-menu-divider" role="separator"></div>
+
+        <a href="/admin/profile" class="profile-menu-item" role="menuitem" tabindex="-1">
+          <i class="fa-solid fa-user" aria-hidden="true"></i>
+          <span>Profile</span>
+        </a>
+        <button type="button" class="profile-menu-item" role="menuitem" tabindex="-1" data-profile-action="workspace">
+          <i class="fa-solid fa-building" aria-hidden="true"></i>
+          <span>Workspace</span>
+          <i class="fa-solid fa-arrow-right profile-menu-item-hint" aria-hidden="true"></i>
+        </button>
+
+        <div class="profile-menu-group" id="profileThemeGroup">
+          <button
+            type="button"
+            class="profile-menu-item profile-menu-item-toggle"
+            role="menuitem"
+            tabindex="-1"
+            data-profile-action="theme-toggle"
+            aria-expanded="false"
+            aria-controls="profileThemeSubmenu"
+          >
+            <i class="fa-solid fa-palette" aria-hidden="true"></i>
+            <span>Theme</span>
+            <span class="profile-menu-item-value" id="profileThemeCurrent">Light</span>
+            <i class="fa-solid fa-chevron-down profile-menu-sub-chevron" aria-hidden="true"></i>
+          </button>
+          <div class="profile-menu-submenu" id="profileThemeSubmenu" role="group" aria-label="Theme options" hidden>
+            <button type="button" class="profile-menu-subitem" role="menuitemradio" tabindex="-1" data-theme-value="light" aria-checked="true">
+              <i class="fa-solid fa-sun" aria-hidden="true"></i> Light
+            </button>
+            <button type="button" class="profile-menu-subitem" role="menuitemradio" tabindex="-1" data-theme-value="dark" aria-checked="false">
+              <i class="fa-solid fa-moon" aria-hidden="true"></i> Dark
+            </button>
+            <button type="button" class="profile-menu-subitem" role="menuitemradio" tabindex="-1" data-theme-value="system" aria-checked="false">
+              <i class="fa-solid fa-desktop" aria-hidden="true"></i> System
+            </button>
+          </div>
+        </div>
+
+        <button type="button" class="profile-menu-item" role="menuitem" tabindex="-1" data-profile-action="preferences">
+          <i class="fa-solid fa-sliders" aria-hidden="true"></i>
+          <span>Preferences</span>
+        </button>
+        <a href="/billing" class="profile-menu-item" role="menuitem" tabindex="-1" data-profile-nav="billing">
+          <i class="fa-solid fa-crown" aria-hidden="true"></i>
+          <span>Billing</span>
+        </a>
+
+        <div class="profile-menu-divider" role="separator"></div>
+
+        <button type="button" class="profile-menu-item profile-menu-item-danger" role="menuitem" tabindex="-1" data-profile-action="logout">
+          <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
+          <span>Logout</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</header>

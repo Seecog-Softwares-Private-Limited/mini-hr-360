@@ -8,6 +8,18 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/material_blue.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="/assets/css/app-shell.css" rel="stylesheet">
+    <script>
+      (function () {
+        var mode = localStorage.getItem('mh360:theme') || 'light';
+        var effective = mode === 'system'
+          ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+          : mode;
+        document.documentElement.setAttribute('data-theme', effective);
+        document.documentElement.setAttribute('data-theme-mode', mode);
+      })();
+    </script>
     <script src="https://cdn.ckeditor.com/ckeditor5/40.1.0/classic/ckeditor.js"></script>
     <style>
         /* ---------- App shell (Dashboard-style pages) ---------- */
@@ -1604,9 +1616,29 @@
     </style>
 </head>
 <body class="{{pageClass}}">
-    {{{body}}}
+    {{#if (or (eq pageClass 'auth') (eq pageClass 'landing'))}}
+        {{{body}}}
+    {{else}}
+        <div class="app-shell" id="appShell">
+            <aside class="app-sidebar" id="appSidebar" aria-label="Application sidebar">
+                {{> sidebar}}
+            </aside>
+            <div class="app-main">
+                {{> topbar}}
+                <main class="app-content main-content" id="appContent" role="main">
+                    {{{body}}}
+                </main>
+            </div>
+            <div class="app-sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+        </div>
+        {{> shell-modals}}
+    {{/if}}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="/assets/js/app-shell.js"></script>
+    <script src="/assets/js/workspace-switcher.js"></script>
+    <script src="/assets/js/notification-center.js"></script>
+    <script src="/assets/js/profile-menu.js"></script>
     <script>
         // Default API base is same-origin (works for localhost + production deployments)
         const API_BASE = `${window.location.origin.replace(/\/$/, '')}/api/v1`;
@@ -1615,6 +1647,30 @@
         function isAuthPage() {
             const p = window.location.pathname.toLowerCase();
             return p === '/' || p === '/login' || p === '/register' || p.endsWith('/login') || p.endsWith('/register');
+        }
+
+        let refreshSessionPromise = null;
+
+        async function refreshSession() {
+            if (!refreshSessionPromise) {
+                refreshSessionPromise = fetch(`${API_BASE}/users/refresh`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                }).finally(() => {
+                    refreshSessionPromise = null;
+                });
+            }
+
+            const response = await refreshSessionPromise;
+            if (!response.ok) return false;
+
+            const data = await response.json().catch(() => ({}));
+            const tokens = data.tokens || data.data?.tokens || {};
+            if (tokens.accessToken) {
+                localStorage.setItem('accessToken', tokens.accessToken);
+            }
+            return true;
         }
         
         // Helper function to make API calls (minimal fixes only)
@@ -1629,6 +1685,14 @@
             // Attach Authorization only if we have a real token and caller didn't skip auth
             if (token && !options.skipAuth) {
                 headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            // Multi-tenant workspace context
+            if (!options.skipWorkspace && typeof getWorkspaceId === 'function') {
+                const workspaceId = getWorkspaceId();
+                if (workspaceId) {
+                    headers['x-business-id'] = workspaceId;
+                }
             }
 
             const defaultOptions = {
@@ -1652,19 +1716,22 @@
                             String(errorData.error).includes('Authentication failed')
                         ));
 
+                    if (isAuthError && !options._retried && !options.skipAuth) {
+                        const refreshed = await refreshSession();
+                        if (refreshed) {
+                            return apiCall(endpoint, { ...options, _retried: true });
+                        }
+                    }
+
                     if (isAuthError) {
-                        // Clear stale tokens from localStorage
                         localStorage.removeItem('accessToken');
                         localStorage.removeItem('user');
                         
-                        // Only redirect to /login if we are NOT already on login/register
                         if (!isAuthPage()) {
                             console.log('Authentication failed, clearing tokens and redirecting to login...');
-                            // Clear cookies by calling logout endpoint or letting server clear them
                             window.location.replace('/login');
                             return;
                         }
-                        // If we are on an auth page, just return the error JSON to the caller
                         return errorData;
                     }
 
@@ -1725,6 +1792,8 @@
                 // Clear localStorage
                 localStorage.removeItem('accessToken');
                 localStorage.removeItem('user');
+                localStorage.removeItem('mh360:workspaceId');
+                localStorage.removeItem('mh360:recentWorkspaces');
                 
                 // Redirect to login
                 window.location.replace('/login');
@@ -1734,23 +1803,6 @@
                 localStorage.removeItem('accessToken');
                 localStorage.removeItem('user');
                 window.location.replace('/login');
-            }
-        }
-        
-        // Menu toggle functionality
-        function toggleMenu(menuId) {
-            const submenu = document.getElementById(menuId);
-            const toggle = document.querySelector(`[onclick="toggleMenu('${menuId}')"]`);
-            const arrow = toggle ? toggle.querySelector('.submenu-arrow, .fa-chevron-down') : null;
-            
-            if (submenu.classList.contains('show')) {
-                submenu.classList.remove('show');
-                toggle.classList.add('collapsed');
-                if (arrow) arrow.classList.remove('open');
-            } else {
-                submenu.classList.add('show');
-                toggle.classList.remove('collapsed');
-                if (arrow) arrow.classList.add('open');
             }
         }
         

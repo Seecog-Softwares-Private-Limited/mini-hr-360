@@ -91,6 +91,9 @@ app.engine(
                 if (start < 0) return str.slice(start);
                 return str.substring(start, len !== undefined ? start + len : undefined);
             },
+            startswith(str, prefix) {
+                return String(str || '').startsWith(String(prefix || ''));
+            },
             gt(a, b) { return a > b; },
             gte(a, b) { return a >= b; },
             lt(a, b) { return a < b; },
@@ -105,6 +108,29 @@ app.engine(
 
 app.set('view engine', 'hbs');
 app.set('views', path.join(__dirname, 'views'));
+
+// Enrich render locals with authenticated user profile for shell partials
+app.use((req, res, next) => {
+    const render = res.render.bind(res);
+    res.render = (view, options, callback) => {
+        if (typeof options === 'function') {
+            callback = options;
+            options = {};
+        }
+        options = options || {};
+        if (req.user) {
+            const shellUser = {
+                firstName: req.user.firstName,
+                lastName: req.user.lastName,
+                role: req.user.role,
+                email: req.user.email,
+            };
+            options.user = { ...shellUser, ...(options.user || {}) };
+        }
+        return render(view, options, callback);
+    };
+    next();
+});
 
 // ---------- Middleware ----------
 app.use(
@@ -177,6 +203,7 @@ import { employeePayrollRouter } from './routes/employeePayroll.routes.js';
 import { adminProfileRouter } from './routes/adminProfile.routes.js';
 import adminPayrollPagesRouter from './routes/admin.payroll.pages.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
+import workspaceRoutes from './routes/workspace.routes.js';
 
 
 // ---------- Frontend pages ----------
@@ -188,42 +215,42 @@ app.get('/login', (req, res) => res.render('login', { title: 'mini-hr-360', page
 app.get('/register', (req, res) => res.render('register', { title: 'mini-hr-360', pageClass: 'auth' }));
 
 app.get('/dashboard', verifyUser, (req, res) => {
-    const user = { firstName: req.user.firstName, lastName: req.user.lastName };
+    const user = { firstName: req.user.firstName, lastName: req.user.lastName, role: req.user.role };
     res.render('dashboard', { title: 'Dashboard', user, active: 'dashboard', activeGroup: 'workspace' });
 });
 
 app.get('/customers', verifyUser, (req, res) => {
-    const user = { firstName: req.user.firstName, lastName: req.user.lastName };
+    const user = { firstName: req.user.firstName, lastName: req.user.lastName, role: req.user.role };
     res.render('customers', { title: 'Customers', user, active: 'customers', activeGroup: 'workspace' });
 });
 
 app.get('/business', verifyUser, (req, res) => {
-    const user = { firstName: req.user.firstName, lastName: req.user.lastName };
+    const user = { firstName: req.user.firstName, lastName: req.user.lastName, role: req.user.role };
     res.render('business', { title: 'Business', user, active: 'business', activeGroup: 'workspace' });
 });
 
 app.get('/templates', verifyUser, (req, res) => {
-    const user = { firstName: req.user.firstName, lastName: req.user.lastName };
+    const user = { firstName: req.user.firstName, lastName: req.user.lastName, role: req.user.role };
     res.render('templates', { title: 'Templates', user, active: 'templates', activeGroup: 'workspace' });
 });
 
 app.get('/campaigns', verifyUser, (req, res) => {
-    const user = { firstName: req.user.firstName, lastName: req.user.lastName };
+    const user = { firstName: req.user.firstName, lastName: req.user.lastName, role: req.user.role };
     res.render('campaigns', { title: 'Campaigns', user, active: 'campaigns', activeGroup: 'workspace' });
 });
 
 app.get('/designations', verifyUser, (req, res) => {
-    const user = { firstName: req.user.firstName, lastName: req.user.lastName };
+    const user = { firstName: req.user.firstName, lastName: req.user.lastName, role: req.user.role };
     res.render('designations', { title: 'Designations', user, active: 'designations', activeGroup: 'workspace' });
 });
 
 app.get('/departments', verifyUser, (req, res) => {
-    const user = { firstName: req.user.firstName, lastName: req.user.lastName };
+    const user = { firstName: req.user.firstName, lastName: req.user.lastName, role: req.user.role };
     res.render('departments', { title: 'Departments', user, active: 'departments', activeGroup: 'workspace' });
 });
 
 app.get('/business-addresses', verifyUser, (req, res) => {
-    const user = { firstName: req.user.firstName, lastName: req.user.lastName };
+    const user = { firstName: req.user.firstName, lastName: req.user.lastName, role: req.user.role };
     res.render('business-addresses', { title: 'Business Addresses', user, active: 'businessAddresses', activeGroup: 'workspace' });
 });
 
@@ -258,6 +285,7 @@ app.use('/storage', express.static('storage'));
 
 // ---------- API routes ----------
 app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/workspaces', workspaceRoutes);
 app.use('/api/v1/business', businessRouter);
 
 app.get('/api/v1/health', (req, res) =>

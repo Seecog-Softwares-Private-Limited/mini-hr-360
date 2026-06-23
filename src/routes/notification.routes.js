@@ -19,14 +19,15 @@ router.use(verifyUser);
  */
 router.get('/', asyncHandler(async (req, res) => {
     const userId = req.user?.id;
-    const { unreadOnly, limit, offset, type, businessId } = req.query;
+    const { unreadOnly, limit, offset, type, category, businessId } = req.query;
 
     const result = await notificationService.getUserNotifications(userId, {
         unreadOnly: unreadOnly === 'true',
-        limit: limit ? parseInt(limit) : 50,
-        offset: offset ? parseInt(offset) : 0,
+        limit: limit ? parseInt(limit, 10) : 15,
+        offset: offset ? parseInt(offset, 10) : 0,
         type: type || null,
-        businessId: businessId ? parseInt(businessId) : null,
+        category: category || null,
+        businessId: businessId ? parseInt(businessId, 10) : null,
     });
 
     return res.json(new ApiResponse(200, result));

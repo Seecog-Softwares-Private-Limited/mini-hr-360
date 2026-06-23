@@ -4,6 +4,7 @@ import { ApiError } from "../../utils/ApiError.js"
 import { ApiResponse } from "../../utils/ApiResponse.js"
 import { User } from '../../models/User.js';
 import { buildTokenPair, hashToken } from '../../utils/token.util.js';
+import { setUserAuthCookies } from '../../utils/authCookie.util.js';
 
 export default async function register(req, res) {
     try {
@@ -46,30 +47,10 @@ export default async function register(req, res) {
         createdUser.refreshTokenExpiresAt = refreshExp ? new Date(refreshExp * 1000) : null;
         await createdUser.save();
 
-        // Calculate maxAge in seconds (refresh token expires in 7d by default)
-        // Use refresh token expiry for cookie persistence, fallback to 7 days
-        // refreshExp is in seconds since epoch, convert to remaining seconds from now
-        let maxAgeSeconds;
-        if (refreshExp) {
-            const remainingMs = (refreshExp * 1000) - Date.now();
-            maxAgeSeconds = Math.max(0, Math.floor(remainingMs / 1000));
-        } else {
-            // Fallback: 7 days = 7 * 24 * 60 * 60 seconds
-            maxAgeSeconds = 7 * 24 * 60 * 60;
-        }
-
-        const options = {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-            maxAge: maxAgeSeconds, // Persistent cookie that survives browser close
-            path: "/" // Ensure cookie is available for all paths
-        }
+        setUserAuthCookies(res, accessToken, refreshToken, refreshExp);
 
         return res
             .status(200)
-            .cookie("accessToken", accessToken, options)
-            .cookie("refreshToken", refreshToken, options)
             .json(
                 new ApiResponse(200, { tokens: { accessToken, refreshToken }, user: createdUser }, "User registered Successfully")
             )

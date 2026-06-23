@@ -12,14 +12,118 @@
         <!-- Sticky Navigation for sections -->
         <div class="emp-card mb-4 p-2 sticky-top"
             style="top: 1rem; z-index: 100; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px);">
-            <div class="nav nav-pills nav-justified" id="profile-tabs">
-                <a class="nav-link active" href="#personal"><i class="fa-solid fa-user me-2"></i>Personal</a>
-                <a class="nav-link" href="#professional"><i class="fa-solid fa-briefcase me-2"></i>Professional</a>
-                <a class="nav-link" href="#compensation"><i
-                        class="fa-solid fa-money-bill-wave me-2"></i>Compensation</a>
-                <a class="nav-link" href="#education"><i class="fa-solid fa-graduation-cap me-2"></i>Education</a>
-                <a class="nav-link" href="#experience"><i class="fa-solid fa-history me-2"></i>Experience</a>
-                <a class="nav-link" href="#documents"><i class="fa-solid fa-file-shield me-2"></i>KYC</a>
+            <div class="nav nav-pills nav-justified flex-wrap" id="profile-tabs">
+                <a class="nav-link active" href="#overview"><i class="fa-solid fa-gauge me-1"></i>Overview</a>
+                <a class="nav-link" href="#personal"><i class="fa-solid fa-user me-1"></i>Personal</a>
+                <a class="nav-link" href="#career"><i class="fa-solid fa-road me-1"></i>Career</a>
+                <a class="nav-link" href="#skills"><i class="fa-solid fa-lightbulb me-1"></i>Skills</a>
+                <a class="nav-link" href="#certificates"><i class="fa-solid fa-certificate me-1"></i>Certs</a>
+                <a class="nav-link" href="#professional"><i class="fa-solid fa-briefcase me-1"></i>Work</a>
+                <a class="nav-link" href="#compensation"><i class="fa-solid fa-money-bill-wave me-1"></i>Pay</a>
+                <a class="nav-link" href="#education"><i class="fa-solid fa-graduation-cap me-1"></i>Edu</a>
+                <a class="nav-link" href="#documents"><i class="fa-solid fa-file-shield me-1"></i>Docs</a>
+            </div>
+        </div>
+
+        <!-- Overview: Reputation -->
+        <div id="overview" class="emp-card mb-4">
+            <div class="emp-card-header">
+                <h5 class="emp-card-title"><i class="fa-solid fa-star" style="color: #f59e0b;"></i> Internal Reputation</h5>
+            </div>
+            <div class="emp-card-body text-center">
+                <div class="emp-reputation-ring">
+                    <svg width="140" height="140" viewBox="0 0 140 140">
+                        <circle cx="70" cy="70" r="58" fill="none" stroke="#e2e8f0" stroke-width="12"/>
+                        <circle cx="70" cy="70" r="58" fill="none" stroke="url(#repGrad)" stroke-width="12"
+                            stroke-dasharray="{{reputation}}, 100" stroke-linecap="round"
+                            transform="rotate(-90 70 70)" pathLength="100"/>
+                        <defs>
+                            <linearGradient id="repGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#0ea5e9"/>
+                                <stop offset="100%" stop-color="#22c55e"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <div class="emp-reputation-score">{{reputation}}</div>
+                </div>
+                <p class="text-muted mt-3 mb-0" style="max-width:400px;margin:0 auto;">
+                    Based on attendance streak, punctuality, leave compliance, and tenure.
+                </p>
+            </div>
+        </div>
+
+        <!-- Career Journey -->
+        <div id="career" class="emp-card mb-4">
+            <div class="emp-card-header">
+                <h5 class="emp-card-title"><i class="fa-solid fa-road" style="color: var(--emp-primary);"></i> Career Journey</h5>
+            </div>
+            <div class="emp-card-body">
+                {{#if careerJourney.length}}
+                <div class="emp-timeline">
+                    {{#each careerJourney}}
+                    <div class="emp-timeline-item">
+                        <div class="emp-timeline-dot" style="background: {{this.color}};">
+                            <i class="fa-solid {{this.icon}}"></i>
+                        </div>
+                        <div class="emp-timeline-title">{{this.title}}</div>
+                        <div class="emp-timeline-sub">{{this.subtitle}}</div>
+                        <div class="emp-timeline-date">{{formatDate this.date}}{{#if this.endDate}} – {{formatDate this.endDate}}{{else}}{{#if (eq this.type 'join')}} – Present{{/if}}{{/if}}</div>
+                    </div>
+                    {{/each}}
+                </div>
+                {{else}}
+                <p class="text-muted mb-0">Your career timeline will appear here as you grow with the company.</p>
+                {{/if}}
+            </div>
+        </div>
+
+        <!-- Skills -->
+        <div id="skills" class="emp-card mb-4">
+            <div class="emp-card-header">
+                <h5 class="emp-card-title"><i class="fa-solid fa-lightbulb" style="color: var(--emp-primary);"></i> Skills</h5>
+            </div>
+            <div class="emp-card-body">
+                {{#if skills.length}}
+                    {{#each skills}}
+                    <span class="emp-skill-chip">{{this.name}} <small>{{this.level}}</small></span>
+                    {{/each}}
+                {{else}}
+                    <p class="text-muted mb-0">No skills listed yet. Ask HR to update your profile.</p>
+                {{/if}}
+            </div>
+        </div>
+
+        <!-- Certificates -->
+        <div id="certificates" class="emp-card mb-4">
+            <div class="emp-card-header">
+                <h5 class="emp-card-title"><i class="fa-solid fa-certificate" style="color: var(--emp-primary);"></i> Certificates</h5>
+            </div>
+            <div class="emp-card-body">
+                {{#if certificates.length}}
+                <div class="row g-3">
+                    {{#each certificates}}
+                    <div class="col-md-6">
+                        <div class="emp-cert-card">
+                            <div class="d-flex align-items-start gap-3">
+                                <div style="width:44px;height:44px;border-radius:10px;background:rgba(14,165,233,0.12);display:grid;place-items:center;color:var(--emp-primary);">
+                                    <i class="fa-solid fa-award"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold">{{this.documentType}}</div>
+                                    <div class="text-muted small">{{this.category}}</div>
+                                    <span class="emp-badge {{#if (eq this.verificationStatus 'Verified')}}emp-badge-approved{{else}}emp-badge-pending{{/if}} mt-1">{{this.verificationStatus}}</span>
+                                    {{#if this.fileUrl}}
+                                    <div class="mt-2"><a href="{{this.fileUrl}}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-download"></i></a></div>
+                                    {{/if}}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {{/each}}
+                </div>
+                {{else}}
+                <p class="text-muted mb-0">No certificates on file. Upload via HR or check KYC documents below.</p>
+                {{/if}}
             </div>
         </div>
 

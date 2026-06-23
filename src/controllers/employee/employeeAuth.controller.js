@@ -5,31 +5,9 @@ import { Business } from '../../models/Business.js';
 import { ApiResponse } from '../../utils/ApiResponse.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { hashToken } from '../../utils/token.util.js';
-import jwt from 'jsonwebtoken';
-
-const ACCESS_TOKEN_TTL = process.env.ACCESS_TOKEN_TTL || '60m';
-const REFRESH_TOKEN_TTL = process.env.REFRESH_TOKEN_TTL || '7d';
-
-/**
- * Generate employee-specific tokens with employeeId claim
- */
-function buildEmployeeTokenPair(employeeId, businessId) {
-  const accessToken = jwt.sign(
-    { employeeId: employeeId.toString(), businessId: businessId?.toString(), type: 'employee' },
-    process.env.JWT_ACCESS_SECRET,
-    { expiresIn: ACCESS_TOKEN_TTL }
-  );
-  const refreshToken = jwt.sign(
-    { employeeId: employeeId.toString(), businessId: businessId?.toString(), type: 'employee' },
-    process.env.JWT_REFRESH_SECRET,
-    { expiresIn: REFRESH_TOKEN_TTL }
-  );
-
-  const decoded = jwt.decode(refreshToken);
-  const refreshExp = decoded?.exp ?? null;
-
-  return { accessToken, refreshToken, refreshExp };
-}
+import { buildEmployeeTokenPair } from '../../utils/employeeToken.util.js';
+import { clearEmployeeAuthCookies, setEmployeeAuthCookies } from '../../utils/authCookie.util.js';
+import { rotateEmployeeSession } from '../../services/employeeSession.service.js';
 
 /**
  * GET /employee/login - Render login page
@@ -142,24 +120,8 @@ export const loginEmployee = asyncHandler(async (req, res) => {
     employee.lastEmployeeLoginAt = new Date();
     await employee.save();
 
-    // Calculate maxAge
-    let maxAgeSeconds;
-    if (refreshExp) {
-      const remainingMs = refreshExp * 1000 - Date.now();
-      maxAgeSeconds = Math.max(0, Math.floor(remainingMs / 1000));
-    } else {
-      maxAgeSeconds = 7 * 24 * 60 * 60;
-    }
+    setEmployeeAuthCookies(res, accessToken, refreshToken, refreshExp);
 
-    const cookieOptions = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      maxAge: maxAgeSeconds * 1000,
-      path: '/',
-    };
-
-    // Return employee data (without sensitive fields)
     const employeeData = {
       id: employee.id,
       empId: employee.empId,
@@ -174,20 +136,16 @@ export const loginEmployee = asyncHandler(async (req, res) => {
       businessName: employee.business?.businessName,
     };
 
-    return res
-      .status(200)
-      .cookie('employeeAccessToken', accessToken, cookieOptions)
-      .cookie('employeeRefreshToken', refreshToken, cookieOptions)
-      .json(
-        new ApiResponse(
-          200,
-          {
-            tokens: { accessToken, refreshToken },
-            employee: employeeData,
-          },
-          'Login successful'
-        )
-      );
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          tokens: { accessToken, refreshToken },
+          employee: employeeData,
+        },
+        'Login successful'
+      )
+    );
   } catch (error) {
     console.error('Employee login error:', error);
     return res.status(500).json({
@@ -195,6 +153,47 @@ export const loginEmployee = asyncHandler(async (req, res) => {
       message: 'Server error',
       error: error.message,
     });
+  }
+});
+
+/**
+ * POST /employee/refresh - Rotate employee session tokens
+ */
+export const refreshEmployee = asyncHandler(async (req, res) => {
+  try {
+    const refreshToken =
+      req.cookies?.employeeRefreshToken ||
+      req.body?.refreshToken ||
+      req.header('x-refresh-token')?.trim();
+
+    if (!refreshToken) {
+      return res.status(400).json({ success: false, message: 'refreshToken required' });
+    }
+
+    const { accessToken, refreshToken: newRefresh, refreshExp, employee } =
+      await rotateEmployeeSession(refreshToken);
+
+    setEmployeeAuthCookies(res, accessToken, newRefresh, refreshExp);
+
+    const safeEmployee = await Employee.findByPk(employee.id, {
+      attributes: { exclude: ['password', 'employeeRefreshToken', 'employeeRefreshTokenExpiresAt'] },
+    });
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        { tokens: { accessToken, refreshToken: newRefresh }, employee: safeEmployee },
+        'Token refreshed'
+      )
+    );
+  } catch (error) {
+    if (error.code) {
+      clearEmployeeAuthCookies(res);
+      return res.status(401).json({ success: false, message: error.message });
+    }
+
+    console.error('Employee refresh error:', error);
+    return res.status(500).json({ success: false, message: 'internal_error' });
   }
 });
 
@@ -212,22 +211,13 @@ export const logoutEmployee = asyncHandler(async (req, res) => {
       }
     }
 
-    const cookieOptions = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      path: '/',
-      expires: new Date(0),
-    };
-
     // Check if this is an API request or page navigation
     const wantsJson =
       req.xhr ||
       String(req.headers?.accept || '').includes('application/json') ||
       String(req.headers?.['x-requested-with'] || '').toLowerCase() === 'xmlhttprequest';
 
-    res.cookie('employeeAccessToken', '', cookieOptions);
-    res.cookie('employeeRefreshToken', '', cookieOptions);
+    clearEmployeeAuthCookies(res);
 
     if (wantsJson) {
       return res.status(200).json(new ApiResponse(200, null, 'Logout successful'));
@@ -247,5 +237,6 @@ export const logoutEmployee = asyncHandler(async (req, res) => {
 export default {
   renderEmployeeLogin,
   loginEmployee,
+  refreshEmployee,
   logoutEmployee,
 };

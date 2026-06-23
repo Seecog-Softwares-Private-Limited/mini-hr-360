@@ -5,6 +5,12 @@ import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { Op } from 'sequelize';
 import { sendDocumentEmail } from '../../utils/emailService.js';
+import {
+  getEmployeeDashboardOverview,
+  parseSkills,
+  buildCareerJourney,
+  getCertificates,
+} from '../../services/employeeDashboard.service.js';
 
 /**
  * GET /employee/profile - Render profile page
@@ -22,11 +28,18 @@ export const renderProfile = asyncHandler(async (req, res) => {
         ]
     });
 
+    const employeeJson = employee.toJSON();
+    const overview = await getEmployeeDashboardOverview(employee);
+
     res.render('employee/profile', {
         title: 'My Profile',
         layout: 'employee-main',
         active: 'profile',
-        employee: employee.toJSON(),
+        employee: employeeJson,
+        skills: parseSkills(employeeJson),
+        careerJourney: buildCareerJourney(employeeJson, employeeJson.experiences || []),
+        certificates: getCertificates(employeeJson.documents || []),
+        reputation: overview.reputation,
     });
 });
 

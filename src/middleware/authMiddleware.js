@@ -1,8 +1,9 @@
-import { ApiError } from "../utils/ApiError.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
 
 import { User } from "../models/User.js"
-import { decodeExpUnix, verifyAccessToken } from "../utils/token.util.js"
+import { verifyAccessToken } from "../utils/token.util.js"
+import { rotateUserSession } from "../services/userSession.service.js"
+import { clearUserAuthCookies, setUserAuthCookies } from "../utils/authCookie.util.js"
 
 function shouldRedirectToLogin(req) {
     // Only redirect for real browser page navigations to HTML pages.
@@ -18,112 +19,105 @@ function shouldRedirectToLogin(req) {
     return isGet && wantsHtml && !isApiPath && !isXHR;
 }
 
-export const verifyUser = asyncHandler(async (req, res, next) => {
+function isExpiredTokenError(error) {
+    return error?.name === "TokenExpiredError" || String(error?.message || "").includes("jwt expired");
+}
+
+async function tryRefreshUserSession(req, res) {
+    const refreshToken = req.cookies?.refreshToken;
+    if (!refreshToken) return null;
+
     try {
-        const token = req.cookies?.accessToken || req.header
-            ("Authorization")?.replace(/^Bearer\s+/i, "").trim();
+        const { accessToken, refreshToken: newRefresh, refreshExp, user } = await rotateUserSession(refreshToken);
+        setUserAuthCookies(res, accessToken, newRefresh, refreshExp);
+        return user;
+    } catch {
+        clearUserAuthCookies(res);
+        return null;
+    }
+}
 
-        if (!token) {
-            if (shouldRedirectToLogin(req)) return res.redirect('/login');
-            return res.status(401).json({
-                success: false,
-                message: 'Authentication failed',
-                error: 'Unauthorized request',
-            });
-        }
+async function authenticateUser(req, res) {
+    const token = req.cookies?.accessToken || req.header
+        ("Authorization")?.replace(/^Bearer\s+/i, "").trim();
 
-        const decoded = verifyAccessToken(token)
-        console.log("Decoded Token:->", decoded)
+    if (!token) {
+        return { error: "missing_token" };
+    }
 
+    try {
+        const decoded = verifyAccessToken(token);
         const user = await User.findByPk(decoded?.sub, {
             attributes: { exclude: ['password', 'refreshTokens'] }
         });
 
         if (!user) {
-            if (shouldRedirectToLogin(req)) return res.redirect('/login');
-            return res.status(401).json({
-                success: false,
-                message: 'Authentication failed',
-                error: 'Invalid access token',
-            });
+            return { error: "invalid_user" };
         }
 
-        req.user = user;
-        console.log("verify User")
-        next()
+        return { user };
     } catch (error) {
-        console.log("Auth error:", error.message);
-        
-        if (shouldRedirectToLogin(req)) {
-            res.clearCookie('accessToken');
-            return res.redirect('/login');
+        if (!isExpiredTokenError(error)) {
+            return { error: "invalid_token", message: error.message };
         }
 
-        return res.status(401).json({
-            success: false,
-            message: 'Authentication failed',
-            error: error.message,
-        });
+        const user = await tryRefreshUserSession(req, res);
+        if (!user) {
+            return { error: "session_expired", message: error.message };
+        }
+
+        return { user };
     }
+}
+
+export const verifyUser = asyncHandler(async (req, res, next) => {
+    const auth = await authenticateUser(req, res);
+
+    if (auth.user) {
+        req.user = auth.user;
+        return next();
+    }
+
+    if (shouldRedirectToLogin(req)) {
+        clearUserAuthCookies(res);
+        return res.redirect('/login');
+    }
+
+    return res.status(401).json({
+        success: false,
+        message: 'Authentication failed',
+        error: auth.message || 'Unauthorized request',
+    });
 })
 
 export const verifyOwner = asyncHandler(async (req, res, next) => {
-    try {
-        const token = req.cookies?.accessToken || req.header
-            ("Authorization")?.replace(/^Bearer\s+/i, "").trim();
+    const auth = await authenticateUser(req, res);
 
-        if (!token) {
-            if (shouldRedirectToLogin(req)) return res.redirect('/login');
-            return res.status(401).json({
-                success: false,
-                message: 'Authentication failed',
-                error: 'Unauthorized request',
-            });
-        }
-
-        const decoded = verifyAccessToken(token)
-        console.log("Decoded Token:->", decoded)
-
-        const owner = await User.findByPk(decoded?.sub, {
-            attributes: { exclude: ['password', 'refreshTokens'] }
-        });
-
-        if (!owner) {
-            if (shouldRedirectToLogin(req)) return res.redirect('/login');
-            return res.status(401).json({
-                success: false,
-                message: 'Authentication failed',
-                error: 'Invalid access token',
-            });
-        }
-
-        // Allow shop_owner and any role that indicates admin (contains 'admin') to access owner-only routes
-        const role = String(owner.role || '').toLowerCase();
-        const isAdminRole = role.includes('admin');
-        if (role !== 'shop_owner' && !isAdminRole) {
-            if (shouldRedirectToLogin(req)) return res.redirect('/login');
-            return res.status(403).json({
-                success: false,
-                message: 'Access denied',
-                error: 'only shop owner or admin roles can access',
-            });
-        }
-
-        req.owner = owner;
-        console.log("verify Owner")
-        next()
-    } catch (error) {
-        console.log("Auth error:", error.message);
-        
+    if (!auth.user) {
         if (shouldRedirectToLogin(req)) {
-            res.clearCookie('accessToken');
+            clearUserAuthCookies(res);
             return res.redirect('/login');
         }
 
         return res.status(401).json({
             success: false,
             message: 'Authentication failed',
-            error: error.message,
+            error: auth.message || 'Unauthorized request',
         });
     }
+
+    const owner = auth.user;
+    const role = String(owner.role || '').toLowerCase();
+    const isAdminRole = role.includes('admin');
+    if (role !== 'shop_owner' && !isAdminRole) {
+        if (shouldRedirectToLogin(req)) return res.redirect('/login');
+        return res.status(403).json({
+            success: false,
+            message: 'Access denied',
+            error: 'only shop owner or admin roles can access',
+        });
+    }
+
+    req.owner = owner;
+    next();
 });

@@ -34,18 +34,15 @@ import {
   unlockPeriod,
 } from '../../services/attendance.service.js';
 
-const resolveBusinessId = async (req) => {
-  const raw = req.query.businessId ?? req.body?.businessId;
-  const businessId = raw ? Number(raw) : null;
-  if (businessId) return businessId;
-console.log(businessId);
-  const ownerId = req.user?.id;
-  if (!ownerId) throw new ApiError(401, 'Unauthorized');
+import { resolveWorkspaceIdFromRequest } from '../../services/workspace.service.js';
 
-  const biz = await Business.findOne({ where: { ownerId }, order: [['createdAt', 'ASC']] });
-  if (!biz) throw new ApiError(400, 'businessId is required (no business found for this user)');
-  console.log(biz);
-  return biz.id;
+const resolveBusinessId = async (req) => {
+  if (req.workspaceId) return req.workspaceId;
+
+  const workspaceId = await resolveWorkspaceIdFromRequest(req);
+  if (workspaceId) return workspaceId;
+
+  throw new ApiError(400, 'businessId is required (select a workspace)');
 };
 
 

@@ -1,15 +1,5 @@
 {{!-- views/employees.hbs --}}
-<div class="container-fluid">
-  <div class="row">
-    {{!-- Sidebar --}}
-    <div class="col-md-3 col-lg-2 px-0">
-      {{> sidebar}}
-    </div>
-
-    {{!-- Main content --}}
-    <div class="col-md-9 col-lg-10">
-      <div class="main-content p-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-4">
           <div>
             <h2 class="mb-0">Employees</h2>
 
@@ -386,6 +376,7 @@
                     Personal Email <span class="text-danger">*</span>
                   </label>
                   <input type="email" name="empEmail" class="form-control" required />
+                  <small class="text-muted">Used as employee portal login (with auto-generated password)</small>
                 </div>
 
                 <div class="col-12">
@@ -1420,9 +1411,85 @@
         </div>
       </div>
       <div class="modal-footer view-emp-modal-footer">
+        <button class="btn btn-outline-primary" type="button" id="resetPortalAccessBtn" title="Generate new portal login password">
+          <i class="fas fa-key me-1"></i> Reset portal login
+        </button>
         <button class="btn btn-secondary view-emp-close-btn" type="button" data-bs-dismiss="modal">
           Close
         </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{!-- Employee portal credentials (shown after create / password reset) --}}
+<div class="modal fade" id="employeePortalCredentialsModal" tabindex="-1" aria-labelledby="employeePortalCredentialsTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff;">
+        <h5 class="modal-title" id="employeePortalCredentialsTitle">
+          <i class="fas fa-user-lock me-2"></i>Employee portal login
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted small mb-3" id="portalCredentialsIntro">
+          Share these credentials with the employee. They can sign in at the employee portal using <strong>email</strong> or <strong>employee code</strong>.
+        </p>
+        <div id="portalEmailSentBanner" class="alert alert-success d-none py-2 small mb-3">
+          <i class="fas fa-envelope-circle-check me-1"></i> Credentials were also emailed to the employee.
+        </div>
+        <div id="portalEmailFailedBanner" class="alert alert-warning d-none py-2 small mb-3">
+          <i class="fas fa-triangle-exclamation me-1"></i> Email could not be sent — copy and share these credentials manually.
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small text-muted mb-1">Employee</label>
+          <div class="fw-bold" id="portalCredEmployeeName">—</div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small text-muted mb-1">Portal URL</label>
+          <div class="input-group input-group-sm">
+            <input type="text" class="form-control font-monospace" id="portalCredUrl" readonly>
+            <button class="btn btn-outline-secondary" type="button" data-copy-target="portalCredUrl">Copy</button>
+            <a class="btn btn-outline-primary" id="portalCredOpenLink" href="/employee/login" target="_blank" rel="noopener">Open</a>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small text-muted mb-1">Login email</label>
+          <div class="input-group input-group-sm">
+            <input type="text" class="form-control font-monospace" id="portalCredEmail" readonly>
+            <button class="btn btn-outline-secondary" type="button" data-copy-target="portalCredEmail">Copy</button>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small text-muted mb-1">Employee code (alternate login)</label>
+          <div class="input-group input-group-sm">
+            <input type="text" class="form-control font-monospace" id="portalCredEmpId" readonly>
+            <button class="btn btn-outline-secondary" type="button" data-copy-target="portalCredEmpId">Copy</button>
+          </div>
+        </div>
+
+        <div class="mb-0">
+          <label class="form-label small text-muted mb-1">Password</label>
+          <div class="input-group input-group-sm">
+            <input type="text" class="form-control font-monospace fw-bold" id="portalCredPassword" readonly>
+            <button class="btn btn-outline-secondary" type="button" data-copy-target="portalCredPassword">Copy</button>
+          </div>
+        </div>
+
+        <div class="alert alert-warning mt-3 mb-0 py-2 small">
+          <i class="fas fa-shield-halved me-1"></i> This password is shown once. Ask the employee to change it after first login.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" id="portalCopyAllBtn">
+          <i class="fas fa-copy me-1"></i> Copy all
+        </button>
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal" id="portalCredentialsDoneBtn">Done</button>
       </div>
     </div>
   </div>
@@ -1453,6 +1520,91 @@
 
     let formMode = "create"; // 'create' or 'edit'
     let currentEditingId = null;
+    let currentViewEmployeeId = null;
+    let reloadAfterPortalCredentials = false;
+
+    function copyInputValue(inputId) {
+      const el = document.getElementById(inputId);
+      if (!el?.value) return;
+      navigator.clipboard.writeText(el.value).then(() => {
+        const btn = document.querySelector(`[data-copy-target="${inputId}"]`);
+        if (btn) {
+          const original = btn.textContent;
+          btn.textContent = "Copied!";
+          setTimeout(() => { btn.textContent = original; }, 1200);
+        }
+      }).catch(() => alert("Copy failed — please select and copy manually."));
+    }
+
+    function showPortalCredentialsModal(employee, portalAccess) {
+      if (!portalAccess) return;
+
+      document.getElementById("portalCredEmployeeName").textContent =
+        employee?.empName || `${employee?.firstName || ""} ${employee?.lastName || ""}`.trim() || "Employee";
+      document.getElementById("portalCredUrl").value = portalAccess.portalUrl || `${window.location.origin}/employee/login`;
+      document.getElementById("portalCredEmail").value = portalAccess.loginEmail || "";
+      document.getElementById("portalCredEmpId").value = portalAccess.loginEmployeeCode || "";
+      document.getElementById("portalCredPassword").value = portalAccess.password || "";
+
+      const openLink = document.getElementById("portalCredOpenLink");
+      if (openLink) openLink.href = portalAccess.portalUrl || "/employee/login";
+
+      const sentBanner = document.getElementById("portalEmailSentBanner");
+      const failedBanner = document.getElementById("portalEmailFailedBanner");
+      if (portalAccess.emailSent) {
+        sentBanner?.classList.remove("d-none");
+        failedBanner?.classList.add("d-none");
+      } else {
+        sentBanner?.classList.add("d-none");
+        failedBanner?.classList.remove("d-none");
+      }
+
+      const credModal = bootstrap.Modal.getOrCreateInstance(
+        document.getElementById("employeePortalCredentialsModal")
+      );
+      credModal.show();
+    }
+
+    document.querySelectorAll("[data-copy-target]").forEach((btn) => {
+      btn.addEventListener("click", () => copyInputValue(btn.getAttribute("data-copy-target")));
+    });
+
+    document.getElementById("portalCopyAllBtn")?.addEventListener("click", () => {
+      const text = [
+        `Employee Portal: ${document.getElementById("portalCredUrl")?.value || ""}`,
+        `Email: ${document.getElementById("portalCredEmail")?.value || ""}`,
+        `Employee Code: ${document.getElementById("portalCredEmpId")?.value || ""}`,
+        `Password: ${document.getElementById("portalCredPassword")?.value || ""}`,
+      ].join("\n");
+      navigator.clipboard.writeText(text).then(() => alert("All credentials copied to clipboard."))
+        .catch(() => alert("Copy failed."));
+    });
+
+    document.getElementById("employeePortalCredentialsModal")?.addEventListener("hidden.bs.modal", () => {
+      if (reloadAfterPortalCredentials) {
+        reloadAfterPortalCredentials = false;
+        window.location.reload();
+      }
+    });
+
+    document.getElementById("resetPortalAccessBtn")?.addEventListener("click", async () => {
+      if (!currentViewEmployeeId) return;
+      if (!confirm("Generate a new employee portal password? The previous password will stop working.")) return;
+
+      try {
+        const res = await fetch(`/api/v1/employees/${currentViewEmployeeId}/portal-access/reset`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to reset portal access");
+
+        bootstrap.Modal.getInstance(document.getElementById("viewEmployeeModal"))?.hide();
+        showPortalCredentialsModal(data, data.portalAccess);
+      } catch (error) {
+        alert(error.message);
+      }
+    });
 
     function updateWizardButtons() {
       if (!nextBtn || !saveBtn) return;
@@ -2234,6 +2386,15 @@
             throw new Error(err.error || "Failed to save employee");
           }
 
+          const saved = await res.json();
+
+          if (formMode === "create" && saved.portalAccess) {
+            reloadAfterPortalCredentials = true;
+            bootstrap.Modal.getInstance(addEmployeeModalEl)?.hide();
+            showPortalCredentialsModal(saved, saved.portalAccess);
+            return;
+          }
+
           window.location.reload();
         } catch (error) {
           alert(error.message);
@@ -2292,6 +2453,7 @@
     }
 
     async function openViewEmployeeModal(id) {
+      currentViewEmployeeId = id;
       try {
         const emp = await fetchEmployee(id);
 

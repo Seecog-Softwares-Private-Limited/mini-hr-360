@@ -1,6 +1,7 @@
 // src/routes/adminAttendance.routes.js
 import { Router } from 'express';
 import { verifyUser } from '../middleware/authMiddleware.js';
+import { attachWorkspaceContext } from '../middleware/workspaceMiddleware.js';
 
 import {
   getAttendanceDashboard,
@@ -34,6 +35,7 @@ import {
 const router = Router();
 
 router.use(verifyUser);
+router.use(attachWorkspaceContext);
 
 // ==================== PAGE ROUTES (Render HBS) ====================
 
