@@ -1,6 +1,5 @@
 <div class="auth-shell">
   <div class="auth-decor" aria-hidden="true">
-    <!-- HR-themed floating icons (decor only) -->
     <div class="auth-float c1 s1 d1" style="left: 6%; top: 12%;"><i class="fa-solid fa-user-tie"></i></div>
     <div class="auth-float c2 s2 d2" style="left: 12%; top: 42%;"><i class="fa-solid fa-users-gear"></i></div>
     <div class="auth-float c3 s3 d3" style="left: 6%; top: 62%;"><i class="fa-solid fa-id-card-clip"></i></div>
@@ -18,52 +17,107 @@
         <div class="auth-mark mx-auto" style="border-radius: 999px; width: 56px; height: 56px;">HR</div>
         <div class="mt-3">
           <p class="auth-title" style="font-size: 22px;">mini-hr-360</p>
-          <p class="auth-subtitle">Professional HR management</p>
+          <p class="auth-subtitle" id="loginSubtitle">Sign in to your employee portal</p>
         </div>
       </div>
 
-      <div id="alertContainer"></div>
+      <div class="auth-mode-switch" role="tablist" aria-label="Login mode">
+        <button type="button" class="auth-mode-btn active" id="modeEmployeeBtn" data-mode="employee" role="tab" aria-selected="true">
+          Employee Login
+        </button>
+        <button type="button" class="auth-mode-btn" id="modeHrBtn" data-mode="hr" role="tab" aria-selected="false">
+          HR Login
+        </button>
+      </div>
 
-      <form id="loginForm" class="auth-form">
-        <div class="mb-3">
-          <label for="email" class="form-label">Email Address</label>
-          <div class="input-group">
-            <span class="input-group-text"><i class="fa-solid fa-envelope"></i></span>
-            <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
+      <div id="alertContainer">
+        {{#if errorMessage}}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          {{errorMessage}}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {{/if}}
+      </div>
+
+      <form id="loginForm" class="auth-form" novalidate>
+        <div class="auth-panel active" id="employeePanel" data-mode="employee">
+          <div class="mb-3">
+            <label for="identifier" class="form-label">Email or Employee Code</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="fa-solid fa-user"></i></span>
+              <input type="text" class="form-control" id="identifier" name="identifier"
+                placeholder="Enter your email or employee code" autocomplete="username">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <div class="d-flex align-items-center justify-content-between">
+              <label for="employeePassword" class="form-label mb-0">Password</label>
+              <a class="auth-link" href="/employee/forgot-password">Forgot Password?</a>
+            </div>
+            <div class="input-group mt-2">
+              <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
+              <input type="password" class="form-control" id="employeePassword" name="employeePassword"
+                placeholder="Enter your password" autocomplete="current-password">
+              <button class="auth-toggle-password" type="button" data-target="employeePassword" aria-label="Toggle password visibility">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
           </div>
         </div>
 
-        <div class="mb-3">
-          <div class="d-flex align-items-center justify-content-between">
-            <label for="password" class="form-label mb-0">Password</label>
-            <a class="auth-link" href="#" onclick="return false;" title="Coming soon">Forgot Password?</a>
+        <div class="auth-panel" id="hrPanel" data-mode="hr">
+          <div class="mb-3">
+            <label for="email" class="form-label">Email Address</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="fa-solid fa-envelope"></i></span>
+              <input type="email" class="form-control" id="email" name="email"
+                placeholder="Enter your email" autocomplete="username">
+            </div>
           </div>
-          <div class="input-group mt-2">
-            <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
-            <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
+
+          <div class="mb-3">
+            <div class="d-flex align-items-center justify-content-between">
+              <label for="hrPassword" class="form-label mb-0">Password</label>
+              <a class="auth-link" href="#" onclick="return false;" title="Coming soon">Forgot Password?</a>
+            </div>
+            <div class="input-group mt-2">
+              <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
+              <input type="password" class="form-control" id="hrPassword" name="hrPassword"
+                placeholder="Enter your password" autocomplete="current-password">
+              <button class="auth-toggle-password" type="button" data-target="hrPassword" aria-label="Toggle password visibility">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
           </div>
         </div>
 
         <button type="submit" class="btn auth-primary w-100 mb-2" id="loginBtn">
-          <span id="loginText">Login</span>
+          <span id="loginText">Sign in</span>
           <span id="loadingText" class="d-none">
             <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-            Logging in...
+            Signing in...
           </span>
         </button>
 
-        <div class="auth-or">Or continue with</div>
-        <div class="auth-social" aria-label="Social login options (UI only)">
-          <a href="#" onclick="return false;" title="Google (UI only)"><i class="fa-brands fa-google"></i></a>
-          <a href="#" onclick="return false;" title="Instagram (UI only)"><i class="fa-brands fa-instagram"></i></a>
-          <a href="#" onclick="return false;" title="Facebook (UI only)"><i class="fa-brands fa-facebook-f"></i></a>
-          <a href="#" onclick="return false;" title="GitHub (UI only)"><i class="fa-brands fa-github"></i></a>
-          <a href="#" onclick="return false;" title="LinkedIn (UI only)"><i class="fa-brands fa-linkedin-in"></i></a>
-          <a href="#" onclick="return false;" title="X (UI only)"><i class="fa-brands fa-x-twitter"></i></a>
+        <div id="hrSocialSection">
+          <div class="auth-or">Or continue with</div>
+          <div class="auth-social" aria-label="Social login options (UI only)">
+            <a href="#" onclick="return false;" title="Google (UI only)"><i class="fa-brands fa-google"></i></a>
+            <a href="#" onclick="return false;" title="Instagram (UI only)"><i class="fa-brands fa-instagram"></i></a>
+            <a href="#" onclick="return false;" title="Facebook (UI only)"><i class="fa-brands fa-facebook-f"></i></a>
+            <a href="#" onclick="return false;" title="GitHub (UI only)"><i class="fa-brands fa-github"></i></a>
+            <a href="#" onclick="return false;" title="LinkedIn (UI only)"><i class="fa-brands fa-linkedin-in"></i></a>
+            <a href="#" onclick="return false;" title="X (UI only)"><i class="fa-brands fa-x-twitter"></i></a>
+          </div>
         </div>
       </form>
     </div>
-    <div class="auth-footer">
+    <div class="auth-footer" id="authFooterEmployee">
+      <div><i class="fa-solid fa-shield-halved me-1"></i> Secure employee access portal</div>
+      <div class="mt-2"><a href="/" class="auth-link" style="font-size: 0.875rem;">← Back to home</a></div>
+    </div>
+    <div class="auth-footer d-none" id="authFooterHr">
       <div>Don’t have an account? <a href="/register">Create Account</a></div>
       <div class="mt-2"><a href="/" class="auth-link" style="font-size: 0.875rem;">← Back to home</a></div>
     </div>
@@ -71,121 +125,237 @@
 </div>
 
 <script>
-  document.getElementById('loginForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    const loginBtn = document.getElementById('loginBtn');
+  (function () {
+    const MODES = {
+      employee: {
+        subtitle: 'Sign in to your employee portal',
+        submitLabel: 'Sign in to Employee Portal',
+        redirect: '/employee/dashboard',
+      },
+      hr: {
+        subtitle: 'Sign in to the HR admin portal',
+        submitLabel: 'Sign in to HR Portal',
+        redirect: '/dashboard',
+      },
+    };
+
+    let activeMode = '{{defaultMode}}' === 'hr' ? 'hr' : 'employee';
+
+    const modeEmployeeBtn = document.getElementById('modeEmployeeBtn');
+    const modeHrBtn = document.getElementById('modeHrBtn');
+    const employeePanel = document.getElementById('employeePanel');
+    const hrPanel = document.getElementById('hrPanel');
+    const loginSubtitle = document.getElementById('loginSubtitle');
     const loginText = document.getElementById('loginText');
+    const hrSocialSection = document.getElementById('hrSocialSection');
+    const authFooterEmployee = document.getElementById('authFooterEmployee');
+    const authFooterHr = document.getElementById('authFooterHr');
+    const loginForm = document.getElementById('loginForm');
+    const loginBtn = document.getElementById('loginBtn');
     const loadingText = document.getElementById('loadingText');
     const alertContainer = document.getElementById('alertContainer');
 
-    // Clear previous alerts
-    alertContainer.innerHTML = '';
+    function setActiveMode(mode, updateUrl) {
+      activeMode = mode === 'hr' ? 'hr' : 'employee';
+      const config = MODES[activeMode];
 
-    // Show loading
-    loginBtn.disabled = true;
-    loginText.classList.add('d-none');
-    loadingText.classList.remove('d-none');
+      modeEmployeeBtn.classList.toggle('active', activeMode === 'employee');
+      modeHrBtn.classList.toggle('active', activeMode === 'hr');
+      modeEmployeeBtn.setAttribute('aria-selected', activeMode === 'employee' ? 'true' : 'false');
+      modeHrBtn.setAttribute('aria-selected', activeMode === 'hr' ? 'true' : 'false');
 
-    try {
-      // IMPORTANT: skipAuth so Authorization header is not added
+      employeePanel.classList.toggle('active', activeMode === 'employee');
+      hrPanel.classList.toggle('active', activeMode === 'hr');
+
+      loginSubtitle.textContent = config.subtitle;
+      loginText.textContent = config.submitLabel;
+      hrSocialSection.classList.toggle('d-none', activeMode !== 'hr');
+      authFooterEmployee.classList.toggle('d-none', activeMode !== 'employee');
+      authFooterHr.classList.toggle('d-none', activeMode !== 'hr');
+
+      if (updateUrl) {
+        const url = new URL(window.location.href);
+        if (activeMode === 'hr') {
+          url.searchParams.set('mode', 'hr');
+        } else {
+          url.searchParams.delete('mode');
+        }
+        window.history.replaceState({}, '', url);
+      }
+    }
+
+    modeEmployeeBtn.addEventListener('click', () => setActiveMode('employee', true));
+    modeHrBtn.addEventListener('click', () => setActiveMode('hr', true));
+
+    document.querySelectorAll('.auth-toggle-password').forEach((button) => {
+      button.addEventListener('click', () => {
+        const input = document.getElementById(button.dataset.target);
+        const icon = button.querySelector('i');
+        const isPassword = input.type === 'password';
+        input.type = isPassword ? 'text' : 'password';
+        icon.classList.toggle('fa-eye', !isPassword);
+        icon.classList.toggle('fa-eye-slash', isPassword);
+      });
+    });
+
+    function showAlert(message, type) {
+      alertContainer.innerHTML = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+          ${message}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      `;
+    }
+
+    function setLoading(isLoading) {
+      loginBtn.disabled = isLoading;
+      loginText.classList.toggle('d-none', isLoading);
+      loadingText.classList.toggle('d-none', !isLoading);
+    }
+
+    function validateForm() {
+      if (activeMode === 'employee') {
+        const identifier = document.getElementById('identifier').value.trim();
+        const password = document.getElementById('employeePassword').value;
+        if (!identifier) {
+          showAlert('Please enter your email or employee code.', 'danger');
+          return false;
+        }
+        if (!password) {
+          showAlert('Please enter your password.', 'danger');
+          return false;
+        }
+        return true;
+      }
+
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('hrPassword').value;
+      if (!email) {
+        showAlert('Please enter your email address.', 'danger');
+        return false;
+      }
+      if (!password) {
+        showAlert('Please enter your password.', 'danger');
+        return false;
+      }
+      return true;
+    }
+
+    async function loginEmployee(identifier, password) {
+      const response = await fetch('/employee/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ identifier, password }),
+      });
+      const data = await response.json();
+      if (!response.ok || data.success === false) {
+        throw new Error(data.message || data.error || 'Login failed');
+      }
+      if (data.data?.employee) {
+        localStorage.setItem('employee', JSON.stringify(data.data.employee));
+      }
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('user');
+      localStorage.removeItem('userRole');
+      return data;
+    }
+
+    async function loginHr(email, password) {
       const resObj = await apiCall('/users/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
-        skipAuth: true
+        skipAuth: true,
       });
 
-      // resObj is already JSON (from main.hbs apiCall)
       const data = resObj || {};
-      const payload = data.data || data; // handle ApiResponse or plain
+      const payload = data.data || data;
 
-      // If API returned an error shape
-      if (data.error || data.message && !payload.tokens) {
-        showAlert(data.message || data.error || 'Login failed', 'danger');
-        return;
+      if (data.error || (data.message && !payload.tokens)) {
+        throw new Error(data.message || data.error || 'Login failed');
       }
 
-      const user   = payload.user || payload.data?.user || null;
+      const user = payload.user || payload.data?.user || null;
       const tokens = payload.tokens || payload.data?.tokens || {};
 
-      if (!tokens || !tokens.accessToken) {
-        showAlert('Login failed: no token received', 'danger');
-        return;
+      if (!tokens?.accessToken) {
+        throw new Error('Login failed: no token received');
       }
 
-      // Store user + token
       if (user) localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('accessToken', tokens.accessToken);
-      
-      // Store user role for role-based access
-      if (user && user.role) {
-        localStorage.setItem('userRole', user.role);
-      }
-
-      // Success + redirect
-      showAlert('Login successful! Redirecting...', 'success');
-      const url = new URL(location.href);
-      const next = url.searchParams.get('next');
-      setTimeout(() => {
-        window.location.replace(next || '/dashboard');
-      }, 500);
-
-    } catch (error) {
-      console.error('Login error:', error);
-      showAlert('Network error. Please try again.', 'danger');
-    } finally {
-      // Hide loading
-      loginBtn.disabled = false;
-      loginText.classList.remove('d-none');
-      loadingText.classList.add('d-none');
+      if (user?.role) localStorage.setItem('userRole', user.role);
+      localStorage.removeItem('employee');
+      return { user, tokens };
     }
-  });
 
-  function showAlert(message, type) {
-    const alertContainer = document.getElementById('alertContainer');
-    alertContainer.innerHTML = `
-      <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-      </div>
-    `;
-  }
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      alertContainer.innerHTML = '';
 
-  // Check if user is already authenticated via cookies and auto-redirect to dashboard
-  document.addEventListener('DOMContentLoaded', async function() {
-    // Check if user is already authenticated by trying to access a protected endpoint
-    // Cookies are httpOnly so we can't read them directly, but we can check via API call
-    try {
-      // Use the business list endpoint - works even if user has no businesses yet
-      // It will return 200 with empty array if authenticated but no businesses
-      const response = await fetch(`${window.location.origin.replace(/\/$/, '')}/api/v1/business`, {
-        method: 'GET',
-        credentials: 'include', // Important: sends cookies automatically
-        headers: {
-          'Content-Type': 'application/json'
+      if (!validateForm()) return;
+
+      setLoading(true);
+
+      try {
+        if (activeMode === 'employee') {
+          await loginEmployee(
+            document.getElementById('identifier').value.trim(),
+            document.getElementById('employeePassword').value
+          );
+        } else {
+          await loginHr(
+            document.getElementById('email').value.trim(),
+            document.getElementById('hrPassword').value
+          );
         }
-      });
 
-      // If we get 200 (authenticated, even if no businesses) or any non-401 response, user is authenticated
-      // 404/500 would be server errors, not auth failures, so we only check for 401
-      if (response.status !== 401) {
-        console.log('User is already authenticated via cookies, redirecting to dashboard...');
-        // User is authenticated, redirect to dashboard
-        window.location.replace('/dashboard');
-        return;
+        showAlert('Login successful! Redirecting...', 'success');
+        const url = new URL(location.href);
+        const next = url.searchParams.get('next');
+        const fallback = MODES[activeMode].redirect;
+
+        setTimeout(() => {
+          window.location.replace(next || fallback);
+        }, 500);
+      } catch (error) {
+        console.error('Login error:', error);
+        showAlert(error.message || 'Network error. Please try again.', 'danger');
+      } finally {
+        setLoading(false);
       }
+    });
 
-      // If 401, user is not authenticated, show login form (do nothing)
-      console.log('User is not authenticated, showing login form');
-      // Clear any stale localStorage tokens
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('user');
-    } catch (error) {
-      // Network error or other issue - show login form (do nothing)
-      // This could be a network issue, so don't clear localStorage unnecessarily
-      console.log('Auth check failed (network error), showing login form');
+    async function checkExistingSession() {
+      try {
+        if (activeMode === 'employee') {
+          const response = await fetch('/employee/api/profile', {
+            method: 'GET',
+            credentials: 'include',
+          });
+          if (response.ok) {
+            window.location.replace('/employee/dashboard');
+            return;
+          }
+        } else {
+          const response = await fetch(`${window.location.origin.replace(/\/$/, '')}/api/v1/business`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+          });
+          if (response.status !== 401) {
+            window.location.replace('/dashboard');
+            return;
+          }
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('user');
+        }
+      } catch (error) {
+        console.log('Auth check skipped:', error.message);
+      }
     }
-  });
+
+    setActiveMode(activeMode, false);
+    checkExistingSession();
+  })();
 </script>

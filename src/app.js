@@ -212,7 +212,25 @@ app.get('/', (req, res) => {
     res.render('landing', { title: 'mini-hr-360', pageClass: 'landing' });
 });
 
-app.get('/login', (req, res) => res.render('login', { title: 'mini-hr-360', pageClass: 'auth' }));
+app.get('/login', (req, res) => {
+    const mode = req.query.mode === 'hr' ? 'hr' : 'employee';
+    let errorMessage = null;
+    const error = req.query.error;
+
+    if (error === 'inactive') {
+        errorMessage = 'Your account has been deactivated. Please contact HR.';
+    } else if (error === 'noaccess') {
+        errorMessage = 'You do not have portal access. Please contact HR.';
+    }
+
+    res.render('login', {
+        title: 'mini-hr-360',
+        pageClass: 'auth',
+        defaultMode: mode,
+        errorMessage,
+    });
+});
+app.get('/hr', (req, res) => res.redirect('/login?mode=hr'));
 app.get('/register', (req, res) => res.render('register', { title: 'mini-hr-360', pageClass: 'auth' }));
 
 app.get('/dashboard', verifyUser, (req, res) => {
