@@ -13,21 +13,9 @@ import { rotateEmployeeSession } from '../../services/employeeSession.service.js
  * GET /employee/login - Render login page
  */
 export const renderEmployeeLogin = (req, res) => {
-  const error = req.query.error;
-  let errorMessage = null;
-
-  if (error === 'inactive') {
-    errorMessage = 'Your account has been deactivated. Please contact HR.';
-  } else if (error === 'noaccess') {
-    errorMessage = 'You do not have portal access. Please contact HR.';
-  }
-
-  res.render('employee/login', {
-    title: 'Employee Login',
-    pageClass: 'auth',
-    layout: 'employee-main',
-    errorMessage,
-  });
+  const params = new URLSearchParams({ mode: 'employee' });
+  if (req.query.error) params.set('error', req.query.error);
+  return res.redirect(`/login?${params.toString()}`);
 };
 
 /**

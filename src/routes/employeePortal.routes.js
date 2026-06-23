@@ -49,11 +49,13 @@ import {
 
 const router = Router();
 
+router.get('/', (req, res) => res.redirect('/login'));
+
 // ===================================
 // PUBLIC ROUTES (No Auth Required)
 // ===================================
 
-// Employee Login
+// Employee Login (unified login page)
 router.get('/login', renderEmployeeLogin);
 router.post('/login', loginEmployee);
 router.post('/refresh', refreshEmployee);
