@@ -39,6 +39,13 @@ import {
   renderGoals,
   renderPerformance,
 } from '../controllers/employee/employeeWork.controller.js';
+import {
+  renderDocumentsVault,
+  listDocumentsApi,
+  previewDocument,
+  downloadDocument,
+  getDocumentDetail,
+} from '../controllers/employee/employeeDocument.controller.js';
 
 const router = Router();
 
@@ -80,6 +87,11 @@ router.get('/profile', verifyEmployee, renderProfile);
 router.get('/change-password', verifyEmployee, renderChangePassword);
 router.post('/change-password', verifyEmployee, updatePassword);
 
+// Documents Vault
+router.get('/documents', verifyEmployee, renderDocumentsVault);
+router.get('/documents/:id/preview', verifyEmployee, previewDocument);
+router.get('/documents/:id/download', verifyEmployee, downloadDocument);
+
 // Leave Management - Page Routes
 router.get('/leaves', verifyEmployee, renderLeaveList);
 router.get('/leaves/apply', verifyEmployee, renderApplyLeave);
@@ -97,6 +109,10 @@ router.get('/leaves/:id', verifyEmployee, getLeaveDetails);
 router.get('/api/dashboard/stats', verifyEmployee, getDashboardStats);
 router.get('/api/dashboard/overview', verifyEmployee, getDashboardOverview);
 router.get('/api/profile', verifyEmployee, getEmployeeProfile);
+
+// Documents API
+router.get('/api/documents', verifyEmployee, listDocumentsApi);
+router.get('/api/documents/:id', verifyEmployee, getDocumentDetail);
 
 // Leave API
 router.get('/api/leaves/balances', verifyEmployee, getLeaveBalances);
