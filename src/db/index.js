@@ -2,34 +2,23 @@
 import { Sequelize } from 'sequelize';
 import mysql from 'mysql2/promise';
 
-// --- helpers ---
-// const req = (key, fallback) => {
-//   const v = process.env[key] ?? fallback;
-//   if (v === undefined || v === null || v === '') {
-//     throw new Error(`Missing required env: ${key}`);
-//   }
-//   return v;
-// };
+const req = (key) => {
+  const v = process.env[key];
+  if (v === undefined || v === null || v === '') {
+    throw new Error(`Missing required env: ${key}`);
+  }
+  return v;
+};
 
-// --- env (already loaded in index.js) ---
-console.log("DB_HOST : ", process.env.DB_HOST);
-//Prod
-// const DB_HOST = process.env.DB_HOST;  // GoDaddy: 'localhost'; local can be '127.0.0.1'
-// const DB_PORT = Number(process.env.DB_PORT || 3306);
-// const DB_NAME = process.env.DB_NAME || 'mini_hr_360';
-// const DB_USER = process.env.DB_USER;
-// const DB_PASSWORD = process.env.DB_PASSWORD;
-// const CREATE_DB_IF_MISSING = (process.env.CREATE_DB_IF_MISSING || 'false') === 'true';
-// const SYNC_DB = (process.env.SYNC_DB || 'false') === 'true';
-
-//Stage
-const DB_HOST = 'ls-322b13a438adc6602193777abc66dd7f1b391154.cd0w8y80q80x.ap-south-1.rds.amazonaws.com';  // GoDaddy: 'localhost'; local can be '127.0.0.1'
-const DB_PORT = Number(3306);
-const DB_NAME = 'mini_hr_360';
-const DB_USER = 'dbmasteruser';
-const DB_PASSWORD = '&s0rpr,(G2+1sv7rT3MGKa{c:-j<ebN:';
+const DB_HOST = req('DB_HOST');
+const DB_PORT = Number(process.env.DB_PORT || 3306);
+const DB_NAME = process.env.DB_NAME || 'mini_hr_360';
+const DB_USER = req('DB_USER');
+const DB_PASSWORD = req('DB_PASSWORD');
 const CREATE_DB_IF_MISSING = (process.env.CREATE_DB_IF_MISSING || 'false') === 'true';
 const SYNC_DB = (process.env.SYNC_DB || 'false') === 'true';
+
+console.log(`DB_HOST: ${DB_HOST}`);
 
 // --- sequelize instance ---
 export const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
