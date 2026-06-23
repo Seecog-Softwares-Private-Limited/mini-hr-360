@@ -3,28 +3,9 @@ import { ApiResponse } from '../../../utils/ApiResponse.js';
 import { ApiError } from '../../../utils/ApiError.js';
 import * as payrollRunService from '../../../services/payroll/payrollRun.service.js';
 import payoutService from '../../../services/payroll/payoutService.js';
+import { resolveTenantBusinessId } from '../../../utils/tenantContext.util.js';
 
-const resolveBusinessId = (req) => {
-  const raw =
-    req.get('x-business-id') ||
-    req.query?.businessId ||
-    req.body?.businessId ||
-    req.params?.businessId ||
-    req.user?.businessId ||
-    req.user?.businessId ||
-    req.user?.business_id;
-
-  console.log(`[resolveBusinessId] Headers x-business-id: ${req.get('x-business-id')}`);
-  console.log(`[resolveBusinessId] Query/Body/User:`, { query: req.query?.businessId, body: req.body?.businessId, user: req.user?.businessId });
-
-  const businessId = raw ? Number(raw) : null;
-
-  if (!businessId || Number.isNaN(businessId)) {
-    throw new ApiError(401, 'Unauthorized: businessId not found. Send x-business-id or login.');
-  }
-
-  return businessId;
-};
+const resolveBusinessId = (req) => resolveTenantBusinessId(req);
 
 const resolveUserId = (req, fieldName = 'userId') => {
   const raw =
@@ -49,7 +30,7 @@ const resolveUserId = (req, fieldName = 'userId') => {
  * List all payroll runs for a business
  */
 export const listPayrollRuns = asyncHandler(async (req, res) => {
-  const businessId = resolveBusinessId(req);
+  const businessId = await resolveBusinessId(req);
 
   const filters = {};
   if (req.query.periodMonth) filters.periodMonth = Number(req.query.periodMonth);
@@ -63,7 +44,7 @@ export const listPayrollRuns = asyncHandler(async (req, res) => {
  * Create a new payroll run
  */
 export const createPayrollRun = asyncHandler(async (req, res) => {
-  const businessId = resolveBusinessId(req);
+  const businessId = await resolveBusinessId(req);
 
   // Support both formats: { period: "2026-01" } or { periodMonth: 1, periodYear: 2026 }
   let periodMonth, periodYear;
@@ -100,7 +81,7 @@ export const getPayrollRun = asyncHandler(async (req, res) => {
  * Approve a payroll run
  */
 export const approvePayrollRun = asyncHandler(async (req, res) => {
-  const businessId = resolveBusinessId(req);
+  const businessId = await resolveBusinessId(req);
   const approvedByUserId = resolveUserId(req, 'approvedBy');
 
   try {
@@ -120,7 +101,7 @@ export const approvePayrollRun = asyncHandler(async (req, res) => {
  * Lock a payroll run
  */
 export const lockPayrollRun = asyncHandler(async (req, res) => {
-  const businessId = resolveBusinessId(req);
+  const businessId = await resolveBusinessId(req);
   const lockedByUserId = resolveUserId(req, 'lockedBy');
 
   try {
@@ -139,7 +120,7 @@ export const lockPayrollRun = asyncHandler(async (req, res) => {
  * Update payroll run metadata
  */
 export const updatePayrollRun = asyncHandler(async (req, res) => {
-  const businessId = resolveBusinessId(req);
+  const businessId = await resolveBusinessId(req);
   const runId = Number(req.params.id);
   const force = !!req.body?.force;
   try {
@@ -154,7 +135,7 @@ export const updatePayrollRun = asyncHandler(async (req, res) => {
  * Delete a payroll run (hard delete). Pass { force: true } in body to override locked state.
  */
 export const deletePayrollRun = asyncHandler(async (req, res) => {
-  const businessId = resolveBusinessId(req);
+  const businessId = await resolveBusinessId(req);
   const runId = Number(req.params.id);
   const force = !!req.body?.force || req.query?.force === 'true';
   try {
@@ -169,7 +150,7 @@ export const deletePayrollRun = asyncHandler(async (req, res) => {
  * Unlock a locked payroll run (admin/owner only)
  */
 export const unlockPayrollRun = asyncHandler(async (req, res) => {
-  const businessId = resolveBusinessId(req);
+  const businessId = await resolveBusinessId(req);
   const runId = Number(req.params.id);
   const reason = req.body?.reason || null;
   try {
@@ -185,7 +166,7 @@ export const unlockPayrollRun = asyncHandler(async (req, res) => {
  * Returns attendance, leave data summary for review
  */
 export const pullInputs = asyncHandler(async (req, res) => {
-  const businessId = resolveBusinessId(req);
+  const businessId = await resolveBusinessId(req);
 
   let periodMonth, periodYear;
   if (req.body.period) {
@@ -210,7 +191,7 @@ export const pullInputs = asyncHandler(async (req, res) => {
  * Initialize a payroll run in Draft status - Step 1b
  */
 export const initializePayrollRun = asyncHandler(async (req, res) => {
-  const businessId = resolveBusinessId(req);
+  const businessId = await resolveBusinessId(req);
 
   let periodMonth, periodYear;
   if (req.body.period) {
@@ -251,7 +232,7 @@ export const calculatePayroll = asyncHandler(async (req, res) => {
  * Admin can force recalculate any run regardless of status
  */
 export const recalculatePayroll = asyncHandler(async (req, res) => {
-  const businessId = resolveBusinessId(req);
+  const businessId = await resolveBusinessId(req);
   const runId = Number(req.params.id);
   const force = !!req.body?.force || req.query?.force === 'true';
 
@@ -268,7 +249,7 @@ export const recalculatePayroll = asyncHandler(async (req, res) => {
  * Publish a locked payroll run - Step 6
  */
 export const publishPayrollRun = asyncHandler(async (req, res) => {
-  const businessId = resolveBusinessId(req);
+  const businessId = await resolveBusinessId(req);
   const runId = Number(req.params.id);
 
   try {
@@ -284,7 +265,7 @@ export const publishPayrollRun = asyncHandler(async (req, res) => {
  * This initiates bank transfers to employees
  */
 export const processPayments = asyncHandler(async (req, res) => {
-  const businessId = resolveBusinessId(req);
+  const businessId = await resolveBusinessId(req);
   const runId = Number(req.params.id);
   const { mode = 'IMPS', dryRun = false } = req.body || {};
 

@@ -4,6 +4,7 @@ import { ApiResponse } from "../../utils/ApiResponse.js"
 import { User } from "../../models/User.js"
 import { Business } from "../../models/Business.js"
 import { Op } from 'sequelize';
+import { userCanCreateWorkspace } from '../../services/workspace.service.js';
 
 function escapeRegex(s = "") {
     return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -15,8 +16,8 @@ export const createBusiness = asyncHandler(async (req, res) => {
 
         if (!businessName || !country || !category) return res.status(400).json(new ApiResponse(400, {}, "Business name, country and category are required"));
 
-        if (req.user.role !== "shop_owner") {
-            return res.status(403).json(new ApiResponse(403, {}, "Only shop owner can create businesses"))
+        if (!userCanCreateWorkspace(req.user)) {
+            return res.status(403).json(new ApiResponse(403, {}, "You do not have permission to create workspaces"))
         }
 
         const business = await Business.create({

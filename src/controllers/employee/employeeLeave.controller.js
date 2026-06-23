@@ -8,6 +8,7 @@ import {
   getAllLeaveBalances,
   validateLeaveRequest,
 } from '../../services/leave.service.js';
+import { notifyBusinessAdmins } from '../../services/notification.service.js';
 
 /**
  * GET /employee/leaves - Render leave list page
@@ -176,6 +177,21 @@ export const submitLeaveApplication = asyncHandler(async (req, res) => {
       message: 'Failed to apply leave',
       errors: result.errors,
     });
+  }
+
+  try {
+    await notifyBusinessAdmins({
+      businessId,
+      type: 'LEAVE_REQUEST',
+      title: `Leave request: ${employee.empName}`,
+      message: `${result.leaveRequest.totalDays} day(s) pending your approval`,
+      link: '/leave-requests',
+      entityType: 'LeaveRequest',
+      entityId: result.leaveRequest.id,
+      priority: 'MEDIUM',
+    });
+  } catch (err) {
+    console.warn('Leave notification failed:', err.message);
   }
 
   return res.status(201).json({

@@ -1,0 +1,33 @@
+<div class="container-fluid">
+    <div class="row">
+        {{> employee-sidebar employee=employee active=pageKey}}
+
+        <div class="col-md-10 emp-main">
+            <div class="emp-card">
+                <div class="emp-card-body emp-coming-soon">
+                    <div class="emp-coming-soon-icon">
+                        <i class="fa-solid {{page.icon}}"></i>
+                    </div>
+                    <h2 class="emp-page-title justify-content-center border-0" style="font-size:1.5rem;">{{page.title}}</h2>
+                    <p class="text-muted mx-auto" style="max-width:480px;">{{page.description}}</p>
+                    <span class="emp-badge emp-badge-pending">Coming Soon</span>
+
+                    <ul class="emp-feature-list">
+                        {{#each page.features}}
+                        <li><i class="fa-solid fa-circle-check"></i> {{this}}</li>
+                        {{/each}}
+                    </ul>
+
+                    <div class="mt-4 d-flex gap-2 justify-content-center flex-wrap">
+                        <a href="/employee/dashboard" class="btn emp-btn-secondary">
+                            <i class="fa-solid fa-arrow-left me-1"></i> Back to Dashboard
+                        </a>
+                        <a href="/employee/attendance/today" class="btn emp-btn-primary">
+                            <i class="fa-solid fa-fingerprint me-1"></i> Go to Attendance
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

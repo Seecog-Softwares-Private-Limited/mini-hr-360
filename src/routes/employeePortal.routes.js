@@ -4,11 +4,13 @@ import { verifyEmployee } from '../middleware/employeeAuthMiddleware.js';
 import {
   renderEmployeeLogin,
   loginEmployee,
+  refreshEmployee,
   logoutEmployee,
 } from '../controllers/employee/employeeAuth.controller.js';
 import {
   renderEmployeeDashboard,
   getDashboardStats,
+  getDashboardOverview,
   getEmployeeProfile,
 } from '../controllers/employee/employeeDashboard.controller.js';
 import {
@@ -30,6 +32,14 @@ import {
   validateLeave,
 } from '../controllers/employee/employeeLeave.controller.js';
 
+import {
+  renderTimesheets,
+  renderTasks,
+  renderProjects,
+  renderGoals,
+  renderPerformance,
+} from '../controllers/employee/employeeWork.controller.js';
+
 const router = Router();
 
 // ===================================
@@ -39,6 +49,7 @@ const router = Router();
 // Employee Login
 router.get('/login', renderEmployeeLogin);
 router.post('/login', loginEmployee);
+router.post('/refresh', refreshEmployee);
 
 // Forgot Password
 router.get('/forgot-password', (req, res) => res.render('employee/forgot-password', { layout: 'employee-main', pageClass: 'auth' }));
@@ -56,6 +67,13 @@ router.post('/logout', verifyEmployee, logoutEmployee);
 
 // Dashboard
 router.get('/dashboard', verifyEmployee, renderEmployeeDashboard);
+
+// My Work
+router.get('/work/timesheets', verifyEmployee, renderTimesheets);
+router.get('/work/tasks', verifyEmployee, renderTasks);
+router.get('/work/projects', verifyEmployee, renderProjects);
+router.get('/work/goals', verifyEmployee, renderGoals);
+router.get('/work/performance', verifyEmployee, renderPerformance);
 
 // Profile
 router.get('/profile', verifyEmployee, renderProfile);
@@ -77,6 +95,7 @@ router.get('/leaves/:id', verifyEmployee, getLeaveDetails);
 
 // Dashboard API
 router.get('/api/dashboard/stats', verifyEmployee, getDashboardStats);
+router.get('/api/dashboard/overview', verifyEmployee, getDashboardOverview);
 router.get('/api/profile', verifyEmployee, getEmployeeProfile);
 
 // Leave API

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { verifyUser } from '../middleware/authMiddleware.js';
-import { Business, PayrollRun } from '../models/index.js';
+import { attachWorkspaceContext } from '../middleware/workspaceMiddleware.js';
+import { PayrollRun } from '../models/index.js';
 
 import * as payrollSetupService from '../services/payroll/payrollSetup.service.js';
 import * as salaryStructureService from '../services/payroll/salaryStructure.service.js';
@@ -11,30 +12,9 @@ import * as payslipService from '../services/payroll/payslip.service.js';
 
 const router = Router();
 router.use(verifyUser);
+router.use(attachWorkspaceContext);
 
-const resolveBusinessId = async (req) => {
-  // Check user's businessId or defaultBusinessId first
-  const raw = req.user?.businessId || req.user?.defaultBusinessId || Number(req.query?.businessId) || null;
-  if (Number.isFinite(Number(raw)) && Number(raw) > 0) return Number(raw);
-
-  // fallback: find business by ownerId (same logic as controller)
-  const ownerId = req.user?.id;
-  if (ownerId) {
-    const biz = await Business.findOne({ where: { ownerId }, order: [['createdAt', 'ASC']] });
-    if (biz?.id) return biz.id;
-  }
-
-  // Fallback: If only 1 business exists (Single Tenant Mode), use it
-  try {
-    const count = await Business.count();
-    if (count === 1) {
-      const biz = await Business.findOne();
-      if (biz?.id) return biz.id;
-    }
-  } catch (e) { console.error('Error auto-resolving business:', e); }
-
-  return null;
-};
+const resolveBusinessId = async (req) => req.workspaceId ?? null;
 
 // Payroll setup
 router.get('/setup', async (req, res) => {

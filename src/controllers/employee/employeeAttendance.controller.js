@@ -8,6 +8,7 @@ import {
     getCalendar as getCalendarFromService,
     getEffectiveAssignment,
 } from '../../services/attendance.service.js';
+import { notifyBusinessAdmins } from '../../services/notification.service.js';
 
 // --- Helpers ---
 const getTodayDateString = () => new Date().toISOString().split('T')[0];
@@ -231,6 +232,23 @@ export const createRegularizationRequest = asyncHandler(async (req, res) => {
         });
 
         console.log('Regularization request created successfully:', request.id);
+
+        try {
+            await notifyBusinessAdmins({
+                businessId: employee.businessId,
+                type: 'SYSTEM_ALERT',
+                title: `Attendance regularization: ${employee.empName}`,
+                message: `${type} request for ${date} — pending review`,
+                link: '/admin/attendance/regularizations',
+                entityType: 'AttendanceRegularization',
+                entityId: request.id,
+                priority: 'MEDIUM',
+                metadata: { category: 'attendance', subType: type },
+            });
+        } catch (notifyErr) {
+            console.warn('Regularization notification failed:', notifyErr.message);
+        }
+
         return res.json({ success: true, message: 'Request submitted successfully', request });
     } catch (error) {
         console.error('createRegularizationRequest error:', error.message);

@@ -2,6 +2,8 @@
 import { asyncHandler } from '../utils/asyncHandler.js';
 import Employee from '../models/Employee.js';
 import { verifyAccessToken } from '../utils/token.util.js';
+import { rotateEmployeeSession } from '../services/employeeSession.service.js';
+import { clearEmployeeAuthCookies, setEmployeeAuthCookies } from '../utils/authCookie.util.js';
 
 /**
  * Determines if we should redirect to employee login page
@@ -20,104 +22,125 @@ function shouldRedirectToEmployeeLogin(req) {
   return isGet && wantsHtml && !isApiPath && !isXHR;
 }
 
+function isExpiredTokenError(error) {
+  return error?.name === 'TokenExpiredError' || String(error?.message || '').includes('jwt expired');
+}
+
+async function tryRefreshEmployeeSession(req, res) {
+  const refreshToken = req.cookies?.employeeRefreshToken;
+  if (!refreshToken) return null;
+
+  try {
+    const { accessToken, refreshToken: newRefresh, refreshExp, employee } =
+      await rotateEmployeeSession(refreshToken);
+    setEmployeeAuthCookies(res, accessToken, newRefresh, refreshExp);
+    return employee;
+  } catch {
+    clearEmployeeAuthCookies(res);
+    return null;
+  }
+}
+
+async function authenticateEmployee(req, res) {
+  const token =
+    req.header('Authorization')?.replace(/^Bearer\s+/i, '').trim() ||
+    req.cookies?.employeeAccessToken;
+
+  if (!token || token === 'undefined' || token === 'null') {
+    return { error: 'missing_token' };
+  }
+
+  let decoded;
+  try {
+    decoded = verifyAccessToken(token);
+  } catch (error) {
+    if (!isExpiredTokenError(error)) {
+      return { error: 'invalid_token', message: error.message };
+    }
+
+    const employee = await tryRefreshEmployeeSession(req, res);
+    if (!employee) {
+      return { error: 'session_expired', message: error.message };
+    }
+
+    if (!employee.isActive) {
+      return { error: 'inactive' };
+    }
+
+    if (!employee.canLogin) {
+      return { error: 'noaccess' };
+    }
+
+    return { employee };
+  }
+
+  if (!decoded?.employeeId) {
+    return { error: 'invalid_token_type' };
+  }
+
+  const employee = await Employee.findByPk(decoded.employeeId, {
+    attributes: { exclude: ['password', 'employeeRefreshToken'] },
+  });
+
+  if (!employee) {
+    return { error: 'not_found' };
+  }
+
+  if (!employee.isActive) {
+    return { error: 'inactive' };
+  }
+
+  if (!employee.canLogin) {
+    return { error: 'noaccess' };
+  }
+
+  return { employee };
+}
+
 /**
  * Middleware to verify employee is logged in (via employee-specific token)
  */
 export const verifyEmployee = asyncHandler(async (req, res, next) => {
-  try {
-    // Check for employee-specific token (prioritize header for API debugging)
-    const token =
-      req.header('Authorization')?.replace(/^Bearer\s+/i, '').trim() ||
-      req.cookies?.employeeAccessToken;
+  const auth = await authenticateEmployee(req, res);
 
-    if (!token || token === 'undefined' || token === 'null') {
-      if (shouldRedirectToEmployeeLogin(req)) {
-        return res.redirect('/employee/login');
-      }
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required',
-        error: 'Employee login required',
-      });
-    }
+  if (auth.employee) {
+    req.employee = auth.employee;
+    req.businessId = auth.employee.businessId;
+    return next();
+  }
 
-    let decoded;
-    try {
-      decoded = verifyAccessToken(token);
-    } catch (jwtErr) {
-      console.error(`[Auth] JWT malformed/invalid. Received: "${token.substring(0, 20)}..."`);
-      throw jwtErr;
-    }
-
-
-    // Check if this is an employee token (has employeeId claim)
-    if (!decoded?.employeeId) {
-      if (shouldRedirectToEmployeeLogin(req)) {
-        return res.redirect('/employee/login');
-      }
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid token type',
-        error: 'This token is not valid for employee access',
-      });
-    }
-
-    const employee = await Employee.findByPk(decoded.employeeId, {
-      attributes: { exclude: ['password', 'employeeRefreshToken'] },
-    });
-
-    if (!employee) {
-      if (shouldRedirectToEmployeeLogin(req)) {
-        return res.redirect('/employee/login');
-      }
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication failed',
-        error: 'Employee not found',
-      });
-    }
-
-    // Check if employee is active and can login
-    if (!employee.isActive) {
-      if (shouldRedirectToEmployeeLogin(req)) {
-        return res.redirect('/employee/login?error=inactive');
-      }
-      return res.status(403).json({
-        success: false,
-        message: 'Account inactive',
-        error: 'Your account has been deactivated',
-      });
-    }
-
-    if (!employee.canLogin) {
-      if (shouldRedirectToEmployeeLogin(req)) {
-        return res.redirect('/employee/login?error=noaccess');
-      }
-      return res.status(403).json({
-        success: false,
-        message: 'Access denied',
-        error: 'You do not have portal access',
-      });
-    }
-
-    // Attach employee to request
-    req.employee = employee;
-    req.businessId = employee.businessId;
-    next();
-  } catch (error) {
-    console.error('Employee auth error:', error.message);
-
+  if (auth.error === 'inactive') {
     if (shouldRedirectToEmployeeLogin(req)) {
-      res.clearCookie('employeeAccessToken');
-      return res.redirect('/employee/login');
+      return res.redirect('/employee/login?error=inactive');
     }
-
-    return res.status(401).json({
+    return res.status(403).json({
       success: false,
-      message: 'Authentication failed',
-      error: error.message,
+      message: 'Account inactive',
+      error: 'Your account has been deactivated',
     });
   }
+
+  if (auth.error === 'noaccess') {
+    if (shouldRedirectToEmployeeLogin(req)) {
+      return res.redirect('/employee/login?error=noaccess');
+    }
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied',
+      error: 'You do not have portal access',
+    });
+  }
+
+  if (shouldRedirectToEmployeeLogin(req)) {
+    clearEmployeeAuthCookies(res);
+    return res.redirect('/employee/login');
+  }
+
+  return res.status(401).json({
+    success: false,
+    message: 'Authentication failed',
+    error: auth.message || 'Employee login required',
+  });
 });
 
 /**

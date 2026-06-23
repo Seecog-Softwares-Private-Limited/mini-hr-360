@@ -60,6 +60,31 @@
                 </div>
             </div>
 
+            <!-- Monthly Heatmap -->
+            <div class="emp-card mb-4">
+                <div class="emp-card-header">
+                    <h5 class="emp-card-title">
+                        <i class="fa-solid fa-chart-simple" style="color: var(--emp-primary);"></i>
+                        Monthly Heatmap
+                    </h5>
+                    <small class="text-muted">Darker green = more hours worked</small>
+                </div>
+                <div class="emp-card-body">
+                    <div id="attendanceHeatmap" class="emp-heatmap"></div>
+                    <div class="emp-heatmap-legend">
+                        <span>Less</span>
+                        <span class="level-0" style="background:#e2e8f0;"></span>
+                        <span class="level-1" style="background:#bbf7d0;"></span>
+                        <span class="level-2" style="background:#4ade80;"></span>
+                        <span class="level-3" style="background:#16a34a;"></span>
+                        <span class="level-4" style="background:#15803d;"></span>
+                        <span>More</span>
+                        <span style="margin-left:12px;background:#fecaca;" title="Absent"></span> Absent
+                        <span style="background:#fde68a;" title="Leave"></span> Leave
+                    </div>
+                </div>
+            </div>
+
             <!-- Calendar Card -->
             <div class="emp-card shadow-sm">
                 <div class="emp-card-header" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); border-bottom: none; color: white; border-radius: 10px 10px 0 0;">
@@ -289,6 +314,11 @@ async function loadMonthlyAttendance(monthStr) {
             
             // Render calendar
             renderCalendarGrid(monthStr);
+
+            if (window.empBuildHeatmap) {
+                const [y, m] = monthStr.split('-');
+                window.empBuildHeatmap('attendanceHeatmap', data.data, parseInt(y), parseInt(m));
+            }
             
             // Update last refresh time
             const now = new Date();

@@ -5,6 +5,7 @@ import {
   testPayment
 } from '../controllers/admin/payroll/payrollsetup.controller.js';
 import { verifyOwner, verifyUser } from '../middleware/authMiddleware.js';
+import { attachWorkspaceContext } from '../middleware/workspaceMiddleware.js';
 import { canApprovePayroll, canFinalApprovePayroll, requireRoles } from '../middleware/roleMiddleware.js';
 
 import {
@@ -75,8 +76,9 @@ import {
 
 const router = express.Router();
 
-// Apply verifyUser to all payroll API routes
+// Apply verifyUser + workspace context to all payroll API routes
 router.use(verifyUser);
+router.use(attachWorkspaceContext);
 
 /* Payroll Setup */
 router.get('/setup/:businessId', getPayrollSetup);

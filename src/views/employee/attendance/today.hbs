@@ -5,8 +5,56 @@
         <!-- Main Content -->
         <div class="col-md-10 emp-main">
             <div class="emp-page-header">
-                <h1 class="emp-page-title">Today's Attendance</h1>
-                <p class="text-muted mt-1">Your attendance status for today</p>
+                <h1 class="emp-page-title">Attendance</h1>
+                <p class="text-muted mt-1">Clock in/out, track your hours, and view logs</p>
+            </div>
+
+            <!-- Live Clock Panel -->
+            <div class="emp-clock-panel">
+                <div id="punchStatusRing" class="emp-punch-ring {{#if summary.firstInAt}}{{#unless summary.lastOutAt}}working{{/unless}}{{/if}}">
+                    <i class="fa-solid fa-fingerprint fa-2x" style="color:#38bdf8;"></i>
+                </div>
+                <div style="font-size:13px;opacity:0.8;text-transform:uppercase;letter-spacing:0.1em;">Live Timer</div>
+                <div id="liveWorkTimer"
+                     class="emp-live-timer"
+                     data-check-in="{{#if summary.firstInAt}}{{summary.firstInAt}}{{/if}}"
+                     data-working="{{#if summary.firstInAt}}{{#unless summary.lastOutAt}}true{{else}}false{{/unless}}{{else}}false{{/if}}">00:00:00</div>
+                <div class="mb-3">
+                    <span id="geoStatusBadge" class="emp-geo-badge"><i class="fa-solid fa-location-dot"></i> Checking location…</span>
+                </div>
+                <div class="d-flex gap-2 justify-content-center flex-wrap">
+                    <button id="punchInBtn" class="btn btn-success btn-lg px-4" onclick="handlePunch('IN')">
+                        <i class="fa-solid fa-arrow-right-to-bracket me-1"></i> Clock In
+                    </button>
+                    <button id="punchOutBtn" class="btn btn-outline-light btn-lg px-4" onclick="handlePunch('OUT')" disabled>
+                        <i class="fa-solid fa-arrow-right-from-bracket me-1"></i> Clock Out
+                    </button>
+                </div>
+            </div>
+
+            <!-- Attendance Methods -->
+            <div class="emp-method-tabs mb-4">
+                <button type="button" class="emp-method-tab active" data-panel="manual">
+                    <i class="fa-solid fa-hand-pointer me-1"></i> Manual
+                </button>
+                <button type="button" class="emp-method-tab" data-panel="geo">
+                    <i class="fa-solid fa-location-crosshairs me-1"></i> Geo
+                </button>
+                <button type="button" class="emp-method-tab disabled" title="Coming soon">
+                    <i class="fa-solid fa-qrcode me-1"></i> QR
+                </button>
+                <button type="button" class="emp-method-tab disabled" title="Coming soon">
+                    <i class="fa-solid fa-face-smile me-1"></i> Face
+                </button>
+            </div>
+            <div data-method-panel="manual" class="mb-3">
+                <small class="text-muted"><i class="fa-solid fa-info-circle me-1"></i>Use the clock buttons above or the detailed punch controls below.</small>
+            </div>
+            <div data-method-panel="geo" style="display:none;" class="emp-card mb-4">
+                <div class="emp-card-body">
+                    <p class="mb-2"><i class="fa-solid fa-map-pin me-1 text-primary"></i> Your location is captured automatically when you punch in/out.</p>
+                    <p class="text-muted small mb-0">Enable browser location permissions for accurate geo attendance.</p>
+                </div>
             </div>
 
             <!-- Alert Messages -->
@@ -74,10 +122,10 @@
                 <div class="emp-card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="d-flex gap-2 flex-wrap">
-                            <button id="punchInBtn" class="btn emp-btn-primary" onclick="handlePunch('IN')">
+                            <button id="punchInBtn2" class="btn emp-btn-primary" onclick="handlePunch('IN')">
                                 <i class="fa-solid fa-arrow-right-to-bracket me-1"></i> Punch In
                             </button>
-                            <button id="punchOutBtn" class="btn emp-btn-secondary" onclick="handlePunch('OUT')" disabled>
+                            <button id="punchOutBtn2" class="btn emp-btn-secondary" onclick="handlePunch('OUT')" disabled>
                                 <i class="fa-solid fa-arrow-right-from-bracket me-1"></i> Punch Out
                             </button>
                             <button id="breakStartBtn" class="btn btn-outline-warning" onclick="handlePunch('BREAK_START')" disabled>
@@ -165,9 +213,9 @@ function showAlert(message, type = 'info') {
 
 async function handlePunch(type) {
     try {
-        const punchBtn = document.getElementById('punchInBtn');
-        const outBtn = document.getElementById('punchOutBtn');
-        const allBtns = [punchBtn, outBtn, document.getElementById('breakStartBtn'), document.getElementById('breakEndBtn')];
+        const punchBtn = document.getElementById('punchInBtn') || document.getElementById('punchInBtn2');
+        const outBtn = document.getElementById('punchOutBtn') || document.getElementById('punchOutBtn2');
+        const allBtns = [punchBtn, outBtn, document.getElementById('breakStartBtn'), document.getElementById('breakEndBtn'), document.getElementById('punchInBtn2'), document.getElementById('punchOutBtn2')].filter(Boolean);
         allBtns.forEach(b => b.disabled = true);
         
         // Get geolocation if available
@@ -288,9 +336,10 @@ async function loadAttendanceData() {
             const hasCheckedOut = !!summary.lastOutAt;
             const isLocked = data.isLocked;
 
-            const punchInBtn = document.getElementById('punchInBtn');
-            // default for other buttons (no change in behavior)
-            document.getElementById('punchOutBtn').disabled = !hasCheckedIn || hasCheckedOut || isLocked;
+            const punchInBtn = document.getElementById('punchInBtn') || document.getElementById('punchInBtn2');
+            const punchOutBtn = document.getElementById('punchOutBtn') || document.getElementById('punchOutBtn2');
+            document.getElementById('punchOutBtn2') && (document.getElementById('punchOutBtn2').disabled = !hasCheckedIn || hasCheckedOut || isLocked);
+            document.getElementById('punchOutBtn') && (document.getElementById('punchOutBtn').disabled = !hasCheckedIn || hasCheckedOut || isLocked);
             document.getElementById('breakStartBtn').disabled = !hasCheckedIn || hasCheckedOut || isLocked;
             document.getElementById('breakEndBtn').disabled = !hasCheckedIn || hasCheckedOut || isLocked;
 
@@ -316,6 +365,10 @@ async function loadAttendanceData() {
             }
 
             punchInBtn.disabled = !allowPunchIn;
+            if (document.getElementById('punchInBtn2')) document.getElementById('punchInBtn2').disabled = !allowPunchIn;
+
+            // Update live timer
+            updateWorkTimerFromSummary(summary);
             
             // Update punch log table
             const tbody = document.getElementById('punchTableBody');
@@ -352,9 +405,41 @@ async function loadAttendanceData() {
 }
 
 // Load data on page load and refresh periodically
+let workTimerInterval = null;
+
+function updateWorkTimerFromSummary(summary) {
+    const timerEl = document.getElementById('liveWorkTimer');
+    if (!timerEl || !summary) return;
+    const hasCheckedIn = !!summary.firstInAt;
+    const hasCheckedOut = !!summary.lastOutAt;
+    const isWorking = hasCheckedIn && !hasCheckedOut;
+    timerEl.dataset.checkIn = summary.firstInAt || '';
+    timerEl.dataset.working = isWorking ? 'true' : 'false';
+    const ringEl = document.getElementById('punchStatusRing');
+    if (ringEl) {
+        ringEl.classList.toggle('working', isWorking);
+        ringEl.classList.toggle('out', !isWorking);
+    }
+    if (workTimerInterval) clearInterval(workTimerInterval);
+    if (!isWorking || !summary.firstInAt) {
+        timerEl.textContent = '00:00:00';
+        return;
+    }
+    const checkIn = new Date(summary.firstInAt).getTime();
+    function tick() {
+        const ms = Date.now() - checkIn;
+        const s = Math.floor(ms / 1000);
+        const h = Math.floor(s / 3600);
+        const m = Math.floor((s % 3600) / 60);
+        const sec = s % 60;
+        timerEl.textContent = [h, m, sec].map(n => String(n).padStart(2, '0')).join(':');
+    }
+    tick();
+    workTimerInterval = setInterval(tick, 1000);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     loadAttendanceData();
-    // Refresh every 3 seconds for real-time updates
     setInterval(loadAttendanceData, 3000);
     // Start local clock updater
     const clockEl = document.getElementById('localClock');

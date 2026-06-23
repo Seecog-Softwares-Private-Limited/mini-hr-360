@@ -2,7 +2,7 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 
-const ACCESS_TOKEN_TTL = process.env.ACCESS_TOKEN_TTL || '60m';
+const ACCESS_TOKEN_TTL = process.env.ACCESS_TOKEN_TTL || '2d';
 const REFRESH_TOKEN_TTL = process.env.REFRESH_TOKEN_TTL || '7d';
 
 export function signAccessToken(payload) {

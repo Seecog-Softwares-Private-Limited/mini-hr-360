@@ -23,8 +23,8 @@ const isAdminUser = (user) => String(user?.role || '').toLowerCase() === 'admin'
 /**
  * Generate welcome email HTML template
  */
-function generateWelcomeEmailHTML(employee, password) {
-    const loginUrl = `${'http://localhost:3002'}/employee/login`;
+function generateWelcomeEmailHTML(employee, password, loginUrl) {
+    const portalLoginUrl = loginUrl || '/employee/login';
     const employeeName = employee.empName || `${employee.firstName} ${employee.lastName}`.trim();
 
     return `
@@ -118,11 +118,11 @@ function generateWelcomeEmailHTML(employee, password) {
         <div class="credentials-box">
             <div class="credential-item">
                 <span class="credential-label">Login URL:</span>
-                <span class="credential-value">${loginUrl}</span>
+                <span class="credential-value">${portalLoginUrl}</span>
             </div>
             <div class="credential-item">
-                <span class="credential-label">Email:</span>
-                <span class="credential-value">${employee.empEmail}</span>
+                <span class="credential-label">Email / Employee Code:</span>
+                <span class="credential-value">${employee.empEmail}${employee.empId ? ` or ${employee.empId}` : ''}</span>
             </div>
             <div class="credential-item">
                 <span class="credential-label">Password:</span>
@@ -131,7 +131,7 @@ function generateWelcomeEmailHTML(employee, password) {
         </div>
         
         <div style="text-align: center;">
-            <a href="${loginUrl}" class="button">Login to Dashboard</a>
+            <a href="${portalLoginUrl}" class="button">Login to Dashboard</a>
         </div>
         
         <div class="warning">
@@ -156,14 +156,15 @@ function generateWelcomeEmailHTML(employee, password) {
 /**
  * Send welcome email to new employee
  */
-async function sendWelcomeEmail(employee, password) {
+async function sendWelcomeEmail(employee, password, portalUrl) {
     if (!employee.empEmail) {
         console.warn('Cannot send welcome email: employee email is missing');
         return false;
     }
 
-    const subject = `Welcome to Mini HR 360 - Your Employee Account Credentials`;
-    const html = generateWelcomeEmailHTML(employee, password);
+    const loginUrl = portalUrl || '/employee/login';
+    const subject = `Welcome to Mini HR 360 - Your Employee Portal Login`;
+    const html = generateWelcomeEmailHTML(employee, password, loginUrl);
 
     try {
         const emailSent = await sendDocumentEmail({
@@ -183,6 +184,33 @@ async function sendWelcomeEmail(employee, password) {
         console.error('Error sending welcome email:', error);
         return false;
     }
+}
+
+function getPortalLoginUrl(req) {
+    return `${req.protocol}://${req.get('host')}/employee/login`;
+}
+
+function sanitizeEmployeeJson(employee) {
+    const json = employee.toJSON ? employee.toJSON() : { ...employee };
+    delete json.password;
+    delete json.employeeRefreshToken;
+    delete json.employeeRefreshTokenExpiresAt;
+    delete json.resetPasswordToken;
+    delete json.resetPasswordExpires;
+    return json;
+}
+
+function buildPortalAccess(employee, plainPassword, req, emailSent = false) {
+    return {
+        enabled: true,
+        canLogin: true,
+        loginEmail: employee.empEmail,
+        loginEmployeeCode: employee.empId,
+        password: plainPassword,
+        portalUrl: getPortalLoginUrl(req),
+        instructions: 'Sign in at the employee portal using the email or employee code with the password below.',
+        emailSent: !!emailSent,
+    };
 }
 
 // Legacy installs often have employees created without correct userId tenancy.
@@ -429,7 +457,7 @@ export const getEmployeeById = async (req, res, next) => {
             return res.status(404).json({ error: 'Employee not found' });
         }
 
-        res.json(employee);
+        res.json(sanitizeEmployeeJson(employee));
     } catch (err) {
         console.error('Error fetching employee by id:', err);
         next(err);
@@ -717,18 +745,25 @@ export const createEmployee = async (req, res, next) => {
 
         console.log('Created new employee with related records:', employeeId);
 
+        const portalUrl = getPortalLoginUrl(req);
+        let emailSent = false;
+
         // Send welcome email with credentials (non-blocking - don't fail if email fails)
         if (employee.empEmail) {
             try {
-                await sendWelcomeEmail(employee, plainPassword);
-                console.log('Welcome email sent to:', employee.empEmail);
+                emailSent = await sendWelcomeEmail(employee, plainPassword, portalUrl);
+                if (emailSent) {
+                    console.log('Welcome email sent to:', employee.empEmail);
+                }
             } catch (emailError) {
                 console.error('Failed to send welcome email:', emailError);
-                // Don't fail the request if email fails
             }
         }
 
-        return res.status(201).json(employee);
+        return res.status(201).json({
+            ...sanitizeEmployeeJson(employee),
+            portalAccess: buildPortalAccess(employee, plainPassword, req, emailSent),
+        });
     } catch (err) {
         await t.rollback();
         console.error('Error creating employee:', err);
@@ -1007,6 +1042,64 @@ export const updateEmployee = async (req, res, next) => {
                 .status(400)
                 .json({ error: err.errors.map((e) => e.message).join(', ') });
         }
+        next(err);
+    }
+};
+
+/**
+ * POST /api/v1/employees/:id/portal-access/reset
+ * Generate a new employee portal password and return credentials to HR
+ */
+export const resetEmployeePortalAccess = async (req, res, next) => {
+    try {
+        const userId = req.user?.id;
+        const isAdmin = isAdminUser(req.user);
+        const id = Number.parseInt(String(req.params.id || '').trim(), 10);
+
+        if (Number.isNaN(id)) {
+            return res.status(400).json({ error: 'Invalid employee ID' });
+        }
+
+        const where = { id };
+        if (userId && !isAdmin) {
+            where.userId = userId;
+        }
+
+        let employee = await Employee.findOne({ where });
+        if (!employee && userId && !isAdmin) {
+            const legacy = await isLegacySingleTenantEmployees();
+            if (legacy) {
+                employee = await Employee.findOne({ where: { id } });
+            }
+        }
+
+        if (!employee) {
+            return res.status(404).json({ error: 'Employee not found' });
+        }
+
+        if (!employee.empEmail) {
+            return res.status(400).json({ error: 'Employee must have an email address for portal login' });
+        }
+
+        const plainPassword = generatePassword(12);
+        employee.password = plainPassword;
+        employee.canLogin = true;
+        await employee.save();
+
+        const portalUrl = getPortalLoginUrl(req);
+        let emailSent = false;
+        try {
+            emailSent = await sendWelcomeEmail(employee, plainPassword, portalUrl);
+        } catch (emailError) {
+            console.error('Failed to send portal credentials email:', emailError);
+        }
+
+        return res.json({
+            ...sanitizeEmployeeJson(employee),
+            portalAccess: buildPortalAccess(employee, plainPassword, req, emailSent),
+        });
+    } catch (err) {
+        console.error('Error resetting portal access:', err);
         next(err);
     }
 };
