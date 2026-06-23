@@ -1,0 +1,163 @@
+<div class="container-fluid">
+    <div class="row">
+        {{> employee-sidebar employee=employee active='documents'}}
+
+        <div class="col-md-10 emp-main">
+            <div class="emp-doc-vault-hero">
+                <div class="emp-doc-vault-hero-content">
+                    <div class="emp-doc-vault-icon">
+                        <i class="fa-solid fa-vault"></i>
+                    </div>
+                    <div>
+                        <h1 class="emp-page-title mb-1">Documents Vault</h1>
+                        <p class="text-muted mb-0">All your HR documents, KYC files, and certificates in one secure place</p>
+                    </div>
+                </div>
+                <div class="emp-doc-vault-stats">
+                    <div class="emp-doc-stat">
+                        <span class="value">{{summary.total}}</span>
+                        <span class="label">Total</span>
+                    </div>
+                    <div class="emp-doc-stat">
+                        <span class="value">{{summary.verified}}</span>
+                        <span class="label">Verified</span>
+                    </div>
+                    <div class="emp-doc-stat {{#if summary.expiring}}warn{{/if}}">
+                        <span class="value">{{summary.expiring}}</span>
+                        <span class="label">Expiring</span>
+                    </div>
+                </div>
+            </div>
+
+            {{#if reminders.length}}
+            <div class="emp-doc-expiry-banner" id="expiryReminders">
+                <div class="emp-doc-expiry-banner-icon">
+                    <i class="fa-solid fa-bell"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <strong>Expiry reminders</strong>
+                    <p class="mb-0">{{reminders.length}} document{{#unless (eq reminders.length 1)}}s{{/unless}} need your attention</p>
+                </div>
+                <button type="button" class="btn btn-sm btn-warning" id="scrollToExpiring">
+                    View details
+                </button>
+            </div>
+            {{/if}}
+
+            <!-- Category filters -->
+            <div class="emp-doc-categories" id="docCategories">
+                {{#each categories}}
+                <button type="button"
+                        class="emp-doc-category {{#if (eq this.key 'ALL')}}active{{/if}}"
+                        data-category="{{this.key}}"
+                        style="--cat-color: {{this.color}};">
+                    <i class="fa-solid {{this.icon}}"></i>
+                    <span>{{this.label}}</span>
+                    {{#unless (eq this.key 'ALL')}}
+                    <span class="emp-doc-cat-count" data-cat-count="{{this.key}}">0</span>
+                    {{/unless}}
+                </button>
+                {{/each}}
+            </div>
+
+            <!-- Documents grid -->
+            <div id="documentsGrid" class="emp-doc-grid">
+                {{#if documents.length}}
+                    {{#each documents}}
+                    <article class="emp-doc-card"
+                             data-category="{{this.category}}"
+                             data-doc-id="{{this.id}}"
+                             data-expired="{{#if this.expiry.isExpired}}true{{else}}false{{/if}}"
+                             data-expiring="{{#if this.expiry.isExpiringSoon}}true{{else}}false{{/if}}">
+                        <div class="emp-doc-card-accent" style="background: {{this.categoryColor}};"></div>
+                        <div class="emp-doc-card-body">
+                            <div class="emp-doc-card-top">
+                                <div class="emp-doc-card-icon" style="color: {{this.categoryColor}}; background: color-mix(in srgb, {{this.categoryColor}} 12%, white);">
+                                    <i class="fa-solid {{this.categoryIcon}}"></i>
+                                </div>
+                                <span class="emp-badge {{#if (eq this.verificationStatus 'Verified')}}emp-badge-approved{{else}}{{#if (eq this.verificationStatus 'Rejected')}}emp-badge-rejected{{else}}emp-badge-pending{{/if}}{{/if}}">
+                                    {{this.verificationStatus}}
+                                </span>
+                            </div>
+
+                            <h3 class="emp-doc-card-title">{{this.documentType}}</h3>
+                            <p class="emp-doc-card-meta">{{this.categoryLabel}}{{#if this.documentNumber}} · {{this.documentNumber}}{{/if}}</p>
+
+                            {{#if this.expiryDate}}
+                            <div class="emp-doc-expiry emp-doc-expiry-{{this.expiry.status}}">
+                                <i class="fa-solid {{#if this.expiry.isExpired}}fa-circle-exclamation{{else}}{{#if this.expiry.isExpiringSoon}}fa-clock{{else}}fa-calendar-check{{/if}}{{/if}} me-1"></i>
+                                {{this.expiry.label}}
+                            </div>
+                            {{/if}}
+
+                            {{#if this.nameOnDocument}}
+                            <p class="emp-doc-card-note"><i class="fa-solid fa-user me-1"></i>{{this.nameOnDocument}}</p>
+                            {{/if}}
+                        </div>
+
+                        <div class="emp-doc-card-actions">
+                            {{#if this.hasFile}}
+                            <button type="button"
+                                    class="btn btn-sm emp-btn-secondary emp-doc-preview-btn"
+                                    data-preview-id="{{this.id}}"
+                                    data-preview-type="{{this.previewType}}"
+                                    data-preview-url="{{this.previewUrl}}"
+                                    data-doc-title="{{this.documentType}}">
+                                <i class="fa-solid fa-eye me-1"></i> Preview
+                            </button>
+                            <a href="{{this.downloadUrl}}" class="btn btn-sm emp-btn-primary">
+                                <i class="fa-solid fa-download me-1"></i> Download
+                            </a>
+                            {{else}}
+                            <span class="text-muted small"><i class="fa-solid fa-file-circle-xmark me-1"></i> No file on record</span>
+                            {{/if}}
+                        </div>
+                    </article>
+                    {{/each}}
+                {{else}}
+                    <div class="emp-doc-empty" id="documentsEmpty">
+                        <i class="fa-solid fa-folder-open"></i>
+                        <h4>No documents yet</h4>
+                        <p>Your HR team will upload documents here. Check back soon or contact HR.</p>
+                    </div>
+                {{/if}}
+            </div>
+
+            <div class="emp-doc-empty d-none" id="documentsFilterEmpty">
+                <i class="fa-solid fa-filter"></i>
+                <h4>No documents in this category</h4>
+                <p>Try another category or view all documents.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="docPreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content emp-doc-preview-modal">
+            <div class="modal-header">
+                <h5 class="modal-title" id="docPreviewTitle"><i class="fa-solid fa-file me-2"></i> Document Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="docPreviewBody" class="emp-doc-preview-body">
+                    <div class="text-center py-5 text-muted">
+                        <span class="spinner-border"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="#" id="docPreviewDownload" class="btn emp-btn-primary" download>
+                    <i class="fa-solid fa-download me-1"></i> Download
+                </a>
+                <button type="button" class="btn emp-btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.DOC_VAULT_SUMMARY = {{{json summary}}};
+</script>
+<script src="/assets/js/employee-documents.js"></script>
