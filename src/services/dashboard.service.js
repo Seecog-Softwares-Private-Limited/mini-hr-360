@@ -13,7 +13,7 @@ import { getDashboard as getAttendanceDashboard } from './attendance.service.js'
 
 const ACTIVE_STATUSES = ['Active', 'ACTIVE', 'active'];
 
-function emptyWidgets() {
+export function emptyWidgets() {
   const today = new Date().toISOString().split('T')[0];
   return {
     employees: { total: 0, active: 0, inactive: 0 },
@@ -32,7 +32,7 @@ function emptyWidgets() {
   };
 }
 
-function emptyInsights() {
+export function emptyInsights() {
   return {
     pendingApprovals: { total: 0, items: [] },
     upcomingBirthdays: [],

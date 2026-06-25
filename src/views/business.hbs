@@ -1,64 +1,67 @@
-<div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2>My Businesses</h2>
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBusinessModal">
-                        <i class="fas fa-plus me-2"></i>Add Business
-                    </button>
-                </div>
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <h2>My Organizations</h2>
+    <div class="d-flex gap-2" id="organizationActions" style="display: none !important;">
+        <button class="btn btn-outline-primary" id="joinOrganizationBtn" data-bs-toggle="modal" data-bs-target="#joinOrganizationModal" style="display: none;">
+            <i class="fas fa-right-to-bracket me-2"></i>Join Organization
+        </button>
+        <button class="btn btn-primary" id="addOrganizationBtn" data-bs-toggle="modal" data-bs-target="#addBusinessModal" style="display: none;">
+            <i class="fas fa-plus me-2"></i>Add Organization
+        </button>
+    </div>
+</div>
 
-                <!-- Search and Filter -->
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <div class="input-group">
-                            <input type="text" class="form-control" id="searchInput" placeholder="Search businesses...">
-                            <button class="btn btn-outline-secondary" type="button" onclick="searchBusinesses()">
-                                <i class="fas fa-search"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <select class="form-select" id="categoryFilter" onchange="filterByCategory()">
-                            <option value="">All Categories</option>
-                            <option value="restaurant">Restaurant</option>
-                            <option value="retail">Retail</option>
-                            <option value="healthcare">Healthcare</option>
-                            <option value="education">Education</option>
-                            <option value="technology">Technology</option>
-                            <option value="other">Other</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
-                            <i class="fas fa-times me-2"></i>Clear Filters
-                        </button>
-                    </div>
-                </div>
+<div id="organizationHint" class="alert alert-info d-none mb-4"></div>
 
-                <!-- Businesses Grid -->
-                <div class="row" id="businessesGrid">
-                    <div class="col-12 text-center py-4">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+<!-- Search and Filter -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="input-group">
+            <input type="text" class="form-control" id="searchInput" placeholder="Search organizations...">
+            <button class="btn btn-outline-secondary" type="button" onclick="searchBusinesses()">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <select class="form-select" id="categoryFilter" onchange="filterByCategory()">
+            <option value="">All Categories</option>
+            <option value="restaurant">Restaurant</option>
+            <option value="retail">Retail</option>
+            <option value="healthcare">Healthcare</option>
+            <option value="education">Education</option>
+            <option value="technology">Technology</option>
+            <option value="other">Other</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+            <i class="fas fa-times me-2"></i>Clear Filters
+        </button>
+    </div>
+</div>
+
+<!-- Organizations Grid -->
+<div class="row" id="businessesGrid">
+    <div class="col-12 text-center py-4">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
         </div>
     </div>
 </div>
 
-<!-- Add Business Modal -->
+<!-- Add Organization Modal -->
 <div class="modal fade" id="addBusinessModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Add New Business</h5>
+                <h5 class="modal-title">Add Organization</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form id="addBusinessForm">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="businessName" class="form-label">Business Name *</label>
+                            <label for="businessName" class="form-label">Organization Name *</label>
                             <input type="text" class="form-control" id="businessName" name="businessName" required>
                         </div>
                         <div class="col-md-6 mb-3">
@@ -116,24 +119,50 @@
                     </div>
                     <div class="mb-3">
                         <label for="description" class="form-label">Description</label>
-                        <textarea class="form-control" id="description" name="description" rows="3" placeholder="Brief description of your business"></textarea>
+                        <textarea class="form-control" id="description" name="description" rows="3" placeholder="Brief description of your organization"></textarea>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="addBusiness()">Add Business</button>
+                <button type="button" class="btn btn-primary" onclick="addBusiness()">Add Organization</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Edit Business Modal -->
+<!-- Join Organization Modal -->
+<div class="modal fade" id="joinOrganizationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Join Organization</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small">Enter the invite code shared by your organization owner.</p>
+                <div id="joinOrganizationAlert" class="alert alert-danger d-none"></div>
+                <form id="joinOrganizationForm" onsubmit="joinOrganization(event)">
+                    <div class="mb-3">
+                        <label for="inviteCode" class="form-label">Invite Code *</label>
+                        <input type="text" class="form-control text-uppercase" id="inviteCode" name="inviteCode" placeholder="e.g. A1B2C3D4" required maxlength="16" autocomplete="off">
+                    </div>
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="joinOrganizationSubmitBtn">Join</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Organization Modal -->
 <div class="modal fade" id="editBusinessModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Edit Business</h5>
+                <h5 class="modal-title">Edit Organization</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -141,7 +170,7 @@
                     <input type="hidden" id="editBusinessId" name="id">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="editBusinessName" class="form-label">Business Name *</label>
+                            <label for="editBusinessName" class="form-label">Organization Name *</label>
                             <input type="text" class="form-control" id="editBusinessName" name="businessName" required>
                         </div>
                         <div class="col-md-6 mb-3">
@@ -199,13 +228,13 @@
                     </div>
                     <div class="mb-3">
                         <label for="editDescription" class="form-label">Description</label>
-                        <textarea class="form-control" id="editDescription" name="description" rows="3" placeholder="Brief description of your business"></textarea>
+                        <textarea class="form-control" id="editDescription" name="description" rows="3" placeholder="Brief description of your organization"></textarea>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="updateBusiness()">Update Business</button>
+                <button type="button" class="btn btn-primary" onclick="updateBusiness()">Update Organization</button>
             </div>
         </div>
     </div>
@@ -216,19 +245,19 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Delete Business</h5>
+                <h5 class="modal-title">Delete Organization</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>Are you sure you want to delete this business? This action cannot be undone.</p>
+                <p>Are you sure you want to delete this organization? This action cannot be undone.</p>
                 <div class="alert alert-warning">
-                    <strong>Business:</strong> <span id="deleteBusinessName"></span><br>
+                    <strong>Organization:</strong> <span id="deleteBusinessName"></span><br>
                     <strong>Category:</strong> <span id="deleteBusinessCategory"></span>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger" onclick="confirmDeleteBusiness()">Delete Business</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDeleteBusiness()">Delete Organization</button>
             </div>
         </div>
     </div>
@@ -236,68 +265,129 @@
 
 <script>
     let businesses = [];
+    let capabilities = {};
     let currentDeleteId = null;
 
-    // Load businesses data
-    async function loadBusinesses() {
-        try {
-            const data = await apiCall('/business'); // <-- already JSON
-            businesses = Array.isArray(data) ? data : (data?.data || []);
-            displayBusinesses(businesses);
-        } catch (error) {
-            console.error('Error loading businesses:', error);
-            document.getElementById('businessesGrid').innerHTML = 
-                '<div class="col-12 text-center text-danger py-4">Error loading businesses</div>';
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function updateActionButtons() {
+        const actions = document.getElementById('organizationActions');
+        const addBtn = document.getElementById('addOrganizationBtn');
+        const joinBtn = document.getElementById('joinOrganizationBtn');
+        const hint = document.getElementById('organizationHint');
+
+        const showActions = capabilities.canCreate || capabilities.canJoin;
+        if (actions) actions.style.display = showActions ? 'flex' : 'none';
+        if (addBtn) addBtn.style.display = capabilities.canCreate ? 'inline-flex' : 'none';
+        if (joinBtn) joinBtn.style.display = capabilities.canJoin ? 'inline-flex' : 'none';
+
+        if (hint) {
+            if (capabilities.hasOrganization) {
+                hint.classList.add('d-none');
+            } else if (capabilities.canCreate) {
+                hint.classList.remove('d-none');
+                hint.textContent = 'You can create one organization with your active plan.';
+            } else if (capabilities.canJoin) {
+                hint.classList.remove('d-none');
+                hint.textContent = 'You do not have an active plan. Join an organization using an invite code from the owner.';
+            } else {
+                hint.classList.remove('d-none');
+                hint.textContent = 'Purchase a plan from Billing to create your organization, or join one with an invite code.';
+            }
         }
     }
 
-    // Display businesses in grid
+    async function loadBusinesses() {
+        try {
+            const data = await apiCall('/business');
+            businesses = Array.isArray(data?.organizations) ? data.organizations : (Array.isArray(data) ? data : (data?.data?.organizations || data?.data || []));
+            capabilities = data?.capabilities || {};
+            updateActionButtons();
+            displayBusinesses(businesses);
+
+            const preferred = businesses.find((b) => b.membershipType === 'owner') || businesses[0];
+            if (preferred?.id && typeof window.getOrganizationId === 'function' && !window.getOrganizationId()) {
+                const id = String(preferred.id);
+                localStorage.setItem('mh360:organizationId', id);
+                document.cookie = `mh360_organization_id=${encodeURIComponent(id)}; path=/; max-age=${30 * 24 * 60 * 60}; samesite=lax`;
+                document.cookie = `mh360_workspace_id=${encodeURIComponent(id)}; path=/; max-age=${30 * 24 * 60 * 60}; samesite=lax`;
+            }
+        } catch (error) {
+            console.error('Error loading organizations:', error);
+            document.getElementById('businessesGrid').innerHTML =
+                '<div class="col-12 text-center text-danger py-4">Error loading organizations</div>';
+        }
+    }
+
     function displayBusinesses(businessesToShow) {
         const grid = document.getElementById('businessesGrid');
-        
+
         if (!Array.isArray(businessesToShow) || businessesToShow.length === 0) {
-            grid.innerHTML = '<div class="col-12 text-center text-muted py-4">No businesses found</div>';
+            const emptyMsg = capabilities.canJoin
+                ? 'No organizations yet. Use Join Organization with an invite code.'
+                : capabilities.canCreate
+                    ? 'No organizations yet. Create your organization to get started.'
+                    : 'No organizations found.';
+            grid.innerHTML = `<div class="col-12 text-center text-muted py-4">${emptyMsg}</div>`;
             return;
         }
 
-        grid.innerHTML = businessesToShow.map(business => `
+        grid.innerHTML = businessesToShow.map(business => {
+            const isOwner = business.membershipType === 'owner' || business.membershipType === 'admin';
+            const membershipBadge = business.membershipType === 'member'
+                ? '<span class="badge bg-secondary ms-2">Member</span>'
+                : business.membershipType === 'owner'
+                    ? '<span class="badge bg-success ms-2">Owner</span>'
+                    : '';
+            const inviteBlock = isOwner && business.inviteCode
+                ? `<div class="mt-2"><small class="text-muted">Invite code:</small> <code>${escapeHtml(business.inviteCode)}</code></div>`
+                : '';
+
+            return `
             <div class="col-md-6 col-lg-4 mb-4">
                 <div class="card h-100">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-3">
-                            <h5 class="card-title">${business.businessName || 'Untitled'}</h5>
+                            <h5 class="card-title mb-0">${escapeHtml(business.businessName || 'Untitled')}${membershipBadge}</h5>
+                            ${isOwner ? `
                             <div class="dropdown">
                                 <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown">
                                     <i class="fas fa-ellipsis-v"></i>
                                 </button>
                                 <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="#" onclick="editBusiness(${business.id})">
+                                    <li><a class="dropdown-item" href="#" onclick="editBusiness(${business.id}); return false;">
                                         <i class="fas fa-edit me-2"></i>Edit
                                     </a></li>
-                                    <li><a class="dropdown-item text-danger" href="#" onclick="deleteBusiness(${business.id}, '${business.businessName || ''}', '${business.category || ''}')">
+                                    <li><a class="dropdown-item text-danger" href="#" onclick="deleteBusiness(${business.id}, '${escapeHtml(business.businessName || '')}', '${escapeHtml(business.category || '')}'); return false;">
                                         <i class="fas fa-trash me-2"></i>Delete
                                     </a></li>
                                 </ul>
-                            </div>
+                            </div>` : ''}
                         </div>
                         <div class="mb-2">
-                            <span class="badge bg-primary">${business.category || 'No Category'}</span>
+                            <span class="badge bg-primary">${escapeHtml(business.category || 'No Category')}</span>
                         </div>
-                        <p class="card-text text-muted small">${business.description || 'No description provided'}</p>
+                        <p class="card-text text-muted small">${escapeHtml(business.description || 'No description provided')}</p>
+                        ${inviteBlock}
                         <div class="row text-center">
                             <div class="col-6">
                                 <small class="text-muted">Phone</small><br>
-                                <small>${business.phoneNo || 'Not provided'}</small>
+                                <small>${escapeHtml(business.phoneNo || 'Not provided')}</small>
                             </div>
                             <div class="col-6">
                                 <small class="text-muted">WhatsApp</small><br>
-                                <small>${business.whatsappNo || 'Not provided'}</small>
+                                <small>${escapeHtml(business.whatsappNo || 'Not provided')}</small>
                             </div>
                         </div>
                         <div class="mt-3">
                             <small class="text-muted">
                                 <i class="fas fa-map-marker-alt me-1"></i>
-                                ${business.country || 'No country'} • ${business.timezone || 'No timezone'}
+                                ${escapeHtml(business.country || 'No country')} • ${escapeHtml(business.timezone || 'No timezone')}
                             </small>
                         </div>
                     </div>
@@ -308,13 +398,13 @@
                     </div>
                 </div>
             </div>
-        `).join('');
+        `;
+        }).join('');
     }
 
-    // Search businesses
     function searchBusinesses() {
         const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
-        const filtered = (businesses || []).filter(b => 
+        const filtered = (businesses || []).filter(b =>
             (b.businessName || '').toLowerCase().includes(searchTerm) ||
             (b.description || '').toLowerCase().includes(searchTerm) ||
             (b.category || '').toLowerCase().includes(searchTerm)
@@ -322,15 +412,14 @@
         displayBusinesses(filtered);
     }
 
-    // Filter by category
     function filterByCategory() {
         const selectedCategory = document.getElementById('categoryFilter').value;
         const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
-        
+
         let filtered = businesses || [];
         if (selectedCategory) filtered = filtered.filter(b => (b.category || '') === selectedCategory);
         if (searchTerm) {
-            filtered = filtered.filter(b => 
+            filtered = filtered.filter(b =>
                 (b.businessName || '').toLowerCase().includes(searchTerm) ||
                 (b.description || '').toLowerCase().includes(searchTerm) ||
                 (b.category || '').toLowerCase().includes(searchTerm)
@@ -339,31 +428,25 @@
         displayBusinesses(filtered);
     }
 
-    // Clear filters
     function clearFilters() {
         document.getElementById('searchInput').value = '';
         document.getElementById('categoryFilter').value = '';
         displayBusinesses(businesses);
     }
 
-    // Normalize phone input -> +91xxxxxxxxxx (digits only)
     function normPhone(value) {
         if (!value) return '';
         const digits = String(value).replace(/\D/g, '');
         if (!digits) return '';
-        // if already starts with 91 and length 12 (including country), keep +91
         if (digits.length === 12 && digits.startsWith('91')) return '+'.concat(digits);
-        // otherwise assume 10-digit local and prefix +91
         if (digits.length === 10) return '+91' + digits;
-        // fallback: return with plus
         return '+' + digits;
     }
 
-    // Add business function
     async function addBusiness() {
         const form = document.getElementById('addBusinessForm');
         const formData = new FormData(form);
-        
+
         const businessData = {
             businessName: formData.get('businessName')?.trim(),
             category: formData.get('category'),
@@ -378,24 +461,53 @@
             const data = await apiCall('/business', {
                 method: 'POST',
                 body: JSON.stringify(businessData)
-            }); // <- already JSON
+            });
 
-            // success if no error field present
             if (data && !data.error) {
-                const modal = bootstrap.Modal.getInstance(document.getElementById('addBusinessModal'));
-                modal?.hide();
+                bootstrap.Modal.getInstance(document.getElementById('addBusinessModal'))?.hide();
                 form.reset();
                 loadBusinesses();
-                showAlert('Business added successfully!', 'success');
+                showAlert('Organization created successfully!', 'success');
             } else {
-                showAlert((data && (data.message || data.error)) || 'Failed to add business', 'danger');
+                showAlert((data && (data.message || data.error)) || 'Failed to create organization', 'danger');
             }
         } catch (error) {
-            showAlert('Network error. Please try again.', 'danger');
+            showAlert(error?.message || 'Network error. Please try again.', 'danger');
         }
     }
 
-    // Edit business function
+    async function joinOrganization(event) {
+        event.preventDefault();
+        const inviteCode = document.getElementById('inviteCode')?.value?.trim().toUpperCase();
+        const alertEl = document.getElementById('joinOrganizationAlert');
+        const submitBtn = document.getElementById('joinOrganizationSubmitBtn');
+
+        alertEl?.classList.add('d-none');
+        submitBtn.disabled = true;
+
+        try {
+            const data = await apiCall('/business/join', {
+                method: 'POST',
+                body: JSON.stringify({ inviteCode }),
+            });
+
+            if (data && !data.error) {
+                bootstrap.Modal.getInstance(document.getElementById('joinOrganizationModal'))?.hide();
+                document.getElementById('joinOrganizationForm')?.reset();
+                loadBusinesses();
+                showAlert('Joined organization successfully!', 'success');
+            } else {
+                alertEl.textContent = data?.message || 'Failed to join organization';
+                alertEl.classList.remove('d-none');
+            }
+        } catch (error) {
+            alertEl.textContent = error?.message || 'Failed to join organization';
+            alertEl.classList.remove('d-none');
+        } finally {
+            submitBtn.disabled = false;
+        }
+    }
+
     function editBusiness(businessId) {
         const business = (businesses || []).find(b => b.id === businessId);
         if (!business) return;
@@ -406,21 +518,18 @@
         document.getElementById('editDescription').value = business.description || '';
         document.getElementById('editCountry').value = business.country || '';
         document.getElementById('editTimezone').value = business.timezone || 'Asia/Kolkata';
-        
-        // strip + and country for inputs
+
         const strip91 = v => (v || '').replace(/^\+91/, '');
         document.getElementById('editPhoneNo').value = strip91(business.phoneNo);
         document.getElementById('editWhatsappNo').value = strip91(business.whatsappNo);
 
-        const modal = new bootstrap.Modal(document.getElementById('editBusinessModal'));
-        modal.show();
+        new bootstrap.Modal(document.getElementById('editBusinessModal')).show();
     }
 
-    // Update business function
     async function updateBusiness() {
         const form = document.getElementById('editBusinessForm');
         const formData = new FormData(form);
-        
+
         const businessData = {
             businessName: formData.get('businessName')?.trim(),
             category: formData.get('category'),
@@ -437,55 +546,46 @@
             const data = await apiCall(`/business/${businessId}`, {
                 method: 'PUT',
                 body: JSON.stringify(businessData)
-            }); // <- already JSON
+            });
 
             if (data && !data.error) {
-                const modal = bootstrap.Modal.getInstance(document.getElementById('editBusinessModal'));
-                modal?.hide();
+                bootstrap.Modal.getInstance(document.getElementById('editBusinessModal'))?.hide();
                 loadBusinesses();
-                showAlert('Business updated successfully!', 'success');
+                showAlert('Organization updated successfully!', 'success');
             } else {
-                showAlert((data && (data.message || data.error)) || 'Failed to update business', 'danger');
+                showAlert((data && (data.message || data.error)) || 'Failed to update organization', 'danger');
             }
         } catch (error) {
             showAlert('Network error. Please try again.', 'danger');
         }
     }
 
-    // Delete business function
     function deleteBusiness(businessId, businessName, businessCategory) {
         currentDeleteId = businessId;
         document.getElementById('deleteBusinessName').textContent = businessName || '';
         document.getElementById('deleteBusinessCategory').textContent = businessCategory || '';
-        
-        const modal = new bootstrap.Modal(document.getElementById('deleteBusinessModal'));
-        modal.show();
+        new bootstrap.Modal(document.getElementById('deleteBusinessModal')).show();
     }
 
-    // Confirm delete business function
     async function confirmDeleteBusiness() {
-    if (!currentDeleteId) return;
+        if (!currentDeleteId) return;
 
-    try {
-      const data = await apiCall(`/business/${currentDeleteId}`, {
-        method: 'DELETE'
-      }); // apiCall returns JSON or may be undefined on 204
+        try {
+            const data = await apiCall(`/business/${currentDeleteId}`, { method: 'DELETE' });
 
-      // Success if no error OR if server returned 204 (apiCall -> undefined)
-      if (data === undefined || (data && !data.error)) {
-        const modal = bootstrap.Modal.getInstance(document.getElementById('deleteBusinessModal'));
-        modal?.hide();
-        loadBusinesses();
-        showAlert('Business deleted successfully!', 'success');
-      } else {
-        showAlert((data.message || data.error) || 'Failed to delete business', 'danger');
-      }
-    } catch (error) {
-      showAlert('Network error. Please try again.', 'danger');
-    } finally {
-      currentDeleteId = null;
+            if (data === undefined || (data && !data.error)) {
+                bootstrap.Modal.getInstance(document.getElementById('deleteBusinessModal'))?.hide();
+                loadBusinesses();
+                showAlert('Organization deleted successfully!', 'success');
+            } else {
+                showAlert((data.message || data.error) || 'Failed to delete organization', 'danger');
+            }
+        } catch (error) {
+            showAlert('Network error. Please try again.', 'danger');
+        } finally {
+            currentDeleteId = null;
+        }
     }
-  }
 
     function showAlert(message, type) {
         const alertDiv = document.createElement('div');
@@ -499,9 +599,6 @@
         setTimeout(() => { alertDiv.remove(); }, 5000);
     }
 
-    // Load data when page loads
     document.addEventListener('DOMContentLoaded', loadBusinesses);
-
-    // Search on input
     document.getElementById('searchInput').addEventListener('input', searchBusinesses);
 </script>

@@ -1,49 +1,4 @@
 <aside class="sidebar-inner" aria-label="Main navigation">
-  <div class="workspace-switcher" id="workspaceSwitcher">
-    <button
-      type="button"
-      class="workspace-trigger"
-      id="workspaceTrigger"
-      aria-expanded="false"
-      aria-haspopup="listbox"
-      aria-label="Switch workspace"
-    >
-      <div class="workspace-avatar" id="workspaceAvatar" aria-hidden="true">WS</div>
-      <div class="workspace-meta">
-        <div class="workspace-label">Workspace</div>
-        <div class="workspace-name" id="workspaceName">Loading…</div>
-      </div>
-      <i class="fa-solid fa-chevron-down workspace-chevron" aria-hidden="true"></i>
-    </button>
-
-    <div class="workspace-dropdown" id="workspaceDropdown" role="listbox" hidden>
-      <div class="workspace-dropdown-header">
-        <span class="workspace-dropdown-title">Switch workspace</span>
-        <button type="button" class="workspace-dropdown-close" id="workspaceDropdownClose" aria-label="Close">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-
-      <div class="workspace-dropdown-section">Current</div>
-      <div id="workspaceCurrentSlot"></div>
-
-      <div class="workspace-dropdown-section" id="workspaceRecentSection" style="display: none;">Recent</div>
-      <div id="workspaceRecentList"></div>
-
-      <div class="workspace-dropdown-section">All workspaces</div>
-      <div id="workspaceAllList" class="workspace-list-scroll"></div>
-
-      <div class="workspace-dropdown-actions">
-        <button type="button" class="workspace-create-btn" id="workspaceCreateOpenBtn" style="display: none;">
-          <i class="fa-solid fa-plus"></i> Create workspace
-        </button>
-        <a href="/business" class="workspace-manage-link">
-          <i class="fa-solid fa-sliders"></i> Manage businesses
-        </a>
-      </div>
-    </div>
-  </div>
-
   <div class="sidebar-app-tag">mini-hr-360</div>
 
   <div class="sidebar-profile">
@@ -64,19 +19,12 @@
   </div>
 
   <div class="sidebar-scroll">
-    <nav class="sidebar-nav" aria-label="Workspace navigation">
-      <button type="button" class="sidebar-link {{#if (eq activeGroup 'workspace')}}active{{/if}}" data-menu-toggle="workspace-submenu" onclick="toggleWorkspace()">
-        <i class="fa-solid fa-briefcase nav-icon"></i>
-        <span>Workspace</span>
-        <i class="fa-solid fa-chevron-down nav-chevron {{#if (eq activeGroup 'workspace')}}open{{/if}}"></i>
-      </button>
-
-      <div class="sidebar-submenu show" id="workspace-submenu">
+    <nav class="sidebar-nav" aria-label="Main navigation">
         <a class="sidebar-link {{#if (eq active 'dashboard')}}active{{/if}}" href="/dashboard" data-nav="dashboard">
           <i class="fa-solid fa-gauge-high nav-icon"></i> Dashboard
         </a>
         <a class="sidebar-link {{#if (eq active 'business')}}active{{/if}}" href="/business" data-nav="business">
-          <i class="fa-solid fa-building nav-icon"></i> Businesses
+          <i class="fa-solid fa-building nav-icon"></i> Organizations
         </a>
         <a class="sidebar-link {{#if (eq active 'employees')}}active{{/if}}" href="/employees" data-nav="employees">
           <i class="fa-solid fa-user-tie nav-icon"></i> Employees
@@ -139,7 +87,7 @@
           <i class="fa-solid fa-id-badge nav-icon"></i> Designations
         </a>
         <a class="sidebar-link {{#if (eq active 'businessAddresses')}}active{{/if}}" href="/business-addresses" data-nav="businessAddresses">
-          <i class="fa-solid fa-map-marker-alt nav-icon"></i> Business Addresses
+          <i class="fa-solid fa-map-marker-alt nav-icon"></i> Organization Addresses
         </a>
         <a class="sidebar-link {{#if (eq active 'team')}}active{{/if}}" href="/admin/team" data-nav="team">
           <i class="fa-solid fa-users-gear nav-icon"></i> Team &amp; Roles
@@ -147,7 +95,6 @@
         <a class="sidebar-link {{#if (eq active 'emailTemplates')}}active{{/if}}" href="/email-templates" data-nav="emailTemplates">
           <i class="fa-solid fa-envelope-open-text nav-icon"></i> Email Templates
         </a>
-      </div>
     </nav>
 
     <div class="sidebar-section-label">Account</div>

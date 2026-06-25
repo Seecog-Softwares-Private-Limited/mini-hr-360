@@ -42,6 +42,11 @@ const Business = sequelize.define('Business', {
   country: {
     type: DataTypes.STRING,
     allowNull: true
+  },
+  inviteCode: {
+    type: DataTypes.STRING(16),
+    allowNull: true,
+    unique: true
   }
 }, {
   tableName: 'businesses',

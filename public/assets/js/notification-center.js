@@ -24,15 +24,17 @@
     attendance: { label: 'Attendance', icon: 'fa-fingerprint' },
   };
 
-  function getWorkspaceBusinessId() {
-    try {
-      const raw = localStorage.getItem('mh360_recent_workspaces');
-      if (!raw) return null;
-      const list = JSON.parse(raw);
-      return list?.[0]?.id || null;
-    } catch {
-      return null;
+  function getBusinessId() {
+    const fromStorage = localStorage.getItem('mh360:workspaceId');
+    if (fromStorage) return Number(fromStorage) || null;
+
+    const match = document.cookie.match(/(?:^|;\s*)mh360_workspace_id=([^;]+)/);
+    if (match) {
+      const id = Number(decodeURIComponent(match[1]));
+      return Number.isFinite(id) && id > 0 ? id : null;
     }
+
+    return null;
   }
 
   function escapeHtml(text) {
@@ -85,7 +87,7 @@
     if (state.category && state.category !== 'all') {
       params.set('category', state.category);
     }
-    const businessId = getWorkspaceBusinessId();
+    const businessId = getBusinessId();
     if (businessId) params.set('businessId', String(businessId));
 
     const listEl = document.getElementById('ncList');
@@ -196,7 +198,7 @@
   async function loadNotificationCount() {
     try {
       const params = new URLSearchParams();
-      const businessId = getWorkspaceBusinessId();
+      const businessId = getBusinessId();
       if (businessId) params.set('businessId', String(businessId));
 
       const response = await apiCall(`/notifications/count?${params.toString()}`);
@@ -221,7 +223,7 @@
   async function markAllNotificationsRead() {
     try {
       const params = new URLSearchParams();
-      const businessId = getWorkspaceBusinessId();
+      const businessId = getBusinessId();
       if (businessId) params.set('businessId', String(businessId));
 
       await apiCall(`/notifications/read-all?${params.toString()}`, { method: 'PUT' });

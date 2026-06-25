@@ -64,10 +64,6 @@
 
   function closeOtherOverlays() {
     window.closeNotificationCenter?.();
-    document.getElementById('workspaceSwitcher')?.classList.remove('open');
-    const wsDrop = document.getElementById('workspaceDropdown');
-    if (wsDrop) wsDrop.hidden = true;
-    document.getElementById('workspaceTrigger')?.setAttribute('aria-expanded', 'false');
     document.getElementById('appShell')?.classList.remove('sidebar-open');
   }
 
@@ -148,7 +144,7 @@
     if (!modalEl) return;
 
     const prefs = getPreferences();
-    document.getElementById('prefWorkspaceExpanded') && (document.getElementById('prefWorkspaceExpanded').checked = prefs.workspaceExpanded !== false);
+    document.getElementById('prefNavExpanded') && (document.getElementById('prefNavExpanded').checked = prefs.navExpanded !== false);
     document.getElementById('prefCompactSidebar') && (document.getElementById('prefCompactSidebar').checked = !!prefs.compactSidebar);
     document.getElementById('prefReducedMotion') && (document.getElementById('prefReducedMotion').checked = !!prefs.reducedMotion);
 
@@ -157,7 +153,7 @@
 
   function savePreferencesFromModal() {
     const prefs = {
-      workspaceExpanded: document.getElementById('prefWorkspaceExpanded')?.checked !== false,
+      navExpanded: document.getElementById('prefNavExpanded')?.checked !== false,
       compactSidebar: !!document.getElementById('prefCompactSidebar')?.checked,
       reducedMotion: !!document.getElementById('prefReducedMotion')?.checked,
     };
@@ -170,8 +166,8 @@
     prefs = prefs || getPreferences();
     document.documentElement.classList.toggle('pref-compact-sidebar', !!prefs.compactSidebar);
     document.documentElement.classList.toggle('pref-reduced-motion', !!prefs.reducedMotion);
-    if (prefs.workspaceExpanded === false) {
-      localStorage.setItem('mh360:sidebar:workspaceOpen', 'false');
+    if (prefs.navExpanded === false) {
+      localStorage.setItem('mh360:sidebar:submenus', JSON.stringify({}));
     }
   }
 
@@ -195,15 +191,6 @@
 
   function handleAction(action, el) {
     switch (action) {
-      case 'workspace':
-        closeMenu();
-        if (typeof window.openWorkspaceSwitcher === 'function') {
-          window.openWorkspaceSwitcher();
-        } else {
-          document.getElementById('workspaceTrigger')?.click();
-          document.getElementById('appShell')?.classList.add('sidebar-open');
-        }
-        break;
       case 'theme-toggle':
         toggleThemeSubmenu();
         break;

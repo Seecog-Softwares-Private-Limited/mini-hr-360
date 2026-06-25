@@ -214,7 +214,7 @@
   function renderActivity(data) {
     const items = data?.recentActivity || [];
     if (!items.length) {
-      return emptyBody('fa-inbox', 'No recent activity in this workspace');
+      return emptyBody('fa-inbox', 'No recent activity in this organization');
     }
 
     return `
@@ -298,7 +298,6 @@
 
     fetchInsights();
     setInterval(() => refreshInsights().catch(() => {}), 120000);
-    window.addEventListener('workspace:changed', () => refreshInsights());
   }
 
   if (document.readyState === 'loading') {

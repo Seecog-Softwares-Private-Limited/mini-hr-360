@@ -203,7 +203,6 @@ import { employeePayrollRouter } from './routes/employeePayroll.routes.js';
 import { adminProfileRouter } from './routes/adminProfile.routes.js';
 import adminPayrollPagesRouter from './routes/admin.payroll.pages.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
-import workspaceRoutes from './routes/workspace.routes.js';
 import dashboardRoutes from './routes/dashboard.routes.js';
 
 
@@ -245,7 +244,7 @@ app.get('/customers', verifyUser, (req, res) => {
 
 app.get('/business', verifyUser, (req, res) => {
     const user = { firstName: req.user.firstName, lastName: req.user.lastName, role: req.user.role };
-    res.render('business', { title: 'Business', user, active: 'business', activeGroup: 'workspace' });
+    res.render('business', { title: 'Organizations', user, active: 'business', activeGroup: 'workspace' });
 });
 
 app.get('/templates', verifyUser, (req, res) => {
@@ -270,7 +269,7 @@ app.get('/departments', verifyUser, (req, res) => {
 
 app.get('/business-addresses', verifyUser, (req, res) => {
     const user = { firstName: req.user.firstName, lastName: req.user.lastName, role: req.user.role };
-    res.render('business-addresses', { title: 'Business Addresses', user, active: 'businessAddresses', activeGroup: 'workspace' });
+    res.render('business-addresses', { title: 'Organization Addresses', user, active: 'businessAddresses', activeGroup: 'workspace' });
 });
 
 app.get('/clear-storage', (req, res) => {
@@ -304,7 +303,6 @@ app.use('/storage', express.static('storage'));
 
 // ---------- API routes ----------
 app.use('/api/v1/users', userRoutes);
-app.use('/api/v1/workspaces', workspaceRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/business', businessRouter);
 

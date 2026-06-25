@@ -288,7 +288,8 @@
 
   async function loadBusinesses() {
     try {
-      businesses = await unwrap(await apiCall('/business')) || [];
+      const raw = await unwrap(await apiCall('/business'));
+      businesses = Array.isArray(raw?.organizations) ? raw.organizations : (raw || []);
       populateBusinessDropdowns();
     } catch (e) { console.error('loadBusinesses', e); }
   }

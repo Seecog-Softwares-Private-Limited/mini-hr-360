@@ -1,6 +1,6 @@
 import express from 'express'
 import { verifyUser } from '../middleware/authMiddleware.js'
-import { createBusiness, deleteMyBusiness, getMyBusiness, listBusinesses_admin, transferOwnerShip_admin, updateMyBusiness, getAllMyBusinesses, updateBusinessById } from '../controllers/business/business.js'
+import { createBusiness, deleteMyBusiness, getMyBusiness, listBusinesses_admin, transferOwnerShip_admin, updateMyBusiness, getAllMyBusinesses, updateBusinessById, getOrganizationCapabilitiesHandler, joinOrganization } from '../controllers/business/business.js'
 
 const router = express.Router()
 
@@ -13,6 +13,8 @@ router.param('id', (req, _res, next, val) => {
 })
 
 // New CRUD routes for frontend
+router.route("/capabilities").get(verifyUser, getOrganizationCapabilitiesHandler)
+router.route("/join").post(verifyUser, joinOrganization)
 router.route("/").get(verifyUser, getAllMyBusinesses)
 router.route("/").post(verifyUser, createBusiness)
 router.route("/:id").put(verifyUser, updateBusinessById)
