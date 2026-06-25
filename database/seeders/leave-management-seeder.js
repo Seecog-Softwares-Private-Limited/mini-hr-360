@@ -36,8 +36,6 @@ const {
   Employee,
   LeaveType,
   LeaveBalance,
-  LeaveRequest,
-  LeaveApproval,
 } = await import('../../src/models/index.js');
 import bcrypt from 'bcrypt';
 
@@ -317,153 +315,8 @@ async function seed() {
       }
     }
 
-    // =========================================
-    // 5. Seed Sample Leave Requests
-    // =========================================
-    const emp1 = employees['EMP0001'];
-    const emp2 = employees['EMP0002'];
-    
-    // Sample requests data
-    const leaveRequestsData = [
-      // Pending request for John
-      {
-        businessId,
-        employeeId: emp1.id,
-        leaveTypeId: leaveTypes['CL'].id,
-        startDate: getDateOffset(7),
-        endDate: getDateOffset(8),
-        totalDays: 2,
-        reason: 'Personal work - need to visit bank and complete some paperwork',
-        status: 'PENDING',
-      },
-      // Approved request for John
-      {
-        businessId,
-        employeeId: emp1.id,
-        leaveTypeId: leaveTypes['SL'].id,
-        startDate: getDateOffset(-10),
-        endDate: getDateOffset(-9),
-        totalDays: 2,
-        reason: 'Not feeling well, need rest',
-        status: 'APPROVED',
-        approverId: adminUser.id,
-        approvedAt: getDateOffset(-8),
-      },
-      // Rejected request for Jane
-      {
-        businessId,
-        employeeId: emp2.id,
-        leaveTypeId: leaveTypes['EL'].id,
-        startDate: getDateOffset(-20),
-        endDate: getDateOffset(-15),
-        totalDays: 6,
-        reason: 'Vacation trip',
-        status: 'REJECTED',
-        approverId: adminUser.id,
-        rejectedAt: getDateOffset(-21),
-        managerNote: 'Please apply with more notice for earned leaves. Project deadline approaching.',
-      },
-      // Approved request for Jane
-      {
-        businessId,
-        employeeId: emp2.id,
-        leaveTypeId: leaveTypes['WFH'].id,
-        startDate: getDateOffset(1),
-        endDate: getDateOffset(1),
-        totalDays: 1,
-        reason: 'Internet installation at new apartment',
-        status: 'APPROVED',
-        approverId: adminUser.id,
-        approvedAt: getDateOffset(0),
-      },
-      // Pending request for Jane
-      {
-        businessId,
-        employeeId: emp2.id,
-        leaveTypeId: leaveTypes['CL'].id,
-        startDate: getDateOffset(14),
-        endDate: getDateOffset(14),
-        totalDays: 1,
-        isHalfDayStart: true,
-        halfDaySession: 'FIRST_HALF',
-        reason: 'Doctor appointment in the morning',
-        status: 'PENDING',
-      },
-    ];
-
-    const leaveRequests = [];
-    for (const lrData of leaveRequestsData) {
-      // Check if similar request exists
-      const existing = await LeaveRequest.findOne({
-        where: {
-          employeeId: lrData.employeeId,
-          leaveTypeId: lrData.leaveTypeId,
-          startDate: lrData.startDate,
-        },
-      });
-
-      if (!existing) {
-        const lr = await LeaveRequest.create(lrData);
-        leaveRequests.push(lr);
-        console.log(`✅ Created leave request: ${lr.status} - ${lr.startDate}`);
-
-        // Update balance for approved requests
-        if (lr.status === 'APPROVED') {
-          const balance = await LeaveBalance.findOne({
-            where: {
-              employeeId: lr.employeeId,
-              leaveTypeId: lr.leaveTypeId,
-              year: currentYear,
-            },
-          });
-          if (balance) {
-            await balance.update({
-              used: parseFloat(balance.used) + parseFloat(lr.totalDays),
-            });
-          }
-        } else if (lr.status === 'PENDING') {
-          const balance = await LeaveBalance.findOne({
-            where: {
-              employeeId: lr.employeeId,
-              leaveTypeId: lr.leaveTypeId,
-              year: currentYear,
-            },
-          });
-          if (balance) {
-            await balance.update({
-              pending: parseFloat(balance.pending) + parseFloat(lr.totalDays),
-            });
-          }
-        }
-      } else {
-        console.log(`⏭️ Leave request exists: ${lrData.status} - ${lrData.startDate}`);
-        leaveRequests.push(existing);
-      }
-    }
-
-    // =========================================
-    // 6. Seed Leave Approvals
-    // =========================================
-    for (const lr of leaveRequests) {
-      if (lr.status === 'APPROVED' || lr.status === 'REJECTED') {
-        const [approval, created] = await LeaveApproval.findOrCreate({
-          where: { leaveRequestId: lr.id },
-          defaults: {
-            businessId,
-            leaveRequestId: lr.id,
-            approverId: adminUser.id,
-            action: lr.status,
-            level: 1,
-            comments: lr.status === 'REJECTED' ? lr.managerNote : 'Approved',
-            actionAt: lr.approvedAt || lr.rejectedAt || new Date(),
-          },
-        });
-        
-        if (created) {
-          console.log(`✅ Created approval record for request #${lr.id}`);
-        }
-      }
-    }
+    // Leave requests are created by employees via the portal — no sample requests seeded.
+    console.log('⏭️ Skipping sample leave requests (apply via employee portal)');
 
     console.log('\n✅ Leave Management Seeder completed successfully!');
     console.log('\n📝 Test Credentials:');
@@ -480,13 +333,6 @@ async function seed() {
   } finally {
     await sequelize.close();
   }
-}
-
-// Helper function to get date offset from today
-function getDateOffset(days) {
-  const date = new Date();
-  date.setDate(date.getDate() + days);
-  return date.toISOString().split('T')[0];
 }
 
 // Run seeder

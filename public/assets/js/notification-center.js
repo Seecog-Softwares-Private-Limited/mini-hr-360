@@ -24,6 +24,14 @@
     attendance: { label: 'Attendance', icon: 'fa-fingerprint' },
   };
 
+  function request(endpoint, options = {}) {
+    const fn = window.shellApiCall || window.apiCall;
+    if (typeof fn !== 'function') {
+      throw new Error('API helper is unavailable');
+    }
+    return fn(endpoint, options);
+  }
+
   function getBusinessId() {
     const fromStorage = localStorage.getItem('mh360:workspaceId');
     if (fromStorage) return Number(fromStorage) || null;
@@ -98,7 +106,7 @@
     if (loadBtn) loadBtn.disabled = true;
 
     try {
-      const response = await apiCall(`/notifications?${params.toString()}`);
+      const response = await request(`/notifications?${params.toString()}`);
       const data = response.data || response;
       const notifications = data.notifications || [];
       state.hasMore = !!data.hasMore;
@@ -181,7 +189,7 @@
     const link = item?.link;
 
     try {
-      await apiCall(`/notifications/${id}/read`, { method: 'PUT' });
+      await request(`/notifications/${id}/read`, { method: 'PUT' });
       if (item) item.isRead = true;
       renderList();
       loadNotificationCount();
@@ -201,7 +209,7 @@
       const businessId = getBusinessId();
       if (businessId) params.set('businessId', String(businessId));
 
-      const response = await apiCall(`/notifications/count?${params.toString()}`);
+      const response = await request(`/notifications/count?${params.toString()}`);
       const data = response.data || response;
       const count = data.count || 0;
 
@@ -226,7 +234,7 @@
       const businessId = getBusinessId();
       if (businessId) params.set('businessId', String(businessId));
 
-      await apiCall(`/notifications/read-all?${params.toString()}`, { method: 'PUT' });
+      await request(`/notifications/read-all?${params.toString()}`, { method: 'PUT' });
       state.items.forEach((n) => { n.isRead = true; });
       renderList();
       loadNotificationCount();
