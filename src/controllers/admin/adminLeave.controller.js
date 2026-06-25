@@ -14,23 +14,89 @@ import {
   rejectLeaveRequest,
   getAllLeaveBalances,
 } from '../../services/leave.service.js';
+import {
+  getUserOrganizations,
+  resolveOrganizationIdFromRequest,
+  isPlatformAdmin,
+} from '../../services/organization.service.js';
+
+async function getLeaveOrgScope(req) {
+  const filterId = req.query.businessId ? Number(req.query.businessId) : null;
+  const activeOrgId = await resolveOrganizationIdFromRequest(req);
+
+  if (isPlatformAdmin(req.user)) {
+    const businesses = await Business.findAll({
+      attributes: ['id', 'businessName'],
+      order: [['businessName', 'ASC']],
+    });
+    const orgIds = businesses.map((b) => b.id);
+    const businessId =
+      filterId && orgIds.includes(filterId)
+        ? filterId
+        : activeOrgId && orgIds.includes(activeOrgId)
+          ? activeOrgId
+          : null;
+    return { orgIds, businessId, businesses };
+  }
+
+  const organizations = await getUserOrganizations(req.user);
+  const orgIds = organizations.map((o) => o.id);
+  const businesses = organizations.map((o) => ({
+    id: o.id,
+    businessName: o.businessName,
+  }));
+
+  let businessId = null;
+  if (filterId && orgIds.includes(filterId)) {
+    businessId = filterId;
+  } else if (activeOrgId && orgIds.includes(activeOrgId)) {
+    businessId = activeOrgId;
+  } else if (orgIds.length === 1) {
+    businessId = orgIds[0];
+  }
+
+  return { orgIds, businessId, businesses };
+}
+
+function buildBusinessScopeWhere(orgIds, businessId) {
+  if (businessId) return { businessId };
+  if (orgIds.length) return { businessId: { [Op.in]: orgIds } };
+  return { businessId: -1 };
+}
+
+async function assertLeaveRequestInScope(req, requestId) {
+  const { orgIds } = await getLeaveOrgScope(req);
+  if (!orgIds.length && !isPlatformAdmin(req.user)) {
+    return { ok: false, error: 'No organization linked to your account' };
+  }
+
+  const leaveRequest = await LeaveRequest.findByPk(requestId);
+  if (!leaveRequest) {
+    return { ok: false, error: 'Leave request not found' };
+  }
+
+  if (!isPlatformAdmin(req.user) && !orgIds.includes(leaveRequest.businessId)) {
+    return { ok: false, error: 'Leave request not found' };
+  }
+
+  return { ok: true, leaveRequest };
+}
 
 /**
  * GET /leave-requests - Render leave requests management page
  */
 export const renderLeaveRequests = asyncHandler(async (req, res) => {
   const user = req.user;
-  
+  const { orgIds, businessId, businesses } = await getLeaveOrgScope(req);
+
   // Get filter parameters
   const page = parseInt(req.query.page) || 1;
   const pageSize = parseInt(req.query.pageSize) || 20;
   const status = req.query.status || null;
-  const businessId = req.query.businessId || null;
 
-  // Build where clause
-  const where = {};
+  // Build where clause scoped to user's organization(s)
+  const where = buildBusinessScopeWhere(orgIds, businessId);
   if (status) where.status = status;
-  if (businessId) where.businessId = businessId;
 
   // Get leave requests with pagination
   const { count, rows: requests } = await LeaveRequest.findAndCountAll({
@@ -47,14 +113,9 @@ export const renderLeaveRequests = asyncHandler(async (req, res) => {
 
   const totalPages = Math.ceil(count / pageSize);
 
-  // Get businesses for filter dropdown
-  const businesses = await Business.findAll({
-    attributes: ['id', 'businessName'],
-    order: [['businessName', 'ASC']],
-  });
-
-  // Count by status for summary
+  // Count by status for summary (same org scope)
   const statusCounts = await LeaveRequest.findAll({
+    where: buildBusinessScopeWhere(orgIds, businessId),
     attributes: [
       'status',
       [LeaveRequest.sequelize.fn('COUNT', LeaveRequest.sequelize.col('LeaveRequest.id')), 'count'],
@@ -113,19 +174,18 @@ export const renderLeaveRequests = asyncHandler(async (req, res) => {
  */
 export const renderLeaveTypes = asyncHandler(async (req, res) => {
   const user = req.user;
-  
+  const { orgIds, businessId, businesses } = await getLeaveOrgScope(req);
+
   // Get filter/search/sort/pagination parameters
   const page = parseInt(req.query.page) || 1;
   const pageSize = parseInt(req.query.pageSize) || 10;
-  const businessId = req.query.businessId || null;
   const search = req.query.search || '';
   const sortBy = req.query.sortBy || 'name';
   const sortOrder = req.query.sortOrder || 'ASC';
   const statusFilter = req.query.status || '';
 
-  // Build where clause
-  const where = {};
-  if (businessId) where.businessId = businessId;
+  // Build where clause scoped to user's organization(s)
+  const where = buildBusinessScopeWhere(orgIds, businessId);
   if (statusFilter) where.status = statusFilter;
   
   // Search in name or code
@@ -153,11 +213,6 @@ export const renderLeaveTypes = asyncHandler(async (req, res) => {
   });
 
   const totalPages = Math.ceil(count / pageSize);
-
-  const businesses = await Business.findAll({
-    attributes: ['id', 'businessName'],
-    order: [['businessName', 'ASC']],
-  });
 
   res.render('admin/leave-types', {
     title: 'Leave Types',
@@ -330,12 +385,11 @@ export const deleteLeaveType = asyncHandler(async (req, res) => {
  */
 export const renderLeaveBalances = asyncHandler(async (req, res) => {
   const user = req.user;
-  const businessId = req.query.businessId || null;
+  const { orgIds, businessId, businesses } = await getLeaveOrgScope(req);
   const year = parseInt(req.query.year) || new Date().getFullYear();
 
   // Get employees with their balances
-  const employeeWhere = { isActive: true };
-  if (businessId) employeeWhere.businessId = businessId;
+  const employeeWhere = { isActive: true, ...buildBusinessScopeWhere(orgIds, businessId) };
 
   const employees = await Employee.findAll({
     where: employeeWhere,
@@ -362,11 +416,6 @@ export const renderLeaveBalances = asyncHandler(async (req, res) => {
     });
   }
 
-  const businesses = await Business.findAll({
-    attributes: ['id', 'businessName'],
-    order: [['businessName', 'ASC']],
-  });
-
   res.render('admin/leave-balances', {
     title: 'Leave Balances',
     user,
@@ -388,6 +437,14 @@ export const approveRequest = asyncHandler(async (req, res) => {
   const approverId = req.user.id;
   const comments = req.body.comments || null;
 
+  const scope = await assertLeaveRequestInScope(req, requestId);
+  if (!scope.ok) {
+    return res.status(scope.error === 'Leave request not found' ? 404 : 403).json({
+      success: false,
+      message: scope.error,
+    });
+  }
+
   const result = await approveLeaveRequest(requestId, approverId, comments);
 
   if (!result.success) {
@@ -404,6 +461,14 @@ export const rejectRequest = asyncHandler(async (req, res) => {
   const requestId = parseInt(req.params.id);
   const approverId = req.user.id;
   const comments = req.body.comments || req.body.reason || null;
+
+  const scope = await assertLeaveRequestInScope(req, requestId);
+  if (!scope.ok) {
+    return res.status(scope.error === 'Leave request not found' ? 404 : 403).json({
+      success: false,
+      message: scope.error,
+    });
+  }
 
   const result = await rejectLeaveRequest(requestId, approverId, comments);
 

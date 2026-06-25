@@ -4,6 +4,7 @@
  */
 
 const API_BASE = '/admin/attendance/api';
+const API_BASE_FALLBACK = '/api/v1/admin/attendance/api';
 let editingId = null;
 let editingType = null;
 let allPolicies = [];
@@ -54,6 +55,18 @@ function stopAutoRefresh(functionName) {
   }
 }
 
+async function resolveOrgCapabilities() {
+  try {
+    if (typeof window.apiCall === 'function') {
+      const data = await window.apiCall('/business/capabilities', { skipWorkspace: true, skipAuth: false });
+      return data?.data || data || {};
+    }
+  } catch (_) {
+    // Ignore; caller will fallback to generic behaviour.
+  }
+  return {};
+}
+
 async function attendanceApiCall(endpoint, method = 'GET', body = null) {
   try {
     const options = {
@@ -63,17 +76,41 @@ async function attendanceApiCall(endpoint, method = 'GET', body = null) {
     };
     if (body) options.body = JSON.stringify(body);
 
-    const response = await fetch(API_BASE + endpoint, options);
+    let response = await fetch(API_BASE + endpoint, options);
+    let attemptedFallback = false;
+
+    // Some environments can serve attendance APIs under /api/v1.
+    // Retry once before surfacing an error.
+    const contentType = response.headers.get('content-type') || '';
+    if (response.status === 404 && !contentType.includes('application/json')) {
+      attemptedFallback = true;
+      response = await fetch(API_BASE_FALLBACK + endpoint, options);
+    }
 
     // Check if response is actually JSON
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      throw new Error(`Expected JSON but got ${contentType}. HTTP ${response.status}`);
+    const finalContentType = response.headers.get('content-type');
+    if (!finalContentType || !finalContentType.includes('application/json')) {
+      const caps = await resolveOrgCapabilities();
+      if (caps && caps.hasOrganization === false) {
+        throw new Error('Organization required. Create or join an organization first.');
+      }
+      throw new Error(
+        `Expected JSON but got ${finalContentType}. HTTP ${response.status}${attemptedFallback ? ' (after fallback)' : ''}`
+      );
     }
 
     const data = await response.json();
 
     if (!response.ok) {
+      if (response.status === 400 || response.status === 403) {
+        const msg = String(data?.message || data?.error || '').toLowerCase();
+        if (msg.includes('organization') || msg.includes('workspace')) {
+          const caps = await resolveOrgCapabilities();
+          if (caps && caps.hasOrganization === false) {
+            throw new Error('Organization required. Create or join an organization first.');
+          }
+        }
+      }
       throw new Error(data.message || `API Error: ${response.status}`);
     }
 

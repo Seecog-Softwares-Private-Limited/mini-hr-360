@@ -51,9 +51,9 @@
                                 </select>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label">Business</label>
+                                <label class="form-label">Organization</label>
                                 <select name="businessId" class="form-select">
-                                    <option value="">All Businesses</option>
+                                    <option value="">All Organizations</option>
                                     {{#each businesses}}
                                     <option value="{{this.id}}" {{#if (eq ../currentBusinessId this.id)}}selected{{/if}}>{{this.businessName}}</option>
                                     {{/each}}

@@ -371,6 +371,8 @@ app.use('/employee', employeePortalRouter);
 
 // Admin Attendance Management Routes
 app.use('/admin/attendance', adminAttendanceRouter);
+// Backward-compatible API mount for frontend scripts expecting /api/v1 prefix
+app.use('/api/v1/admin/attendance', adminAttendanceRouter);
 
 // Admin Leave Management Routes
 app.use('/leave-requests', adminLeaveRouter);
