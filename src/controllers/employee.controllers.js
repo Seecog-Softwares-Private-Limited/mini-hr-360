@@ -8,17 +8,116 @@ import EmployeeDocument from '../models/EmployeeDocument.js';
 import { Department } from '../models/Department.js';
 import { Designation } from '../models/Designation.js';
 import { Business } from '../models/Business.js';
+import { OrganizationMember } from '../models/OrganizationMember.js';
+import { User } from '../models/User.js';
 import BusinessAddress from '../models/BusinessAddress.js';
 import Country from '../models/Country.js';
 import State from '../models/State.js';
+import crypto from 'crypto';
 import { getEffectiveAssignment } from '../services/attendance.service.js';
 import { generatePassword } from '../utils/passwordGenerator.js';
 import { sendDocumentEmail } from '../utils/emailService.js';
+import { resolveOrganizationIdFromRequest } from '../services/organization.service.js';
 
 const toBool = (val) =>
     val === true || val === 'true' || val === '1' || val === 'on';
 
 const isAdminUser = (user) => String(user?.role || '').toLowerCase() === 'admin';
+const HR_DEFAULT_PASSWORD_PREFIX = 'hr_default_pwd:';
+
+function getPasswordCryptoKey() {
+    const secret = String(
+        process.env.HR_PASSWORD_ENCRYPTION_KEY ||
+        process.env.JWT_SECRET ||
+        process.env.ACCESS_TOKEN_SECRET ||
+        ''
+    ).trim();
+    if (!secret) return null;
+    return crypto.createHash('sha256').update(secret).digest();
+}
+
+function encodeHrDefaultPasswordToken(plainPassword) {
+    if (!plainPassword) return null;
+    const key = getPasswordCryptoKey();
+    if (!key) return null;
+
+    const iv = crypto.randomBytes(12);
+    const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+    const encrypted = Buffer.concat([cipher.update(plainPassword, 'utf8'), cipher.final()]);
+    const tag = cipher.getAuthTag();
+    return `${HR_DEFAULT_PASSWORD_PREFIX}${iv.toString('base64')}.${tag.toString('base64')}.${encrypted.toString('base64')}`;
+}
+
+function decodeHrDefaultPasswordToken(token) {
+    if (!token || !String(token).startsWith(HR_DEFAULT_PASSWORD_PREFIX)) return null;
+    const key = getPasswordCryptoKey();
+    if (!key) return null;
+
+    try {
+        const payload = String(token).slice(HR_DEFAULT_PASSWORD_PREFIX.length);
+        const [ivB64, tagB64, encryptedB64] = payload.split('.');
+        if (!ivB64 || !tagB64 || !encryptedB64) return null;
+
+        const iv = Buffer.from(ivB64, 'base64');
+        const tag = Buffer.from(tagB64, 'base64');
+        const encrypted = Buffer.from(encryptedB64, 'base64');
+
+        const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+        decipher.setAuthTag(tag);
+        const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
+        return decrypted.toString('utf8');
+    } catch (err) {
+        console.error('Failed to decrypt HR default password token:', err?.message || err);
+        return null;
+    }
+}
+
+async function buildPendingInvitedMembers(organizationId, existingEmployees = []) {
+    if (!organizationId) return [];
+
+    const memberRows = await OrganizationMember.findAll({
+        where: { businessId: Number(organizationId), status: 'active' },
+        include: [{ model: User, as: 'user', attributes: ['id', 'firstName', 'lastName', 'email', 'status'] }],
+        attributes: ['userId', 'role', 'status'],
+        order: [['createdAt', 'ASC']],
+    });
+
+    const existingEmails = new Set(
+        existingEmployees
+            .map((e) => String(e?.empEmail || '').trim().toLowerCase())
+            .filter(Boolean)
+    );
+
+    const pending = [];
+    for (const row of memberRows) {
+        const user = row.user;
+        if (!user?.email) continue;
+
+        const email = String(user.email).trim().toLowerCase();
+        if (existingEmails.has(email)) continue;
+
+        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
+        pending.push({
+            id: `member-${user.id}`,
+            empId: 'INVITED',
+            empName: fullName,
+            empEmail: user.email,
+            empPhone: '—',
+            empDesignation: 'Pending profile',
+            empDepartment: row.role || 'EMPLOYEE',
+            empDateOfJoining: '—',
+            initial: fullName.charAt(0).toUpperCase(),
+            shiftName: null,
+            shiftStartTime: null,
+            shiftEndTime: null,
+            isInvitedMember: true,
+            invitedRole: row.role || 'EMPLOYEE',
+            memberStatus: row.status || 'active',
+        });
+    }
+
+    return pending;
+}
 
 /**
  * Generate welcome email HTML template
@@ -158,8 +257,9 @@ function generateWelcomeEmailHTML(employee, password, loginUrl) {
  */
 async function sendWelcomeEmail(employee, password, portalUrl) {
     if (!employee.empEmail) {
-        console.warn('Cannot send welcome email: employee email is missing');
-        return false;
+        const message = 'Employee email is missing';
+        console.warn(`Cannot send welcome email: ${message}`);
+        return { sent: false, error: message };
     }
 
     const loginUrl = portalUrl || '/employee/login';
@@ -167,22 +267,22 @@ async function sendWelcomeEmail(employee, password, portalUrl) {
     const html = generateWelcomeEmailHTML(employee, password, loginUrl);
 
     try {
-        const emailSent = await sendDocumentEmail({
+        const result = await sendDocumentEmail({
             to: employee.empEmail,
             subject: subject,
             html: html,
         });
 
-        if (emailSent) {
+        if (result.success) {
             console.log(`Welcome email sent successfully to ${employee.empEmail}`);
-        } else {
-            console.error(`Failed to send welcome email to ${employee.empEmail}`);
+            return { sent: true };
         }
 
-        return emailSent;
+        console.error(`Failed to send welcome email to ${employee.empEmail}:`, result.error);
+        return { sent: false, error: result.error || 'Email delivery failed' };
     } catch (error) {
         console.error('Error sending welcome email:', error);
-        return false;
+        return { sent: false, error: error?.message || 'Email delivery failed' };
     }
 }
 
@@ -200,16 +300,20 @@ function sanitizeEmployeeJson(employee) {
     return json;
 }
 
-function buildPortalAccess(employee, plainPassword, req, emailSent = false) {
+function buildPortalAccess(employee, plainPassword, req, emailSent = false, emailError = null) {
+    const savedDefaultPassword = decodeHrDefaultPasswordToken(employee?.resetPasswordToken);
     return {
         enabled: true,
-        canLogin: true,
+        canLogin: !!employee?.canLogin,
         loginEmail: employee.empEmail,
         loginEmployeeCode: employee.empId,
-        password: plainPassword,
+        password: plainPassword || null,
         portalUrl: getPortalLoginUrl(req),
         instructions: 'Sign in at the employee portal using the email or employee code with the password below.',
         emailSent: !!emailSent,
+        emailError: emailSent ? null : (emailError || null),
+        hasHrVisibleDefaultPassword: !!savedDefaultPassword,
+        hrVisibleDefaultPassword: savedDefaultPassword,
     };
 }
 
@@ -234,10 +338,35 @@ export const renderEmployeesPage = async (req, res, next) => {
         const search = (req.query.search || '').trim();
         const userId = req.user?.id;
         const isAdmin = isAdminUser(req.user);
+        const organizationId = await resolveOrganizationIdFromRequest(req);
         const where = {};
 
-        // Non-admin users should only see their own employees
-        if (userId && !isAdmin) {
+        // Non-admin users should only see employees in the active organization.
+        if (!isAdmin && !organizationId) {
+            const user = req.user
+                ? { firstName: req.user.firstName, lastName: req.user.lastName, role: req.user.role }
+                : {};
+
+            return res.render('employees', {
+                layout: 'main',
+                title: 'Employee Management',
+                user,
+                active: 'employees',
+                activeGroup: 'workspace',
+                employees: [],
+                departments: [],
+                designations: [],
+                businesses: [],
+                businessAddresses: [],
+                countries: [],
+                states: [],
+                search,
+            });
+        }
+
+        if (!isAdmin && organizationId) {
+            where.businessId = Number(organizationId);
+        } else if (userId && !isAdmin) {
             where.userId = userId;
         }
 
@@ -282,10 +411,9 @@ export const renderEmployeesPage = async (req, res, next) => {
             }),
         ]);
 
-        // Legacy fallback: if scoped query returns nothing for a non-admin,
-        // and the system is effectively single-tenant, show employees without userId scope.
+        // Legacy fallback: only for strict userId scoping mode.
         let employees = employeesInitial;
-        if (!isAdmin && userId && employees.length === 0) {
+        if (!isAdmin && userId && !organizationId && employees.length === 0) {
             const legacy = await isLegacySingleTenantEmployees();
             if (legacy) {
                 const legacyWhere = { ...where };
@@ -334,6 +462,11 @@ export const renderEmployeesPage = async (req, res, next) => {
             }
         }));
 
+        const pendingMembers = !isAdmin && organizationId
+            ? await buildPendingInvitedMembers(organizationId, employeesPlain)
+            : [];
+        const employeeRows = [...pendingMembers, ...employeesPlain];
+
         const user = req.user
             ? { firstName: req.user.firstName, lastName: req.user.lastName }
             : {};
@@ -344,7 +477,7 @@ export const renderEmployeesPage = async (req, res, next) => {
             user,
             active: 'employees',
             activeGroup: 'workspace',
-            employees: employeesPlain,
+            employees: employeeRows,
             departments: departmentsPlain,
             designations: designationsPlain,
             businesses: businessesPlain,
@@ -367,10 +500,17 @@ export const listEmployees = async (req, res, next) => {
         const search = (req.query.search || '').trim();
         const userId = req.user?.id;
         const isAdmin = isAdminUser(req.user);
+        const organizationId = await resolveOrganizationIdFromRequest(req);
         const where = {};
 
-        // Non-admin users should only see their own employees
-        if (userId && !isAdmin) {
+        if (!isAdmin && !organizationId) {
+            return res.json([]);
+        }
+
+        // Non-admin users should only see employees in the active organization.
+        if (!isAdmin && organizationId) {
+            where.businessId = Number(organizationId);
+        } else if (userId && !isAdmin) {
             where.userId = userId;
         }
 
@@ -388,7 +528,7 @@ export const listEmployees = async (req, res, next) => {
         });
 
         // Legacy fallback (same rules as HTML page)
-        if (!isAdmin && userId && employees.length === 0) {
+        if (!isAdmin && userId && !organizationId && employees.length === 0) {
             const legacy = await isLegacySingleTenantEmployees();
             if (legacy) {
                 const legacyWhere = { ...where };
@@ -400,8 +540,13 @@ export const listEmployees = async (req, res, next) => {
             }
         }
 
+        const employeesPlain = employees.map((e) => e.get({ plain: true }));
+        const pendingMembers = !isAdmin && organizationId
+            ? await buildPendingInvitedMembers(organizationId, employeesPlain)
+            : [];
+
         console.log('Employees listed via API');
-        res.json(employees);
+        res.json([...pendingMembers, ...employeesPlain]);
     } catch (err) {
         console.error('Error listing employees:', err);
         next(err);
@@ -457,7 +602,10 @@ export const getEmployeeById = async (req, res, next) => {
             return res.status(404).json({ error: 'Employee not found' });
         }
 
-        res.json(sanitizeEmployeeJson(employee));
+        res.json({
+            ...sanitizeEmployeeJson(employee),
+            portalAccess: buildPortalAccess(employee, null, req),
+        });
     } catch (err) {
         console.error('Error fetching employee by id:', err);
         next(err);
@@ -480,6 +628,14 @@ export const createEmployee = async (req, res, next) => {
         console.log('Received POST request with body:', req.body);
 
         const userId = req.user?.id || 1;
+        const organizationId = await resolveOrganizationIdFromRequest(req);
+        if (!organizationId) {
+            await t.rollback();
+            return res.status(400).json({
+                error: 'No active organization selected',
+                message: 'Create or join an organization before adding employees.',
+            });
+        }
 
         // Validate required fields before proceeding
         // Helper function to check if a value is truly empty
@@ -618,8 +774,8 @@ export const createEmployee = async (req, res, next) => {
             // empAadhar: req.body.empAadhar,
             // empPan: req.body.empPan,
 
-            // Business association (required)
-            businessId: req.body.businessId ? Number(req.body.businessId) : null,
+            // Organization association is always derived from authenticated context.
+            businessId: Number(organizationId),
         };
 
         // Optional manual empId; otherwise auto-generate in hook
@@ -627,11 +783,21 @@ export const createEmployee = async (req, res, next) => {
             payload.empId = req.body.empId.trim();
         }
 
-        // Generate password and enable login for new employees
-        // This ensures every new employee gets a password and can login to the employee portal
-        const generatedPassword = generatePassword(12);
+        // Allow explicit default password from last-step portal credentials section.
+        const requestedPortalPassword = String(req.body?.portalPassword || '').trim();
+        if (requestedPortalPassword && requestedPortalPassword.length < 8) {
+            await t.rollback();
+            return res.status(400).json({
+                error: 'Default password must be at least 8 characters',
+            });
+        }
+
+        const generatedPassword = requestedPortalPassword || generatePassword(12);
         payload.password = generatedPassword;
         payload.canLogin = true;
+        payload.forcePasswordReset = true;
+        payload.resetPasswordToken = encodeHrDefaultPasswordToken(generatedPassword);
+        payload.resetPasswordExpires = null;
 
         // 2) Create Employee first
         const employee = await Employee.create(payload, { transaction: t });
@@ -747,22 +913,28 @@ export const createEmployee = async (req, res, next) => {
 
         const portalUrl = getPortalLoginUrl(req);
         let emailSent = false;
+        let emailError = null;
+
+        const shouldSendCredentialsEmail = String(req.body?.sendCredentialsEmail ?? 'true').toLowerCase() !== 'false';
 
         // Send welcome email with credentials (non-blocking - don't fail if email fails)
-        if (employee.empEmail) {
+        if (employee.empEmail && shouldSendCredentialsEmail) {
             try {
-                emailSent = await sendWelcomeEmail(employee, plainPassword, portalUrl);
+                const emailResult = await sendWelcomeEmail(employee, plainPassword, portalUrl);
+                emailSent = emailResult.sent;
+                emailError = emailResult.error || null;
                 if (emailSent) {
                     console.log('Welcome email sent to:', employee.empEmail);
                 }
-            } catch (emailError) {
-                console.error('Failed to send welcome email:', emailError);
+            } catch (emailErrorCaught) {
+                console.error('Failed to send welcome email:', emailErrorCaught);
+                emailError = emailErrorCaught?.message || 'Email delivery failed';
             }
         }
 
         return res.status(201).json({
             ...sanitizeEmployeeJson(employee),
-            portalAccess: buildPortalAccess(employee, plainPassword, req, emailSent),
+            portalAccess: buildPortalAccess(employee, plainPassword, req, emailSent, emailError),
         });
     } catch (err) {
         await t.rollback();
@@ -1084,22 +1256,88 @@ export const resetEmployeePortalAccess = async (req, res, next) => {
         const plainPassword = generatePassword(12);
         employee.password = plainPassword;
         employee.canLogin = true;
+        employee.forcePasswordReset = true;
+        employee.resetPasswordToken = encodeHrDefaultPasswordToken(plainPassword);
+        employee.resetPasswordExpires = null;
         await employee.save();
 
         const portalUrl = getPortalLoginUrl(req);
         let emailSent = false;
+        let emailError = null;
         try {
-            emailSent = await sendWelcomeEmail(employee, plainPassword, portalUrl);
-        } catch (emailError) {
-            console.error('Failed to send portal credentials email:', emailError);
+            const emailResult = await sendWelcomeEmail(employee, plainPassword, portalUrl);
+            emailSent = emailResult.sent;
+            emailError = emailResult.error || null;
+        } catch (emailErrorCaught) {
+            console.error('Failed to send portal credentials email:', emailErrorCaught);
+            emailError = emailErrorCaught?.message || 'Email delivery failed';
         }
 
         return res.json({
             ...sanitizeEmployeeJson(employee),
-            portalAccess: buildPortalAccess(employee, plainPassword, req, emailSent),
+            portalAccess: buildPortalAccess(employee, plainPassword, req, emailSent, emailError),
         });
     } catch (err) {
         console.error('Error resetting portal access:', err);
+        next(err);
+    }
+};
+
+/**
+ * POST /api/v1/employees/:id/portal-access/send-email
+ * Resend portal credentials email using the current password (must match stored hash).
+ */
+export const sendEmployeePortalCredentialsEmail = async (req, res, next) => {
+    try {
+        const userId = req.user?.id;
+        const isAdmin = isAdminUser(req.user);
+        const id = Number.parseInt(String(req.params.id || '').trim(), 10);
+        const password = String(req.body?.password || '').trim();
+
+        if (Number.isNaN(id)) {
+            return res.status(400).json({ error: 'Invalid employee ID' });
+        }
+
+        if (!password) {
+            return res.status(400).json({ error: 'Password is required to resend credentials email' });
+        }
+
+        const where = { id };
+        if (userId && !isAdmin) {
+            where.userId = userId;
+        }
+
+        let employee = await Employee.findOne({ where });
+        if (!employee && userId && !isAdmin) {
+            const legacy = await isLegacySingleTenantEmployees();
+            if (legacy) {
+                employee = await Employee.findOne({ where: { id } });
+            }
+        }
+
+        if (!employee) {
+            return res.status(404).json({ error: 'Employee not found' });
+        }
+
+        if (!employee.empEmail) {
+            return res.status(400).json({ error: 'Employee must have an email address for portal login' });
+        }
+
+        const passwordMatches = await employee.isPasswordCorrect(password);
+        if (!passwordMatches) {
+            return res.status(400).json({ error: 'Password does not match current portal credentials' });
+        }
+
+        const portalUrl = getPortalLoginUrl(req);
+        const emailResult = await sendWelcomeEmail(employee, password, portalUrl);
+
+        return res.json({
+            emailSent: emailResult.sent,
+            emailError: emailResult.error || null,
+            portalAccess: buildPortalAccess(employee, password, req, emailResult.sent, emailResult.error),
+        });
+    } catch (err) {
+        console.error('Error resending portal credentials email:', err);
         next(err);
     }
 };

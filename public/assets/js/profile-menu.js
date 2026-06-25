@@ -25,6 +25,10 @@
 
   function formatRole(role) {
     if (!role) return 'Administrator';
+    if (String(role) === 'shop_owner') return 'Owner';
+    if (String(role) === 'SUPER_ADMIN') return 'Super Admin';
+    if (String(role) === 'HR_MANAGER') return 'HR Manager';
+    if (String(role) === 'HR_EXECUTIVE') return 'HR Executive';
     return String(role)
       .replace(/_/g, ' ')
       .toLowerCase()

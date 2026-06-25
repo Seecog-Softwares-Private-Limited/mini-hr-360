@@ -4,6 +4,7 @@ import { ApiResponse } from "../../utils/ApiResponse.js"
 import { User } from "../../models/User.js"
 import { Business } from "../../models/Business.js"
 import { OrganizationMember } from "../../models/OrganizationMember.js"
+import BusinessAddress from "../../models/BusinessAddress.js"
 import { Op } from 'sequelize';
 import {
     assertCanCreateOrganization,
@@ -15,6 +16,35 @@ import {
 
 function escapeRegex(s = "") {
     return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+async function upsertRegisteredAddress(businessId, addressName, fullAddress) {
+    const normalizedAddress = String(fullAddress || '').trim();
+    if (!businessId || !normalizedAddress) return null;
+
+    const normalizedName = String(addressName || 'Head Office').trim() || 'Head Office';
+
+    const existing = await BusinessAddress.findOne({
+        where: { businessId, addressType: 'REGISTERED' },
+        order: [['createdAt', 'ASC']],
+    });
+
+    if (existing) {
+        await existing.update({
+            addressName: normalizedName,
+            fullAddress: normalizedAddress,
+            status: 'ACTIVE',
+        });
+        return existing;
+    }
+
+    return BusinessAddress.create({
+        businessId,
+        addressName: normalizedName,
+        fullAddress: normalizedAddress,
+        addressType: 'REGISTERED',
+        status: 'ACTIVE',
+    });
 }
 
 export const getOrganizationCapabilitiesHandler = asyncHandler(async (req, res) => {
@@ -52,12 +82,12 @@ export const joinOrganization = asyncHandler(async (req, res) => {
     }
 
     if (existing) {
-        await existing.update({ status: 'active', role: req.user.role || 'member' });
+        await existing.update({ status: 'active', role: existing.role || 'EMPLOYEE' });
     } else {
         await OrganizationMember.create({
             userId: req.user.id,
             businessId: business.id,
-            role: req.user.role || 'member',
+            role: 'EMPLOYEE',
             status: 'active',
         });
     }
@@ -69,7 +99,17 @@ export const joinOrganization = asyncHandler(async (req, res) => {
 
 export const createBusiness = asyncHandler(async (req, res) => {
     try {
-        const { businessName, timezone, country, category, description, phoneNo, whatsappNo } = req.body || {}
+        const {
+            businessName,
+            timezone,
+            country,
+            category,
+            description,
+            phoneNo,
+            whatsappNo,
+            addressName,
+            fullAddress,
+        } = req.body || {}
 
         if (!businessName || !country || !category) {
             return res.status(400).json(new ApiResponse(400, {}, "Organization name, country and category are required"));
@@ -93,6 +133,8 @@ export const createBusiness = asyncHandler(async (req, res) => {
             ownerId: req.user.id,
             inviteCode: generateInviteCode(),
         })
+
+        await upsertRegisteredAddress(business.id, addressName, fullAddress);
 
         return res
             .status(201)
@@ -199,8 +241,19 @@ export const deleteMyBusiness = asyncHandler(async (req, res) => {
                 "Business deleted successfully"
             ))
     } catch (error) {
-        console.log("Error: ", error);
-        throw new ApiError(401, "Internal server error")
+        console.log("Error deleting business: ", error);
+
+        if (error?.name === 'SequelizeForeignKeyConstraintError') {
+            return res
+                .status(409)
+                .json(new ApiResponse(
+                    409,
+                    {},
+                    "Cannot delete organization because it still has linked records (employees, addresses, or related data)."
+                ));
+        }
+
+        throw new ApiError(500, "Internal server error")
     }
 })
 
@@ -351,6 +404,25 @@ export const getAllMyBusinesses = asyncHandler(async (req, res) => {
             organizations = await getUserOrganizations(req.user);
         }
 
+        const businessIds = organizations.map((o) => Number(o.id)).filter((id) => Number.isFinite(id) && id > 0);
+        if (businessIds.length) {
+            const addresses = await BusinessAddress.findAll({
+                where: { businessId: { [Op.in]: businessIds }, status: 'ACTIVE' },
+                order: [['createdAt', 'ASC']],
+            });
+            const firstAddressByBusiness = new Map();
+            for (const row of addresses) {
+                const bid = Number(row.businessId);
+                if (!firstAddressByBusiness.has(bid)) {
+                    firstAddressByBusiness.set(bid, row.toJSON());
+                }
+            }
+            organizations = organizations.map((org) => ({
+                ...org,
+                primaryAddress: firstAddressByBusiness.get(Number(org.id)) || null,
+            }));
+        }
+
         const capabilities = await getOrganizationCapabilities(req.user);
 
         return res.status(200).json({
@@ -366,7 +438,7 @@ export const getAllMyBusinesses = asyncHandler(async (req, res) => {
 export const updateBusinessById = asyncHandler(async (req, res) => {
     try {
         const { id } = req.params;
-        const { businessName, description, category, phoneNo, whatsappNo, timezone, country } = req.body;
+        const { businessName, description, category, phoneNo, whatsappNo, timezone, country, addressName, fullAddress } = req.body;
 
         // Since the UI lists all businesses, allow any shop_owner (and admin) to update.
         // If you want strict ownership enforcement again, use: { id, ownerId: req.user.id } for non-admin.
@@ -390,6 +462,8 @@ export const updateBusinessById = asyncHandler(async (req, res) => {
             timezone: timezone || business.timezone,
             country: country || business.country
         });
+
+        await upsertRegisteredAddress(Number(id), addressName, fullAddress);
 
         return res.status(200).json(business);
     } catch (error) {

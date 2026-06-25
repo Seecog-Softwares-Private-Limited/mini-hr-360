@@ -6,6 +6,7 @@ import {
     renderChangePassword,
     updatePassword,
 } from '../controllers/admin/adminProfile.controller.js';
+import { isPlatformAdmin, listUsersForRequest } from '../services/organization.service.js';
 
 const router = Router();
 
@@ -14,13 +15,25 @@ router.get('/profile', verifyUser, renderProfile);
 router.get('/change-password', verifyUser, renderChangePassword);
 router.post('/change-password', verifyUser, updatePassword);
 
-// Team & Roles management page
+// Team & Roles management page (org-scoped for owners; platform-wide for super admins)
 router.get('/team', verifyUser, (req, res) => {
     res.render('admin/team', {
         title: 'Team & Roles',
         active: 'team',
         user: req.user,
+        isPlatformAdmin: isPlatformAdmin(req.user),
     });
+});
+
+// Organization-scoped users for payroll approval workflow and team management
+router.get('/users', verifyUser, async (req, res) => {
+    try {
+        const users = await listUsersForRequest(req);
+        res.json({ data: users });
+    } catch (error) {
+        console.error('Error fetching organization users:', error);
+        res.status(500).json({ error: 'Failed to fetch users' });
+    }
 });
 
 export default router;

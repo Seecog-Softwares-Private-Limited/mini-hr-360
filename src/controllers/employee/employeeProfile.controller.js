@@ -12,6 +12,18 @@ import {
   getCertificates,
 } from '../../services/employeeDashboard.service.js';
 
+const HR_DEFAULT_PASSWORD_PREFIX = 'hr_default_pwd:';
+
+function clearHrVisibleDefaultPassword(employee) {
+    if (!employee) return;
+    if (String(employee.resetPasswordToken || '').startsWith(HR_DEFAULT_PASSWORD_PREFIX)) {
+        employee.resetPasswordToken = null;
+        employee.resetPasswordExpires = null;
+    }
+    employee.forcePasswordReset = false;
+    employee.lastPasswordResetAt = new Date();
+}
+
 /**
  * GET /employee/profile - Render profile page
  */
@@ -71,6 +83,7 @@ export const updatePassword = asyncHandler(async (req, res) => {
     }
 
     employee.password = newPassword;
+    clearHrVisibleDefaultPassword(employee);
     await employee.save();
 
     res.json({ success: true, message: 'Password updated successfully' });
@@ -155,6 +168,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
     }
 
     employee.password = password;
+    clearHrVisibleDefaultPassword(employee);
     employee.resetPasswordToken = null;
     employee.resetPasswordExpires = null;
     await employee.save();

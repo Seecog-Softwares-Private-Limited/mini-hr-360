@@ -12,7 +12,7 @@
       </div>
       <div class="profile-role">
         {{#if user.role}}
-          {{#if (eq user.role 'HR_MANAGER')}}HR Manager{{else if (eq user.role 'HR_EXECUTIVE')}}HR Executive{{else if (eq user.role 'FINANCE')}}Finance{{else if (eq user.role 'admin')}}Administrator{{else if (eq user.role 'SUPER_ADMIN')}}Super Admin{{else}}{{user.role}}{{/if}}
+          {{#if (eq user.role 'HR_MANAGER')}}HR Manager{{else if (eq user.role 'HR_EXECUTIVE')}}HR Executive{{else if (eq user.role 'FINANCE')}}Finance{{else if (eq user.role 'MANAGER')}}Manager{{else if (eq user.role 'EMPLOYEE')}}Employee{{else if (eq user.role 'shop_manager')}}Shop Manager{{else if (eq user.role 'shop_worker')}}Shop Worker{{else if (eq user.role 'shop_owner')}}Owner{{else if (eq user.role 'admin')}}Administrator{{else if (eq user.role 'SUPER_ADMIN')}}Super Admin{{else}}{{user.role}}{{/if}}
         {{else}}Administrator{{/if}}
       </div>
     </div>
@@ -86,11 +86,8 @@
         <a class="sidebar-link {{#if (eq active 'designations')}}active{{/if}}" href="/designations" data-nav="designations">
           <i class="fa-solid fa-id-badge nav-icon"></i> Designations
         </a>
-        <a class="sidebar-link {{#if (eq active 'businessAddresses')}}active{{/if}}" href="/business-addresses" data-nav="businessAddresses">
-          <i class="fa-solid fa-map-marker-alt nav-icon"></i> Organization Addresses
-        </a>
         <a class="sidebar-link {{#if (eq active 'team')}}active{{/if}}" href="/admin/team" data-nav="team">
-          <i class="fa-solid fa-users-gear nav-icon"></i> Team &amp; Roles
+          <i class="fa-solid fa-users-gear nav-icon"></i> Manage Roles &amp; People
         </a>
         <a class="sidebar-link {{#if (eq active 'emailTemplates')}}active{{/if}}" href="/email-templates" data-nav="emailTemplates">
           <i class="fa-solid fa-envelope-open-text nav-icon"></i> Email Templates
@@ -119,6 +116,7 @@
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     const userRole = localStorage.getItem('userRole') || '{{user.role}}' || 'admin';
+    const lockableSelector = '.app-sidebar .sidebar-link, .app-sidebar [data-menu-toggle]';
 
     const rolePermissions = {
       admin: { all: true },
@@ -132,6 +130,37 @@
 
     const permissions = rolePermissions[userRole] || {};
     const isFullAdmin = permissions.all === true;
+    const showOnlyOrganizationsAccess = () => {
+      document.querySelectorAll(lockableSelector).forEach((el) => {
+        const href = el.getAttribute('href') || '';
+        const isOrganizationsLink = href === '/business';
+        const isLogout = el.classList.contains('logout-link');
+        const canKeepEnabled = isOrganizationsLink || isLogout;
+        if (!canKeepEnabled) {
+          el.classList.add('disabled');
+          el.style.pointerEvents = 'none';
+          el.style.opacity = '0.5';
+        }
+      });
+
+      const infoId = 'org-required-sidebar-alert';
+      if (!document.getElementById(infoId)) {
+        const hint = document.createElement('div');
+        hint.id = infoId;
+        hint.className = 'mt-2 mb-0 px-3 py-3 small';
+        hint.style.cssText = 'background: linear-gradient(135deg, rgba(250,204,21,0.22), rgba(245,158,11,0.18)); border: 1px solid rgba(250,204,21,0.45); border-radius: 12px; color: #fde68a;';
+        hint.innerHTML = `
+          <div style="display:flex; gap:10px; align-items:flex-start;">
+            <i class="fa-solid fa-circle-info" style="margin-top:2px; color:#facc15;"></i>
+            <div>
+              <div style="font-weight:700; color:#fef3c7;">Organization Required</div>
+              <div style="opacity:0.95;">Create or join an organization to unlock the workspace menu.</div>
+            </div>
+          </div>
+        `;
+        document.querySelector('.app-sidebar .sidebar-scroll')?.prepend(hint);
+      }
+    };
 
     if (!isFullAdmin) {
       const hideLink = (href) => {
@@ -166,6 +195,19 @@
       if (!permissions.businessAddresses) hideLink('/business-addresses');
       if (!permissions.team) hideLink('/admin/team');
       if (!permissions.billing) hideLink('/billing');
+    }
+
+    // Enforce organization-first flow for non-platform users.
+    if (!['admin', 'SUPER_ADMIN'].includes(userRole) && typeof apiCall === 'function') {
+      apiCall('/business/capabilities', { skipWorkspace: true })
+        .then((data) => {
+          const caps = data?.data || data || {};
+          if (!caps.hasOrganization) showOnlyOrganizationsAccess();
+        })
+        .catch(() => {
+          // If capability check fails, fail-safe to organization-only navigation.
+          showOnlyOrganizationsAccess();
+        });
     }
   });
 

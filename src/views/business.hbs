@@ -1,11 +1,17 @@
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
     <h2>My Organizations</h2>
-    <div class="d-flex gap-2" id="organizationActions" style="display: none !important;">
-        <button class="btn btn-outline-primary" id="joinOrganizationBtn" data-bs-toggle="modal" data-bs-target="#joinOrganizationModal" style="display: none;">
-            <i class="fas fa-right-to-bracket me-2"></i>Join Organization
+    <div class="d-flex gap-2 align-items-center" id="organizationActions" style="display: none !important;">
+        <a class="btn btn-outline-secondary d-inline-flex align-items-center gap-2" id="manageRolesBtn" href="/admin/team" style="display: none;">
+            <i class="fas fa-users-gear" style="width: 14px; text-align: center;"></i>
+            <span>Manage Roles &amp; People</span>
+        </a>
+        <button class="btn btn-outline-primary d-inline-flex align-items-center gap-2" id="joinOrganizationBtn" data-bs-toggle="modal" data-bs-target="#joinOrganizationModal" style="display: none;">
+            <i class="fas fa-right-to-bracket" style="width: 14px; text-align: center;"></i>
+            <span>Join Organization</span>
         </button>
-        <button class="btn btn-primary" id="addOrganizationBtn" data-bs-toggle="modal" data-bs-target="#addBusinessModal" style="display: none;">
-            <i class="fas fa-plus me-2"></i>Add Organization
+        <button class="btn btn-primary d-inline-flex align-items-center gap-2" id="addOrganizationBtn" data-bs-toggle="modal" data-bs-target="#addBusinessModal" style="display: none;">
+            <i class="fas fa-plus" style="width: 14px; text-align: center;"></i>
+            <span>Add Organization</span>
         </button>
     </div>
 </div>
@@ -121,6 +127,16 @@
                         <label for="description" class="form-label">Description</label>
                         <textarea class="form-control" id="description" name="description" rows="3" placeholder="Brief description of your organization"></textarea>
                     </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="addressName" class="form-label">Address Label</label>
+                            <input type="text" class="form-control" id="addressName" name="addressName" placeholder="Head Office">
+                        </div>
+                        <div class="col-md-8 mb-3">
+                            <label for="fullAddress" class="form-label">Organization Address</label>
+                            <textarea class="form-control" id="fullAddress" name="fullAddress" rows="2" placeholder="Street, area, city, state, postal code"></textarea>
+                        </div>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
@@ -230,6 +246,16 @@
                         <label for="editDescription" class="form-label">Description</label>
                         <textarea class="form-control" id="editDescription" name="description" rows="3" placeholder="Brief description of your organization"></textarea>
                     </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="editAddressName" class="form-label">Address Label</label>
+                            <input type="text" class="form-control" id="editAddressName" name="addressName" placeholder="Head Office">
+                        </div>
+                        <div class="col-md-8 mb-3">
+                            <label for="editFullAddress" class="form-label">Organization Address</label>
+                            <textarea class="form-control" id="editFullAddress" name="fullAddress" rows="2" placeholder="Street, area, city, state, postal code"></textarea>
+                        </div>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
@@ -279,10 +305,12 @@
         const actions = document.getElementById('organizationActions');
         const addBtn = document.getElementById('addOrganizationBtn');
         const joinBtn = document.getElementById('joinOrganizationBtn');
+        const manageRolesBtn = document.getElementById('manageRolesBtn');
         const hint = document.getElementById('organizationHint');
 
-        const showActions = capabilities.canCreate || capabilities.canJoin;
+        const showActions = capabilities.canCreate || capabilities.canJoin || capabilities.hasOrganization;
         if (actions) actions.style.display = showActions ? 'flex' : 'none';
+        if (manageRolesBtn) manageRolesBtn.style.display = capabilities.hasOrganization ? 'inline-flex' : 'none';
         if (addBtn) addBtn.style.display = capabilities.canCreate ? 'inline-flex' : 'none';
         if (joinBtn) joinBtn.style.display = capabilities.canJoin ? 'inline-flex' : 'none';
 
@@ -291,13 +319,13 @@
                 hint.classList.add('d-none');
             } else if (capabilities.canCreate) {
                 hint.classList.remove('d-none');
-                hint.textContent = 'You can create one organization with your active plan.';
+                hint.textContent = 'You can create one basic organization.';
             } else if (capabilities.canJoin) {
                 hint.classList.remove('d-none');
-                hint.textContent = 'You do not have an active plan. Join an organization using an invite code from the owner.';
+                hint.textContent = 'You can join one organization using an invite code from the owner.';
             } else {
                 hint.classList.remove('d-none');
-                hint.textContent = 'Purchase a plan from Billing to create your organization, or join one with an invite code.';
+                hint.textContent = 'Only one organization link is allowed per account.';
             }
         }
     }
@@ -390,11 +418,23 @@
                                 ${escapeHtml(business.country || 'No country')} • ${escapeHtml(business.timezone || 'No timezone')}
                             </small>
                         </div>
+                        ${business.primaryAddress?.fullAddress ? `
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <strong>${escapeHtml(business.primaryAddress.addressName || 'Address')}:</strong>
+                                ${escapeHtml(business.primaryAddress.fullAddress)}
+                            </small>
+                        </div>` : ''}
                     </div>
                     <div class="card-footer bg-transparent">
-                        <small class="text-muted">
-                            Created: ${business.createdAt ? new Date(business.createdAt).toLocaleDateString() : '—'}
-                        </small>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                Created: ${business.createdAt ? new Date(business.createdAt).toLocaleDateString() : '—'}
+                            </small>
+                            <button class="btn btn-sm btn-outline-primary" type="button" onclick="openOrganizationOverview(${business.id})">
+                                Open Overview
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -434,6 +474,16 @@
         displayBusinesses(businesses);
     }
 
+    function openOrganizationOverview(organizationId) {
+        if (!organizationId) return;
+        const id = String(organizationId);
+        localStorage.setItem('mh360:organizationId', id);
+        localStorage.setItem('mh360:workspaceId', id);
+        document.cookie = `mh360_organization_id=${encodeURIComponent(id)}; path=/; max-age=${30 * 24 * 60 * 60}; samesite=lax`;
+        document.cookie = `mh360_workspace_id=${encodeURIComponent(id)}; path=/; max-age=${30 * 24 * 60 * 60}; samesite=lax`;
+        window.location.href = '/dashboard';
+    }
+
     function normPhone(value) {
         if (!value) return '';
         const digits = String(value).replace(/\D/g, '');
@@ -454,7 +504,9 @@
             phoneNo: normPhone(formData.get('phoneNo')),
             whatsappNo: normPhone(formData.get('whatsappNo')),
             country: formData.get('country'),
-            timezone: formData.get('timezone')
+            timezone: formData.get('timezone'),
+            addressName: formData.get('addressName')?.trim(),
+            fullAddress: formData.get('fullAddress')?.trim()
         };
 
         try {
@@ -516,6 +568,8 @@
         document.getElementById('editBusinessName').value = business.businessName || '';
         document.getElementById('editCategory').value = business.category || '';
         document.getElementById('editDescription').value = business.description || '';
+        document.getElementById('editAddressName').value = business.primaryAddress?.addressName || '';
+        document.getElementById('editFullAddress').value = business.primaryAddress?.fullAddress || '';
         document.getElementById('editCountry').value = business.country || '';
         document.getElementById('editTimezone').value = business.timezone || 'Asia/Kolkata';
 
@@ -537,7 +591,9 @@
             phoneNo: normPhone(formData.get('phoneNo')),
             whatsappNo: normPhone(formData.get('whatsappNo')),
             country: formData.get('country'),
-            timezone: formData.get('timezone')
+            timezone: formData.get('timezone'),
+            addressName: formData.get('addressName')?.trim(),
+            fullAddress: formData.get('fullAddress')?.trim()
         };
 
         const businessId = formData.get('id');
@@ -581,7 +637,7 @@
                 showAlert((data.message || data.error) || 'Failed to delete organization', 'danger');
             }
         } catch (error) {
-            showAlert('Network error. Please try again.', 'danger');
+            showAlert(error?.message || 'Failed to delete organization', 'danger');
         } finally {
             currentDeleteId = null;
         }
