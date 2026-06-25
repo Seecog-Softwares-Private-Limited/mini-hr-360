@@ -596,6 +596,142 @@ export const getCalendar = async ({ businessId, employeeId, month }) => {
   });
 };
 
+const aggregateAttendanceStats = (summaries = []) => {
+  const stats = {
+    present: 0,
+    absent: 0,
+    late: 0,
+    leave: 0,
+    halfDay: 0,
+    holiday: 0,
+    weekoff: 0,
+    notMarked: 0,
+    totalWorkMinutes: 0,
+    recordedDays: 0,
+  };
+
+  summaries.forEach((s) => {
+    stats.recordedDays += 1;
+    stats.totalWorkMinutes += Number(s.workMinutes) || 0;
+    switch (s.status) {
+      case 'PRESENT': stats.present += 1; break;
+      case 'ABSENT': stats.absent += 1; break;
+      case 'LATE': stats.late += 1; break;
+      case 'LEAVE': stats.leave += 1; break;
+      case 'HALF_DAY': stats.halfDay += 1; break;
+      case 'HOLIDAY': stats.holiday += 1; break;
+      case 'WEEKOFF': stats.weekoff += 1; break;
+      default: stats.notMarked += 1; break;
+    }
+  });
+
+  const workingDays = stats.present + stats.absent + stats.late + stats.halfDay + stats.notMarked;
+  stats.attendanceRate = workingDays > 0
+    ? Math.round(((stats.present + stats.halfDay) / workingDays) * 100)
+    : null;
+
+  return stats;
+};
+
+export const getEmployeeAttendanceSummaries = async ({ businessId, month, department = null, search = null }) => {
+  const { startStr, endStr } = startEndOfMonth(month);
+
+  const empWhere = { businessId };
+  if (department) empWhere.empDepartment = department;
+
+  const employees = await Employee.findAll({
+    where: empWhere,
+    attributes: ['id', 'empName', 'empId', 'empDepartment', 'empDesignation', 'isActive'],
+    order: [['empName', 'ASC']],
+  });
+
+  const summaries = await AttendanceDailySummary.findAll({
+    where: { businessId, date: { [Op.gte]: startStr, [Op.lt]: endStr } },
+    attributes: ['employeeId', 'status', 'workMinutes', 'date'],
+    raw: true,
+  });
+
+  const byEmployee = {};
+  summaries.forEach((row) => {
+    if (!byEmployee[row.employeeId]) byEmployee[row.employeeId] = [];
+    byEmployee[row.employeeId].push(row);
+  });
+
+  let rows = employees.map((employee) => ({
+    employee,
+    stats: aggregateAttendanceStats(byEmployee[employee.id] || []),
+  }));
+
+  if (search) {
+    const q = String(search).toLowerCase();
+    rows = rows.filter((r) => {
+      const e = r.employee;
+      return (
+        (e.empName || '').toLowerCase().includes(q)
+        || (e.empId || '').toLowerCase().includes(q)
+        || (e.empDepartment || '').toLowerCase().includes(q)
+      );
+    });
+  }
+
+  return { month, startStr, endStr, rows };
+};
+
+export const getEmployeeAttendanceHistory = async ({ businessId, employeeId, month, startDate, endDate }) => {
+  const employee = await Employee.findOne({
+    where: { id: employeeId, businessId },
+    attributes: ['id', 'empName', 'empId', 'empDepartment', 'empDesignation', 'isActive'],
+  });
+  if (!employee) {
+    const err = new Error('Employee not found');
+    err.statusCode = 404;
+    throw err;
+  }
+
+  let startStr;
+  let endStr;
+  let periodLabel;
+  let dateWhere;
+
+  if (month) {
+    ({ startStr, endStr } = startEndOfMonth(month));
+    periodLabel = month;
+    dateWhere = { [Op.gte]: startStr, [Op.lt]: endStr };
+  } else if (startDate && endDate) {
+    startStr = toDateOnly(startDate);
+    endStr = toDateOnly(endDate);
+    periodLabel = `${startStr} to ${endStr}`;
+    dateWhere = { [Op.between]: [startStr, endStr] };
+  } else {
+    const now = new Date();
+    const m = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    ({ startStr, endStr } = startEndOfMonth(m));
+    periodLabel = m;
+    dateWhere = { [Op.gte]: startStr, [Op.lt]: endStr };
+  }
+
+  const days = await AttendanceDailySummary.findAll({
+    where: { businessId, employeeId, date: dateWhere },
+    order: [['date', 'ASC']],
+  });
+
+  const holidays = await Holiday.findAll({
+    where: { businessId, date: dateWhere },
+    attributes: ['id', 'date', 'name'],
+    order: [['date', 'ASC']],
+  });
+
+  return {
+    employee,
+    period: periodLabel,
+    startStr,
+    endStr,
+    stats: aggregateAttendanceStats(days),
+    days,
+    holidays,
+  };
+};
+
 // -------------------- Admin: dashboard/logs --------------------
 
 export const getDashboard = async ({ businessId, date }) => {
@@ -636,6 +772,52 @@ export const getDashboard = async ({ businessId, date }) => {
 
   const pendingRegularizations = await AttendanceRegularization.count({ where: { businessId, status: 'PENDING' } });
   return { date: d, counts, pendingRegularizations, summaries };
+};
+
+export const getAttendanceTrend = async ({ businessId, days = 30 }) => {
+  const safeDays = Math.min(90, Math.max(7, Number(days) || 30));
+  const end = new Date();
+  const start = new Date();
+  start.setDate(start.getDate() - (safeDays - 1));
+  const startStr = toDateOnly(start);
+  const endStr = toDateOnly(end);
+
+  const rows = await AttendanceDailySummary.findAll({
+    where: { businessId, date: { [Op.between]: [startStr, endStr] } },
+    attributes: ['date', 'status'],
+    raw: true,
+  });
+
+  const trend = [];
+  for (let i = 0; i < safeDays; i++) {
+    const d = new Date(start);
+    d.setDate(d.getDate() + i);
+    const key = toDateOnly(d);
+    trend.push({
+      date: key,
+      label: safeDays > 14
+        ? d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+        : d.toLocaleDateString('en-GB', { weekday: 'short' }),
+      present: 0,
+      absent: 0,
+      late: 0,
+      onLeave: 0,
+      notMarked: 0,
+    });
+  }
+
+  const byDate = Object.fromEntries(trend.map((t) => [t.date, t]));
+  rows.forEach((r) => {
+    const bucket = byDate[r.date];
+    if (!bucket) return;
+    if (r.status === 'PRESENT' || r.status === 'HALF_DAY') bucket.present += 1;
+    else if (r.status === 'ABSENT') bucket.absent += 1;
+    else if (r.status === 'LATE') bucket.late += 1;
+    else if (r.status === 'LEAVE') bucket.onLeave += 1;
+    else if (r.status === 'NOT_MARKED') bucket.notMarked += 1;
+  });
+
+  return trend;
 };
 
 export const getAttendanceLogs = async ({ businessId, date, department = null, status = null }) => {

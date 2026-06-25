@@ -8,6 +8,7 @@ import { Op } from 'sequelize';
 import { Business, AttendanceDailySummary, Employee } from '../../models/index.js';
 import {
   getDashboard,
+  getAttendanceTrend,
   listPolicies,
   createPolicy,
   updatePolicy,
@@ -25,6 +26,8 @@ import {
   updateAssignment,
   deleteAssignment,
   getAttendanceLogs,
+  getEmployeeAttendanceSummaries,
+  getEmployeeAttendanceHistory,
   manualEdit,
   listRegularizations,
   approveRegularization,
@@ -59,6 +62,13 @@ export const getAttendanceDashboard = asyncHandler(async (req, res) => {
   return res.json(new ApiResponse(200, data, 'Attendance dashboard'));
 });
 
+export const getAttendanceTrendData = asyncHandler(async (req, res) => {
+  const businessId = await resolveBusinessId(req);
+  const days = Number(req.query.days) || 30;
+  const trend = await getAttendanceTrend({ businessId, days });
+  return res.json(new ApiResponse(200, trend, 'Attendance trend'));
+});
+
 export const getLogs = asyncHandler(async (req, res) => {
   const businessId = await resolveBusinessId(req);
   const date = req.query.date;
@@ -72,6 +82,38 @@ export const getLogs = asyncHandler(async (req, res) => {
   });
 
   return res.json(new ApiResponse(200, logs, 'Attendance logs'));
+});
+
+export const getEmployeeSummaries = asyncHandler(async (req, res) => {
+  const businessId = await resolveBusinessId(req);
+  const month = req.query.month || new Date().toISOString().slice(0, 7);
+  const data = await getEmployeeAttendanceSummaries({
+    businessId,
+    month,
+    department: req.query.department || null,
+    search: req.query.search || null,
+  });
+  return res.json(new ApiResponse(200, data, 'Employee attendance summaries'));
+});
+
+export const getEmployeeAttendanceHistoryData = asyncHandler(async (req, res) => {
+  const businessId = await resolveBusinessId(req);
+  const employeeId = Number(req.params.employeeId);
+  if (!employeeId) throw new ApiError(400, 'employeeId is required');
+
+  try {
+    const data = await getEmployeeAttendanceHistory({
+      businessId,
+      employeeId,
+      month: req.query.month || null,
+      startDate: req.query.startDate || null,
+      endDate: req.query.endDate || null,
+    });
+    return res.json(new ApiResponse(200, data, 'Employee attendance history'));
+  } catch (err) {
+    if (err.statusCode === 404) throw new ApiError(404, err.message);
+    throw err;
+  }
 });
 
 export const getReports = asyncHandler(async (req, res) => {

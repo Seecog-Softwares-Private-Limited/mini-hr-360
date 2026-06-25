@@ -5,7 +5,10 @@ import { attachWorkspaceContext } from '../middleware/workspaceMiddleware.js';
 
 import {
   getAttendanceDashboard,
+  getAttendanceTrendData,
   getLogs,
+  getEmployeeSummaries,
+  getEmployeeAttendanceHistoryData,
   getReports,
   manualEditLog,
   getPolicies,
@@ -58,6 +61,17 @@ router.get('/logs', (req, res) => {
     user, 
     active: 'attendance-logs', 
     activeGroup: 'attendance' 
+  });
+});
+
+// Employee attendance summaries (monthly / historical)
+router.get('/summaries', (req, res) => {
+  const user = { firstName: req.user.firstName, lastName: req.user.lastName };
+  res.render('admin/attendance/summaries', {
+    title: 'Employee Attendance Summaries',
+    user,
+    active: 'attendance-summaries',
+    activeGroup: 'attendance',
   });
 });
 
@@ -161,7 +175,10 @@ router.get('/api/health', (req, res) =>
 
 // Dashboard & logs (APIs only)
 router.get('/api/dashboard', getAttendanceDashboard);
+router.get('/api/trend', getAttendanceTrendData);
 router.get('/api/logs', getLogs);
+router.get('/api/employee-summaries', getEmployeeSummaries);
+router.get('/api/employees/:employeeId/attendance-history', getEmployeeAttendanceHistoryData);
 router.get('/api/reports', getReports);
 router.post('/api/logs/manual-edit', manualEditLog);
 

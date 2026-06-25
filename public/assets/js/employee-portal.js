@@ -1,5 +1,5 @@
 /**
- * Employee Portal — sidebar groups, live timer, heatmap helpers
+ * Employee Portal — sidebar groups, live timer
  */
 (function () {
   'use strict';
@@ -100,52 +100,6 @@
       });
     });
   }
-
-  function buildHeatmap(containerId, monthData, year, month) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-
-    const daysInMonth = new Date(year, month, 0).getDate();
-    const statusMap = {};
-    (monthData || []).forEach((d) => {
-      statusMap[d.date] = d;
-    });
-
-    const today = new Date().toISOString().split('T')[0];
-    let html = '';
-
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const dow = new Date(year, month - 1, day).getDay();
-      const summary = statusMap[dateStr];
-      let cls = 'emp-heatmap-cell';
-
-      if (dateStr > today) {
-        cls += ' future';
-      } else if (dow === 0 || dow === 6) {
-        cls += ' weekend';
-      } else if (summary?.status === 'ABSENT') {
-        cls += ' absent';
-      } else if (summary?.status === 'LEAVE' || summary?.status === 'ON_LEAVE') {
-        cls += ' leave';
-      } else if (summary?.status === 'PRESENT' || summary?.status === 'HALF_DAY') {
-        const mins = summary.workMinutes || summary.totalWorkMinutes || 480;
-        const level = mins >= 480 ? 4 : mins >= 360 ? 3 : mins >= 240 ? 2 : 1;
-        cls += ` level-${level}`;
-      } else {
-        cls += ' level-0';
-      }
-
-      const title = summary
-        ? `${dateStr}: ${summary.status}${summary.workMinutes ? ` (${summary.workMinutes}m)` : ''}`
-        : dateStr;
-      html += `<div class="${cls}" title="${title}"></div>`;
-    }
-
-    container.innerHTML = html;
-  }
-
-  window.empBuildHeatmap = buildHeatmap;
 
   document.addEventListener('DOMContentLoaded', () => {
     initSidebarGroups();
