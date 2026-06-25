@@ -1820,6 +1820,8 @@
                 throw error;
             }
         }
+        // Stable reference for scripts that should not use page-local overrides.
+        window.shellApiCall = apiCall;
         
         // Check authentication
         // Note: Server-side middleware (verifyUser) handles auth via cookies
