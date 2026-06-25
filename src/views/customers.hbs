@@ -193,7 +193,7 @@
   async function loadBusinesses() {
     try {
       const data = await apiCall('/business');
-      businesses = Array.isArray(data) ? data : (data && (data.data || data.items)) || [];
+      businesses = Array.isArray(data?.organizations) ? data.organizations : (Array.isArray(data) ? data : (data && (data.data || data.items)) || []);
       updateBusinessFilters();
     } catch (err) {
       console.error('Error loading businesses:', err);

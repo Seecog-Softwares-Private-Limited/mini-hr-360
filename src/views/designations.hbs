@@ -306,7 +306,7 @@
     // Uses existing API in this app: /api/v1/business
     try {
       const businesses = await apiCall('/business', { method: 'GET' });
-      const list = Array.isArray(businesses) ? businesses : (businesses?.items || []);
+      const list = Array.isArray(businesses?.organizations) ? businesses.organizations : (Array.isArray(businesses) ? businesses : (businesses?.items || []));
       state.businessesMap = {};
       list.forEach((b) => {
         state.businessesMap[String(b.id)] = String(b.businessName || b.name || ('Business #' + b.id));

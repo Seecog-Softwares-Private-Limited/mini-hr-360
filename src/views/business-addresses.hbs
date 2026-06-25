@@ -1,7 +1,7 @@
 {{!-- views/business-addresses.hbs --}}
 <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
-            <h2 class="mb-0">Business Addresses</h2>
+            <h2 class="mb-0">Organization Addresses</h2>
             <small class="text-muted" id="addressCount">
               Loading addresses...
             </small>
@@ -36,7 +36,7 @@
               <div class="col-md-2">
                 <label class="form-label">Business</label>
                 <select id="businessFilter" class="form-select">
-                  <option value="">All Businesses</option>
+                  <option value="">All Organizations</option>
                 </select>
               </div>
               <div class="col-md-2">
@@ -370,7 +370,9 @@
         console.log('Businesses API response:', data);
         
         // Handle different response formats
-        if (Array.isArray(data)) {
+        if (Array.isArray(data?.organizations)) {
+          businesses = data.organizations;
+        } else if (Array.isArray(data)) {
           businesses = data;
         } else if (data?.data && Array.isArray(data.data)) {
           businesses = data.data;
@@ -384,30 +386,30 @@
         
         businessesMap = {};
         businesses.forEach(b => {
-          businessesMap[String(b.id)] = b.businessName || b.name || `Business #${b.id}`;
+          businessesMap[String(b.id)] = b.businessName || b.name || `Organization #${b.id}`;
         });
 
         // Populate business filter dropdown
         const filterOpts = businesses.map(b => 
           `<option value="${b.id}">${escapeHtml(businessesMap[String(b.id)])}</option>`
         ).join('');
-        els.businessFilter.innerHTML = '<option value="">All Businesses</option>' + filterOpts;
+        els.businessFilter.innerHTML = '<option value="">All Organizations</option>' + filterOpts;
 
-        // Populate form business dropdown
+        // Populate form organization dropdown
         const formOpts = businesses.map(b => 
           `<option value="${b.id}">${escapeHtml(businessesMap[String(b.id)])}</option>`
         ).join('');
-        els.formBusinessId.innerHTML = '<option value="">Select Business</option>' + formOpts;
+        els.formBusinessId.innerHTML = '<option value="">Select Organization</option>' + formOpts;
         
         if (businesses.length === 0) {
-          console.warn('No businesses found. Make sure you have created at least one business.');
+          console.warn('No organizations found. Create or join an organization first.');
         }
       } catch (error) {
-        console.error('Error loading businesses:', error);
-        showAlert('Error loading businesses: ' + (error.message || 'Unknown error'), 'danger', document.body);
+        console.error('Error loading organizations:', error);
+        showAlert('Error loading organizations: ' + (error.message || 'Unknown error'), 'danger', document.body);
         // Set empty dropdowns
-        els.businessFilter.innerHTML = '<option value="">All Businesses</option>';
-        els.formBusinessId.innerHTML = '<option value="">Select Business</option>';
+        els.businessFilter.innerHTML = '<option value="">All Organizations</option>';
+        els.formBusinessId.innerHTML = '<option value="">Select Organization</option>';
       }
     }
 

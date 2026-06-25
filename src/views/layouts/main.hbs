@@ -1701,7 +1701,6 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="/assets/js/app-shell.js"></script>
-    <script src="/assets/js/workspace-switcher.js"></script>
     <script src="/assets/js/notification-center.js"></script>
     <script src="/assets/js/profile-menu.js"></script>
     <script>
@@ -1752,11 +1751,11 @@
                 headers['Authorization'] = `Bearer ${token}`;
             }
 
-            // Multi-tenant workspace context
-            if (!options.skipWorkspace && typeof getWorkspaceId === 'function') {
-                const workspaceId = getWorkspaceId();
-                if (workspaceId) {
-                    headers['x-business-id'] = workspaceId;
+            // Multi-tenant organization context
+            if (!options.skipWorkspace && typeof getOrganizationId === 'function') {
+                const organizationId = getOrganizationId();
+                if (organizationId) {
+                    headers['x-business-id'] = organizationId;
                 }
             }
 
@@ -1857,9 +1856,6 @@
                 // Clear localStorage
                 localStorage.removeItem('accessToken');
                 localStorage.removeItem('user');
-                localStorage.removeItem('mh360:workspaceId');
-                localStorage.removeItem('mh360:recentWorkspaces');
-                
                 // Redirect to login
                 window.location.replace('/login');
             } catch (error) {

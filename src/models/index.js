@@ -54,6 +54,7 @@ import UserDocument from './UserDocument.js';
 // Payroll Approval Workflow models
 import PayrollApproval from './PayrollApproval.js';
 import Notification from './Notification.js';
+import { OrganizationMember } from './OrganizationMember.js';
 
 
 /**
@@ -66,6 +67,12 @@ import Notification from './Notification.js';
 // User ⇄ Business  (Business.ownerId)
 User.hasMany(Business, { foreignKey: 'ownerId', as: 'businesses' });
 Business.belongsTo(User, { foreignKey: 'ownerId', as: 'owner' });
+
+// User ⇄ Organization membership
+User.hasMany(OrganizationMember, { foreignKey: 'userId', as: 'organizationMemberships' });
+OrganizationMember.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+Business.hasMany(OrganizationMember, { foreignKey: 'businessId', as: 'members' });
+OrganizationMember.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
 
 // User ⇄ Customer
 User.hasMany(Customer, { foreignKey: 'userId', as: 'customers' });
@@ -447,5 +454,6 @@ export {
   // Payroll Approval Workflow
   PayrollApproval,
   Notification,
+  OrganizationMember,
 };
 

@@ -3,21 +3,83 @@ import { ApiError } from "../../utils/ApiError.js"
 import { ApiResponse } from "../../utils/ApiResponse.js"
 import { User } from "../../models/User.js"
 import { Business } from "../../models/Business.js"
+import { OrganizationMember } from "../../models/OrganizationMember.js"
 import { Op } from 'sequelize';
-import { userCanCreateWorkspace } from '../../services/workspace.service.js';
+import {
+    assertCanCreateOrganization,
+    assertCanJoinOrganization,
+    generateInviteCode,
+    getOrganizationCapabilities,
+    getUserOrganizations,
+} from '../../services/organization.service.js';
 
 function escapeRegex(s = "") {
     return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+export const getOrganizationCapabilitiesHandler = asyncHandler(async (req, res) => {
+    const capabilities = await getOrganizationCapabilities(req.user);
+    return res.status(200).json(capabilities);
+});
+
+export const joinOrganization = asyncHandler(async (req, res) => {
+    const inviteCode = String(req.body?.inviteCode || '').trim().toUpperCase();
+    if (!inviteCode) {
+        return res.status(400).json(new ApiResponse(400, {}, "Invite code is required"));
+    }
+
+    try {
+        await assertCanJoinOrganization(req.user);
+    } catch (error) {
+        const status = error.code === 'ORG_LIMIT' ? 409 : 403;
+        return res.status(status).json(new ApiResponse(status, {}, error.message));
+    }
+
+    const business = await Business.findOne({ where: { inviteCode } });
+    if (!business) {
+        return res.status(404).json(new ApiResponse(404, {}, "Invalid invite code"));
+    }
+
+    if (business.ownerId === req.user.id) {
+        return res.status(400).json(new ApiResponse(400, {}, "You already own this organization"));
+    }
+
+    const existing = await OrganizationMember.findOne({
+        where: { userId: req.user.id, businessId: business.id },
+    });
+    if (existing?.status === 'active') {
+        return res.status(409).json(new ApiResponse(409, {}, "You have already joined this organization"));
+    }
+
+    if (existing) {
+        await existing.update({ status: 'active', role: req.user.role || 'member' });
+    } else {
+        await OrganizationMember.create({
+            userId: req.user.id,
+            businessId: business.id,
+            role: req.user.role || 'member',
+            status: 'active',
+        });
+    }
+
+    return res.status(201).json(new ApiResponse(201, {
+        business: { ...business.toJSON(), membershipType: 'member' },
+    }, "Joined organization successfully"));
+});
+
 export const createBusiness = asyncHandler(async (req, res) => {
     try {
         const { businessName, timezone, country, category, description, phoneNo, whatsappNo } = req.body || {}
 
-        if (!businessName || !country || !category) return res.status(400).json(new ApiResponse(400, {}, "Business name, country and category are required"));
+        if (!businessName || !country || !category) {
+            return res.status(400).json(new ApiResponse(400, {}, "Organization name, country and category are required"));
+        }
 
-        if (!userCanCreateWorkspace(req.user)) {
-            return res.status(403).json(new ApiResponse(403, {}, "You do not have permission to create workspaces"))
+        try {
+            await assertCanCreateOrganization(req.user);
+        } catch (error) {
+            const status = error.code === 'ORG_LIMIT' ? 409 : 403;
+            return res.status(status).json(new ApiResponse(status, {}, error.message));
         }
 
         const business = await Business.create({
@@ -28,15 +90,16 @@ export const createBusiness = asyncHandler(async (req, res) => {
             category,
             phoneNo,
             whatsappNo,
-            ownerId: req.user.id
+            ownerId: req.user.id,
+            inviteCode: generateInviteCode(),
         })
 
         return res
             .status(201)
             .json(new ApiResponse(
                 201,
-                { business },
-                "Business created successfully"
+                { business: { ...business.toJSON(), membershipType: 'owner' } },
+                "Organization created successfully"
             ))
     } catch (error) {
         console.log("Error: ", error);
@@ -120,6 +183,10 @@ export const deleteMyBusiness = asyncHandler(async (req, res) => {
         // If you want strict ownership enforcement again, restore the ownerId check.
         if (req.user.role !== "admin" && req.user.role !== "shop_owner") {
             return res.status(403).json(new ApiResponse(403, {}, "Access denied"))
+        }
+
+        if (req.user.role !== "admin" && existing.ownerId !== req.user.id) {
+            return res.status(403).json(new ApiResponse(403, {}, "Only the organization owner can delete it"))
         }
 
         await Business.destroy({ where: { id: businessId } })
@@ -270,12 +337,26 @@ export const transferOwnerShip_admin = asyncHandler(async (req, res) => {
 // New CRUD functions for frontend
 export const getAllMyBusinesses = asyncHandler(async (req, res) => {
     try {
-        // Show ALL businesses (no owner filter) for /business listing
-        const businesses = await Business.findAll({
-            order: [['createdAt', 'DESC']],
+        const role = String(req.user?.role || '');
+        const isAdmin = role === 'admin' || role === 'SUPER_ADMIN';
+
+        let organizations;
+        if (isAdmin) {
+            const rows = await Business.findAll({ order: [['createdAt', 'DESC']] });
+            organizations = rows.map((business) => ({
+                ...business.toJSON(),
+                membershipType: business.ownerId === req.user.id ? 'owner' : 'admin',
+            }));
+        } else {
+            organizations = await getUserOrganizations(req.user);
+        }
+
+        const capabilities = await getOrganizationCapabilities(req.user);
+
+        return res.status(200).json({
+            organizations,
+            capabilities,
         });
-        
-        return res.status(200).json(businesses);
     } catch (error) {
         console.log("Error: ", error);
         throw new ApiError(500, "Internal server error");
@@ -293,7 +374,11 @@ export const updateBusinessById = asyncHandler(async (req, res) => {
         const business = await Business.findOne({ where });
 
         if (!business) {
-            return res.status(404).json({ error: "Business not found" });
+            return res.status(404).json({ error: "Organization not found" });
+        }
+
+        if (!business.inviteCode) {
+            business.inviteCode = generateInviteCode();
         }
 
         await business.update({

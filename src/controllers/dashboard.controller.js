@@ -1,20 +1,19 @@
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
-import { ApiError } from '../utils/ApiError.js';
-import { getWidgetData, getInsightsData } from '../services/dashboard.service.js';
-import { resolveWorkspaceIdFromRequest } from '../services/workspace.service.js';
+import { getWidgetData, getInsightsData, emptyWidgets, emptyInsights } from '../services/dashboard.service.js';
+import { resolveOrganizationIdFromRequest } from '../services/organization.service.js';
 
 async function resolveBusinessId(req) {
-  if (req.workspaceId) return req.workspaceId;
-  const workspaceId = await resolveWorkspaceIdFromRequest(req);
-  if (workspaceId) return workspaceId;
-  return null;
+  if (req.businessId || req.workspaceId) {
+    return req.businessId || req.workspaceId;
+  }
+  return resolveOrganizationIdFromRequest(req);
 }
 
 export const getWidgets = asyncHandler(async (req, res) => {
   const businessId = await resolveBusinessId(req);
   if (!businessId) {
-    throw new ApiError(400, 'Select a workspace to load dashboard widgets');
+    return res.json(new ApiResponse(200, emptyWidgets(), 'No organization linked — empty dashboard widgets'));
   }
 
   const data = await getWidgetData(businessId);
@@ -24,7 +23,7 @@ export const getWidgets = asyncHandler(async (req, res) => {
 export const getInsights = asyncHandler(async (req, res) => {
   const businessId = await resolveBusinessId(req);
   if (!businessId) {
-    throw new ApiError(400, 'Select a workspace to load dashboard insights');
+    return res.json(new ApiResponse(200, emptyInsights(), 'No organization linked — empty dashboard insights'));
   }
 
   const data = await getInsightsData(businessId, req.user?.id);

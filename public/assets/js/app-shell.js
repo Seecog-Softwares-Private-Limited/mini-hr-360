@@ -1,10 +1,10 @@
 /**
  * mini-hr-360 Application Shell
- * Sidebar collapse, responsive drawer, persistent workspace state
+ * Sidebar collapse, responsive drawer, organization context
  */
 (function () {
-  const STORAGE_WORKSPACE = 'mh360:sidebar:workspaceOpen';
   const STORAGE_SUBMENUS = 'mh360:sidebar:submenus';
+  const ORG_STORAGE_KEY = 'mh360:organizationId';
 
   function getStoredSubmenus() {
     try {
@@ -20,14 +20,42 @@
     localStorage.setItem(STORAGE_SUBMENUS, JSON.stringify(state));
   }
 
-  function isWorkspaceOpen() {
-    const stored = localStorage.getItem(STORAGE_WORKSPACE);
-    if (stored === null) return true;
-    return stored === 'true';
+  window.getOrganizationId = function getOrganizationId() {
+    const stored = localStorage.getItem(ORG_STORAGE_KEY) || localStorage.getItem('mh360:workspaceId');
+    if (stored) return stored;
+
+    const match = document.cookie.match(/(?:^|;\s*)mh360_(?:organization|workspace)_id=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : null;
+  };
+
+  // Backward-compatible alias used by apiCall in main layout
+  window.getWorkspaceId = window.getOrganizationId;
+
+  function persistOrganizationId(organizationId) {
+    if (!organizationId) return;
+    const id = String(organizationId);
+    localStorage.setItem(ORG_STORAGE_KEY, id);
+    document.cookie = `mh360_organization_id=${encodeURIComponent(id)}; path=/; max-age=${30 * 24 * 60 * 60}; samesite=lax`;
+    document.cookie = `mh360_workspace_id=${encodeURIComponent(id)}; path=/; max-age=${30 * 24 * 60 * 60}; samesite=lax`;
   }
 
-  function setWorkspaceOpen(open) {
-    localStorage.setItem(STORAGE_WORKSPACE, String(open));
+  async function initOrganizationContext() {
+    if (typeof window.apiCall !== 'function') return;
+
+    try {
+      const data = await window.apiCall('/business', { skipWorkspace: true });
+      const organizations = data?.organizations || [];
+      if (!organizations.length) return;
+
+      const current = getOrganizationId();
+      const allowed = new Set(organizations.map((o) => String(o.id)));
+      if (current && allowed.has(String(current))) return;
+
+      const preferred = organizations.find((o) => o.membershipType === 'owner') || organizations[0];
+      if (preferred?.id) persistOrganizationId(preferred.id);
+    } catch (err) {
+      console.warn('Could not initialize organization context:', err?.message || err);
+    }
   }
 
   window.toggleMenu = function toggleMenu(menuId) {
@@ -44,31 +72,8 @@
     setStoredSubmenu(menuId, willOpen);
   };
 
-  window.toggleWorkspace = function toggleWorkspace() {
-    const submenu = document.getElementById('workspace-submenu');
-    const toggle = document.querySelector('[data-menu-toggle="workspace-submenu"]');
-    const arrow = toggle?.querySelector('.nav-chevron');
-    if (!submenu) return;
-
-    const willOpen = !submenu.classList.contains('show');
-    submenu.classList.toggle('show', willOpen);
-    arrow?.classList.toggle('open', willOpen);
-    toggle?.classList.toggle('collapsed', !willOpen);
-    setWorkspaceOpen(willOpen);
-  };
-
   function initSidebarState() {
-    const workspace = document.getElementById('workspace-submenu');
-    const workspaceToggle = document.querySelector('[data-menu-toggle="workspace-submenu"]');
-    if (workspace) {
-      const open = isWorkspaceOpen();
-      workspace.classList.toggle('show', open);
-      workspaceToggle?.querySelector('.nav-chevron')?.classList.toggle('open', open);
-      workspaceToggle?.classList.toggle('collapsed', !open);
-    }
-
     document.querySelectorAll('.sidebar-submenu').forEach((el) => {
-      if (el.id === 'workspace-submenu') return;
       const id = el.id;
       const serverOpen = el.classList.contains('show');
       const stored = getStoredSubmenus();
@@ -125,5 +130,6 @@
     initSidebarState();
     initResponsiveSidebar();
     highlightActiveRoutes();
+    initOrganizationContext();
   });
 })();

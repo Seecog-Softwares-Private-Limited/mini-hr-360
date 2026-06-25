@@ -3,6 +3,7 @@ import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { Plan, Subscription, Invoice, WebhookLog, Business } from '../models/index.js';
+import { generateInviteCode, userHasOrganization } from '../services/organization.service.js';
 
 // Initialize Razorpay (only if keys are provided)
 let razorpay = null;
@@ -109,19 +110,28 @@ export const createOrder = asyncHandler(async (req, res) => {
     });
   }
 
-  // Get user's business or create one if it doesn't exist
+  // Get user's owned organization or create one when purchasing a plan
   let business = await Business.findOne({ where: { ownerId: user.id } });
   if (!business) {
-    // Auto-create business for the user using customer details
-    console.log('[Billing] Creating business for user:', user.id);
+    const linked = await userHasOrganization(user);
+    if (linked) {
+      return res.status(409).json({
+        success: false,
+        message: 'You are already linked to an organization. Each account can only belong to one organization.',
+      });
+    }
+
+    console.log('[Billing] Creating organization for user:', user.id);
     business = await Business.create({
-      businessName: customer?.name || user.firstName || user.email?.split('@')[0] || 'My Business',
+      businessName: customer?.name || user.firstName || user.email?.split('@')[0] || 'My Organization',
       phoneNo: customer?.contact || null,
       ownerId: user.id,
       timezone: 'Asia/Kolkata',
-      country: 'India'
+      country: 'India',
+      category: 'other',
+      inviteCode: generateInviteCode(),
     });
-    console.log('[Billing] Business created:', business.id);
+    console.log('[Billing] Organization created:', business.id);
   }
 
   // Get plan details - support both ID and code

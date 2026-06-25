@@ -352,7 +352,6 @@
 
     refreshData();
     setInterval(() => refreshData().catch(() => {}), 60000);
-    window.addEventListener('workspace:changed', () => refreshData());
   }
 
   if (document.readyState === 'loading') {
