@@ -612,6 +612,63 @@ export const getEmployeeById = async (req, res, next) => {
     }
 };
 
+async function findEmployeeForUser(req, options = {}) {
+    const userId = req.user?.id;
+    const isAdmin = isAdminUser(req.user);
+    const rawId = String(req.params.id || '').trim();
+    const numericId = Number.parseInt(rawId, 10);
+    const isNumeric = !Number.isNaN(numericId);
+    const where = isNumeric ? { id: numericId } : { empId: rawId };
+
+    if (userId && !isAdmin) {
+        where.userId = userId;
+    }
+
+    const query = { where, ...options };
+
+    let employee = await Employee.findOne(query);
+
+    if (!employee && userId && !isAdmin) {
+        const legacy = await isLegacySingleTenantEmployees();
+        if (legacy) {
+            const legacyWhere = { ...where };
+            delete legacyWhere.userId;
+            employee = await Employee.findOne({ where: legacyWhere, ...options });
+        }
+    }
+
+    return employee;
+}
+
+/**
+ * PATCH /api/v1/employees/:id/status
+ * Set employee active/inactive (HR only).
+ */
+export const updateEmployeeStatus = async (req, res, next) => {
+    try {
+        const employee = await findEmployeeForUser(req);
+        if (!employee) {
+            return res.status(404).json({ error: 'Employee not found' });
+        }
+
+        if (req.body?.isActive === undefined) {
+            return res.status(400).json({ error: 'isActive is required (true or false)' });
+        }
+
+        const isActive = toBool(req.body.isActive);
+        employee.isActive = isActive;
+        await employee.save();
+
+        return res.json({
+            ...sanitizeEmployeeJson(employee),
+            message: isActive ? 'Employee marked as active' : 'Employee marked as inactive',
+        });
+    } catch (err) {
+        console.error('Error updating employee status:', err);
+        next(err);
+    }
+};
+
 /**
  * POST /api/v1/employees
  * Body:
