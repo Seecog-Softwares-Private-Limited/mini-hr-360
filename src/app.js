@@ -245,7 +245,7 @@ app.get('/customers', verifyUser, (req, res) => {
 
 app.get('/business', verifyUser, (req, res) => {
     const user = { firstName: req.user.firstName, lastName: req.user.lastName, role: req.user.role };
-    res.render('business', { title: 'Organizations', user, active: 'business', activeGroup: 'workspace' });
+    res.render('business', { title: 'Company Profile', user, active: 'business', activeGroup: 'workspace' });
 });
 
 app.get('/templates', verifyUser, (req, res) => {

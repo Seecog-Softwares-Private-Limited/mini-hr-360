@@ -60,31 +60,6 @@
                 </div>
             </div>
 
-            <!-- Monthly Heatmap -->
-            <div class="emp-card mb-4">
-                <div class="emp-card-header">
-                    <h5 class="emp-card-title">
-                        <i class="fa-solid fa-chart-simple" style="color: var(--emp-primary);"></i>
-                        Monthly Heatmap
-                    </h5>
-                    <small class="text-muted">Darker green = more hours worked</small>
-                </div>
-                <div class="emp-card-body">
-                    <div id="attendanceHeatmap" class="emp-heatmap"></div>
-                    <div class="emp-heatmap-legend">
-                        <span>Less</span>
-                        <span class="level-0" style="background:#e2e8f0;"></span>
-                        <span class="level-1" style="background:#bbf7d0;"></span>
-                        <span class="level-2" style="background:#4ade80;"></span>
-                        <span class="level-3" style="background:#16a34a;"></span>
-                        <span class="level-4" style="background:#15803d;"></span>
-                        <span>More</span>
-                        <span style="margin-left:12px;background:#fecaca;" title="Absent"></span> Absent
-                        <span style="background:#fde68a;" title="Leave"></span> Leave
-                    </div>
-                </div>
-            </div>
-
             <!-- Calendar Card -->
             <div class="emp-card shadow-sm">
                 <div class="emp-card-header" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); border-bottom: none; color: white; border-radius: 10px 10px 0 0;">
@@ -150,8 +125,30 @@
                             <small><strong>Leave</strong></small>
                         </div>
                         <div class="d-flex align-items-center gap-2">
+                            <div style="width: 12px; height: 12px; background: #94a3b8; border-radius: 3px;"></div>
+                            <small><strong>Week Off</strong></small>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
                             <div style="width: 12px; height: 12px; background: #6b7280; border-radius: 3px;"></div>
                             <small><strong>Not Marked</strong></small>
+                        </div>
+                    </div>
+                    <small class="text-muted d-block mt-2">Attendance rate = present days ÷ (present + absent + not marked) for this month</small>
+                </div>
+            </div>
+
+            <!-- Day detail drawer -->
+            <div class="modal fade" id="empAttendanceDetailModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="empAttendanceDetailTitle">Day details</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body" id="empAttendanceDetailBody"></div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <a href="/employee/attendance/regularizations/new" class="btn btn-outline-primary" id="empRegularizeLink" style="display:none;">Request regularization</a>
                         </div>
                     </div>
                 </div>
@@ -256,6 +253,7 @@
 }
 </style>
 
+<script src="/assets/js/attendance-status.js"></script>
 <script>
 function showAlert(message, type = 'info') {
     const alertContainer = document.getElementById('alertContainer');
@@ -301,11 +299,11 @@ async function loadMonthlyAttendance(monthStr) {
             }
             
             // Calculate stats
-            const present = data.data.filter(a => a.status === 'PRESENT').length;
+            const present = data.data.filter(a => a.status === 'PRESENT' || a.status === 'HALF_DAY').length;
             const absent = data.data.filter(a => a.status === 'ABSENT').length;
             const pending = data.data.filter(a => a.status === 'NOT_MARKED' || a.status === null).length;
-            const total = present + absent + pending;
-            const rate = total > 0 ? Math.round((present / total) * 100) : 0;
+            const workingDays = present + absent + pending;
+            const rate = workingDays > 0 ? Math.round((present / workingDays) * 100) : 0;
             
             document.getElementById('presentCount').textContent = present;
             document.getElementById('absentCount').textContent = absent;
@@ -314,11 +312,6 @@ async function loadMonthlyAttendance(monthStr) {
             
             // Render calendar
             renderCalendarGrid(monthStr);
-
-            if (window.empBuildHeatmap) {
-                const [y, m] = monthStr.split('-');
-                window.empBuildHeatmap('attendanceHeatmap', data.data, parseInt(y), parseInt(m));
-            }
             
             // Update last refresh time
             const now = new Date();
@@ -328,6 +321,7 @@ async function loadMonthlyAttendance(monthStr) {
         }
     } catch (error) {
         console.error('Error loading monthly attendance:', error);
+        document.getElementById('calendarGrid').innerHTML = '<div style="grid-column: 1 / -1; padding: 40px; text-align: center; color: #ef4444;"><i class="fa-solid fa-exclamation-triangle me-2"></i>Could not load calendar. <a href="#" onclick="refreshCalendar(); return false;">Retry</a></div>';
         showAlert('Error loading monthly attendance: ' + error.message, 'danger');
     } finally {
         document.getElementById('refreshIndicator').style.display = 'none';
@@ -393,7 +387,7 @@ function renderCalendarGrid(monthStr) {
                 statusDisplay = '🏖 Leave';
                 statusClass = 'status-leave';
             } else if (status === 'WEEKOFF') {
-                statusDisplay = 'Weekoff';
+                statusDisplay = 'Week Off';
                 statusClass = 'status-notmarked';
             } else if (status === 'HOLIDAY') {
                 statusDisplay = 'Holiday';
@@ -403,20 +397,18 @@ function renderCalendarGrid(monthStr) {
                 statusClass = 'status-notmarked';
             }
             
-            const timeInfo = attendance?.firstInAt ? `<small style="font-size: 10px; color: #6b7280; margin-top: 2px;">IN: ${new Date(attendance.firstInAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}</small>` : '';
-            
+            const timeInfo = attendance?.firstInAt
+                ? `<small style="font-size: 10px; color: #6b7280; margin-top: 2px;">IN ${new Date(attendance.firstInAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}${attendance.lastOutAt ? ' · OUT ' + new Date(attendance.lastOutAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) : ''}</small>`
+                : '';
+
             cell.innerHTML = `
                 <div class="calendar-day-date">${day}</div>
                 ${timeInfo}
                 <div class="calendar-day-status ${statusClass}">${statusDisplay}</div>
             `;
-            
-            // Add click handler for details
-            cell.style.cursor = 'pointer';
+
             cell.addEventListener('click', () => {
-                if (attendance) {
-                    showAttendanceDetail(attendance, dateStr);
-                }
+                showAttendanceDetail(attendance || { status: status, date: dateStr }, dateStr);
             });
         }
         
@@ -425,18 +417,39 @@ function renderCalendarGrid(monthStr) {
 }
 
 function showAttendanceDetail(attendance, dateStr) {
-    const checkin = attendance.firstInAt ? new Date(attendance.firstInAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'}) : '-';
-    const checkout = attendance.lastOutAt ? new Date(attendance.lastOutAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'}) : '-';
-    
-    showAlert(`
-        <strong>Attendance Details - ${dateStr}</strong>
-        <div style="margin-top: 10px; text-align: left;">
-            <p><strong>Status:</strong> ${attendance.status || 'NOT_MARKED'}</p>
-            <p><strong>Check-in:</strong> ${checkin}</p>
-            <p><strong>Check-out:</strong> ${checkout}</p>
-            ${attendance.workMinutes ? `<p><strong>Work Hours:</strong> ${Math.floor(attendance.workMinutes / 60)}h ${attendance.workMinutes % 60}m</p>` : ''}
-        </div>
-    `, 'info');
+    const modal = document.getElementById('empAttendanceDetailModal');
+    const body = document.getElementById('empAttendanceDetailBody');
+    const title = document.getElementById('empAttendanceDetailTitle');
+    const regLink = document.getElementById('empRegularizeLink');
+    const AS = window.AttendanceStatus;
+    const fmtTime = AS?.formatTime || ((v) => (v ? new Date(v).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) : '—'));
+    const fmtWork = AS?.formatWorkMinutes || ((m) => (m ? `${Math.floor(m / 60)}h ${m % 60}m` : '—'));
+    const statusLabel = AS?.getLabel(attendance.status) || attendance.status || 'Not Marked';
+    const badge = AS?.getBadgeHtml(attendance.status) || statusLabel;
+
+    if (title) title.textContent = `Attendance — ${dateStr}`;
+    if (body) {
+        body.innerHTML = `
+            <dl class="row mb-0">
+                <dt class="col-sm-4 text-muted">Status</dt>
+                <dd class="col-sm-8">${badge}</dd>
+                <dt class="col-sm-4 text-muted">Check-in</dt>
+                <dd class="col-sm-8">${fmtTime(attendance.firstInAt)}</dd>
+                <dt class="col-sm-4 text-muted">Check-out</dt>
+                <dd class="col-sm-8">${fmtTime(attendance.lastOutAt)}</dd>
+                <dt class="col-sm-4 text-muted">Work hours</dt>
+                <dd class="col-sm-8">${fmtWork(attendance.workMinutes)}</dd>
+            </dl>
+        `;
+    }
+
+    if (regLink) {
+        const needsAction = ['ABSENT', 'LATE', 'NOT_MARKED', 'HALF_DAY'].includes(String(attendance.status || '').toUpperCase());
+        regLink.style.display = needsAction ? '' : 'none';
+        if (needsAction) regLink.href = `/employee/attendance/regularizations/new?date=${dateStr}`;
+    }
+
+    if (modal) new bootstrap.Modal(modal).show();
 }
 
 function refreshCalendar() {

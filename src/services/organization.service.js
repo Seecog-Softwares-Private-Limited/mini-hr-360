@@ -234,7 +234,8 @@ export async function userHasOrganization(user) {
 }
 
 export async function getOrganizationCapabilities(user) {
-  const hasOrganization = await userHasOrganization(user);
+  const organizations = await getUserOrganizations(user);
+  const hasOrganization = organizations.length > 0;
   const ownedCount = await Business.count({ where: { ownerId: user.id } });
   const hasPlan = await userHasActivePlan(user);
 

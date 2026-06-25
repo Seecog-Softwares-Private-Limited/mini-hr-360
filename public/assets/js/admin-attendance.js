@@ -1203,22 +1203,158 @@ async function unlockAttendance(periodFromBtn = null) {
 
 // ==================== DASHBOARD ====================
 
+let allAttendanceSummaries = [];
+
+function getStatusBadgeHtml(status) {
+  if (window.AttendanceStatus) return window.AttendanceStatus.getBadgeHtml(status);
+  const key = String(status || 'NOT_MARKED').toUpperCase();
+  return `<span class="badge bg-secondary">${key}</span>`;
+}
+
+function showAttendanceDetailModal(summary, employeeName) {
+  const modal = document.getElementById('modalAttendanceDetail');
+  const body = document.getElementById('attendanceDetailBody');
+  const title = document.getElementById('attendanceDetailTitle');
+  const logsLink = document.getElementById('attendanceDetailLogsLink');
+  if (!modal || !body) {
+    showAlert(`Attendance on ${summary?.date || '—'}: ${summary?.status || '—'}`, 'info');
+    return;
+  }
+
+  const AS = window.AttendanceStatus;
+  const fmtTime = AS?.formatTime || ((v) => (v ? new Date(v).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'));
+  const fmtWork = AS?.formatWorkMinutes || ((m) => (m ? `${Math.floor(m / 60)}h ${m % 60}m` : '—'));
+  const statusLabel = AS?.getLabel(summary?.status) || summary?.status || 'Not Marked';
+
+  if (title) {
+    title.textContent = employeeName
+      ? `${employeeName} — ${summary?.date || ''}`
+      : `Attendance — ${summary?.date || ''}`;
+  }
+
+  body.innerHTML = `
+    <dl class="row mb-0">
+      <dt class="col-sm-4 text-muted">Status</dt>
+      <dd class="col-sm-8">${getStatusBadgeHtml(summary?.status)}</dd>
+      <dt class="col-sm-4 text-muted">Check-in</dt>
+      <dd class="col-sm-8">${fmtTime(summary?.firstInAt)}</dd>
+      <dt class="col-sm-4 text-muted">Check-out</dt>
+      <dd class="col-sm-8">${fmtTime(summary?.lastOutAt)}</dd>
+      <dt class="col-sm-4 text-muted">Work hours</dt>
+      <dd class="col-sm-8">${fmtWork(summary?.workMinutes)}</dd>
+      <dt class="col-sm-4 text-muted">Late minutes</dt>
+      <dd class="col-sm-8">${summary?.lateMinutes != null ? summary.lateMinutes + ' min' : '—'}</dd>
+      <dt class="col-sm-4 text-muted">Source</dt>
+      <dd class="col-sm-8">${summary?.source || 'AUTO'}</dd>
+    </dl>
+  `;
+
+  if (logsLink && summary?.date) {
+    logsLink.href = `/admin/attendance/logs?date=${summary.date}`;
+    logsLink.style.display = '';
+  } else if (logsLink) {
+    logsLink.style.display = 'none';
+  }
+
+  new bootstrap.Modal(modal).show();
+}
+
+async function loadAttendanceTrend() {
+  const container = document.getElementById('attendanceTrendContainer');
+  if (!container) return;
+
+  try {
+    const trend = await attendanceApiCall('/trend?days=30');
+    renderAttendanceTrend(Array.isArray(trend) ? trend : []);
+  } catch (e) {
+    console.error(e);
+    container.innerHTML = `
+      <div class="text-center text-danger py-3">
+        <i class="fa-solid fa-exclamation-triangle me-2"></i>Could not load trend.
+        <a href="#" onclick="loadAttendanceTrend(); return false;">Retry</a>
+      </div>`;
+  }
+}
+
+function renderAttendanceTrend(trend) {
+  const container = document.getElementById('attendanceTrendContainer');
+  if (!container) return;
+
+  const hasData = trend.some((d) => (d.present + d.absent + d.late + d.onLeave) > 0);
+  if (!trend.length || !hasData) {
+    container.innerHTML = `
+      <div class="text-center text-muted py-4">
+        <i class="fa-solid fa-chart-line fa-2x mb-2 d-block opacity-50"></i>
+        No attendance records in the last 30 days
+      </div>`;
+    return;
+  }
+
+  const maxVal = Math.max(1, ...trend.map((d) => d.present + d.absent + d.late + d.onLeave));
+  const step = trend.length > 14 ? 3 : 1;
+
+  const bars = trend.map((d, i) => {
+    const total = d.present + d.absent + d.late + d.onLeave;
+    const height = Math.round((total / maxVal) * 100);
+    const presentPct = total ? Math.round((d.present / total) * 100) : 0;
+    const absentPct = total ? Math.round((d.absent / total) * 100) : 0;
+    const latePct = total ? Math.round((d.late / total) * 100) : 0;
+    const leavePct = total ? Math.round((d.onLeave / total) * 100) : 0;
+    const showLabel = i % step === 0 || i === trend.length - 1;
+
+    return `
+      <div class="trend-bar-col" title="${d.date}: ${d.present} present, ${d.absent} absent, ${d.late} late, ${d.onLeave} on leave">
+        <div class="trend-bar" style="height:${Math.max(height, 4)}%">
+          ${total > 0 ? `<span class="trend-seg present" style="height:${presentPct}%"></span>
+          <span class="trend-seg absent" style="height:${absentPct}%"></span>
+          <span class="trend-seg late" style="height:${latePct}%"></span>
+          <span class="trend-seg leave" style="height:${leavePct}%"></span>` : ''}
+        </div>
+        <div class="trend-label" style="${showLabel ? '' : 'visibility:hidden'}">${d.label}</div>
+      </div>`;
+  }).join('');
+
+  const totals = trend.reduce(
+    (acc, d) => {
+      acc.present += d.present;
+      acc.absent += d.absent;
+      acc.late += d.late;
+      acc.leave += d.onLeave;
+      return acc;
+    },
+    { present: 0, absent: 0, late: 0, leave: 0 }
+  );
+
+  container.innerHTML = `
+    <div class="trend-chart">${bars}</div>
+    <div class="trend-legend">
+      <span><i class="trend-dot present"></i> Present</span>
+      <span><i class="trend-dot absent"></i> Absent</span>
+      <span><i class="trend-dot late"></i> Late</span>
+      <span><i class="trend-dot leave"></i> On leave</span>
+    </div>
+    <div class="insight-summary-text text-muted small mt-2">30-day total: ${totals.present} present · ${totals.absent} absent · ${totals.late} late · ${totals.leave} on leave</div>`;
+}
+
 async function loadDashboard() {
   try {
     const data = await attendanceApiCall('/dashboard');
 
-    // Update KPI cards
     const presentCard = document.querySelector('[data-kpi="present"]');
     const absentCard = document.querySelector('[data-kpi="absent"]');
     const lateCard = document.querySelector('[data-kpi="late"]');
     const onLeaveCard = document.querySelector('[data-kpi="onLeave"]');
 
-    // Backend returns { date, counts: { PRESENT/ABSENT/LATE/LEAVE/... }, pendingRegularizations, summaries }
     const counts = data?.counts || {};
     if (presentCard) presentCard.textContent = counts.PRESENT || 0;
     if (absentCard) absentCard.textContent = counts.ABSENT || 0;
     if (lateCard) lateCard.textContent = counts.LATE || 0;
     if (onLeaveCard) onLeaveCard.textContent = counts.LEAVE || 0;
+
+    const lastUpdated = document.getElementById('lastUpdatedTime');
+    if (lastUpdated) {
+      lastUpdated.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
   } catch (e) {
     console.error(e);
   }
@@ -1238,16 +1374,9 @@ async function loadDashboardAttendanceTable() {
       refreshTimeEl.textContent = now;
     }
 
-    const fmtTime = (d) => (d ? new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-');
-    const calcHours = (firstIn, lastOut) => {
-      if (!firstIn || !lastOut) return '-';
-      const diff = Math.round((new Date(lastOut) - new Date(firstIn)) / 60000);
-      const hrs = Math.floor(diff / 60);
-      const mins = diff % 60;
-      return `${hrs}h ${mins}m`;
-    };
-
     const rows = Array.isArray(data?.summaries) ? data.summaries : [];
+    allAttendanceSummaries = rows;
+    window.allAttendanceSummaries = rows;
 
     // Update record count
     const recordCountEl = document.getElementById('recordCount');
@@ -1256,9 +1385,20 @@ async function loadDashboardAttendanceTable() {
     }
 
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted py-4"><i class="fa-solid fa-inbox text-muted" style="font-size: 2rem;"></i><br>No attendance records for today</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted py-5"><i class="fa-solid fa-inbox fa-2x mb-2 d-block opacity-50"></i>No attendance records for today.<br><small>Employees will appear here after punches or day recalculation.</small></td></tr>';
       return;
     }
+
+    const AS = window.AttendanceStatus;
+    const fmtTime = AS?.formatTime || ((d) => (d ? new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'));
+    const displayWorkHours = (r) => {
+      if (r.workMinutes != null && r.workMinutes !== '') {
+        return AS?.formatWorkMinutes(r.workMinutes) || `${Math.floor(r.workMinutes / 60)}h ${r.workMinutes % 60}m`;
+      }
+      if (!r.firstInAt || !r.lastOutAt) return '—';
+      const diff = Math.round((new Date(r.lastOutAt) - new Date(r.firstInAt)) / 60000);
+      return `${Math.floor(diff / 60)}h ${diff % 60}m`;
+    };
 
     tbody.innerHTML = rows.map((r, i) => {
       // Get shift info from employee's current shift assignment
@@ -1272,30 +1412,10 @@ async function loadDashboardAttendanceTable() {
         }
       }
 
-      // Status styling with icons
-      const getStatusBadge = (status) => {
-        const badges = {
-          'PRESENT': '<span class="badge bg-success"><i class="fa-solid fa-check-circle me-1"></i>Present</span>',
-          'ABSENT': '<span class="badge bg-danger"><i class="fa-solid fa-x me-1"></i>Absent</span>',
-          'LATE': '<span class="badge bg-warning text-dark"><i class="fa-solid fa-clock me-1"></i>Late</span>',
-          'HALF_DAY': '<span class="badge bg-info"><i class="fa-solid fa-hourglass-end me-1"></i>Half Day</span>',
-          'LEAVE': '<span class="badge bg-primary"><i class="fa-solid fa-umbrella-beach me-1"></i>On Leave</span>',
-          'HOLIDAY': '<span class="badge bg-secondary"><i class="fa-solid fa-star me-1"></i>Holiday</span>',
-          'WEEKOFF': '<span class="badge bg-secondary"><i class="fa-solid fa-calendar-xmark me-1"></i>Weekoff</span>',
-          'NOT_MARKED': '<span class="text-muted text-center d-block">-</span>'  // Blank/dash by default
-        };
-        return badges[status] || `<span class="badge bg-secondary">${status}</span>`;
-      };
-
-      // Row highlight based on status
-      const rowClass = r.status === 'PRESENT' ? '' :
-        r.status === 'ABSENT' ? 'table-danger' :
-          r.status === 'LATE' ? 'table-warning' :
-            r.status === 'LEAVE' ? 'table-info' :
-              r.status === 'NOT_MARKED' ? '' : '';  // No highlight for NOT_MARKED or unknown
+      const rowClass = AS?.STATUSES?.[AS.normalize(r.status)]?.rowClass || '';
 
       return `
-        <tr class="${rowClass}">
+        <tr class="${rowClass}" data-status="${r.status || 'NOT_MARKED'}" data-employee-id="${r.employeeId || ''}">
           <td><strong>${i + 1}</strong></td>
           <td>
             <div>
@@ -1311,7 +1431,7 @@ async function loadDashboardAttendanceTable() {
             <small>${r.employee?.empDesignation || '-'}</small>
           </td>
           <td class="text-center">
-            ${getStatusBadge(r.status)}
+            ${getStatusBadgeHtml(r.status)}
           </td>
           <td class="text-center">
             <strong>${fmtTime(r.firstInAt)}</strong>
@@ -1320,7 +1440,7 @@ async function loadDashboardAttendanceTable() {
             <strong>${fmtTime(r.lastOutAt)}</strong>
           </td>
           <td class="text-center">
-            <strong>${calcHours(r.firstInAt, r.lastOutAt)}</strong>
+            <strong>${displayWorkHours(r)}</strong>
           </td>
           <td>
             <div>
@@ -1346,8 +1466,271 @@ async function loadDashboardAttendanceTable() {
       if (el._bsTooltip) el._bsTooltip.dispose();
       new bootstrap.Tooltip(el);
     });
+
+    filterAttendance();
   } catch (e) {
     console.error(e);
+    const tbody = document.getElementById('attendanceTableBody');
+    if (tbody) {
+      tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger py-4"><i class="fa-solid fa-exclamation-triangle me-2"></i>Failed to load attendance. <a href="#" onclick="loadDashboardAttendanceTable(); return false;">Retry</a></td></tr>';
+    }
+  }
+}
+
+// ==================== EMPLOYEE SUMMARIES ====================
+
+let allEmployeeSummaryRows = [];
+let currentHistoryEmployee = null;
+
+function getAdminCalendarStatusMeta(status) {
+  const key = String(status || 'NOT_MARKED').toUpperCase();
+  const map = {
+    PRESENT: { text: '✓ Present', cls: 'admin-cal-status-present' },
+    ABSENT: { text: '✗ Absent', cls: 'admin-cal-status-absent' },
+    LATE: { text: '⏰ Late', cls: 'admin-cal-status-late' },
+    LEAVE: { text: '🏖 On Leave', cls: 'admin-cal-status-leave' },
+    HALF_DAY: { text: '⏸ Half Day', cls: 'admin-cal-status-leave' },
+    HOLIDAY: { text: 'Holiday', cls: 'admin-cal-status-holiday' },
+    WEEKOFF: { text: 'Week Off', cls: 'admin-cal-status-notmarked' },
+    NOT_MARKED: { text: '—', cls: 'admin-cal-status-notmarked' },
+  };
+  return map[key] || { text: key, cls: 'admin-cal-status-notmarked' };
+}
+
+function renderEmployeeHistoryCalendar({ monthStr, days, holidays, employee }) {
+  const grid = document.getElementById('empHistoryCalendarGrid');
+  const monthLabel = document.getElementById('empHistoryMonthLabel');
+  if (!grid) return;
+
+  const [year, month] = monthStr.split('-');
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  if (monthLabel) {
+    monthLabel.textContent = `${monthNames[parseInt(month, 10) - 1]} ${year}`;
+  }
+
+  const attendanceMap = {};
+  (days || []).forEach((d) => { attendanceMap[d.date] = d; });
+
+  const holidayMap = {};
+  (holidays || []).forEach((h) => { holidayMap[h.date] = h; });
+
+  const firstDay = new Date(Number(year), parseInt(month, 10) - 1, 1).getDay();
+  const daysInMonth = new Date(Number(year), parseInt(month, 10), 0).getDate();
+  const today = new Date().toISOString().split('T')[0];
+  const AS = window.AttendanceStatus;
+  const fmtTime = AS?.formatTime || ((v) => (v ? new Date(v).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''));
+
+  grid.innerHTML = '';
+
+  for (let i = 0; i < firstDay; i++) {
+    const empty = document.createElement('div');
+    empty.className = 'admin-cal-day other-month';
+    grid.appendChild(empty);
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const cell = document.createElement('div');
+    cell.className = 'admin-cal-day';
+    if (dateStr === today) cell.classList.add('today');
+
+    const holiday = holidayMap[dateStr];
+    const attendance = attendanceMap[dateStr];
+
+    if (holiday) {
+      cell.classList.add('holiday');
+      cell.innerHTML = `
+        <div class="admin-cal-day-date">${day}</div>
+        <div class="admin-cal-holiday-name">${holiday.name || 'Holiday'}</div>
+        <div class="admin-cal-day-status admin-cal-status-holiday">🎉 Holiday</div>`;
+      cell.addEventListener('click', () => {
+        showAttendanceDetailModal({ date: dateStr, status: 'HOLIDAY' }, employee?.empName);
+      });
+    } else {
+      const status = attendance?.status || 'NOT_MARKED';
+      const meta = getAdminCalendarStatusMeta(status);
+      const timeInfo = attendance?.firstInAt
+        ? `<div class="admin-cal-day-times">IN ${fmtTime(attendance.firstInAt)}${attendance.lastOutAt ? ` · OUT ${fmtTime(attendance.lastOutAt)}` : ''}</div>`
+        : '';
+
+      cell.innerHTML = `
+        <div class="admin-cal-day-date">${day}</div>
+        ${timeInfo}
+        <div class="admin-cal-day-status ${meta.cls}">${meta.text}</div>`;
+
+      cell.addEventListener('click', () => {
+        showAttendanceDetailModal(attendance || { date: dateStr, status: 'NOT_MARKED' }, employee?.empName);
+      });
+    }
+
+    grid.appendChild(cell);
+  }
+}
+
+function formatTotalHours(minutes) {
+  const mins = Number(minutes) || 0;
+  if (!mins) return '—';
+  return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+}
+
+async function loadEmployeeSummaries() {
+  const tbody = document.getElementById('employeeSummariesBody');
+  const monthInput = document.getElementById('summaryMonth');
+  if (!tbody) return;
+
+  const month = monthInput?.value || new Date().toISOString().slice(0, 7);
+  if (monthInput && !monthInput.value) monthInput.value = month;
+
+  const department = document.getElementById('summaryDepartment')?.value || '';
+
+  try {
+    tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted py-4"><i class="fa-solid fa-spinner fa-spin me-2"></i>Loading summaries...</td></tr>';
+
+    const params = new URLSearchParams({ month });
+    if (department) params.set('department', department);
+
+    const data = await attendanceApiCall(`/employee-summaries?${params.toString()}`);
+    allEmployeeSummaryRows = Array.isArray(data?.rows) ? data.rows : [];
+    populateSummaryDepartments(allEmployeeSummaryRows);
+    renderEmployeeSummaries(allEmployeeSummaryRows);
+  } catch (e) {
+    console.error(e);
+    tbody.innerHTML = '<tr><td colspan="11" class="text-center text-danger py-4"><i class="fa-solid fa-exclamation-triangle me-2"></i>Failed to load summaries. <a href="#" onclick="loadEmployeeSummaries(); return false;">Retry</a></td></tr>';
+  }
+}
+
+function populateSummaryDepartments(rows) {
+  const select = document.getElementById('summaryDepartment');
+  if (!select) return;
+  const current = select.value;
+  const departments = [...new Set(rows.map((r) => r.employee?.empDepartment).filter(Boolean))].sort();
+  select.innerHTML = '<option value="">All departments</option>';
+  departments.forEach((dept) => {
+    const opt = document.createElement('option');
+    opt.value = dept;
+    opt.textContent = dept;
+    select.appendChild(opt);
+  });
+  if (current && departments.includes(current)) select.value = current;
+}
+
+function filterEmployeeSummaries() {
+  const search = (document.getElementById('summarySearch')?.value || '').toLowerCase();
+  if (!search) {
+    renderEmployeeSummaries(allEmployeeSummaryRows);
+    return;
+  }
+  const filtered = allEmployeeSummaryRows.filter((row) => {
+    const e = row.employee || {};
+    return (
+      (e.empName || '').toLowerCase().includes(search)
+      || (e.empId || '').toLowerCase().includes(search)
+      || (e.empDepartment || '').toLowerCase().includes(search)
+    );
+  });
+  renderEmployeeSummaries(filtered);
+}
+
+function renderEmployeeSummaries(rows) {
+  const tbody = document.getElementById('employeeSummariesBody');
+  const countEl = document.getElementById('summaryCount');
+  if (!tbody) return;
+
+  if (countEl) {
+    countEl.textContent = `${rows.length} employee${rows.length !== 1 ? 's' : ''}`;
+  }
+
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted py-5"><i class="fa-solid fa-inbox fa-2x mb-2 d-block opacity-50"></i>No employees found for this period</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = rows.map((row, i) => {
+    const e = row.employee || {};
+    const s = row.stats || {};
+    const rate = s.attendanceRate != null ? `${s.attendanceRate}%` : '—';
+    const inactive = e.isActive === false ? '<span class="badge bg-secondary ms-1">Inactive</span>' : '';
+
+    return `
+      <tr>
+        <td>${i + 1}</td>
+        <td>
+          <strong>${e.empName || 'N/A'}</strong>${inactive}
+          <br><small class="text-muted">${e.empId || ''}</small>
+        </td>
+        <td>${e.empDepartment || '—'}</td>
+        <td class="text-center"><span class="badge bg-success">${s.present || 0}</span></td>
+        <td class="text-center"><span class="badge bg-danger">${s.absent || 0}</span></td>
+        <td class="text-center"><span class="badge bg-warning text-dark">${s.late || 0}</span></td>
+        <td class="text-center"><span class="badge bg-primary">${s.leave || 0}</span></td>
+        <td class="text-center"><span class="text-muted">${s.notMarked || 0}</span></td>
+        <td class="text-center"><strong>${rate}</strong></td>
+        <td class="text-center">${formatTotalHours(s.totalWorkMinutes)}</td>
+        <td class="text-center">
+          <button class="btn btn-sm btn-outline-primary" onclick="viewEmployeeAttendanceHistory(${e.id})" title="View daily history">
+            <i class="fa-solid fa-calendar-days me-1"></i> View
+          </button>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+async function viewEmployeeAttendanceHistory(employeeId) {
+  const modal = document.getElementById('modalEmployeeAttendanceHistory');
+  const title = document.getElementById('empHistoryTitle');
+  const subtitle = document.getElementById('empHistorySubtitle');
+  const statsEl = document.getElementById('empHistoryStats');
+  const grid = document.getElementById('empHistoryCalendarGrid');
+  const updatedEl = document.getElementById('empHistoryUpdated');
+  if (!modal || !grid) return;
+
+  const month = document.getElementById('summaryMonth')?.value || new Date().toISOString().slice(0, 7);
+
+  grid.innerHTML = '<div class="admin-cal-loading text-center text-muted py-4"><i class="fa-solid fa-spinner fa-spin me-2"></i>Loading calendar...</div>';
+  if (statsEl) statsEl.innerHTML = '';
+  new bootstrap.Modal(modal).show();
+
+  try {
+    const data = await attendanceApiCall(`/employees/${employeeId}/attendance-history?month=${month}`);
+    const emp = data.employee || {};
+    currentHistoryEmployee = emp;
+    const stats = data.stats || {};
+
+    if (title) title.textContent = emp.empName || 'Employee attendance';
+    if (subtitle) {
+      subtitle.textContent = `${emp.empId || ''} · ${emp.empDepartment || '—'} · ${data.period || month}`;
+    }
+    if (updatedEl) {
+      updatedEl.textContent = `Updated ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    }
+
+    if (statsEl) {
+      const cards = [
+        { label: 'Present', value: stats.present || 0, cls: 'text-success' },
+        { label: 'Absent', value: stats.absent || 0, cls: 'text-danger' },
+        { label: 'Late', value: stats.late || 0, cls: 'text-warning' },
+        { label: 'On Leave', value: stats.leave || 0, cls: 'text-primary' },
+        { label: 'Rate', value: stats.attendanceRate != null ? `${stats.attendanceRate}%` : '—', cls: 'text-dark' },
+        { label: 'Total Hours', value: formatTotalHours(stats.totalWorkMinutes), cls: 'text-dark' },
+      ];
+      statsEl.innerHTML = cards.map((c) => `
+        <div class="col-md-2 col-6">
+          <div class="border rounded p-2 text-center h-100">
+            <div class="small text-muted">${c.label}</div>
+            <div class="fw-bold ${c.cls}">${c.value}</div>
+          </div>
+        </div>`).join('');
+    }
+
+    renderEmployeeHistoryCalendar({
+      monthStr: month,
+      days: Array.isArray(data.days) ? data.days : [],
+      holidays: Array.isArray(data.holidays) ? data.holidays : [],
+      employee: emp,
+    });
+  } catch (e) {
+    console.error(e);
+    grid.innerHTML = '<div class="admin-cal-loading text-center text-danger py-4"><i class="fa-solid fa-exclamation-triangle me-2"></i>Failed to load calendar</div>';
   }
 }
 
@@ -1370,12 +1753,13 @@ document.addEventListener('DOMContentLoaded', () => {
     loadShifts();
     setupAutoRefresh(loadAssignments, 8000);
   } else if (page.includes('/admin/attendance/logs')) {
-    setupAutoRefresh(loadLogs, 5000); // Refresh every 5 seconds for real-time logs
+    setupAutoRefresh(loadLogs, 5000);
 
-    // Add event listener for date change
     const dateInput = document.getElementById('logDate');
     if (dateInput) {
-      if (!dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
+      const urlDate = new URLSearchParams(window.location.search).get('date');
+      if (urlDate) dateInput.value = urlDate;
+      else if (!dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
       dateInput.addEventListener('change', () => {
         stopAutoRefresh('loadLogs');
         setupAutoRefresh(loadLogs, 5000);
@@ -1391,9 +1775,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (generateBtn) {
       generateBtn.addEventListener('click', generateReport);
     }
+  } else if (page.includes('/admin/attendance/summaries')) {
+    const monthInput = document.getElementById('summaryMonth');
+    if (monthInput && !monthInput.value) {
+      monthInput.value = new Date().toISOString().slice(0, 7);
+    }
+    loadEmployeeSummaries();
   } else if (page.includes('/admin/attendance/dashboard') || page === '/admin/attendance') {
-    setupAutoRefresh(loadDashboard, 5000); // KPIs
-    setupAutoRefresh(loadDashboardAttendanceTable, 5000); // table
+    loadAttendanceTrend();
+    setupAutoRefresh(loadDashboard, 5000);
+    setupAutoRefresh(loadDashboardAttendanceTable, 5000);
   }
 
   // Cleanup on page unload to prevent memory leaks
@@ -1408,27 +1799,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // View Attendance Details Modal
 function viewEmployeeAttendanceDetails(summaryId, employeeId, date) {
-  // For now, show a basic view. In future, you could expand this to a modal
-  showAlert(`Viewing attendance details for employee ${employeeId} on ${date}`, 'info');
-
-  // Optionally: fetch and display full details in a modal
-  // You could extend this to show punch-in/out times, break duration, late minutes, etc.
+  const summary = (window.allAttendanceSummaries || allAttendanceSummaries || []).find(
+    (s) => s.id === summaryId || (s.employeeId === employeeId && s.date === date)
+  );
+  if (!summary) {
+    showAlert('Attendance record not found. Try refreshing the table.', 'warning');
+    return;
+  }
+  showAttendanceDetailModal(summary, summary.employee?.empName);
 }
 
-// Edit Attendance Modal
 function openEditAttendanceModal(summaryId, employeeId, date) {
-  editingId = summaryId;
-  editingType = 'attendance';
-
-  // Navigate to the manual edit page or open a modal for editing
-  // For now, we'll navigate to a dedicated edit page (you can create this later)
-  // Or show a modal with punch editing capabilities
-
-  showAlert(`Opening edit modal for attendance on ${date}`, 'info');
-
-  // TODO: Implement full modal with punch editing
-  // const modal = document.getElementById('modalEditAttendance');
-  // if (modal) new bootstrap.Modal(modal).show();
+  window.location.href = `/admin/attendance/logs?date=${date || new Date().toISOString().split('T')[0]}`;
 }
 
 // Top-bar refresh buttons in HBS
@@ -1436,17 +1818,8 @@ function refreshPolicies() { return loadPolicies(); }
 function refreshLogs() { return loadLogs(); }
 
 function viewLogDetails(id, empId, date) {
-  const log = window.allLogs?.find(l => l.id === id) || {};
-  const details = `
-    Employee: ${log.employee?.empName || 'N/A'}
-    ID: ${log.employee?.empId || '—'}
-    Date: ${log.date || '—'}
-    Status: ${log.status || '—'}
-    Check-in: ${log.firstInAt ? new Date(log.firstInAt).toLocaleTimeString() : '—'}
-    Check-out: ${log.lastOutAt ? new Date(log.lastOutAt).toLocaleTimeString() : '—'}
-    Work Hours: ${log.workMinutes ? Math.floor(log.workMinutes / 60) + 'h ' + (log.workMinutes % 60) + 'm' : '—'}
-  `;
-  showAlert(details, 'info');
+  const log = window.allLogs?.find((l) => l.id === id) || {};
+  showAttendanceDetailModal(log, log.employee?.empName);
 }
 
 // Dashboard export button
@@ -1488,32 +1861,46 @@ function filterLogs() {
   renderLogs(filtered);
 }
 
+function filterByKpi(status) {
+  const filter = document.getElementById('statusFilter');
+  const current = filter?.value || '';
+  const next = current === status ? '' : status;
+  if (filter) filter.value = next;
+
+  document.querySelectorAll('[data-kpi-filter]').forEach((el) => {
+    el.classList.toggle('active-filter', el.dataset.kpiFilter === next);
+  });
+
+  filterAttendance();
+}
+
 // Dashboard table filter hook used by HBS (client-side)
 function filterAttendance() {
   const search = (document.getElementById('attendanceSearch')?.value || '').toLowerCase();
   const status = (document.getElementById('statusFilter')?.value || '').toUpperCase();
 
-  const rows = document.querySelectorAll('#attendanceTableBody tr');
+  const rows = document.querySelectorAll('#attendanceTableBody tr[data-status]');
+  let visible = 0;
+
   rows.forEach((row) => {
     const text = row.textContent.toLowerCase();
     const matchesSearch = !search || text.includes(search);
-
-    let matchesStatus = true;
-    if (status) {
-      // Attempt to match the badge text inside the row
-      const badge = row.querySelector('.badge');
-      const badgeText = (badge?.textContent || '').trim().toUpperCase();
-      matchesStatus = badgeText === status;
-    }
-
-    row.style.display = (matchesSearch && matchesStatus) ? '' : 'none';
+    const rowStatus = (row.dataset.status || '').toUpperCase();
+    const matchesStatus = !status || rowStatus === status;
+    const show = matchesSearch && matchesStatus;
+    row.style.display = show ? '' : 'none';
+    if (show) visible += 1;
   });
+
+  const recordCountEl = document.getElementById('recordCount');
+  if (recordCountEl && rows.length) {
+    recordCountEl.textContent = status || search
+      ? `${visible} of ${rows.length} records`
+      : `${rows.length} record${rows.length !== 1 ? 's' : ''}`;
+  }
 }
 
 // Placeholder actions referenced by some refined templates
-function viewLogDetails(id) {
-  showAlert(`Details view not implemented for log ${id} (API wiring pending)`, 'info');
-}
 function viewAttendanceLog(id) {
   showAlert(`View attendance log ${id}`, 'info');
 }

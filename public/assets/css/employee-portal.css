@@ -661,52 +661,6 @@
     cursor: not-allowed;
 }
 
-/* Heatmap */
-.emp-heatmap {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
-    margin-top: 1rem;
-}
-
-.emp-heatmap-cell {
-    aspect-ratio: 1;
-    border-radius: 4px;
-    min-height: 14px;
-    transition: transform 100ms ease;
-}
-
-.emp-heatmap-cell:hover {
-    transform: scale(1.15);
-    z-index: 1;
-}
-
-.emp-heatmap-cell.level-0 { background: #e2e8f0; }
-.emp-heatmap-cell.level-1 { background: #bbf7d0; }
-.emp-heatmap-cell.level-2 { background: #4ade80; }
-.emp-heatmap-cell.level-3 { background: #16a34a; }
-.emp-heatmap-cell.level-4 { background: #15803d; }
-.emp-heatmap-cell.absent { background: #fecaca; }
-.emp-heatmap-cell.leave { background: #fde68a; }
-.emp-heatmap-cell.weekend { background: #f1f5f9; }
-.emp-heatmap-cell.future { background: transparent; border: 1px dashed #e2e8f0; }
-
-.emp-heatmap-legend {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    color: #64748b;
-    margin-top: 0.75rem;
-}
-
-.emp-heatmap-legend span {
-    width: 12px;
-    height: 12px;
-    border-radius: 3px;
-    display: inline-block;
-}
-
 /* Career timeline */
 .emp-timeline {
     position: relative;

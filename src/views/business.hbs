@@ -1,15 +1,15 @@
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <h2>My Organizations</h2>
-    <div class="d-flex gap-2 align-items-center" id="organizationActions" style="display: none !important;">
-        <a class="btn btn-outline-secondary d-inline-flex align-items-center gap-2" id="manageRolesBtn" href="/admin/team" style="display: none;">
+    <h2>Company Profile</h2>
+    <div class="d-flex gap-2 align-items-center d-none" id="organizationActions">
+        <a class="btn btn-outline-secondary d-none align-items-center gap-2" id="manageRolesBtn" href="/admin/team">
             <i class="fas fa-users-gear" style="width: 14px; text-align: center;"></i>
             <span>Manage Roles &amp; People</span>
         </a>
-        <button class="btn btn-outline-primary d-inline-flex align-items-center gap-2" id="joinOrganizationBtn" data-bs-toggle="modal" data-bs-target="#joinOrganizationModal" style="display: none;">
+        <button class="btn btn-outline-primary d-none align-items-center gap-2" id="joinOrganizationBtn" data-bs-toggle="modal" data-bs-target="#joinOrganizationModal" type="button">
             <i class="fas fa-right-to-bracket" style="width: 14px; text-align: center;"></i>
             <span>Join Organization</span>
         </button>
-        <button class="btn btn-primary d-inline-flex align-items-center gap-2" id="addOrganizationBtn" data-bs-toggle="modal" data-bs-target="#addBusinessModal" style="display: none;">
+        <button class="btn btn-primary d-none align-items-center gap-2" id="addOrganizationBtn" data-bs-toggle="modal" data-bs-target="#addBusinessModal" type="button">
             <i class="fas fa-plus" style="width: 14px; text-align: center;"></i>
             <span>Add Organization</span>
         </button>
@@ -301,6 +301,12 @@
         return div.innerHTML;
     }
 
+    function setActionButtonVisible(el, visible) {
+        if (!el) return;
+        el.classList.toggle('d-none', !visible);
+        el.classList.toggle('d-inline-flex', visible);
+    }
+
     function updateActionButtons() {
         const actions = document.getElementById('organizationActions');
         const addBtn = document.getElementById('addOrganizationBtn');
@@ -308,19 +314,27 @@
         const manageRolesBtn = document.getElementById('manageRolesBtn');
         const hint = document.getElementById('organizationHint');
 
-        const showActions = capabilities.canCreate || capabilities.canJoin || capabilities.hasOrganization;
-        if (actions) actions.style.display = showActions ? 'flex' : 'none';
-        if (manageRolesBtn) manageRolesBtn.style.display = capabilities.hasOrganization ? 'inline-flex' : 'none';
-        if (addBtn) addBtn.style.display = capabilities.canCreate ? 'inline-flex' : 'none';
-        if (joinBtn) joinBtn.style.display = capabilities.canJoin ? 'inline-flex' : 'none';
+        const hasOrg = capabilities.hasOrganization === true
+            || (Array.isArray(businesses) && businesses.length > 0);
+        const canCreate = !hasOrg && !!capabilities.canCreate;
+        const canJoin = !hasOrg && !!capabilities.canJoin;
+
+        const showActions = hasOrg || canCreate || canJoin;
+        if (actions) {
+            actions.classList.toggle('d-none', !showActions);
+            actions.classList.toggle('d-flex', showActions);
+        }
+        setActionButtonVisible(manageRolesBtn, hasOrg);
+        setActionButtonVisible(addBtn, canCreate);
+        setActionButtonVisible(joinBtn, canJoin);
 
         if (hint) {
-            if (capabilities.hasOrganization) {
+            if (hasOrg) {
                 hint.classList.add('d-none');
-            } else if (capabilities.canCreate) {
+            } else if (canCreate) {
                 hint.classList.remove('d-none');
                 hint.textContent = 'You can create one basic organization.';
-            } else if (capabilities.canJoin) {
+            } else if (canJoin) {
                 hint.classList.remove('d-none');
                 hint.textContent = 'You can join one organization using an invite code from the owner.';
             } else {
@@ -335,6 +349,11 @@
             const data = await apiCall('/business');
             businesses = Array.isArray(data?.organizations) ? data.organizations : (Array.isArray(data) ? data : (data?.data?.organizations || data?.data || []));
             capabilities = data?.capabilities || {};
+            if (businesses.length > 0) {
+                capabilities.hasOrganization = true;
+                capabilities.canCreate = false;
+                capabilities.canJoin = false;
+            }
             updateActionButtons();
             displayBusinesses(businesses);
 
