@@ -1352,6 +1352,10 @@
                 <i class="fas fa-phone"></i>
                 <span id="viewEmpPhone"></span>
               </span>
+              <span class="view-emp-chip" id="viewEmpStatusChip">
+                <i class="fas fa-circle" id="viewEmpStatusIcon"></i>
+                <span id="viewEmpStatusText">Active</span>
+              </span>
             </div>
           </div>
         </div>
@@ -1453,7 +1457,14 @@
           </div>
         </div>
       </div>
-      <div class="modal-footer view-emp-modal-footer">
+      <div class="modal-footer view-emp-modal-footer d-flex flex-wrap align-items-center gap-3">
+        <div class="d-flex align-items-center gap-2 me-auto" id="viewEmployeeStatusControl">
+          <span class="small text-muted">Employee status</span>
+          <div class="form-check form-switch mb-0">
+            <input class="form-check-input" type="checkbox" id="viewEmployeeActiveToggle" />
+            <label class="form-check-label" for="viewEmployeeActiveToggle" id="viewEmployeeActiveToggleLabel">Active</label>
+          </div>
+        </div>
         <button class="btn btn-outline-secondary d-none" type="button" id="viewDefaultPortalPasswordBtn" title="View default portal password (visible only until employee changes it)">
           <i class="fas fa-eye me-1"></i> View default password
         </button>
@@ -1581,6 +1592,12 @@
     const sendCredentialsEmailCheckbox = document.getElementById("sendCredentialsEmailCheckbox");
     const portalCredentialsSection = document.getElementById("portalCredentialsSection");
     const viewDefaultPortalPasswordBtn = document.getElementById("viewDefaultPortalPasswordBtn");
+    const viewEmployeeActiveToggle = document.getElementById("viewEmployeeActiveToggle");
+    const viewEmployeeActiveToggleLabel = document.getElementById("viewEmployeeActiveToggleLabel");
+    const viewEmpStatusChip = document.getElementById("viewEmpStatusChip");
+    const viewEmpStatusText = document.getElementById("viewEmpStatusText");
+    const viewEmpStatusIcon = document.getElementById("viewEmpStatusIcon");
+    let isUpdatingEmployeeStatus = false;
 
     function generateDefaultPortalPassword() {
       const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$";
@@ -1750,6 +1767,76 @@
         showPortalCredentialsModal(data, data.portalAccess);
       } catch (error) {
         alert(error.message);
+      }
+    });
+
+    function updateViewEmployeeStatusUI(emp) {
+      const isActive = emp?.isActive !== false;
+      if (viewEmployeeActiveToggle) {
+        viewEmployeeActiveToggle.checked = isActive;
+        viewEmployeeActiveToggle.disabled = false;
+      }
+      if (viewEmployeeActiveToggleLabel) {
+        viewEmployeeActiveToggleLabel.textContent = isActive ? "Active" : "Inactive";
+      }
+      if (viewEmpStatusText) {
+        viewEmpStatusText.textContent = isActive ? "Active" : "Inactive";
+      }
+      if (viewEmpStatusChip) {
+        viewEmpStatusChip.style.background = isActive ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)";
+        viewEmpStatusChip.style.color = isActive ? "#166534" : "#991b1b";
+      }
+      if (viewEmpStatusIcon) {
+        viewEmpStatusIcon.style.color = isActive ? "#22c55e" : "#ef4444";
+      }
+    }
+
+    viewEmployeeActiveToggle?.addEventListener("change", async function () {
+      if (!currentViewEmployeeId || isUpdatingEmployeeStatus) return;
+
+      const nextActive = viewEmployeeActiveToggle.checked;
+      const previousActive = !nextActive;
+
+      if (!nextActive) {
+        const confirmed = confirm(
+          "Mark this employee as inactive? They will not be able to sign in to the employee portal."
+        );
+        if (!confirmed) {
+          viewEmployeeActiveToggle.checked = previousActive;
+          return;
+        }
+      }
+
+      isUpdatingEmployeeStatus = true;
+      viewEmployeeActiveToggle.disabled = true;
+
+      try {
+        const res = await fetch(`/api/v1/employees/${currentViewEmployeeId}/status`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isActive: nextActive }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to update employee status");
+
+        updateViewEmployeeStatusUI(data);
+        const profContainer = document.getElementById("viewProfessionalDetails");
+        if (profContainer) {
+          const rows = profContainer.querySelectorAll("dt");
+          rows.forEach((dt) => {
+            if (dt.textContent.trim() === "Account Status") {
+              const dd = dt.nextElementSibling;
+              if (dd) dd.textContent = nextActive ? "Active" : "Inactive";
+            }
+          });
+        }
+      } catch (error) {
+        viewEmployeeActiveToggle.checked = previousActive;
+        updateViewEmployeeStatusUI({ isActive: previousActive });
+        alert(error.message || "Failed to update employee status");
+      } finally {
+        isUpdatingEmployeeStatus = false;
+        if (viewEmployeeActiveToggle) viewEmployeeActiveToggle.disabled = false;
       }
     });
 
@@ -2704,6 +2791,8 @@
           else viewEmpPhoneChip.style.display = "inline-flex";
         }
 
+        updateViewEmployeeStatusUI(emp);
+
         renderKeyValueList("viewPersonalDetails", [
           ["Gender", emp.gender],
           ["Marital Status", emp.maritalStatus],
@@ -2741,6 +2830,7 @@
         ]);
 
         renderKeyValueList("viewProfessionalDetails", [
+          ["Account Status", emp.isActive === false ? "Inactive" : "Active"],
           ["Employee Type", emp.employeeType],
           ["Employment Status", emp.employmentStatus],
           ["Department", emp.empDepartment],

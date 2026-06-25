@@ -197,16 +197,20 @@
       if (!permissions.billing) hideLink('/billing');
     }
 
-    // Enforce organization-first flow for non-platform users.
-    if (!['admin', 'SUPER_ADMIN'].includes(userRole) && typeof apiCall === 'function') {
-      apiCall('/business/capabilities', { skipWorkspace: true })
+    // Enforce organization-first flow only for restricted roles without full workspace access.
+    if (!isFullAdmin && typeof window.apiCall === 'function') {
+      window.apiCall('/business/capabilities', { skipWorkspace: true })
         .then((data) => {
           const caps = data?.data || data || {};
           if (!caps.hasOrganization) showOnlyOrganizationsAccess();
         })
-        .catch(() => {
-          // If capability check fails, fail-safe to organization-only navigation.
-          showOnlyOrganizationsAccess();
+        .catch((err) => {
+          // Do not lock navigation on transient API failures when org context already exists.
+          const hasOrgContext = typeof getOrganizationId === 'function' && !!getOrganizationId();
+          if (!hasOrgContext) {
+            console.warn('Organization capability check failed:', err?.message || err);
+            showOnlyOrganizationsAccess();
+          }
         });
     }
   });

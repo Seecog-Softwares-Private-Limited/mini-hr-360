@@ -67,7 +67,7 @@ async function resolveOrgCapabilities() {
   return {};
 }
 
-async function apiCall(endpoint, method = 'GET', body = null) {
+async function attendanceApiCall(endpoint, method = 'GET', body = null) {
   try {
     const options = {
       method,
@@ -127,7 +127,7 @@ async function apiCall(endpoint, method = 'GET', body = null) {
 async function loadPolicies() {
   try {
     // Backend ignores :id; keep call simple and avoid hardcoding a bogus id
-    allPolicies = await apiCall('/policies');
+    allPolicies = await attendanceApiCall('/policies');
     if (!Array.isArray(allPolicies)) allPolicies = [];
     renderPolicies();
   } catch (e) {
@@ -227,10 +227,10 @@ async function savePolicy() {
     };
 
     if (editingId) {
-      await apiCall(`/policies/${editingId}`, 'PATCH', payload);
+      await attendanceApiCall(`/policies/${editingId}`, 'PATCH', payload);
       showAlert('Policy updated successfully', 'success');
     } else {
-      await apiCall('/policies', 'POST', payload);
+      await attendanceApiCall('/policies', 'POST', payload);
       showAlert('Policy created successfully', 'success');
     }
 
@@ -249,7 +249,7 @@ async function deletePolicy(id) {
   if (!confirm('Are you sure you want to delete this policy?')) return;
 
   try {
-    await apiCall(`/policies/${id}`, 'DELETE');
+    await attendanceApiCall(`/policies/${id}`, 'DELETE');
     showAlert('Policy deleted successfully', 'success');
     await loadPolicies();
   } catch (e) {
@@ -268,7 +268,7 @@ function filterPolicies() {
 
 async function loadShifts() {
   try {
-    allShifts = await apiCall('/shifts');
+    allShifts = await attendanceApiCall('/shifts');
     if (!Array.isArray(allShifts)) allShifts = [];
     renderShifts();
     updateShiftDropdowns();
@@ -376,10 +376,10 @@ async function saveShift() {
     };
 
     if (editingId) {
-      await apiCall(`/shifts/${editingId}`, 'PATCH', payload);
+      await attendanceApiCall(`/shifts/${editingId}`, 'PATCH', payload);
       showAlert('Shift updated successfully', 'success');
     } else {
-      await apiCall('/shifts', 'POST', payload);
+      await attendanceApiCall('/shifts', 'POST', payload);
       showAlert('Shift created successfully', 'success');
     }
 
@@ -398,7 +398,7 @@ async function deleteShift(id) {
   if (!confirm('Are you sure you want to delete this shift?')) return;
 
   try {
-    await apiCall(`/shifts/${id}`, 'DELETE');
+    await attendanceApiCall(`/shifts/${id}`, 'DELETE');
     showAlert('Shift deleted successfully', 'success');
     await loadShifts();
   } catch (e) {
@@ -514,7 +514,7 @@ function filterShifts() {
 
 async function loadHolidays() {
   try {
-    allHolidays = await apiCall('/holidays');
+    allHolidays = await attendanceApiCall('/holidays');
     if (!Array.isArray(allHolidays)) allHolidays = [];
     renderHolidays();
   } catch (e) {
@@ -606,10 +606,10 @@ async function saveHoliday() {
     };
 
     if (editingId) {
-      await apiCall(`/holidays/${editingId}`, 'PATCH', payload);
+      await attendanceApiCall(`/holidays/${editingId}`, 'PATCH', payload);
       showAlert('Holiday updated successfully', 'success');
     } else {
-      await apiCall('/holidays', 'POST', payload);
+      await attendanceApiCall('/holidays', 'POST', payload);
       showAlert('Holiday created successfully', 'success');
     }
 
@@ -628,7 +628,7 @@ async function deleteHoliday(id) {
   if (!confirm('Are you sure you want to delete this holiday?')) return;
 
   try {
-    await apiCall(`/holidays/${id}`, 'DELETE');
+    await attendanceApiCall(`/holidays/${id}`, 'DELETE');
     showAlert('Holiday deleted successfully', 'success');
     await loadHolidays();
   } catch (e) {
@@ -652,7 +652,7 @@ async function loadAssignments() {
       tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3"><i class="fa-solid fa-spinner fa-spin me-2"></i>Loading assignments...</td></tr>';
     }
 
-    allAssignments = await apiCall('/assignments');
+    allAssignments = await attendanceApiCall('/assignments');
     if (!Array.isArray(allAssignments)) allAssignments = [];
     renderAssignments();
   } catch (e) {
@@ -844,10 +844,10 @@ async function saveAssignment() {
     }
 
     if (editingId) {
-      await apiCall(`/assignments/${editingId}`, 'PATCH', payload);
+      await attendanceApiCall(`/assignments/${editingId}`, 'PATCH', payload);
       showAlert('Assignment updated successfully', 'success');
     } else {
-      await apiCall('/assignments', 'POST', payload);
+      await attendanceApiCall('/assignments', 'POST', payload);
       showAlert('Assignment created successfully', 'success');
     }
 
@@ -867,7 +867,7 @@ async function deleteAssignment(id) {
   if (!confirm('Are you sure you want to delete this assignment?')) return;
 
   try {
-    await apiCall(`/assignments/${id}`, 'DELETE');
+    await attendanceApiCall(`/assignments/${id}`, 'DELETE');
     showAlert('Assignment deleted successfully', 'success');
     await loadAssignments();
   } catch (e) {
@@ -894,7 +894,7 @@ async function loadLogs() {
     const dateInput = document.getElementById('logDate');
     const date = dateInput?.value || new Date().toISOString().split('T')[0];
 
-    const logs = await apiCall(`/logs?date=${date}`);
+    const logs = await attendanceApiCall(`/logs?date=${date}`);
     renderLogs(Array.isArray(logs) ? logs : []);
   } catch (e) {
     console.error('Error loading logs:', e);
@@ -983,7 +983,7 @@ async function downloadLogs() {
     const dateInput = document.getElementById('logDate');
     const date = dateInput?.value || new Date().toISOString().split('T')[0];
 
-    const logs = await apiCall(`/logs?date=${date}`);
+    const logs = await attendanceApiCall(`/logs?date=${date}`);
     if (!Array.isArray(logs) || logs.length === 0) {
       showAlert('No logs to export', 'warning');
       return;
@@ -1028,7 +1028,7 @@ let allRegularizations = [];
 
 async function loadRegularizations() {
   try {
-    const regs = await apiCall('/regularizations');
+    const regs = await attendanceApiCall('/regularizations');
     allRegularizations = Array.isArray(regs) ? regs : [];
     renderRegularizations(allRegularizations);
   } catch (e) {
@@ -1068,7 +1068,7 @@ async function approveRegularization(id) {
   if (!confirm('Approve this regularization request?')) return;
 
   try {
-    await apiCall(`/regularizations/${id}/approve`, 'PATCH', { actionNote: 'Approved by admin' });
+    await attendanceApiCall(`/regularizations/${id}/approve`, 'PATCH', { actionNote: 'Approved by admin' });
     showAlert('Regularization approved', 'success');
     await loadRegularizations();
   } catch (e) {
@@ -1081,7 +1081,7 @@ async function rejectRegularization(id) {
   if (reason === null) return;
 
   try {
-    await apiCall(`/regularizations/${id}/reject`, 'PATCH', { actionNote: reason || 'Rejected by admin' });
+    await attendanceApiCall(`/regularizations/${id}/reject`, 'PATCH', { actionNote: reason || 'Rejected by admin' });
     showAlert('Regularization rejected', 'success');
     await loadRegularizations();
   } catch (e) {
@@ -1140,7 +1140,7 @@ async function generateReport() {
 
 async function loadLockedPeriods() {
   try {
-    const locks = await apiCall('/locks');
+    const locks = await attendanceApiCall('/locks');
     const tbody = document.getElementById('lockedPeriodsTableBody');
     if (!tbody) return;
 
@@ -1176,7 +1176,7 @@ async function lockAttendance(event) {
   if (!confirm(`Lock attendance for period ${period}?`)) return;
 
   try {
-    await apiCall('/lock', 'POST', { period });
+    await attendanceApiCall('/lock', 'POST', { period });
     showAlert('Attendance period locked successfully', 'success');
     if (periodInput) periodInput.value = '';
     await loadLockedPeriods();
@@ -1193,7 +1193,7 @@ async function unlockAttendance(periodFromBtn = null) {
   if (!confirm(`Unlock attendance for period ${period}?`)) return;
 
   try {
-    await apiCall('/unlock', 'POST', { period, unlockNote: note });
+    await attendanceApiCall('/unlock', 'POST', { period, unlockNote: note });
     showAlert('Attendance period unlocked successfully', 'success');
     await loadLockedPeriods();
   } catch (e) {
@@ -1205,7 +1205,7 @@ async function unlockAttendance(periodFromBtn = null) {
 
 async function loadDashboard() {
   try {
-    const data = await apiCall('/dashboard');
+    const data = await attendanceApiCall('/dashboard');
 
     // Update KPI cards
     const presentCard = document.querySelector('[data-kpi="present"]');
@@ -1227,7 +1227,7 @@ async function loadDashboard() {
 async function loadDashboardAttendanceTable() {
   try {
     const today = new Date().toISOString().split('T')[0];
-    const data = await apiCall(`/dashboard?date=${today}`);
+    const data = await attendanceApiCall(`/dashboard?date=${today}`);
     const tbody = document.getElementById('attendanceTableBody');
     if (!tbody) return;
 
@@ -1529,7 +1529,7 @@ let reportsSortDirection = 'desc';
 async function loadReports() {
   try {
     // Use apiCall to include credentials and normalize response
-    const data = await apiCall('/reports'); // apiCall returns data.data || data
+    const data = await attendanceApiCall('/reports'); // apiCall returns data.data || data
 
     const rows = Array.isArray(data) ? data : [];
     allReports = rows.map(log => ({
