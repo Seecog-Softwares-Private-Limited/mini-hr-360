@@ -116,6 +116,11 @@ Once the server is running, visit:
 - `PATCH /api/v1/business/update-business/:id` - Update business
 - `DELETE /api/v1/business/delete-business/:id` - Delete business
 
+### Organization Access Policy
+- Any authenticated user can create one basic organization.
+- Any authenticated user can join one organization using invite code.
+- A user can be linked to only one organization at a time (owner or member).
+
 ### Customer Management
 - `POST /api/v1/customers` - Add/update customer
 - `GET /api/v1/customers` - List customers

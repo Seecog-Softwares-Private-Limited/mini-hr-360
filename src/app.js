@@ -204,6 +204,7 @@ import { adminProfileRouter } from './routes/adminProfile.routes.js';
 import adminPayrollPagesRouter from './routes/admin.payroll.pages.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 import dashboardRoutes from './routes/dashboard.routes.js';
+import { listUsersForRequest } from './services/organization.service.js';
 
 
 // ---------- Frontend pages ----------
@@ -339,6 +340,15 @@ app.use('/api/v1/designations', designationsRoutes);
 app.use('/api/leave-types', leaveTypesRoutes);
 app.use('/api/leave-requests', leaveRequestsRoutes);
 app.use('/api/admin/payroll', payrollRoutes);
+app.get('/api/admin/users', verifyUser, async (req, res) => {
+    try {
+        const users = await listUsersForRequest(req);
+        res.json({ data: users });
+    } catch (error) {
+        console.error('Error fetching organization users:', error);
+        res.status(500).json({ error: 'Failed to fetch users' });
+    }
+});
 app.use('/api/v1/notifications', notificationRoutes);
 
 

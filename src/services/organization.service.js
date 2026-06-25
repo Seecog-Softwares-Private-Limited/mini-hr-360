@@ -1,9 +1,121 @@
 import crypto from 'crypto';
 import { Op } from 'sequelize';
-import { Business, OrganizationMember, Subscription } from '../models/index.js';
+import { Business, OrganizationMember, Subscription, User } from '../models/index.js';
 
-const ADMIN_ROLES = new Set(['admin', 'SUPER_ADMIN']);
 const ACTIVE_SUBSCRIPTION_STATUSES = ['active', 'trialing'];
+
+export function isPlatformAdmin(user) {
+  const role = String(user?.role || '');
+  return role === 'SUPER_ADMIN' || role === 'admin';
+}
+
+export const ORG_ASSIGNABLE_ROLES = [
+  'admin',
+  'HR_MANAGER',
+  'MANAGER',
+  'EMPLOYEE',
+];
+
+export function formatUserSummary(user) {
+  const plain = user?.toJSON ? user.toJSON() : user;
+  const effectiveRole = plain.organizationRole || plain.role;
+  return {
+    id: plain.id,
+    name: `${plain.firstName || ''} ${plain.lastName || ''}`.trim() || plain.email,
+    email: plain.email,
+    role: effectiveRole,
+    globalRole: plain.role,
+    organizationRole: plain.organizationRole || plain.role,
+    isOrganizationOwner: !!plain.isOrganizationOwner,
+    status: plain.status,
+  };
+}
+
+export async function getOrganizationMemberUserIds(businessId) {
+  if (!businessId) return [];
+
+  const business = await Business.findByPk(businessId, { attributes: ['id', 'ownerId'] });
+  if (!business) return [];
+
+  const ids = new Set();
+  if (business.ownerId) ids.add(business.ownerId);
+
+  const members = await OrganizationMember.findAll({
+    where: { businessId, status: 'active' },
+    attributes: ['userId'],
+  });
+  for (const member of members) ids.add(member.userId);
+
+  return [...ids];
+}
+
+export async function userBelongsToOrganization(userId, businessId) {
+  const memberIds = await getOrganizationMemberUserIds(businessId);
+  return memberIds.includes(Number(userId));
+}
+
+export async function userCanManageOrganizationRoles(user, businessId) {
+  if (!user?.id || !businessId) return false;
+  if (isPlatformAdmin(user)) return true;
+
+  const business = await Business.findByPk(businessId, { attributes: ['id', 'ownerId'] });
+  return business?.ownerId === user.id;
+}
+
+export async function listOrganizationUsers(businessId) {
+  if (!businessId) return [];
+
+  const business = await Business.findByPk(businessId, { attributes: ['id', 'ownerId'] });
+  if (!business) return [];
+
+  const memberships = await OrganizationMember.findAll({
+    where: { businessId, status: 'active' },
+    attributes: ['userId', 'role'],
+  });
+
+  const roleByUserId = new Map(memberships.map((m) => [Number(m.userId), m.role || 'EMPLOYEE']));
+  const userIds = new Set([Number(business.ownerId), ...memberships.map((m) => Number(m.userId))]);
+  const ids = [...userIds].filter((id) => Number.isFinite(id) && id > 0);
+  if (!ids.length) return [];
+
+  const users = await User.findAll({
+    where: { id: { [Op.in]: ids } },
+    attributes: ['id', 'firstName', 'lastName', 'email', 'role', 'status'],
+    order: [['firstName', 'ASC']],
+  });
+
+  const withOrgRole = users.map((user) => {
+    const plain = user.toJSON();
+    const isOrganizationOwner = Number(plain.id) === Number(business.ownerId);
+    return {
+      ...plain,
+      organizationRole: isOrganizationOwner ? 'shop_owner' : (roleByUserId.get(Number(plain.id)) || 'EMPLOYEE'),
+      isOrganizationOwner,
+    };
+  });
+
+  return withOrgRole.map(formatUserSummary);
+}
+
+export async function listUsersForRequest(req) {
+  if (isPlatformAdmin(req.user)) {
+    const users = await User.findAll({
+      attributes: ['id', 'firstName', 'lastName', 'email', 'role', 'status'],
+      order: [['firstName', 'ASC']],
+    });
+    return users.map(formatUserSummary);
+  }
+
+  const organizationId = await resolveOrganizationIdFromRequest(req);
+  if (!organizationId) {
+    const self = await User.findByPk(req.user.id, {
+      attributes: ['id', 'firstName', 'lastName', 'email', 'role', 'status'],
+    });
+    return self ? [formatUserSummary(self)] : [];
+  }
+
+  return listOrganizationUsers(organizationId);
+}
 
 export function generateInviteCode() {
   return crypto.randomBytes(4).toString('hex').toUpperCase();
@@ -12,21 +124,27 @@ export function generateInviteCode() {
 export async function userHasActivePlan(user) {
   if (!user?.id) return false;
 
-  const owned = await Business.findAll({
-    where: { ownerId: user.id },
-    attributes: ['id'],
-  });
-  if (!owned.length) return false;
+  try {
+    const owned = await Business.findAll({
+      where: { ownerId: user.id },
+      attributes: ['id'],
+    });
+    if (!owned.length) return false;
 
-  const businessIds = owned.map((b) => b.id);
-  const subscription = await Subscription.findOne({
-    where: {
-      businessId: { [Op.in]: businessIds },
-      status: { [Op.in]: ACTIVE_SUBSCRIPTION_STATUSES },
-    },
-  });
+    const businessIds = owned.map((b) => b.id);
+    const subscription = await Subscription.findOne({
+      where: {
+        businessId: { [Op.in]: businessIds },
+        status: { [Op.in]: ACTIVE_SUBSCRIPTION_STATUSES },
+      },
+    });
 
-  return !!subscription;
+    return !!subscription;
+  } catch (err) {
+    // Fallback so organization listing/capabilities never fail due to billing schema drift.
+    console.warn('userHasActivePlan fallback=false:', err?.message || err);
+    return false;
+  }
 }
 
 export async function getUserOwnedBusinesses(user) {
@@ -116,24 +234,14 @@ export async function userHasOrganization(user) {
 }
 
 export async function getOrganizationCapabilities(user) {
-  const role = String(user?.role || '').toLowerCase();
-  const isAdmin = ADMIN_ROLES.has(user?.role) || role === 'super_admin';
   const hasOrganization = await userHasOrganization(user);
-  const hasPlan = await userHasActivePlan(user);
   const ownedCount = await Business.count({ where: { ownerId: user.id } });
+  const hasPlan = await userHasActivePlan(user);
 
-  let canCreate = false;
-  let canJoin = false;
-
-  if (!hasOrganization) {
-    if (isAdmin) {
-      canCreate = ownedCount === 0;
-    } else if (role === 'shop_owner' && hasPlan && ownedCount === 0) {
-      canCreate = true;
-    } else if (!isAdmin) {
-      canJoin = true;
-    }
-  }
+  // Product rule: any authenticated user can either create one basic organization
+  // or join one organization, but cannot be linked to more than one organization.
+  const canCreate = !hasOrganization && ownedCount === 0;
+  const canJoin = !hasOrganization;
 
   return {
     hasOrganization,
@@ -152,11 +260,7 @@ export async function assertCanCreateOrganization(user) {
     throw err;
   }
   if (!caps.canCreate) {
-    const err = new Error(
-      caps.hasPlan
-        ? 'You cannot create another organization.'
-        : 'Purchase a plan to create an organization, or join one using an invite code.'
-    );
+    const err = new Error('You cannot create another organization. Each account can create only one basic organization.');
     err.code = 'FORBIDDEN';
     throw err;
   }
@@ -165,7 +269,7 @@ export async function assertCanCreateOrganization(user) {
 export async function assertCanJoinOrganization(user) {
   const caps = await getOrganizationCapabilities(user);
   if (caps.hasOrganization) {
-    const err = new Error('You are already linked to an organization.');
+    const err = new Error('You are already linked to an organization. Each account can join only one organization.');
     err.code = 'ORG_LIMIT';
     throw err;
   }

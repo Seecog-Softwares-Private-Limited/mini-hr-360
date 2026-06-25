@@ -8,6 +8,7 @@ import {
     updateEmployee,
     deleteEmployee,
     resetEmployeePortalAccess,
+    sendEmployeePortalCredentialsEmail,
 } from '../controllers/employee.controllers.js';
 import { verifyUser } from '../middleware/authMiddleware.js';
 
@@ -22,6 +23,7 @@ router.post('/api/v1/employees', verifyUser, createEmployee);
 router.get('/api/v1/employees/:id', verifyUser, getEmployeeById);
 router.put('/api/v1/employees/:id', verifyUser, updateEmployee);
 router.post('/api/v1/employees/:id/portal-access/reset', verifyUser, resetEmployeePortalAccess);
+router.post('/api/v1/employees/:id/portal-access/send-email', verifyUser, sendEmployeePortalCredentialsEmail);
 router.delete('/api/v1/employees/:id', verifyUser, deleteEmployee);
 
 export default router;
