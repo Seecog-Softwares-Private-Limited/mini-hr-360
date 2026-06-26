@@ -1,4 +1,49 @@
 {{!-- views/employees.hbs --}}
+<style>
+.emp-shift-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #075985;
+  font-size: 12px;
+  font-weight: 600;
+}
+.emp-shift-time {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+.emp-row-actions {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-end;
+}
+.emp-action-btn {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+.emp-action-btn:hover { transform: translateY(-1px); }
+.emp-action-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+.emp-action-view { background: #f1f5f9; color: #475569; }
+.emp-action-view:hover { background: #e2e8f0; }
+.emp-action-edit { background: #eef2ff; color: #4f46e5; }
+.emp-action-edit:hover { background: #e0e7ff; }
+.emp-action-more { background: #f8fafc; color: #64748b; }
+.emp-action-more:hover { background: #f1f5f9; }
+.emp-actions-menu { min-width: 220px; padding: 6px; border-radius: 10px; box-shadow: 0 8px 24px rgba(15,23,42,0.12); }
+.emp-actions-menu .dropdown-item { border-radius: 6px; font-size: 14px; padding: 8px 12px; }
+.emp-actions-menu .dropdown-item:disabled { opacity: 0.5; }
+</style>
 <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
             <h2 class="mb-0">Employees</h2>
@@ -72,7 +117,8 @@
                     <th>Designation</th>
                     <th>Department</th>
                     <th>DOJ</th>
-                    <th>Actions</th>
+                    <th>Shift</th>
+                    <th class="text-end">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -103,6 +149,18 @@
                         <td>{{empDateOfJoining}}</td>
                         <td>
                           {{#if isInvitedMember}}
+                            <span class="text-muted small">—</span>
+                          {{else}}
+                            {{#if shiftName}}
+                              <span class="emp-shift-pill">{{shiftName}}</span>
+                              <div class="emp-shift-time">{{shiftStartTime}} – {{shiftEndTime}}</div>
+                            {{else}}
+                              <span class="text-muted small">Unassigned</span>
+                            {{/if}}
+                          {{/if}}
+                        </td>
+                        <td class="text-end">
+                          {{#if isInvitedMember}}
                             <button
                               type="button"
                               class="btn btn-sm btn-outline-primary complete-invited-member-btn"
@@ -114,40 +172,59 @@
                               <i class="fas fa-user-pen me-1"></i> Complete Profile
                             </button>
                           {{else}}
-                          <div style="display:flex;gap:8px;align-items:center;">
-                            <div style="min-width:120px;text-align:center;">
-                                {{#if shiftName}}
-                                    <span style="display:inline-block;padding:6px 10px;border-radius:999px;background:#eef2ff;color:#075985;font-weight:600;">{{shiftName}}</span>
-                                    <div style="font-size:11px;color:#94a3b8;margin-top:4px;">{{shiftStartTime}} - {{shiftEndTime}}</div>
-                                {{else}}
-                                    <span style="font-size:13px;color:#94a3b8;">Unassigned</span>
-                                {{/if}}
-                            </div>
-                            <div class="btn-group btn-group-sm" role="group">
+                          <div class="emp-row-actions">
                             <button
                               type="button"
-                              class="btn btn-outline-secondary view-employee-btn"
+                              class="emp-action-btn emp-action-view view-employee-btn"
                               data-id="{{id}}"
-                              title="View Employee"
+                              title="View employee"
                             >
                               <i class="fas fa-eye"></i>
                             </button>
                             <button
                               type="button"
-                              class="btn btn-outline-primary edit-employee-btn"
+                              class="emp-action-btn emp-action-edit edit-employee-btn"
                               data-id="{{id}}"
-                              title="Edit Employee"
+                              title="Edit employee"
                             >
-                              <i class="fas fa-edit"></i>
+                              <i class="fas fa-pen"></i>
                             </button>
-                            <button
-                              type="button"
-                              class="btn btn-outline-danger delete-employee-btn"
-                              data-id="{{id}}"
-                              title="Delete Employee"
-                            >
-                              <i class="fas fa-trash"></i>
-                            </button>
+                            <div class="dropdown">
+                              <button
+                                type="button"
+                                class="emp-action-btn emp-action-more"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false"
+                                title="More options"
+                              >
+                                <i class="fas fa-ellipsis-vertical"></i>
+                              </button>
+                              <ul class="dropdown-menu dropdown-menu-end emp-actions-menu">
+                                <li>
+                                  <button
+                                    type="button"
+                                    class="dropdown-item send-credentials-btn"
+                                    data-id="{{id}}"
+                                    data-email="{{empEmail}}"
+                                    data-name="{{empName}}"
+                                    {{#unless empEmail}}disabled{{/unless}}
+                                  >
+                                    <i class="fas fa-paper-plane me-2 text-info"></i>Send portal credentials
+                                  </button>
+                                </li>
+                                <li><hr class="dropdown-divider my-1"></li>
+                                <li>
+                                  <button
+                                    type="button"
+                                    class="dropdown-item text-danger delete-employee-btn"
+                                    data-id="{{id}}"
+                                    data-name="{{empName}}"
+                                  >
+                                    <i class="fas fa-trash me-2"></i>Delete employee
+                                  </button>
+                                </li>
+                              </ul>
+                            </div>
                           </div>
                           {{/if}}
                         </td>
@@ -155,7 +232,7 @@
                     {{/each}}
                   {{else}}
                     <tr>
-                      <td colspan="9" class="text-center py-3">
+                      <td colspan="10" class="text-center py-3">
                         No employees found.
                       </td>
                     </tr>
@@ -1468,9 +1545,6 @@
         <button class="btn btn-outline-secondary d-none" type="button" id="viewDefaultPortalPasswordBtn" title="View default portal password (visible only until employee changes it)">
           <i class="fas fa-eye me-1"></i> View default password
         </button>
-        <button class="btn btn-outline-primary" type="button" id="resetPortalAccessBtn" title="Generate new portal login password">
-          <i class="fas fa-key me-1"></i> Reset portal login
-        </button>
         <button class="btn btn-secondary view-emp-close-btn" type="button" data-bs-dismiss="modal">
           Close
         </button>
@@ -1748,25 +1822,6 @@
       if (reloadAfterPortalCredentials) {
         reloadAfterPortalCredentials = false;
         window.location.reload();
-      }
-    });
-
-    document.getElementById("resetPortalAccessBtn")?.addEventListener("click", async () => {
-      if (!currentViewEmployeeId) return;
-      if (!confirm("Generate a new employee portal password? The previous password will stop working.")) return;
-
-      try {
-        const res = await fetch(`/api/v1/employees/${currentViewEmployeeId}/portal-access/reset`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Failed to reset portal access");
-
-        bootstrap.Modal.getInstance(document.getElementById("viewEmployeeModal"))?.hide();
-        showPortalCredentialsModal(data, data.portalAccess);
-      } catch (error) {
-        alert(error.message);
       }
     });
 
@@ -3116,9 +3171,10 @@ if (expContainer) {
       }
     }
 
-    async function deleteEmployee(id) {
+    async function deleteEmployee(id, name) {
+      const label = name ? `"${name}"` : "this employee";
       const confirmed = window.confirm(
-        "Are you sure you want to delete this employee? This action cannot be undone."
+        `Delete ${label}? This action cannot be undone.`
       );
       if (!confirmed) return;
 
@@ -3143,10 +3199,78 @@ if (expContainer) {
       }
     }
 
+    async function sendEmployeeCredentials(id, email, name, triggerBtn) {
+      if (!email) {
+        alert("This employee has no registered email address.");
+        return;
+      }
+
+      if (!confirm(`Send portal login credentials to ${name} at ${email}?`)) return;
+
+      const originalHtml = triggerBtn?.innerHTML;
+      if (triggerBtn) {
+        triggerBtn.disabled = true;
+        if (triggerBtn.classList.contains("dropdown-item")) {
+          triggerBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Sending...';
+        } else {
+          triggerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        }
+      }
+
+      try {
+        const res = await fetch(`/api/v1/employees/${id}/portal-access/send`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to send credentials");
+
+        const portalAccess = data.portalAccess;
+        const regenNote = data.passwordRegenerated
+          ? " A new portal password was generated."
+          : "";
+
+        if (data.emailSent) {
+          alert(`Credentials emailed to ${email}.${regenNote}`);
+        } else {
+          const errMsg = data.emailError || "Email could not be sent";
+          alert(`${errMsg}.${regenNote} Opening credentials so you can share them manually.`);
+          if (portalAccess) {
+            showPortalCredentialsModal(
+              { id, empName: name, empEmail: email, empId: portalAccess.loginEmployeeCode },
+              portalAccess
+            );
+          }
+        }
+      } catch (error) {
+        alert(error.message);
+      } finally {
+        if (triggerBtn) {
+          triggerBtn.disabled = false;
+          if (triggerBtn.classList.contains("dropdown-item")) {
+            triggerBtn.innerHTML = '<i class="fas fa-paper-plane me-2 text-info"></i>Send portal credentials';
+          } else {
+            triggerBtn.innerHTML = originalHtml || '<i class="fas fa-paper-plane"></i>';
+          }
+        }
+      }
+    }
+
     // =======================================
-    // Global click delegation for View/Edit/Delete
+    // Global click delegation for View/Edit/Delete/Send credentials
     // =======================================
     document.addEventListener("click", function (e) {
+      const sendBtn = e.target.closest(".send-credentials-btn");
+      if (sendBtn) {
+        if (sendBtn.disabled) return;
+        const id = sendBtn.getAttribute("data-id");
+        const email = sendBtn.getAttribute("data-email");
+        const name = sendBtn.getAttribute("data-name");
+        if (id) sendEmployeeCredentials(id, email, name, sendBtn);
+        return;
+      }
+
       const viewBtn = e.target.closest(".view-employee-btn");
       if (viewBtn) {
         const id = viewBtn.getAttribute("data-id");
@@ -3164,7 +3288,8 @@ if (expContainer) {
       const deleteBtn = e.target.closest(".delete-employee-btn");
       if (deleteBtn) {
         const id = deleteBtn.getAttribute("data-id");
-        if (id) deleteEmployee(id);
+        const name = deleteBtn.getAttribute("data-name");
+        if (id) deleteEmployee(id, name);
         return;
       }
 
