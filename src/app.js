@@ -97,7 +97,17 @@ app.engine(
             gt(a, b) { return a > b; },
             gte(a, b) { return a >= b; },
             lt(a, b) { return a < b; },
-            lte(a, b) { return a <= b; }
+            lte(a, b) { return a <= b; },
+            navActive(current, key) {
+                if (!current || !key) return false;
+                if (current === key) return true;
+                if (key === 'attendance' && String(current).startsWith('attendance')) return true;
+                if (key === 'leaves' && (current === 'leaves' || current === 'apply-leave')) return true;
+                if (key === 'payslips' && String(current).startsWith('payroll')) return true;
+                if (key === 'documents' && current === 'documents') return true;
+                if (key === 'profile' && current === 'profile') return true;
+                return false;
+            },
         },
         runtimeOptions: {
             allowProtoPropertiesByDefault: true,
@@ -118,6 +128,11 @@ app.use((req, res, next) => {
             options = {};
         }
         options = options || {};
+        for (const key of ['portalNav', 'portalAccess', 'portalRole']) {
+            if (res.locals[key] !== undefined && options[key] === undefined) {
+                options[key] = res.locals[key];
+            }
+        }
         if (req.user) {
             const shellUser = {
                 firstName: req.user.firstName,
@@ -194,6 +209,7 @@ import businessAddressRoutes from './routes/businessAddress.routes.js';
 import emailTemplateRoutes from './routes/emailTemplate.routes.js';
 import { renderEmailTemplatesPage } from './controllers/emailTemplate.controller.js';
 import { employeePortalRouter } from './routes/employeePortal.routes.js';
+import employeeTeamRouter from './routes/employeeTeam.routes.js';
 import { employeeAttendanceRouter } from './routes/employeeAttendance.routes.js';
 import { adminLeaveRouter } from './routes/adminLeave.routes.js';
 import { adminAttendanceRouter } from './routes/admin.attendance.routes.js';
@@ -367,6 +383,7 @@ app.use('/', emailTemplateRoutes);
 // Employee Portal Routes
 app.use('/employee/attendance', employeeAttendanceRouter);
 app.use('/employee/payroll', employeePayrollRouter);
+app.use('/employee/team', employeeTeamRouter);
 app.use('/employee', employeePortalRouter);
 
 // Admin Attendance Management Routes

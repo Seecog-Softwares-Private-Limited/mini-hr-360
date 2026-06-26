@@ -17,13 +17,87 @@ import crypto from 'crypto';
 import { getEffectiveAssignment } from '../services/attendance.service.js';
 import { generatePassword } from '../utils/passwordGenerator.js';
 import { sendDocumentEmail } from '../utils/emailService.js';
-import { resolveOrganizationIdFromRequest } from '../services/organization.service.js';
+import {
+    resolveOrganizationIdFromRequest,
+    userBelongsToOrganization,
+} from '../services/organization.service.js';
 
 const toBool = (val) =>
     val === true || val === 'true' || val === '1' || val === 'on';
 
 const isAdminUser = (user) => String(user?.role || '').toLowerCase() === 'admin';
 const HR_DEFAULT_PASSWORD_PREFIX = 'hr_default_pwd:';
+
+function buildEmployeePageLookups(organizationId, userId, isAdmin) {
+    const deptWhere = { status: 'ACTIVE' };
+    const desigWhere = { status: 'ACTIVE' };
+    const addressWhere = { status: 'ACTIVE' };
+    let businessWhere = {};
+
+    if (organizationId) {
+        const orgId = Number(organizationId);
+        businessWhere = { id: orgId };
+        deptWhere.businessId = orgId;
+        desigWhere.businessId = orgId;
+        addressWhere.businessId = orgId;
+    } else if (userId && !isAdmin) {
+        businessWhere = { ownerId: userId };
+    }
+
+    return { businessWhere, deptWhere, desigWhere, addressWhere };
+}
+
+async function resolveActiveOrganizationId(req) {
+    return req.organizationId ?? await resolveOrganizationIdFromRequest(req);
+}
+
+/** Scope employee queries to the active organization (or legacy owner userId). */
+async function applyEmployeeTenantScope(where, req) {
+    const isAdmin = isAdminUser(req.user);
+    const userId = req.user?.id;
+    if (isAdmin || !userId) return where;
+
+    const organizationId = await resolveActiveOrganizationId(req);
+    if (organizationId) {
+        where.businessId = Number(organizationId);
+        return where;
+    }
+
+    where.userId = userId;
+    return where;
+}
+
+async function assertOrganizationAccess(req, organizationId) {
+    if (isAdminUser(req.user)) return true;
+    const userId = req.user?.id;
+    if (!userId || !organizationId) return false;
+    return userBelongsToOrganization(userId, Number(organizationId));
+}
+
+async function resolveTenantUserId(organizationId, fallbackUserId, transaction) {
+    if (!organizationId) return fallbackUserId;
+    const business = await Business.findByPk(Number(organizationId), {
+        attributes: ['ownerId'],
+        transaction,
+    });
+    return business?.ownerId || fallbackUserId;
+}
+
+async function findEmployeeWithLegacyFallback(where, req, options = {}) {
+    const isAdmin = isAdminUser(req.user);
+    let employee = await Employee.findOne({ where, ...options });
+
+    if (!employee && req.user?.id && !isAdmin && !(await resolveActiveOrganizationId(req))) {
+        const legacy = await isLegacySingleTenantEmployees();
+        if (legacy) {
+            const legacyWhere = { ...where };
+            delete legacyWhere.userId;
+            employee = await Employee.findOne({ where: legacyWhere, ...options });
+        }
+    }
+
+    return employee;
+}
 
 function getPasswordCryptoKey() {
     const secret = String(
@@ -361,14 +435,11 @@ export const renderEmployeesPage = async (req, res, next) => {
                 countries: [],
                 states: [],
                 search,
+                activeOrganizationId: null,
             });
         }
 
-        if (!isAdmin && organizationId) {
-            where.businessId = Number(organizationId);
-        } else if (userId && !isAdmin) {
-            where.userId = userId;
-        }
+        await applyEmployeeTenantScope(where, req);
 
         if (search) {
             where[Op.or] = [
@@ -378,27 +449,33 @@ export const renderEmployeesPage = async (req, res, next) => {
             ];
         }
 
-        let employeesPromise = Employee.findAll({
+        const employeesPromise = Employee.findAll({
             where,
             order: [['empId', 'ASC']],
         });
 
+        const { businessWhere, deptWhere, desigWhere, addressWhere } = buildEmployeePageLookups(
+            organizationId,
+            userId,
+            isAdmin
+        );
+
         const [employeesInitial, departments, designations, businesses, business_addresses, countries, states] = await Promise.all([
             employeesPromise,
             Department.findAll({
-                where: { status: 'ACTIVE' },
+                where: deptWhere,
                 order: [['name', 'ASC']],
             }),
             Designation.findAll({
-                where: { status: 'ACTIVE' },
+                where: desigWhere,
                 order: [['name', 'ASC']],
             }),
             Business.findAll({
-                where: userId && !isAdmin ? { ownerId: userId } : {},
+                where: businessWhere,
                 order: [['businessName', 'ASC']],
             }),
             BusinessAddress.findAll({
-                where: { status: 'ACTIVE' },
+                where: addressWhere,
                 order: [['addressName', 'ASC']],
             }),
             Country.findAll({
@@ -485,6 +562,7 @@ export const renderEmployeesPage = async (req, res, next) => {
             countries: countriesPlain,
             states: statesPlain,
             search,
+            activeOrganizationId: organizationId || null,
         });
     } catch (err) {
         console.error('Error rendering employees page:', err);
@@ -507,12 +585,7 @@ export const listEmployees = async (req, res, next) => {
             return res.json([]);
         }
 
-        // Non-admin users should only see employees in the active organization.
-        if (!isAdmin && organizationId) {
-            where.businessId = Number(organizationId);
-        } else if (userId && !isAdmin) {
-            where.userId = userId;
-        }
+        await applyEmployeeTenantScope(where, req);
 
         if (search) {
             where[Op.or] = [
@@ -559,44 +632,20 @@ export const listEmployees = async (req, res, next) => {
  */
 export const getEmployeeById = async (req, res, next) => {
     try {
-        const userId = req.user?.id;
-        const isAdmin = isAdminUser(req.user);
         const rawId = String(req.params.id || '').trim();
-
-        // Support numeric primary key id, and fallback to empId string (e.g. EMP0001)
         const numericId = Number.parseInt(rawId, 10);
         const isNumeric = !Number.isNaN(numericId);
 
         const where = isNumeric ? { id: numericId } : { empId: rawId };
-        if (userId && !isAdmin) {
-            where.userId = userId;
-        }
+        await applyEmployeeTenantScope(where, req);
 
-        let employee = await Employee.findOne({
-            where,
+        const employee = await findEmployeeWithLegacyFallback(where, req, {
             include: [
                 { model: EmployeeEducation, as: 'educations' },
                 { model: EmployeeExperience, as: 'experiences' },
                 { model: EmployeeDocument, as: 'documents' },
             ],
         });
-
-        // Legacy fallback: if not found and non-admin, allow lookup without userId
-        if (!employee && userId && !isAdmin) {
-            const legacy = await isLegacySingleTenantEmployees();
-            if (legacy) {
-                const legacyWhere = { ...where };
-                delete legacyWhere.userId;
-                employee = await Employee.findOne({
-                    where: legacyWhere,
-                    include: [
-                        { model: EmployeeEducation, as: 'educations' },
-                        { model: EmployeeExperience, as: 'experiences' },
-                        { model: EmployeeDocument, as: 'documents' },
-                    ],
-                });
-            }
-        }
 
         if (!employee) {
             return res.status(404).json({ error: 'Employee not found' });
@@ -613,31 +662,13 @@ export const getEmployeeById = async (req, res, next) => {
 };
 
 async function findEmployeeForUser(req, options = {}) {
-    const userId = req.user?.id;
-    const isAdmin = isAdminUser(req.user);
     const rawId = String(req.params.id || '').trim();
     const numericId = Number.parseInt(rawId, 10);
     const isNumeric = !Number.isNaN(numericId);
     const where = isNumeric ? { id: numericId } : { empId: rawId };
 
-    if (userId && !isAdmin) {
-        where.userId = userId;
-    }
-
-    const query = { where, ...options };
-
-    let employee = await Employee.findOne(query);
-
-    if (!employee && userId && !isAdmin) {
-        const legacy = await isLegacySingleTenantEmployees();
-        if (legacy) {
-            const legacyWhere = { ...where };
-            delete legacyWhere.userId;
-            employee = await Employee.findOne({ where: legacyWhere, ...options });
-        }
-    }
-
-    return employee;
+    await applyEmployeeTenantScope(where, req);
+    return findEmployeeWithLegacyFallback(where, req, options);
 }
 
 /**
@@ -685,7 +716,7 @@ export const createEmployee = async (req, res, next) => {
         console.log('Received POST request with body:', req.body);
 
         const userId = req.user?.id || 1;
-        const organizationId = await resolveOrganizationIdFromRequest(req);
+        const organizationId = await resolveActiveOrganizationId(req);
         if (!organizationId) {
             await t.rollback();
             return res.status(400).json({
@@ -693,6 +724,16 @@ export const createEmployee = async (req, res, next) => {
                 message: 'Create or join an organization before adding employees.',
             });
         }
+
+        if (!(await assertOrganizationAccess(req, organizationId))) {
+            await t.rollback();
+            return res.status(403).json({
+                error: 'Forbidden',
+                message: 'You can only add employees to your organization.',
+            });
+        }
+
+        const tenantUserId = await resolveTenantUserId(organizationId, userId, t);
 
         // Validate required fields before proceeding
         // Helper function to check if a value is truly empty
@@ -746,7 +787,7 @@ export const createEmployee = async (req, res, next) => {
 
         // 1) Core Employee payload (Sections 1–3: Personal, Professional, Compensation)
         const payload = {
-            userId,
+            userId: tenantUserId,
 
             // --- Name ---
             firstName: req.body.firstName.trim(),
@@ -972,7 +1013,7 @@ export const createEmployee = async (req, res, next) => {
         let emailSent = false;
         let emailError = null;
 
-        const shouldSendCredentialsEmail = String(req.body?.sendCredentialsEmail ?? 'true').toLowerCase() !== 'false';
+        const shouldSendCredentialsEmail = String(req.body?.sendCredentialsEmail ?? 'false').toLowerCase() === 'true';
 
         // Send welcome email with credentials (non-blocking - don't fail if email fails)
         if (employee.empEmail && shouldSendCredentialsEmail) {
@@ -1047,8 +1088,6 @@ export const updateEmployee = async (req, res, next) => {
         console.log('Params id:', req.params.id);
         console.log('Body:', JSON.stringify(req.body, null, 2));
         console.log('User:', req.user?.id);
-        const userId = req.user?.id;
-        const isAdmin = isAdminUser(req.user);
         const id = Number.parseInt(String(req.params.id || '').trim(), 10);
 
         if (Number.isNaN(id)) {
@@ -1056,21 +1095,22 @@ export const updateEmployee = async (req, res, next) => {
             return res.status(400).json({ error: 'Invalid employee ID' });
         }
 
+        const organizationId = await resolveActiveOrganizationId(req);
         const where = { id };
-        if (userId && !isAdmin) where.userId = userId;
+        await applyEmployeeTenantScope(where, req);
 
-        let employee = await Employee.findOne({ where, transaction: t, lock: t.LOCK.UPDATE });
-        // Legacy fallback: if not found and non-admin, allow update without userId scope only in single-tenant legacy mode
-        if (!employee && userId && !isAdmin) {
-            const legacy = await isLegacySingleTenantEmployees();
-            if (legacy) {
-                const legacyWhere = { id };
-                employee = await Employee.findOne({ where: legacyWhere, transaction: t, lock: t.LOCK.UPDATE });
-            }
-        }
+        let employee = await findEmployeeWithLegacyFallback(where, req, {
+            transaction: t,
+            lock: t.LOCK.UPDATE,
+        });
         if (!employee) {
             await t.rollback();
             return res.status(404).json({ error: 'Employee not found' });
+        }
+
+        if (organizationId && !(await assertOrganizationAccess(req, organizationId))) {
+            await t.rollback();
+            return res.status(403).json({ error: 'You can only update employees in your organization.' });
         }
 
         const payload = {
@@ -1147,8 +1187,8 @@ export const updateEmployee = async (req, res, next) => {
             // empAadhar: req.body.empAadhar,
             // empPan: req.body.empPan,
 
-            // Business association
-            businessId: req.body.businessId ? Number(req.body.businessId) : employee.businessId,
+            // Organization association is always derived from authenticated context.
+            businessId: organizationId ? Number(organizationId) : employee.businessId,
         };
 
         // Allow manual empId change if passed
@@ -1281,8 +1321,6 @@ export const updateEmployee = async (req, res, next) => {
  */
 export const resetEmployeePortalAccess = async (req, res, next) => {
     try {
-        const userId = req.user?.id;
-        const isAdmin = isAdminUser(req.user);
         const id = Number.parseInt(String(req.params.id || '').trim(), 10);
 
         if (Number.isNaN(id)) {
@@ -1290,17 +1328,8 @@ export const resetEmployeePortalAccess = async (req, res, next) => {
         }
 
         const where = { id };
-        if (userId && !isAdmin) {
-            where.userId = userId;
-        }
-
-        let employee = await Employee.findOne({ where });
-        if (!employee && userId && !isAdmin) {
-            const legacy = await isLegacySingleTenantEmployees();
-            if (legacy) {
-                employee = await Employee.findOne({ where: { id } });
-            }
-        }
+        await applyEmployeeTenantScope(where, req);
+        const employee = await findEmployeeWithLegacyFallback(where, req);
 
         if (!employee) {
             return res.status(404).json({ error: 'Employee not found' });
@@ -1341,25 +1370,13 @@ export const resetEmployeePortalAccess = async (req, res, next) => {
 };
 
 async function findEmployeeForPortalAccess(req, id) {
-    const userId = req.user?.id;
-    const isAdmin = isAdminUser(req.user);
-
     if (Number.isNaN(id)) {
         return { error: { status: 400, message: 'Invalid employee ID' } };
     }
 
     const where = { id };
-    if (userId && !isAdmin) {
-        where.userId = userId;
-    }
-
-    let employee = await Employee.findOne({ where });
-    if (!employee && userId && !isAdmin) {
-        const legacy = await isLegacySingleTenantEmployees();
-        if (legacy) {
-            employee = await Employee.findOne({ where: { id } });
-        }
-    }
+    await applyEmployeeTenantScope(where, req);
+    const employee = await findEmployeeWithLegacyFallback(where, req);
 
     if (!employee) {
         return { error: { status: 404, message: 'Employee not found' } };
@@ -1424,8 +1441,6 @@ export const sendEmployeePortalCredentials = async (req, res, next) => {
  */
 export const sendEmployeePortalCredentialsEmail = async (req, res, next) => {
     try {
-        const userId = req.user?.id;
-        const isAdmin = isAdminUser(req.user);
         const id = Number.parseInt(String(req.params.id || '').trim(), 10);
         const password = String(req.body?.password || '').trim();
 
@@ -1437,26 +1452,12 @@ export const sendEmployeePortalCredentialsEmail = async (req, res, next) => {
             return res.status(400).json({ error: 'Password is required to resend credentials email' });
         }
 
-        const where = { id };
-        if (userId && !isAdmin) {
-            where.userId = userId;
+        const lookup = await findEmployeeForPortalAccess(req, id);
+        if (lookup.error) {
+            return res.status(lookup.error.status).json({ error: lookup.error.message });
         }
 
-        let employee = await Employee.findOne({ where });
-        if (!employee && userId && !isAdmin) {
-            const legacy = await isLegacySingleTenantEmployees();
-            if (legacy) {
-                employee = await Employee.findOne({ where: { id } });
-            }
-        }
-
-        if (!employee) {
-            return res.status(404).json({ error: 'Employee not found' });
-        }
-
-        if (!employee.empEmail) {
-            return res.status(400).json({ error: 'Employee must have an email address for portal login' });
-        }
+        const { employee } = lookup;
 
         const passwordMatches = await employee.isPasswordCorrect(password);
         if (!passwordMatches) {
@@ -1484,8 +1485,6 @@ export const sendEmployeePortalCredentialsEmail = async (req, res, next) => {
 export const deleteEmployee = async (req, res, next) => {
     const t = await sequelize.transaction();
     try {
-        const userId = req.user?.id;
-        const isAdmin = isAdminUser(req.user);
         const id = Number.parseInt(String(req.params.id || '').trim(), 10);
 
         if (Number.isNaN(id)) {
@@ -1494,19 +1493,12 @@ export const deleteEmployee = async (req, res, next) => {
         }
 
         const where = { id };
-        if (userId && !isAdmin) {
-            where.userId = userId;
-        }
+        await applyEmployeeTenantScope(where, req);
 
-        let employee = await Employee.findOne({ where, transaction: t, lock: t.LOCK.UPDATE });
-        // Legacy fallback: if not found and non-admin, allow delete without userId scope only in single-tenant legacy mode
-        if (!employee && userId && !isAdmin) {
-            const legacy = await isLegacySingleTenantEmployees();
-            if (legacy) {
-                const legacyWhere = { id };
-                employee = await Employee.findOne({ where: legacyWhere, transaction: t, lock: t.LOCK.UPDATE });
-            }
-        }
+        let employee = await findEmployeeWithLegacyFallback(where, req, {
+            transaction: t,
+            lock: t.LOCK.UPDATE,
+        });
         if (!employee) {
             await t.rollback();
             return res.status(404).json({ error: 'Employee not found' });

@@ -1126,3 +1126,34 @@
     }
 }
 
+.emp-stat-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    border: 1px solid #e2e8f0;
+}
+
+.emp-stat-label {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin-bottom: 0.35rem;
+}
+
+.emp-stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.2;
+}
+
+.emp-page-header h4 {
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.emp-profile-role-badge {
+    font-size: 0.7rem;
+    letter-spacing: 0.02em;
+}
+

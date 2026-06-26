@@ -1,0 +1,91 @@
+<div class="container-fluid">
+  <div class="row">
+    {{> employee-sidebar employee=employee active=active portalNav=portalNav portalAccess=portalAccess portalRole=portalRole}}
+
+    <div class="col-md-10 emp-main">
+      <div class="emp-page-header mb-4">
+        <h4 class="mb-1"><i class="fa-solid fa-calendar-check me-2"></i>Team Leave Requests</h4>
+        <p class="text-muted mb-0">Approve or reject leave requests from employees who report directly to you.</p>
+      </div>
+
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+          {{#if requests.length}}
+          <div class="table-responsive">
+            <table class="table table-hover mb-0" id="teamLeaveTable">
+              <thead class="table-light">
+                <tr>
+                  <th>Employee</th>
+                  <th>Leave type</th>
+                  <th>Dates</th>
+                  <th>Days</th>
+                  <th>Reason</th>
+                  <th>Status</th>
+                  <th class="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {{#each requests}}
+                <tr data-id="{{id}}">
+                  <td>
+                    <div class="fw-600">{{employeeName}}</div>
+                    <small class="text-muted">{{employeeId}}{{#if department}} · {{department}}{{/if}}</small>
+                  </td>
+                  <td><span class="badge" style="background:{{leaveTypeColor}}">{{leaveType}}</span></td>
+                  <td>{{startDate}} – {{endDate}}</td>
+                  <td>{{totalDays}}</td>
+                  <td class="text-muted small">{{reason}}</td>
+                  <td><span class="badge bg-warning text-dark">{{status}}</span></td>
+                  <td class="text-end">
+                    {{#if (eq status 'PENDING')}}
+                    <button type="button" class="btn btn-sm btn-success me-1 team-leave-approve" data-id="{{id}}">Approve</button>
+                    <button type="button" class="btn btn-sm btn-outline-danger team-leave-reject" data-id="{{id}}">Reject</button>
+                    {{else}}
+                    <span class="text-muted small">—</span>
+                    {{/if}}
+                  </td>
+                </tr>
+                {{/each}}
+              </tbody>
+            </table>
+          </div>
+          {{else}}
+          <div class="p-5 text-center text-muted">
+            <i class="fa-solid fa-inbox fa-2x mb-3 opacity-50"></i>
+            <p class="mb-0">No pending leave requests from your team.</p>
+          </div>
+          {{/if}}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  async function act(action, id) {
+    const note = action === 'reject' ? prompt('Optional note for the employee:') : null;
+    const res = await fetch(`/employee/team/api/leaves/${id}/${action}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ comments: note }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Action failed');
+    window.location.reload();
+  }
+
+  document.querySelectorAll('.team-leave-approve').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      try { await act('approve', btn.dataset.id); } catch (e) { alert(e.message); }
+    });
+  });
+  document.querySelectorAll('.team-leave-reject').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Reject this leave request?')) return;
+      try { await act('reject', btn.dataset.id); } catch (e) { alert(e.message); }
+    });
+  });
+});
+</script>

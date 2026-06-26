@@ -1,4 +1,4 @@
-{{!-- Employee Portal Sidebar --}}
+{{!-- Employee Portal Sidebar — navigation generated from portalNav (RBAC) --}}
 <div class="col-md-2 emp-sidebar p-3">
     <div class="emp-brand mb-3">
         <div class="emp-brand-mark">
@@ -17,75 +17,47 @@
         <div>
             <div class="emp-profile-name">{{employee.empName}}</div>
             <div class="emp-profile-role">{{employee.empDesignation}}</div>
+            {{#if portalRole}}
+            <div class="emp-profile-role-badge text-capitalize small opacity-75">{{portalRole}}</div>
+            {{/if}}
         </div>
     </div>
 
     <div class="emp-divider"></div>
 
-    <nav class="nav flex-column">
-        <a class="nav-link {{#if (eq active 'dashboard')}}active{{/if}}" href="/employee/dashboard">
-            <i class="fa-solid fa-house"></i> Dashboard
-        </a>
-    </nav>
+    <nav class="nav flex-column emp-sidebar-nav">
+        {{#each portalNav}}
+            {{#if this.title}}
+                <div class="emp-nav-section">{{this.title}}</div>
+                <button type="button" class="emp-nav-toggle" data-emp-nav-toggle="{{this.submenuId}}" aria-expanded="false">
+                    <span class="emp-nav-left"><i class="fa-solid {{this.toggleIcon}}"></i> {{this.toggleLabel}}</span>
+                    <i class="fa-solid fa-chevron-down"></i>
+                </button>
+                <div id="{{this.submenuId}}" class="emp-nav-submenu">
+                    {{#each this.items}}
+                    <a class="nav-link {{#if (navActive ../active this.key)}}active{{/if}}{{#if this.comingSoon}} coming-soon{{/if}}"
+                       href="{{this.href}}"
+                       {{#if this.external}}target="_blank" rel="noopener noreferrer"{{/if}}>
+                        {{#if this.icon}}<i class="fa-solid {{this.icon}}"></i>{{/if}}
+                        {{this.label}}
+                        {{#if this.external}}<i class="fa-solid fa-arrow-up-right-from-square ms-1 small opacity-50"></i>{{/if}}
+                    </a>
+                    {{/each}}
+                </div>
+            {{else}}
+                {{#each this.items}}
+                <a class="nav-link {{#if (navActive ../active this.key)}}active{{/if}}"
+                   href="{{this.href}}"
+                   {{#if this.external}}target="_blank" rel="noopener noreferrer"{{/if}}>
+                    {{#if this.icon}}<i class="fa-solid {{this.icon}}"></i>{{/if}}
+                    {{this.label}}
+                </a>
+                {{/each}}
+                {{#unless @last}}<div class="emp-divider"></div>{{/unless}}
+            {{/if}}
+        {{/each}}
 
-    <div class="emp-nav-section">My Work</div>
-    <button type="button" class="emp-nav-toggle" data-emp-nav-toggle="empNavMyWork" aria-expanded="false">
-        <span class="emp-nav-left"><i class="fa-solid fa-briefcase"></i> My Work</span>
-        <i class="fa-solid fa-chevron-down"></i>
-    </button>
-    <div id="empNavMyWork" class="emp-nav-submenu">
-        <a class="nav-link {{#if (eq active 'attendance')}}active{{/if}}{{#if (eq active 'attendance_today')}}active{{/if}}{{#if (eq active 'attendance_calendar')}}active{{/if}}{{#if (eq active 'attendance_regularizations')}}active{{/if}}{{#if (eq active 'attendance_request')}}active{{/if}}" href="/employee/attendance/today">
-            <i class="fa-solid fa-fingerprint"></i> Attendance
-        </a>
-        <a class="nav-link {{#if (eq active 'leaves')}}active{{/if}}{{#if (eq active 'apply-leave')}}active{{/if}}" href="/employee/leaves">
-            <i class="fa-solid fa-calendar-days"></i> Leaves
-        </a>
-        <a class="nav-link coming-soon {{#if (eq active 'work_timesheets')}}active{{/if}}" href="/employee/work/timesheets">
-            <i class="fa-solid fa-clock-rotate-left"></i> Timesheets
-        </a>
-        <a class="nav-link coming-soon {{#if (eq active 'work_tasks')}}active{{/if}}" href="/employee/work/tasks">
-            <i class="fa-solid fa-list-check"></i> Tasks
-        </a>
-        <a class="nav-link coming-soon {{#if (eq active 'work_projects')}}active{{/if}}" href="/employee/work/projects">
-            <i class="fa-solid fa-diagram-project"></i> Projects
-        </a>
-        <a class="nav-link coming-soon {{#if (eq active 'work_goals')}}active{{/if}}" href="/employee/work/goals">
-            <i class="fa-solid fa-bullseye"></i> Goals
-        </a>
-        <a class="nav-link coming-soon {{#if (eq active 'work_performance')}}active{{/if}}" href="/employee/work/performance">
-            <i class="fa-solid fa-chart-line"></i> Performance
-        </a>
-    </div>
-
-    <div class="emp-nav-section">Payroll</div>
-    <button type="button" class="emp-nav-toggle" data-emp-nav-toggle="empNavPayroll" aria-expanded="false">
-        <span class="emp-nav-left"><i class="fa-solid fa-wallet"></i> Payroll</span>
-        <i class="fa-solid fa-chevron-down"></i>
-    </button>
-    <div id="empNavPayroll" class="emp-nav-submenu">
-        <a class="nav-link {{#if (eq active 'payroll_payslips')}}active{{/if}}" href="/employee/payroll/payslips">
-            Payslips
-        </a>
-        <a class="nav-link {{#if (eq active 'payroll_bank_tax')}}active{{/if}}" href="/employee/payroll/bank-tax">
-            Bank & Tax
-        </a>
-        <a class="nav-link {{#if (eq active 'payroll_salary_details')}}active{{/if}}" href="/employee/payroll/salary-details">
-            Salary Details
-        </a>
-        <a class="nav-link {{#if (eq active 'payroll_queries')}}active{{/if}}" href="/employee/payroll/queries">
-            Queries
-        </a>
-    </div>
-
-    <div class="emp-divider"></div>
-
-    <nav class="nav flex-column">
-        <a class="nav-link {{#if (eq active 'documents')}}active{{/if}}" href="/employee/documents">
-            <i class="fa-solid fa-vault"></i> Documents Vault
-        </a>
-        <a class="nav-link {{#if (eq active 'profile')}}active{{/if}}" href="/employee/profile">
-            <i class="fa-solid fa-id-card"></i> My Profile
-        </a>
+        <div class="emp-divider"></div>
         <a class="nav-link text-danger" href="/employee/logout">
             <i class="fa-solid fa-right-from-bracket"></i> Logout
         </a>
