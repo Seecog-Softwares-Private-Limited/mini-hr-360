@@ -74,6 +74,10 @@ const EmployeeEducation = sequelize.define(
             type: DataTypes.STRING(255),
             allowNull: true,
         },
+        googleDriveUrl: {
+            type: DataTypes.STRING(500),
+            allowNull: true,
+        },
     },
     {
         tableName: 'employee_educations',

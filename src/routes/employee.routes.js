@@ -11,37 +11,29 @@ import {
     resetEmployeePortalAccess,
     sendEmployeePortalCredentials,
     sendEmployeePortalCredentialsEmail,
+    uploadEducationCertificate,
+    uploadExperienceDocument,
+    uploadEmployeeDocument,
 } from '../controllers/employee.controllers.js';
 import { verifyUser } from '../middleware/authMiddleware.js';
-import { attachWorkspaceContext } from '../middleware/workspaceMiddleware.js';
 
 const router = express.Router();
 
-// This router is mounted at `/` in app.js. Without a path guard, router-level
-// verifyUser would run for every request (including POST /employee/login).
-const HR_EMPLOYEE_ROUTE = /^\/(?:employees|api\/v1\/employees)(?:\/|$)/;
-
-router.use((req, res, next) => {
-    if (!HR_EMPLOYEE_ROUTE.test(req.path)) {
-        return next('router');
-    }
-    next();
-});
-
-router.use(verifyUser, attachWorkspaceContext);
-
 // HTML page
-router.get('/employees', renderEmployeesPage);
+router.get('/employees', verifyUser, renderEmployeesPage);
 
 // JSON APIs
-router.get('/api/v1/employees', listEmployees);
-router.post('/api/v1/employees', createEmployee);
-router.get('/api/v1/employees/:id', getEmployeeById);
-router.put('/api/v1/employees/:id', updateEmployee);
-router.patch('/api/v1/employees/:id/status', updateEmployeeStatus);
-router.post('/api/v1/employees/:id/portal-access/reset', resetEmployeePortalAccess);
-router.post('/api/v1/employees/:id/portal-access/send', sendEmployeePortalCredentials);
-router.post('/api/v1/employees/:id/portal-access/send-email', sendEmployeePortalCredentialsEmail);
-router.delete('/api/v1/employees/:id', deleteEmployee);
+router.get('/api/v1/employees', verifyUser, listEmployees);
+router.post('/api/v1/employees', verifyUser, createEmployee);
+router.post('/api/v1/employees/education-certificate/upload', verifyUser, uploadEducationCertificate);
+router.post('/api/v1/employees/experience-document/upload', verifyUser, uploadExperienceDocument);
+router.post('/api/v1/employees/document/upload', verifyUser, uploadEmployeeDocument);
+router.get('/api/v1/employees/:id', verifyUser, getEmployeeById);
+router.put('/api/v1/employees/:id', verifyUser, updateEmployee);
+router.patch('/api/v1/employees/:id/status', verifyUser, updateEmployeeStatus);
+router.post('/api/v1/employees/:id/portal-access/reset', verifyUser, resetEmployeePortalAccess);
+router.post('/api/v1/employees/:id/portal-access/send', verifyUser, sendEmployeePortalCredentials);
+router.post('/api/v1/employees/:id/portal-access/send-email', verifyUser, sendEmployeePortalCredentialsEmail);
+router.delete('/api/v1/employees/:id', verifyUser, deleteEmployee);
 
 export default router;
