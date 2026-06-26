@@ -1340,6 +1340,84 @@ export const resetEmployeePortalAccess = async (req, res, next) => {
     }
 };
 
+async function findEmployeeForPortalAccess(req, id) {
+    const userId = req.user?.id;
+    const isAdmin = isAdminUser(req.user);
+
+    if (Number.isNaN(id)) {
+        return { error: { status: 400, message: 'Invalid employee ID' } };
+    }
+
+    const where = { id };
+    if (userId && !isAdmin) {
+        where.userId = userId;
+    }
+
+    let employee = await Employee.findOne({ where });
+    if (!employee && userId && !isAdmin) {
+        const legacy = await isLegacySingleTenantEmployees();
+        if (legacy) {
+            employee = await Employee.findOne({ where: { id } });
+        }
+    }
+
+    if (!employee) {
+        return { error: { status: 404, message: 'Employee not found' } };
+    }
+
+    if (!employee.empEmail) {
+        return { error: { status: 400, message: 'Employee must have an email address for portal login' } };
+    }
+
+    return { employee };
+}
+
+/**
+ * POST /api/v1/employees/:id/portal-access/send
+ * Send portal username + password to the employee's registered email.
+ */
+export const sendEmployeePortalCredentials = async (req, res, next) => {
+    try {
+        const id = Number.parseInt(String(req.params.id || '').trim(), 10);
+        const lookup = await findEmployeeForPortalAccess(req, id);
+        if (lookup.error) {
+            return res.status(lookup.error.status).json({ error: lookup.error.message });
+        }
+
+        const { employee } = lookup;
+        let plainPassword = decodeHrDefaultPasswordToken(employee.resetPasswordToken);
+        let passwordRegenerated = false;
+
+        if (plainPassword) {
+            const stillValid = await employee.isPasswordCorrect(plainPassword);
+            if (!stillValid) plainPassword = null;
+        }
+
+        if (!plainPassword) {
+            plainPassword = generatePassword(12);
+            employee.password = plainPassword;
+            employee.canLogin = true;
+            employee.forcePasswordReset = true;
+            employee.resetPasswordToken = encodeHrDefaultPasswordToken(plainPassword);
+            await employee.save();
+            passwordRegenerated = true;
+        }
+
+        const portalUrl = getPortalLoginUrl(req);
+        const emailResult = await sendWelcomeEmail(employee, plainPassword, portalUrl);
+
+        return res.json({
+            emailSent: emailResult.sent,
+            emailError: emailResult.error || null,
+            passwordRegenerated,
+            portalAccess: buildPortalAccess(employee, plainPassword, req, emailResult.sent, emailResult.error),
+        });
+    } catch (err) {
+        console.error('Error sending portal credentials:', err);
+        next(err);
+    }
+};
+
 /**
  * POST /api/v1/employees/:id/portal-access/send-email
  * Resend portal credentials email using the current password (must match stored hash).
