@@ -1,0 +1,305 @@
+/* Education & Qualification wizard (Add Employee modal) */
+
+.edu-wizard-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.edu-wizard-header h6 {
+  margin: 0;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.edu-saved-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.edu-saved-list.is-empty {
+  margin-bottom: 0.5rem;
+}
+
+.edu-empty-state {
+  text-align: center;
+  padding: 1.75rem 1rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #64748b;
+}
+
+.edu-empty-state i {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: #94a3b8;
+}
+
+.edu-entry-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  padding: 1rem 1.1rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.edu-entry-card:hover {
+  border-color: #c7d2fe;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.08);
+}
+
+.edu-entry-card__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.edu-entry-card__title {
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 0.15rem;
+}
+
+.edu-entry-card__subtitle {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.edu-entry-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  margin-top: 0.65rem;
+  font-size: 0.8125rem;
+  color: #475569;
+}
+
+.edu-entry-card__meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.edu-entry-card__actions {
+  display: inline-flex;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.edu-form-panel {
+  border: 1px solid #e0e7ff;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fafbff 0%, #fff 100%);
+  padding: 1.15rem 1.25rem 1.25rem;
+  margin-top: 0.5rem;
+}
+
+.edu-form-panel__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.edu-form-panel__header h6 {
+  margin: 0;
+  font-weight: 600;
+  color: #312e81;
+}
+
+.edu-section {
+  margin-bottom: 1.15rem;
+}
+
+.edu-section:last-child {
+  margin-bottom: 0;
+}
+
+.edu-section__title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6366f1;
+  margin-bottom: 0.65rem;
+}
+
+.edu-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.edu-field-hidden {
+  display: none !important;
+}
+
+.edu-searchable-wrap {
+  position: relative;
+}
+
+.edu-searchable-wrap .form-select {
+  padding-right: 2rem;
+}
+
+.edu-searchable-wrap .edu-searchable-icon {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+  font-size: 0.75rem;
+}
+
+.edu-searchable-dropdown {
+  position: absolute;
+  z-index: 1060;
+  left: 0;
+  right: 0;
+  top: calc(100% + 2px);
+  max-height: 220px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  display: none;
+}
+
+.edu-searchable-dropdown.is-open {
+  display: block;
+}
+
+.edu-searchable-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: #334155;
+  cursor: pointer;
+}
+
+.edu-searchable-option:hover,
+.edu-searchable-option.is-active {
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.edu-searchable-option.is-selected {
+  font-weight: 600;
+}
+
+.edu-file-upload {
+  border: 2px dashed #cbd5e1;
+  border-radius: 10px;
+  padding: 1rem;
+  background: #f8fafc;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.edu-file-upload:hover,
+.edu-file-upload.is-dragover {
+  border-color: #818cf8;
+  background: #eef2ff;
+}
+
+.edu-file-upload input[type="file"] {
+  display: none;
+}
+
+.edu-file-upload__icon {
+  font-size: 1.35rem;
+  color: #6366f1;
+  margin-bottom: 0.35rem;
+}
+
+.edu-file-upload__hint {
+  font-size: 0.8125rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.edu-file-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.65rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  font-size: 0.8125rem;
+}
+
+.edu-file-preview__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #065f46;
+}
+
+.edu-inline-error {
+  font-size: 0.75rem;
+  color: #dc2626;
+  margin-top: 0.25rem;
+}
+
+@media (max-width: 767.98px) {
+  .edu-form-panel {
+    padding: 1rem;
+  }
+
+  .edu-entry-card__top {
+    flex-direction: column;
+  }
+
+  .edu-entry-card__actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+[data-theme="dark"] .edu-entry-card {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+[data-theme="dark"] .edu-entry-card__title {
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .edu-empty-state {
+  background: #0f172a;
+  border-color: #334155;
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .edu-form-panel {
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border-color: #4338ca;
+}

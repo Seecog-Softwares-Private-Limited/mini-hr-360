@@ -1,4 +1,7 @@
 {{!-- views/employees.hbs --}}
+<link href="/assets/css/employee-education-wizard.css" rel="stylesheet">
+<link href="/assets/css/employee-experience-wizard.css" rel="stylesheet">
+<link href="/assets/css/employee-documents-wizard.css" rel="stylesheet">
 <style>
 .emp-shift-pill {
   display: inline-block;
@@ -72,7 +75,6 @@
         </div>
 
         {{!-- Search form --}}
-        <input type="hidden" id="activeOrganizationId" value="{{activeOrganizationId}}" />
         <form
           class="row mb-3"
           id="employeeSearchForm"
@@ -209,9 +211,8 @@
                                     data-email="{{empEmail}}"
                                     data-name="{{empName}}"
                                     {{#unless empEmail}}disabled{{/unless}}
-                                    title="Email portal login credentials to the employee"
                                   >
-                                    <i class="fas fa-paper-plane me-2 text-info"></i>Send credentials
+                                    <i class="fas fa-paper-plane me-2 text-info"></i>Send portal credentials
                                   </button>
                                 </li>
                                 <li><hr class="dropdown-divider my-1"></li>
@@ -624,7 +625,7 @@
             {{!-- TAB 2: PROFESSIONAL DETAILS --}}
             <div class="tab-pane fade" id="tab-job" role="tabpanel">
               <div class="row g-3">
-                <div class="col-md-4" id="businessFieldWrap">
+                <div class="col-md-4">
                   <label class="form-label">Business <span class="text-danger">*</span></label>
                   <select name="businessId" class="form-select" required>
                     <option value="">Select Business</option>
@@ -632,7 +633,7 @@
                     <option value="{{id}}">{{businessName}}</option>
                     {{/each}}
                   </select>
-                  <small class="text-muted" id="businessFieldHint">
+                  <small class="text-muted">
                     Select the business this employee belongs to
                   </small>
                 </div>
@@ -931,25 +932,32 @@
 
             {{!-- TAB 4: EDUCATION & QUALIFICATION --}}
             <div class="tab-pane fade" id="tab-education" role="tabpanel">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <h6 class="mb-0">Education Entries</h6>
-                <button
-                  type="button"
-                  class="btn btn-sm btn-outline-primary"
-                  id="addEducationRowBtn"
-                >
+              <div class="edu-wizard-header">
+                <h6>Education &amp; Qualification</h6>
+                <button type="button" class="btn btn-sm btn-primary" id="addEducationEntryBtn">
                   <i class="fas fa-plus me-1"></i> Add Education
                 </button>
               </div>
 
-              <div id="educationRows" class="row g-3">
-                {{!-- One template row --}}
-                <div class="education-row border rounded p-3 mb-2">
+              <div id="educationEmptyState" class="edu-empty-state">
+                <i class="fas fa-graduation-cap d-block"></i>
+                <p class="mb-0">No education records yet. Click <strong>Add Education</strong> to get started.</p>
+              </div>
+
+              <div id="educationSavedList" class="edu-saved-list is-empty" aria-live="polite"></div>
+
+              <div id="educationFormPanel" class="edu-form-panel d-none">
+                <div class="edu-form-panel__header">
+                  <h6 id="educationFormTitle">Add Education</h6>
+                </div>
+
+                <div class="edu-section">
+                  <div class="edu-section__title">Qualification</div>
                   <div class="row g-3">
-                    <div class="col-md-3">
-                      <label class="form-label">Highest Qualification</label>
-                      <select class="form-select edu_level">
-                        <option value="">Select</option>
+                    <div class="col-md-4 col-lg-3">
+                      <label class="form-label">Highest Qualification <span class="text-danger">*</span></label>
+                      <select class="form-select" id="eduFormLevel">
+                        <option value="">Select qualification</option>
                         <option value="10th">10th</option>
                         <option value="12th">12th</option>
                         <option value="Diploma">Diploma</option>
@@ -959,67 +967,32 @@
                         <option value="Other">Other</option>
                       </select>
                     </div>
-                    <div class="col-md-3">
-                      <label class="form-label">Degree / Course Name</label>
-                      <input
-                        type="text"
-                        class="form-control edu_degree"
-                        placeholder="e.g. B.Tech in CSE"
-                      />
+                    <div class="col-md-4 col-lg-3" id="eduGroupDegree">
+                      <label class="form-label">Degree / Course Name <span class="text-danger edu-req-grad">*</span></label>
+                      <input type="text" class="form-control" id="eduFormDegree" placeholder="e.g. B.Tech in CSE" />
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4 col-lg-3" id="eduGroupSpecialization">
                       <label class="form-label">Specialization / Major</label>
-                      <input
-                        type="text"
-                        class="form-control edu_specialization"
-                      />
+                      <input type="text" class="form-control" id="eduFormSpecialization" placeholder="e.g. Computer Science" />
                     </div>
-                    <div class="col-md-3">
-                      <label class="form-label">Institution Name</label>
-                      <input
-                        type="text"
-                        class="form-control edu_institutionName"
-                      />
+                    <div class="col-md-4 col-lg-3" id="eduGroupBoard">
+                      <label class="form-label">Board <span class="text-danger edu-req-school">*</span></label>
+                      <input type="text" class="form-control" id="eduFormBoard" placeholder="e.g. CBSE, ICSE" />
                     </div>
-                    <div class="col-md-3">
-                      <label class="form-label">Board (for school)</label>
-                      <input type="text" class="form-control edu_board" />
+                  </div>
+                </div>
+
+                <div class="edu-section">
+                  <div class="edu-section__title">Institution</div>
+                  <div class="row g-3">
+                    <div class="col-md-8 col-lg-6">
+                      <label class="form-label">Institution Name <span class="text-danger">*</span></label>
+                      <input type="text" class="form-control" id="eduFormInstitution" placeholder="School / College / University name" />
                     </div>
-                    <div class="col-md-3">
-                      <label class="form-label">Start Year</label>
-                      <input type="number" class="form-control edu_startYear" />
-                    </div>
-                    <div class="col-md-3">
-                      <label class="form-label">End Year</label>
-                      <input type="number" class="form-control edu_endYear" />
-                    </div>
-                    <div class="col-md-3">
-                      <label class="form-label">Year of Passing</label>
-                      <input
-                        type="number"
-                        class="form-control edu_yearOfPassing"
-                      />
-                    </div>
-                    <div class="col-md-3">
-                      <label class="form-label">Percentage / CGPA</label>
-                      <input
-                        type="text"
-                        class="form-control edu_percentageOrCgpa"
-                      />
-                    </div>
-                    <div class="col-md-3">
-                      <label class="form-label">Mode of Study</label>
-                      <select class="form-select edu_modeOfStudy">
-                        <option value="">Select</option>
-                        <option value="Full-Time">Full-Time</option>
-                        <option value="Part-Time">Part-Time</option>
-                        <option value="Distance">Distance</option>
-                      </select>
-                    </div>
-                    <div class="col-md-3">
-                      <label class="form-label">Education Type</label>
-                      <select class="form-select edu_educationType">
-                        <option value="">Select</option>
+                    <div class="col-md-4 col-lg-3">
+                      <label class="form-label">Education Type <span class="text-danger">*</span></label>
+                      <select class="form-select" id="eduFormEducationType">
+                        <option value="">Select type</option>
                         <option value="School">School</option>
                         <option value="College">College</option>
                         <option value="Professional">Professional</option>
@@ -1027,334 +1000,391 @@
                         <option value="Other">Other</option>
                       </select>
                     </div>
-                    <div class="col-md-3">
-                      <label class="form-label">Country</label>
-                      {{!-- <input type="text" class="form-control edu_country" /> --}}
-                      <select name="edu_country" class="form-control edu_country">
-                        <option value="">Select Country</option>
+                  </div>
+                </div>
+
+                <div class="edu-section">
+                  <div class="edu-section__title">Duration</div>
+                  <div class="row g-3">
+                    <div class="col-md-4 col-lg-3">
+                      <label class="form-label">Start Year <span class="text-danger">*</span></label>
+                      <select class="form-select" id="eduFormStartYear"></select>
+                    </div>
+                    <div class="col-md-4 col-lg-3">
+                      <label class="form-label">End Year <span class="text-danger">*</span></label>
+                      <select class="form-select" id="eduFormEndYear"></select>
+                    </div>
+                    <div class="col-md-4 col-lg-3">
+                      <label class="form-label">Year of Passing <span class="text-danger">*</span></label>
+                      <select class="form-select" id="eduFormPassingYear"></select>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="edu-section">
+                  <div class="edu-section__title">Location</div>
+                  <div class="row g-3">
+                    <div class="col-md-4 col-lg-4">
+                      <label class="form-label">Country <span class="text-danger">*</span></label>
+                      <select class="form-select" id="eduFormCountry">
+                        <option value="">Select country</option>
                         {{#each countries}}
                         <option value="{{name}}">{{name}}</option>
                         {{/each}}
-                  </select>
-
+                      </select>
                     </div>
-                    <div class="col-md-3">
-                      <label class="form-label">City</label>
-                      <input type="text" class="form-control edu_city" />
-                    </div>
-                    <div class="col-md-4">
-                      <label class="form-label">Google drive link : Certificate/Marksheet/Migration </label>
-                      <input type="text" class="form-control edu_certificateUrl" placeholder="https://..." />
-                      <label class="form-label">
-                        Certificate / Marksheet URL
-                      </label>
-                      <input
-                        type="text"
-                        class="form-control edu_certificateUrl"
-                        placeholder="https://..."
-                      />
-                    </div>
-                    <div class="col-md-2 d-flex align-items-end justify-content-end">
-                      <button
-                        type="button"
-                        class="btn btn-outline-danger btn-sm remove-education-row-btn"
-                      >
-                        <i class="fas fa-trash"></i>
-                      </button>
+                    <div class="col-md-4 col-lg-4">
+                      <label class="form-label">City <span class="text-danger">*</span></label>
+                      <input type="text" class="form-control" id="eduFormCity" placeholder="City" />
                     </div>
                   </div>
+                </div>
+
+                <div class="edu-section">
+                  <div class="edu-section__title">Academic Details</div>
+                  <div class="row g-3">
+                    <div class="col-md-4 col-lg-3">
+                      <label class="form-label">Percentage / CGPA</label>
+                      <input type="text" class="form-control" id="eduFormPercentage" placeholder="e.g. 85% or 8.5 CGPA" />
+                    </div>
+                    <div class="col-md-4 col-lg-3">
+                      <label class="form-label">Mode of Study</label>
+                      <select class="form-select" id="eduFormMode">
+                        <option value="">Select mode</option>
+                        <option value="Full-Time">Full-Time</option>
+                        <option value="Part-Time">Part-Time</option>
+                        <option value="Distance">Distance</option>
+                      </select>
+                    </div>
+                    <div class="col-md-12 col-lg-6">
+                      <label class="form-label">Certificate / Marksheet (PDF, JPG, PNG)</label>
+                      <div class="edu-file-upload" id="eduFormFileUpload" role="button" tabindex="0">
+                        <input type="file" id="eduFormFileInput" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" />
+                        <div class="edu-file-upload__icon"><i class="fas fa-cloud-arrow-up"></i></div>
+                        <p class="edu-file-upload__hint mb-0">Drag &amp; drop or click to upload (max 5 MB)</p>
+                      </div>
+                      <div class="edu-file-preview d-none" id="eduFormFilePreview">
+                        <span class="edu-file-preview__name"></span>
+                        <button type="button" class="btn btn-sm btn-outline-danger" id="eduFormRemoveFileBtn">
+                          <i class="fas fa-times"></i>
+                        </button>
+                      </div>
+                      <input type="hidden" id="eduFormCertificateUrl" />
+                      <input type="hidden" id="eduFormCertificateFileName" />
+                    </div>
+                    <div class="col-md-12">
+                      <label class="form-label">Google Drive link <span class="text-muted small">(optional)</span></label>
+                      <input type="url" class="form-control" id="eduFormDriveUrl" placeholder="https://drive.google.com/..." />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="edu-form-actions">
+                  <button type="button" class="btn btn-outline-secondary" id="educationFormCancelBtn">Cancel</button>
+                  <button type="button" class="btn btn-primary" id="educationFormSaveBtn">
+                    <i class="fas fa-check me-1"></i> Save Entry
+                  </button>
                 </div>
               </div>
             </div>
 
             {{!-- TAB 5: EXPERIENCE --}}
             <div class="tab-pane fade" id="tab-experience" role="tabpanel">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <h6 class="mb-0">Employment History</h6>
-                <button
-                  type="button"
-                  class="btn btn-sm btn-outline-primary"
-                  id="addExperienceRowBtn"
-                >
+              <div class="exp-wizard-header">
+                <h6>Experience / Employment History</h6>
+                <button type="button" class="btn btn-sm btn-primary" id="addExperienceEntryBtn">
                   <i class="fas fa-plus me-1"></i> Add Experience
                 </button>
               </div>
 
-              <div id="experienceRows" class="row g-3">
-    <div class="experience-row border rounded p-3 mb-2">
-    <div class="row g-3">
-      <div class="col-md-4">
-        <label class="form-label">Organization / Company Name</label>
-        <input
-          type="text"
-          class="form-control exp_organizationName"
-        />
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Designation / Job Title</label>
-        <input type="text" class="form-control exp_jobTitle" />
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Employment Type</label>
-        <select class="form-select exp_employmentType">
-          <option value="">Select</option>
-          <option value="Full-Time">Full-Time</option>
-          <option value="Part-Time">Part-Time</option>
-          <option value="Contract">Contract</option>
-          <option value="Internship">Internship</option>
-          <option value="Freelance">Freelance</option>
-        </select>
-      </div>
+              <div id="experienceEmptyState" class="exp-empty-state">
+                <i class="fas fa-briefcase d-block"></i>
+                <p class="mb-0">No employment history yet. Click <strong>Add Experience</strong> to get started.</p>
+              </div>
 
-      <div class="col-md-4">
-        <label class="form-label">Department / Division</label>
-        <input type="text" class="form-control exp_department" />
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Industry Type</label>
-        <input type="text" class="form-control exp_industryType" />
-      </div>
-      <div class="col-md-2">
-        <label class="form-label">City</label>
-        <input
-          type="text"
-          class="form-control exp_companyLocationCity"
-        />
-      </div>
-      <div class="col-md-2">
-        <label class="form-label">Country</label>
-        {{!-- <input
-          type="text"
-          class="form-control exp_companyLocationCountry"
-        /> --}}
-        <select name="exp_companyLocationCountry" class="form-control exp_companyLocationCountry">
-                        <option value="">Select Country</option>
+              <div id="experienceSavedList" class="exp-saved-list is-empty" aria-live="polite"></div>
+
+              <div id="experienceFormPanel" class="exp-form-panel d-none">
+                <div class="exp-form-panel__header">
+                  <h6 id="experienceFormTitle">Add Experience</h6>
+                </div>
+
+                <div class="exp-section">
+                  <div class="exp-section__title">Company</div>
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <label class="form-label">Organization / Company Name <span class="text-danger">*</span></label>
+                      <input type="text" class="form-control" id="expFormOrganization" placeholder="e.g. Acme Technologies Pvt. Ltd." />
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label">Designation / Job Title <span class="text-danger">*</span></label>
+                      <input type="text" class="form-control" id="expFormJobTitle" placeholder="e.g. Senior Software Engineer" />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="exp-section">
+                  <div class="exp-section__title">Employment</div>
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <label class="form-label">Employment Type <span class="text-danger">*</span></label>
+                      <select class="form-select" id="expFormEmploymentType">
+                        <option value="">Select type</option>
+                        <option value="Full-Time">Full-Time</option>
+                        <option value="Part-Time">Part-Time</option>
+                        <option value="Contract">Contract</option>
+                        <option value="Internship">Internship</option>
+                        <option value="Freelance">Freelance</option>
+                      </select>
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label">Start Date <span class="text-danger">*</span></label>
+                      <input type="date" class="form-control" id="expFormStartDate" />
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label">End Date <span class="text-danger exp-req-end">*</span></label>
+                      <input type="date" class="form-control" id="expFormEndDate" />
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                      <div class="form-check mb-2">
+                        <input type="checkbox" class="form-check-input" id="expFormIsCurrent" />
+                        <label class="form-check-label" for="expFormIsCurrent">Currently working here</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="exp-section">
+                  <div class="exp-section__title">Location</div>
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <label class="form-label">City</label>
+                      <input type="text" class="form-control" id="expFormCity" placeholder="City" />
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label">Country</label>
+                      <select class="form-select" id="expFormCountry">
+                        <option value="">Select country</option>
                         {{#each countries}}
                         <option value="{{name}}">{{name}}</option>
                         {{/each}}
                       </select>
-      </div>
+                    </div>
+                  </div>
+                </div>
 
-      <div class="col-md-3">
-        <label class="form-label">Start Date</label>
-        <input type="date" class="form-control exp_startDate" />
-      </div>
-      <div class="col-md-3">
-        <label class="form-label">End Date</label>
-        <input type="date" class="form-control exp_endDate" />
-      </div>
-      <div class="col-md-3 d-flex align-items-center">
-        <div class="form-check mt-3">
-          <input
-            type="checkbox"
-            class="form-check-input exp_isCurrent"
-          />
-          <label class="form-check-label">
-            Present (currently working)
-          </label>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <label class="form-label">
-          Last Drawn Salary / CTC
-        </label>
-        <input
-          type="number"
-          step="0.01"
-          class="form-control exp_lastDrawnCtc"
-        />
-      </div>
+                <div class="exp-section">
+                  <button class="exp-optional-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#expOptionalDetails" aria-expanded="false">
+                    <span><i class="fas fa-sliders me-1"></i> Additional Details &amp; Documents</span>
+                    <i class="fas fa-chevron-down small"></i>
+                  </button>
+                  <div class="collapse" id="expOptionalDetails">
+                    <div class="exp-optional-body">
+                      <div class="row g-3">
+                        <div class="col-md-4">
+                          <label class="form-label">Department / Division</label>
+                          <input type="text" class="form-control" id="expFormDepartment" placeholder="e.g. Engineering" />
+                        </div>
+                        <div class="col-md-4">
+                          <label class="form-label">Industry Type</label>
+                          <input type="text" class="form-control" id="expFormIndustry" placeholder="Start typing industry…" autocomplete="off" />
+                        </div>
+                        <div class="col-md-4">
+                          <label class="form-label">Last Drawn Salary / CTC</label>
+                          <input type="number" step="0.01" min="0" class="form-control" id="expFormSalary" placeholder="Annual amount" />
+                        </div>
+                        <div class="col-md-8" id="expGroupLeaving">
+                          <label class="form-label">Reason for Leaving</label>
+                          <textarea class="form-control" id="expFormReason" rows="2" placeholder="Optional"></textarea>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end" id="expGroupNotice">
+                          <div class="form-check mb-2">
+                            <input type="checkbox" class="form-check-input" id="expFormNoticeServed" />
+                            <label class="form-check-label" for="expFormNoticeServed">Notice period served</label>
+                          </div>
+                        </div>
+                      </div>
 
-      <div class="col-md-4">
-        <label class="form-label">Reason for Leaving</label>
-        {{!-- <input
-          type="text"
-          class="form-control exp_reasonForLeaving"
-        /> --}}
-        <textarea
-          class="form-control exp_reasonForLeaving"
-          rows="2"
-        ></textarea>
-      </div>
-      <div class="col-md-3 d-flex align-items-center">
-        <div class="form-check mt-3">
-          <input
-            type="checkbox"
-            class="form-check-input exp_noticePeriodServed"
-          />
-          <label class="form-check-label">
-            Notice Period Served
-          </label>
-        </div>
-      </div>
+                      <div class="exp-section__title mt-3">Supporting Documents</div>
+                      <div class="row g-3">
+                        <div class="col-md-4">
+                          <div class="exp-file-upload" id="expFormRelievingUpload" role="button" tabindex="0">
+                            <input type="file" id="expFormRelievingInput" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" />
+                            <div class="exp-file-upload__label">Relieving Letter</div>
+                            <p class="exp-file-upload__hint mb-0">PDF, JPG or PNG (max 5 MB)</p>
+                          </div>
+                          <div class="exp-file-preview d-none" id="expFormRelievingPreview">
+                            <span class="exp-file-preview__name"></span>
+                            <button type="button" class="btn btn-sm btn-outline-danger" id="expFormRelievingRemove"><i class="fas fa-times"></i></button>
+                          </div>
+                          <input type="hidden" id="expFormRelievingUrl" />
+                          <input type="hidden" id="expFormRelievingFileName" />
+                        </div>
+                        <div class="col-md-4">
+                          <div class="exp-file-upload" id="expFormSalarySlipsUpload" role="button" tabindex="0">
+                            <input type="file" id="expFormSalarySlipsInput" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" />
+                            <div class="exp-file-upload__label">Salary Slips (3 months)</div>
+                            <p class="exp-file-upload__hint mb-0">PDF, JPG or PNG (max 5 MB)</p>
+                          </div>
+                          <div class="exp-file-preview d-none" id="expFormSalarySlipsPreview">
+                            <span class="exp-file-preview__name"></span>
+                            <button type="button" class="btn btn-sm btn-outline-danger" id="expFormSalarySlipsRemove"><i class="fas fa-times"></i></button>
+                          </div>
+                          <input type="hidden" id="expFormSalarySlipsUrl" />
+                          <input type="hidden" id="expFormSalarySlipsFileName" />
+                        </div>
+                        <div class="col-md-4">
+                          <div class="exp-file-upload" id="expFormBankStatementUpload" role="button" tabindex="0">
+                            <input type="file" id="expFormBankStatementInput" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" />
+                            <div class="exp-file-upload__label">Bank Statement</div>
+                            <p class="exp-file-upload__hint mb-0">PDF, JPG or PNG (max 5 MB)</p>
+                          </div>
+                          <div class="exp-file-preview d-none" id="expFormBankStatementPreview">
+                            <span class="exp-file-preview__name"></span>
+                            <button type="button" class="btn btn-sm btn-outline-danger" id="expFormBankStatementRemove"><i class="fas fa-times"></i></button>
+                          </div>
+                          <input type="hidden" id="expFormBankStatementUrl" />
+                          <input type="hidden" id="expFormBankStatementFileName" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-      {{!-- NEW: Supporting document URLs --}}
-      <div class="col-12">
-        <hr />
-        <h6 class="mb-2">Supporting Documents (URLs)</h6>
-      </div>
-
-      <div class="col-md-4">
-        <label class="form-label">Relieving Letter URL</label>
-        <input
-          type="text"
-          class="form-control exp_relievingLetterUrl"
-          placeholder="https://... (Relieving letter)"
-        />
-      </div>
-
-      <div class="col-md-4">
-        <label class="form-label">Last 3 Months Salary Slips URL</label>
-        <input
-          type="text"
-          class="form-control exp_salarySlipsUrl"
-          placeholder="https://... (3 months salary slips)"
-        />
-      </div>
-
-      <div class="col-md-4">
-        <label class="form-label">Bank Statement URL</label>
-        <input
-          type="text"
-          class="form-control exp_bankStatementUrl"
-          placeholder="https://... (Bank statement)"
-        />
-      </div>
-
-      <div class="col-md-2 d-flex align-items-end justify-content-end">
-        <button
-          type="button"
-          class="btn btn-outline-danger btn-sm remove-experience-row-btn"
-        >
-          <i class="fas fa-trash"></i>
-        </button>
-      </div>
-    </div>
-    </div>
-</div>
-
+                <div class="exp-form-actions">
+                  <button type="button" class="btn btn-outline-secondary" id="experienceFormCancelBtn">Cancel</button>
+                  <button type="button" class="btn btn-primary" id="experienceFormSaveBtn">
+                    <i class="fas fa-check me-1"></i> Save Entry
+                  </button>
+                </div>
+              </div>
             </div>
 
             {{!-- TAB 6: DOCUMENTS & KYC --}}
             <div class="tab-pane fade" id="tab-documents" role="tabpanel">
-              {{!-- Aadhaar / PAN removed from here (only via documents now) --}}
-
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <h6 class="mb-0">Employee Documents &amp; KYC</h6>
-                <button
-                  type="button"
-                  class="btn btn-sm btn-outline-primary"
-                  id="addDocumentRowBtn"
-                >
+              <div class="doc-wizard-header">
+                <h6>Employee Documents &amp; KYC</h6>
+                <button type="button" class="btn btn-sm btn-primary" id="addDocumentEntryBtn">
                   <i class="fas fa-plus me-1"></i> Add Document
                 </button>
               </div>
 
-              <div id="documentRows" class="row g-3">
-                <div class="document-row border rounded p-3 mb-2">
+              <div id="documentsEmptyState" class="doc-empty-state">
+                <i class="fas fa-folder-open d-block"></i>
+                <p class="mb-0">No documents added yet. Click <strong>Add Document</strong> to upload KYC files.</p>
+              </div>
+
+              <div id="documentsSavedList" class="doc-saved-list is-empty" aria-live="polite"></div>
+
+              <div id="documentsFormPanel" class="doc-form-panel d-none">
+                <div class="doc-form-panel__header">
+                  <h6 class="mb-0" id="documentsFormTitle">Add Document</h6>
+                </div>
+
+                <div class="mb-3">
+                  <div class="doc-section__title">Document Details</div>
                   <div class="row g-3">
-                    <div class="col-md-3">
+                    <div class="col-md-6">
+                      <label class="form-label">Document Type <span class="text-danger">*</span></label>
+                      <select class="form-select" id="docFormType"></select>
+                    </div>
+                    <div class="col-md-6">
                       <label class="form-label">Category</label>
-                      <select class="form-select doc_category">
+                      <select class="form-select" id="docFormCategory">
                         <option value="KYC">KYC</option>
-                        <option value="RESUME">Resume</option>
-                        <option value="AADHAAR">Aadhaar</option>
                         <option value="PAN">PAN</option>
                         <option value="ADDRESS">Address Proof</option>
                         <option value="EDUCATION">Education</option>
                         <option value="EXPERIENCE">Experience</option>
                         <option value="HR">HR Letters</option>
                         <option value="OTHER">Other</option>
-                        
                       </select>
                     </div>
-                    <div class="col-md-3">
-                      <label class="form-label">Document Type</label>
-                      <input
-                        type="text"
-                        class="form-control doc_documentType"
-                        placeholder="Aadhaar Card, PAN Card, Passport, 10th Marksheet, Offer Letter..."
-                      />
+                    <div class="col-md-6" id="docGroupName">
+                      <label class="form-label">Name as per Document <span class="text-danger">*</span></label>
+                      <input type="text" class="form-control" id="docFormName" placeholder="Full name on document" />
                     </div>
-                    <div class="col-md-3">
-                      <label class="form-label">Name as per Document</label>
-                      <input
-                        type="text"
-                        class="form-control doc_nameOnDocument"
-                      />
+                    <div class="col-md-6" id="docGroupNumber">
+                      <label class="form-label" id="docFormNumberLabel">Document Number</label>
+                      <input type="text" class="form-control" id="docFormNumber" placeholder="" />
                     </div>
-                    <div class="col-md-3">
-                      <label class="form-label">Document Number</label>
-                      <input
-                        type="text"
-                        class="form-control doc_documentNumber"
-                      />
-                    </div>
-
-                    <div class="col-md-3">
+                    <div class="col-md-4" id="docGroupIssueDate">
                       <label class="form-label">Issue Date</label>
-                      <input type="date" class="form-control doc_issueDate" />
+                      <input type="date" class="form-control" id="docFormIssueDate" />
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4" id="docGroupExpiryDate">
                       <label class="form-label">Expiry Date</label>
-                      <input type="date" class="form-control doc_expiryDate" />
+                      <input type="date" class="form-control" id="docFormExpiryDate" />
                     </div>
-                    <div class="col-md-3">
-                      <label class="form-label">Verification Status</label>
-                      <select class="form-select doc_verificationStatus">
-                        <option value="Pending">Pending</option>
-                        <option value="Verified">Verified</option>
-                        <option value="Rejected">Rejected</option>
-                      </select>
-                    </div>
-
-                    <div class="col-md-6">
-                      <label class="form-label">File URL (PDF / Doc)</label>
-                      <input
-                        type="text"
-                        class="form-control doc_fileUrl"
-                        placeholder="/uploads/documents/... or https://..."
-                      />
-                    </div>
-                    <div class="col-md-6">
-                      <label class="form-label">Document Image URL</label>
-                      <input
-                        type="text"
-                        class="form-control doc_documentImageUrl"
-                        placeholder="Scanned image URL/path"
-                      />
-                    </div>
-
-                    <div class="col-md-10">
-                      <label class="form-label">Notes</label>
-                      <textarea
-                        class="form-control doc_notes"
-                        rows="2"
-                      ></textarea>
-                    </div>
-                    <div class="col-md-2 d-flex align-items-end justify-content-end">
-                      <button
-                        type="button"
-                        class="btn btn-outline-danger btn-sm remove-document-row-btn"
-                      >
-                        <i class="fas fa-trash"></i>
-                      </button>
+                    <div class="col-md-4">
+                      <label class="form-label d-block">Verification Status</label>
+                      <div class="doc-status-picker">
+                        <button type="button" class="doc-status-picker__btn doc-status-picker__btn--pending is-active" data-status="Pending">Pending</button>
+                        <button type="button" class="doc-status-picker__btn doc-status-picker__btn--verified" data-status="Verified">Verified</button>
+                        <button type="button" class="doc-status-picker__btn doc-status-picker__btn--rejected" data-status="Rejected">Rejected</button>
+                      </div>
                     </div>
                   </div>
                 </div>
+
+                <div class="mb-3">
+                  <div class="doc-section__title">Upload Document <span class="text-danger">*</span></div>
+                  <div class="doc-file-upload" id="docFormFileUpload" role="button" tabindex="0">
+                    <input type="file" id="docFormFileInput" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/png" />
+                    <div class="text-primary mb-1"><i class="fas fa-cloud-arrow-up fa-lg"></i></div>
+                    <p class="mb-0 small text-muted">Drag &amp; drop or click to upload PDF, DOC, JPG, or PNG (max 5 MB)</p>
+                  </div>
+                  <div class="doc-file-preview d-none" id="docFormFilePreview">
+                    <span class="doc-file-preview__name"></span>
+                    <button type="button" class="btn btn-sm btn-outline-danger" id="docFormRemoveFileBtn"><i class="fas fa-times"></i></button>
+                  </div>
+                  <input type="hidden" id="docFormFileUrl" />
+                  <input type="hidden" id="docFormImageUrl" />
+                  <input type="hidden" id="docFormFileName" />
+                </div>
+
+                <div class="mb-2">
+                  <label class="form-label">Notes</label>
+                  <textarea class="form-control" id="docFormNotes" rows="2" placeholder="Optional notes for HR"></textarea>
+                </div>
+
+                <div class="doc-form-actions">
+                  <button type="button" class="btn btn-outline-secondary" id="documentsFormCancelBtn">Cancel</button>
+                  <button type="button" class="btn btn-primary" id="documentsFormSaveBtn">
+                    <i class="fas fa-check me-1"></i> Save Document
+                  </button>
+                </div>
               </div>
 
-              <div class="mt-3 border rounded p-3 bg-light" id="portalCredentialsSection">
-                <h6 class="mb-2"><i class="fas fa-envelope me-2"></i>Portal access</h6>
-                <p class="text-muted small mb-3">
-                  Email portal login credentials to the employee's registered address. If the profile isn't saved yet, it will be saved automatically before credentials are sent.
-                </p>
-                <button type="button" class="btn btn-primary" id="sendPortalCredentialsFormBtn">
-                  <i class="fas fa-paper-plane me-2"></i>Send Credentials
-                </button>
-                <div class="small mt-2" id="sendPortalCredentialsFormStatus"></div>
+              <div class="portal-creds-card mt-3" id="portalCredentialsSection">
+                <h6><i class="fas fa-key me-2"></i>Portal Credentials</h6>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Username (Email)</label>
+                    <input type="text" class="form-control" id="portalUsernamePreview" placeholder="Will use employee email" readonly />
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Default Password</label>
+                    <div class="input-group">
+                      <input type="password" class="form-control" id="portalPasswordInput" name="portalPassword" placeholder="Auto-generated strong password" autocomplete="new-password" />
+                      <button type="button" class="btn btn-outline-secondary" id="togglePortalPasswordBtn" title="Show/Hide"><i class="fas fa-eye"></i></button>
+                      <button type="button" class="btn btn-outline-secondary" id="copyPortalPasswordBtn" title="Copy"><i class="fas fa-copy"></i></button>
+                      <button type="button" class="btn btn-outline-primary" id="regenPortalPasswordBtn">Generate</button>
+                    </div>
+                    <div class="portal-password-strength" id="portalPasswordStrength">
+                      <div class="portal-password-strength__bar"><div class="portal-password-strength__fill" id="portalPasswordStrengthFill"></div></div>
+                      <div class="portal-password-strength__label" id="portalPasswordStrengthLabel">Password strength: —</div>
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="sendCredentialsEmailCheckbox" name="sendCredentialsEmail" value="true" checked />
+                      <label class="form-check-label" for="sendCredentialsEmailCheckbox">Send Welcome Email</label>
+                    </div>
+                    <p class="portal-welcome-note mb-0">Includes portal login URL, username, and password when the employee is saved.</p>
+                  </div>
+                </div>
               </div>
-
             </div>{{!-- end tab-documents --}}
           </div>{{!-- end tab-content --}}
         </div>{{!-- end modal-body --}}
@@ -1535,24 +1565,24 @@
     <div class="modal-content">
       <div class="modal-header" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff;">
         <h5 class="modal-title" id="employeePortalCredentialsTitle">
-          <i class="fas fa-user-lock me-2"></i>Portal sign-in details
+          <i class="fas fa-user-lock me-2"></i>Employee portal login
         </h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <p class="text-muted small mb-3" id="portalCredentialsIntro">
-          Share these sign-in details with the employee. They can access the portal using their <strong>email</strong> or <strong>employee code</strong>.
+          Share these credentials with the employee. They can sign in at the employee portal using <strong>email</strong> or <strong>employee code</strong>.
         </p>
         <div id="portalEmailSentBanner" class="alert alert-success d-none py-2 small mb-3">
-          <i class="fas fa-envelope-circle-check me-1"></i> Credentials emailed to the employee.
+          <i class="fas fa-envelope-circle-check me-1"></i> Credentials were also emailed to the employee.
         </div>
         <div id="portalEmailFailedBanner" class="alert alert-warning d-none py-2 small mb-3">
           <i class="fas fa-triangle-exclamation me-1"></i>
-          <span id="portalEmailFailedText">Credentials could not be emailed — share these sign-in details manually.</span>
+          <span id="portalEmailFailedText">Email could not be sent — copy and share these credentials manually.</span>
         </div>
         <div id="portalEmailRetryWrap" class="d-none mb-3">
           <button type="button" class="btn btn-sm btn-outline-primary" id="portalRetryEmailBtn">
-            <i class="fas fa-paper-plane me-1"></i> Resend credentials
+            <i class="fas fa-paper-plane me-1"></i> Retry send email
           </button>
         </div>
 
@@ -1608,6 +1638,9 @@
   </div>
 </div>
 
+<script src="/assets/js/employee-education-wizard.js"></script>
+<script src="/assets/js/employee-experience-wizard.js"></script>
+<script src="/assets/js/employee-documents-wizard.js"></script>
 <script>
   (function () {
     // =========================
@@ -1636,8 +1669,10 @@
     let currentViewEmployeeId = null;
     let reloadAfterPortalCredentials = false;
     let currentPortalEmployeeId = null;
-    const sendPortalCredentialsFormBtn = document.getElementById("sendPortalCredentialsFormBtn");
-    const sendPortalCredentialsFormStatus = document.getElementById("sendPortalCredentialsFormStatus");
+    const portalUsernamePreview = document.getElementById("portalUsernamePreview");
+    const portalPasswordInput = document.getElementById("portalPasswordInput");
+    const regenPortalPasswordBtn = document.getElementById("regenPortalPasswordBtn");
+    const sendCredentialsEmailCheckbox = document.getElementById("sendCredentialsEmailCheckbox");
     const portalCredentialsSection = document.getElementById("portalCredentialsSection");
     const viewDefaultPortalPasswordBtn = document.getElementById("viewDefaultPortalPasswordBtn");
     const viewEmployeeActiveToggle = document.getElementById("viewEmployeeActiveToggle");
@@ -1647,10 +1682,82 @@
     const viewEmpStatusIcon = document.getElementById("viewEmpStatusIcon");
     let isUpdatingEmployeeStatus = false;
 
-    function setSendPortalCredentialsStatus(message, type = "muted") {
-      if (!sendPortalCredentialsFormStatus) return;
-      sendPortalCredentialsFormStatus.textContent = message || "";
-      sendPortalCredentialsFormStatus.className = `small mt-2 text-${type}`;
+    function generateDefaultPortalPassword() {
+      const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+      const lower = "abcdefghijkmnpqrstuvwxyz";
+      const digits = "23456789";
+      const special = "!@#$%&*";
+      const all = upper + lower + digits + special;
+      const pick = (chars) => chars.charAt(Math.floor(Math.random() * chars.length));
+      let out = pick(upper) + pick(lower) + pick(digits) + pick(special);
+      for (let i = out.length; i < 14; i += 1) {
+        out += pick(all);
+      }
+      return out.split("").sort(() => Math.random() - 0.5).join("");
+    }
+
+    function scorePortalPassword(password) {
+      const value = String(password || "");
+      if (!value) return { score: 0, label: "—", color: "#e2e8f0", width: "0%" };
+      let score = 0;
+      if (value.length >= 8) score += 1;
+      if (value.length >= 12) score += 1;
+      if (/[a-z]/.test(value) && /[A-Z]/.test(value)) score += 1;
+      if (/\d/.test(value)) score += 1;
+      if (/[^A-Za-z0-9]/.test(value)) score += 1;
+      if (score <= 2) return { score, label: "Weak", color: "#ef4444", width: "33%" };
+      if (score === 3 || score === 4) return { score, label: "Good", color: "#f59e0b", width: "66%" };
+      return { score, label: "Strong", color: "#10b981", width: "100%" };
+    }
+
+    function updatePortalPasswordStrength() {
+      const fill = document.getElementById("portalPasswordStrengthFill");
+      const label = document.getElementById("portalPasswordStrengthLabel");
+      if (!portalPasswordInput || !fill || !label) return;
+      const result = scorePortalPassword(portalPasswordInput.value);
+      fill.style.width = result.width;
+      fill.style.background = result.color;
+      label.textContent = `Password strength: ${result.label}`;
+    }
+
+    function togglePortalPasswordVisibility() {
+      if (!portalPasswordInput) return;
+      const btn = document.getElementById("togglePortalPasswordBtn");
+      const icon = btn?.querySelector("i");
+      const isHidden = portalPasswordInput.type === "password";
+      portalPasswordInput.type = isHidden ? "text" : "password";
+      if (icon) {
+        icon.className = isHidden ? "fas fa-eye-slash" : "fas fa-eye";
+      }
+    }
+
+    function copyPortalPassword() {
+      if (!portalPasswordInput?.value) return;
+      navigator.clipboard.writeText(portalPasswordInput.value).then(() => {
+        const btn = document.getElementById("copyPortalPasswordBtn");
+        if (btn) {
+          const original = btn.innerHTML;
+          btn.innerHTML = '<i class="fas fa-check"></i>';
+          setTimeout(() => { btn.innerHTML = original; }, 1200);
+        }
+      }).catch(() => alert("Copy failed — please copy manually."));
+    }
+
+    function syncPortalUsernameFromEmail() {
+      const email = addEmployeeForm?.elements?.empEmail?.value || "";
+      if (portalUsernamePreview) portalUsernamePreview.value = email;
+    }
+
+    function setPortalCredentialsMode(isCreateMode) {
+      if (!portalCredentialsSection) return;
+      portalCredentialsSection.style.display = isCreateMode ? "" : "none";
+      if (isCreateMode) {
+        if (portalPasswordInput && !portalPasswordInput.value) {
+          portalPasswordInput.value = generateDefaultPortalPassword();
+        }
+        if (sendCredentialsEmailCheckbox) sendCredentialsEmailCheckbox.checked = true;
+        updatePortalPasswordStrength();
+      }
     }
 
     function copyInputValue(inputId) {
@@ -1697,8 +1804,8 @@
         failedBanner?.classList.remove("d-none");
         if (failedText) {
           failedText.textContent = portalAccess.emailError
-            ? `Credentials could not be emailed: ${portalAccess.emailError}`
-            : "Credentials could not be emailed — share these sign-in details manually.";
+            ? `Email could not be sent: ${portalAccess.emailError}`
+            : "Email could not be sent — copy and share these credentials manually.";
         }
         retryWrap?.classList.toggle("d-none", !currentPortalEmployeeId);
       } else {
@@ -1769,7 +1876,7 @@
         `Employee Code: ${document.getElementById("portalCredEmpId")?.value || ""}`,
         `Password: ${document.getElementById("portalCredPassword")?.value || ""}`,
       ].join("\n");
-      navigator.clipboard.writeText(text).then(() => alert("Sign-in details copied to clipboard."))
+      navigator.clipboard.writeText(text).then(() => alert("All credentials copied to clipboard."))
         .catch(() => alert("Copy failed."));
     });
 
@@ -1937,6 +2044,16 @@
     }
 
     function validateTab(stepIdx, { markInvalid = false } = {}) {
+      if (stepIdx === 3 && window.EmployeeEducationWizard) {
+        return window.EmployeeEducationWizard.isTabValid({ markInvalid });
+      }
+      if (stepIdx === 4 && window.EmployeeExperienceWizard) {
+        return window.EmployeeExperienceWizard.isTabValid({ markInvalid });
+      }
+      if (stepIdx === 5 && window.EmployeeDocumentsWizard) {
+        return window.EmployeeDocumentsWizard.isTabValid({ markInvalid });
+      }
+
       const pane = getTabPaneByStep(stepIdx);
       if (!pane) return true;
 
@@ -1994,6 +2111,25 @@
 
     if (nextBtn) {
       nextBtn.addEventListener("click", function () {
+        if (currentStep === 3 && window.EmployeeEducationWizard?.isFormOpen?.()) {
+          validateTab(currentStep, { markInvalid: true });
+          updateWizardValidity();
+          alert("Please save or cancel the open education entry before continuing.");
+          return;
+        }
+        if (currentStep === 4 && window.EmployeeExperienceWizard?.isFormOpen?.()) {
+          validateTab(currentStep, { markInvalid: true });
+          updateWizardValidity();
+          alert("Please save or cancel the open experience entry before continuing.");
+          return;
+        }
+        if (currentStep === 5 && window.EmployeeDocumentsWizard?.isFormOpen?.()) {
+          validateTab(currentStep, { markInvalid: true });
+          updateWizardValidity();
+          alert("Please save or cancel the open document entry before continuing.");
+          return;
+        }
+
         // Block moving forward if required fields (with red asterisk) aren't filled
         const ok = validateTab(currentStep, { markInvalid: true });
         updateWizardValidity();
@@ -2074,15 +2210,24 @@
     }
 
     // =======================================
-    // Dynamic rows: Education, Experience, Documents
+    // Wizards: Education, Experience, Documents
     // =======================================
-    const educationContainer = document.getElementById("educationRows");
-    const experienceContainer = document.getElementById("experienceRows");
-    const documentContainer = document.getElementById("documentRows");
 
-    const addEducationRowBtn = document.getElementById("addEducationRowBtn");
-    const addExperienceRowBtn = document.getElementById("addExperienceRowBtn");
-    const addDocumentRowBtn = document.getElementById("addDocumentRowBtn");
+    if (window.EmployeeEducationWizard) {
+      window.EmployeeEducationWizard.init({
+        onValidityChange: updateWizardValidity,
+      });
+    }
+    if (window.EmployeeExperienceWizard) {
+      window.EmployeeExperienceWizard.init({
+        onValidityChange: updateWizardValidity,
+      });
+    }
+    if (window.EmployeeDocumentsWizard) {
+      window.EmployeeDocumentsWizard.init({
+        onValidityChange: updateWizardValidity,
+      });
+    }
 
     function clearInputsInRow(row) {
       row.querySelectorAll("input, select, textarea").forEach((el) => {
@@ -2115,176 +2260,25 @@
       });
     }
 
-    // Education dynamic
-    if (addEducationRowBtn && educationContainer) {
-      addEducationRowBtn.addEventListener("click", function () {
-        cloneRow(educationContainer, ".education-row");
-      });
-
-      educationContainer.addEventListener("click", function (e) {
-        const removeBtn = e.target.closest(".remove-education-row-btn");
-        if (removeBtn) {
-          const row = e.target.closest(".education-row");
-          if (
-            educationContainer.querySelectorAll(".education-row").length > 1 &&
-            row
-          ) {
-            row.remove();
-          }
-        }
-      });
-    }
-
-    // Experience dynamic
-    if (addExperienceRowBtn && experienceContainer) {
-      addExperienceRowBtn.addEventListener("click", function () {
-        cloneRow(experienceContainer, ".experience-row");
-      });
-
-      experienceContainer.addEventListener("click", function (e) {
-        const removeBtn = e.target.closest(".remove-experience-row-btn");
-        if (removeBtn) {
-          const row = e.target.closest(".experience-row");
-          if (
-            experienceContainer.querySelectorAll(".experience-row").length > 1 &&
-            row
-          ) {
-            row.remove();
-          }
-        }
-      });
-    }
-
-    // Document dynamic
-    if (addDocumentRowBtn && documentContainer) {
-      addDocumentRowBtn.addEventListener("click", function () {
-        cloneRow(documentContainer, ".document-row");
-      });
-
-      documentContainer.addEventListener("click", function (e) {
-        const removeBtn = e.target.closest(".remove-document-row-btn");
-        if (removeBtn) {
-          const row = e.target.closest(".document-row");
-          if (documentContainer.querySelectorAll(".document-row").length > 1 && row) {
-            row.remove();
-          }
-        }
-      });
-    }
-
     function collectEducationRows() {
-      const rows = [];
-
-      document.querySelectorAll(".education-row").forEach((row) => {
-        const obj = {
-          level: row.querySelector(".edu_level")?.value || "",
-          degree: row.querySelector(".edu_degree")?.value || "",
-          specialization: row.querySelector(".edu_specialization")?.value || "",
-          institutionName:
-            row.querySelector(".edu_institutionName")?.value || "",
-          board: row.querySelector(".edu_board")?.value || "",
-          startYear: row.querySelector(".edu_startYear")?.value || "",
-          endYear: row.querySelector(".edu_endYear")?.value || "",
-          yearOfPassing:
-            row.querySelector(".edu_yearOfPassing")?.value || "",
-          percentageOrCgpa:
-            row.querySelector(".edu_percentageOrCgpa")?.value || "",
-          modeOfStudy: row.querySelector(".edu_modeOfStudy")?.value || "",
-          educationType:
-            row.querySelector(".edu_educationType")?.value || "",
-          country: row.querySelector(".edu_country")?.value || "",
-          city: row.querySelector(".edu_city")?.value || "",
-          certificateUrl:
-            row.querySelector(".edu_certificateUrl")?.value || "",
-        };
-
-        // Push only if some key fields are present
-        if (obj.level || obj.degree || obj.institutionName) {
-          rows.push(obj);
-        }
-      });
-
-      return rows;
+      if (window.EmployeeEducationWizard) {
+        return window.EmployeeEducationWizard.getEntries();
+      }
+      return [];
     }
 
     function collectExperienceRows() {
-  const rows = [];
-
-  document.querySelectorAll(".experience-row").forEach((row) => {
-    const obj = {
-      organizationName:
-        row.querySelector(".exp_organizationName")?.value || "",
-      jobTitle: row.querySelector(".exp_jobTitle")?.value || "",
-      employmentType:
-        row.querySelector(".exp_employmentType")?.value || "",
-      department: row.querySelector(".exp_department")?.value || "",
-      industryType: row.querySelector(".exp_industryType")?.value || "",
-      companyLocationCity:
-        row.querySelector(".exp_companyLocationCity")?.value || "",
-      companyLocationCountry:
-        row.querySelector(".exp_companyLocationCountry")?.value || "",
-      startDate: row.querySelector(".exp_startDate")?.value || "",
-      endDate: row.querySelector(".exp_endDate")?.value || "",
-      isCurrent: row.querySelector(".exp_isCurrent")?.checked || false,
-      lastDrawnCtc:
-        row.querySelector(".exp_lastDrawnCtc")?.value || "",
-      reasonForLeaving:
-        row.querySelector(".exp_reasonForLeaving")?.value || "",
-      noticePeriodServed:
-        row.querySelector(".exp_noticePeriodServed")?.checked || false,
-
-      // NEW: document URLs
-      relievingLetterUrl:
-        row.querySelector(".exp_relievingLetterUrl")?.value || "",
-      salarySlipsUrl:
-        row.querySelector(".exp_salarySlipsUrl")?.value || "",
-      bankStatementUrl:
-        row.querySelector(".exp_bankStatementUrl")?.value || "",
-    };
-
-    // Keep same condition – row considered valid if some core fields present
-    if (obj.organizationName || obj.jobTitle) {
-      rows.push(obj);
+      if (window.EmployeeExperienceWizard) {
+        return window.EmployeeExperienceWizard.getEntries();
+      }
+      return [];
     }
-  });
-
-  return rows;
-}
 
     function collectDocumentRows() {
-      const rows = [];
-
-      document.querySelectorAll(".document-row").forEach((row) => {
-        const obj = {
-          category: row.querySelector(".doc_category")?.value || "",
-          documentType:
-            row.querySelector(".doc_documentType")?.value || "",
-          nameOnDocument:
-            row.querySelector(".doc_nameOnDocument")?.value || "",
-          documentNumber:
-            row.querySelector(".doc_documentNumber")?.value || "",
-          issueDate: row.querySelector(".doc_issueDate")?.value || "",
-          expiryDate: row.querySelector(".doc_expiryDate")?.value || "",
-          verificationStatus:
-            row.querySelector(".doc_verificationStatus")?.value ||
-            "Pending",
-          fileUrl: row.querySelector(".doc_fileUrl")?.value || "",
-          documentImageUrl:
-            row.querySelector(".doc_documentImageUrl")?.value || "",
-          notes: row.querySelector(".doc_notes")?.value || "",
-        };
-
-        if (
-          obj.documentType ||
-          obj.documentNumber ||
-          obj.fileUrl ||
-          obj.documentImageUrl
-        ) {
-          rows.push(obj);
-        }
-      });
-
-      return rows;
+      if (window.EmployeeDocumentsWizard) {
+        return window.EmployeeDocumentsWizard.getEntries();
+      }
+      return [];
     }
 
     // =======================================
@@ -2300,33 +2294,18 @@
         sameAsPresentCheckbox.checked = false;
       }
 
-      resetDynamicSection(educationContainer, ".education-row");
-      resetDynamicSection(experienceContainer, ".experience-row");
-      resetDynamicSection(documentContainer, ".document-row");
-
-      updateGenderDropdownDisplay();
-      applyActiveOrganizationToEmployeeForm();
-      setSendPortalCredentialsStatus("");
-    }
-
-    function applyActiveOrganizationToEmployeeForm() {
-      const orgId = document.getElementById("activeOrganizationId")?.value;
-      const businessSelect = addEmployeeForm?.elements?.businessId;
-      const businessWrap = document.getElementById("businessFieldWrap");
-      const businessHint = document.getElementById("businessFieldHint");
-
-      if (!businessSelect) return;
-
-      if (orgId) {
-        businessSelect.value = orgId;
-        businessSelect.required = false;
-        if (businessWrap) businessWrap.classList.add("d-none");
-        if (businessHint) businessHint.textContent = "Organization is set automatically from your active company.";
-      } else {
-        businessSelect.required = true;
-        if (businessWrap) businessWrap.classList.remove("d-none");
-        if (businessHint) businessHint.textContent = "Select the business this employee belongs to";
+      if (window.EmployeeEducationWizard) {
+        window.EmployeeEducationWizard.reset();
       }
+      if (window.EmployeeExperienceWizard) {
+        window.EmployeeExperienceWizard.reset();
+      }
+      if (window.EmployeeDocumentsWizard) {
+        window.EmployeeDocumentsWizard.reset();
+      }
+
+      // Reset gender dropdown display
+      updateGenderDropdownDisplay();
     }
 
     // =======================================
@@ -2469,125 +2448,21 @@
     }
 
     function setEducationRows(educations) {
-      resetDynamicSection(educationContainer, ".education-row");
-      if (!educationContainer) return;
-      if (!Array.isArray(educations) || educations.length === 0) return;
-
-      const firstRow = educationContainer.querySelector(".education-row");
-      if (!firstRow) return;
-
-      educations.forEach((edu, index) => {
-        let row = firstRow;
-        if (index > 0) {
-          row = firstRow.cloneNode(true);
-          clearInputsInRow(row);
-          educationContainer.appendChild(row);
-        }
-
-        row.querySelector(".edu_level").value = edu.level || "";
-        row.querySelector(".edu_degree").value = edu.degree || "";
-        row.querySelector(".edu_specialization").value =
-          edu.specialization || "";
-        row.querySelector(".edu_institutionName").value =
-          edu.institutionName || "";
-        row.querySelector(".edu_board").value = edu.board || "";
-        row.querySelector(".edu_startYear").value = edu.startYear || "";
-        row.querySelector(".edu_endYear").value = edu.endYear || "";
-        row.querySelector(".edu_yearOfPassing").value =
-          edu.yearOfPassing || "";
-        row.querySelector(".edu_percentageOrCgpa").value =
-          edu.percentageOrCgpa || "";
-        row.querySelector(".edu_modeOfStudy").value =
-          edu.modeOfStudy || "";
-        row.querySelector(".edu_educationType").value =
-          edu.educationType || "";
-        row.querySelector(".edu_country").value = edu.country || "";
-        row.querySelector(".edu_city").value = edu.city || "";
-        row.querySelector(".edu_certificateUrl").value =
-          edu.certificateUrl || "";
-      });
+      if (window.EmployeeEducationWizard) {
+        window.EmployeeEducationWizard.loadEntries(educations || []);
+      }
     }
 
     function setExperienceRows(experiences) {
-      resetDynamicSection(experienceContainer, ".experience-row");
-      if (!experienceContainer) return;
-      if (!Array.isArray(experiences) || experiences.length === 0) return;
-
-      const firstRow = experienceContainer.querySelector(".experience-row");
-      if (!firstRow) return;
-
-      experiences.forEach((exp, index) => {
-        let row = firstRow;
-        if (index > 0) {
-          row = firstRow.cloneNode(true);
-          clearInputsInRow(row);
-          experienceContainer.appendChild(row);
-        }
-
-        row.querySelector(".exp_organizationName").value =
-          exp.organizationName || "";
-        row.querySelector(".exp_jobTitle").value = exp.jobTitle || "";
-        row.querySelector(".exp_employmentType").value =
-          exp.employmentType || "";
-        row.querySelector(".exp_department").value = exp.department ||    "";
-        row.querySelector(".exp_industryType").value =
-          exp.industryType || "";
-        row.querySelector(".exp_companyLocationCity").value =
-          exp.companyLocationCity || "";
-        row.querySelector(".exp_companyLocationCountry").value =
-          exp.companyLocationCountry || "";
-        row.querySelector(".exp_startDate").value = exp.startDate || "";
-        row.querySelector(".exp_endDate").value = exp.endDate || "";
-        row.querySelector(".exp_isCurrent").checked = !!exp.isCurrent;
-        row.querySelector(".exp_lastDrawnCtc").value =
-          exp.lastDrawnCtc || "";
-        row.querySelector(".exp_reasonForLeaving").value =
-          exp.reasonForLeaving || "";
-        row.querySelector(".exp_noticePeriodServed").checked =
-          !!exp.noticePeriodServed;
-
-        // NEW: document URLs
-        row.querySelector(".exp_relievingLetterUrl").value =
-          exp.relievingLetterUrl || "";
-        row.querySelector(".exp_salarySlipsUrl").value =
-      exp.salarySlipsUrl || "";
-        row.querySelector(".exp_bankStatementUrl").value =
-      exp.bankStatementUrl || "";
-      });
+      if (window.EmployeeExperienceWizard) {
+        window.EmployeeExperienceWizard.loadEntries(experiences || []);
+      }
     }
 
     function setDocumentRows(documents) {
-      resetDynamicSection(documentContainer, ".document-row");
-      if (!documentContainer) return;
-      if (!Array.isArray(documents) || documents.length === 0) return;
-
-      const firstRow = documentContainer.querySelector(".document-row");
-      if (!firstRow) return;
-
-      documents.forEach((doc, index) => {
-        let row = firstRow;
-        if (index > 0) {
-          row = firstRow.cloneNode(true);
-          clearInputsInRow(row);
-          documentContainer.appendChild(row);
-        }
-
-        row.querySelector(".doc_category").value = doc.category || "KYC";
-        row.querySelector(".doc_documentType").value =
-          doc.documentType || "";
-        row.querySelector(".doc_nameOnDocument").value =
-          doc.nameOnDocument || "";
-        row.querySelector(".doc_documentNumber").value =
-          doc.documentNumber || "";
-        row.querySelector(".doc_issueDate").value = doc.issueDate || "";
-        row.querySelector(".doc_expiryDate").value = doc.expiryDate || "";
-        row.querySelector(".doc_verificationStatus").value =
-          doc.verificationStatus || "Pending";
-        row.querySelector(".doc_fileUrl").value = doc.fileUrl || "";
-        row.querySelector(".doc_documentImageUrl").value =
-          doc.documentImageUrl || "";
-        row.querySelector(".doc_notes").value = doc.notes || "";
-      });
+      if (window.EmployeeDocumentsWizard) {
+        window.EmployeeDocumentsWizard.loadEntries(documents || []);
+      }
     }
 
     // =======================================
@@ -2609,12 +2484,10 @@
         resetEmployeeForm();
         const emailInput = addEmployeeForm?.elements?.empEmail;
         if (emailInput) emailInput.readOnly = false;
-        setSendPortalCredentialsStatus("");
-        applyActiveOrganizationToEmployeeForm();
+        setPortalCredentialsMode(true);
+        syncPortalUsernameFromEmail();
       });
     }
-
-    applyActiveOrganizationToEmployeeForm();
 
     function splitName(fullName) {
       const text = String(fullName || "").trim();
@@ -2642,8 +2515,8 @@
 
       const emailInput = addEmployeeForm?.elements?.empEmail;
       if (emailInput) emailInput.readOnly = true;
-      setSendPortalCredentialsStatus("");
-      applyActiveOrganizationToEmployeeForm();
+      setPortalCredentialsMode(true);
+      syncPortalUsernameFromEmail();
 
       const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
       modal.show();
@@ -2652,125 +2525,103 @@
     // =======================================
     // Form submit logic (Create / Edit)
     // =======================================
-    async function saveEmployeeFromForm() {
-      if (!addEmployeeForm) throw new Error("Employee form not found");
-
-      updateWizardValidity();
-      const firstBad = findFirstInvalidStep();
-      if (firstBad !== -1) {
-        goToStep(firstBad);
-        currentStep = firstBad;
-        updateWizardButtons();
-        validateTab(firstBad, { markInvalid: true });
-        updateWizardValidity();
-        throw new Error("Please fill all required fields (*) before saving.");
-      }
-
-      const formData = new FormData(addEmployeeForm);
-      const base = Object.fromEntries(formData.entries());
-      delete base.id;
-
-      base.sendCredentialsEmail = "false";
-      base.educations = collectEducationRows();
-      base.experiences = collectExperienceRows();
-      base.documents = collectDocumentRows();
-
-      let url = "/api/v1/employees";
-      let method = "POST";
-
-      if (formMode === "edit" && currentEditingId) {
-        url = "/api/v1/employees/" + currentEditingId;
-        method = "PUT";
-      }
-
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(base),
-      });
-
-      if (!res.ok) {
-        let err;
-        try {
-          err = await res.json();
-        } catch (e) {
-          err = {};
-        }
-        throw new Error(err.error || err.message || "Failed to save employee");
-      }
-
-      return res.json();
-    }
-
-    async function sendPortalCredentialsFromForm() {
-      const email = addEmployeeForm?.elements?.empEmail?.value?.trim();
-      if (!email) {
-        alert("Employee email is required to send credentials.");
-        return;
-      }
-
-      if (!confirm(`Send portal login credentials to ${email}?`)) return;
-
-      const btn = sendPortalCredentialsFormBtn;
-      const originalHtml = btn?.innerHTML;
-      if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Sending...';
-      }
-      setSendPortalCredentialsStatus("Saving employee profile...", "muted");
-
-      try {
-        let employeeId = currentEditingId;
-        if (!employeeId || formMode === "create") {
-          const saved = await saveEmployeeFromForm();
-          employeeId = saved.id;
-          currentEditingId = employeeId;
-          formMode = "edit";
-          if (employeeIdField) employeeIdField.value = String(employeeId);
-        }
-
-        setSendPortalCredentialsStatus("Sending credentials...", "muted");
-
-        const res = await fetch(`/api/v1/employees/${employeeId}/portal-access/send`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Failed to send credentials");
-
-        if (data.emailSent) {
-          const regenNote = data.passwordRegenerated ? " A new temporary password was included." : "";
-          setSendPortalCredentialsStatus(`Credentials sent to ${email}.${regenNote}`, "success");
-        } else {
-          throw new Error(data.emailError || "Credentials could not be emailed. Check SMTP settings.");
-        }
-      } catch (error) {
-        setSendPortalCredentialsStatus(error.message || "Failed to send credentials.", "danger");
-        alert(error.message || "Failed to send credentials.");
-      } finally {
-        if (btn) {
-          btn.disabled = false;
-          btn.innerHTML = originalHtml || '<i class="fas fa-paper-plane me-2"></i>Send Credentials';
-        }
-      }
-    }
-
     if (addEmployeeForm) {
       addEmployeeForm.addEventListener("submit", async function (e) {
         e.preventDefault();
 
+        if (window.EmployeeEducationWizard?.isFormOpen?.()) {
+          goToStep(3);
+          currentStep = 3;
+          updateWizardButtons();
+          validateTab(3, { markInvalid: true });
+          updateWizardValidity();
+          alert("Please save or cancel the open education entry before saving the employee.");
+          return;
+        }
+        if (window.EmployeeExperienceWizard?.isFormOpen?.()) {
+          goToStep(4);
+          currentStep = 4;
+          updateWizardButtons();
+          validateTab(4, { markInvalid: true });
+          updateWizardValidity();
+          alert("Please save or cancel the open experience entry before saving the employee.");
+          return;
+        }
+        if (window.EmployeeDocumentsWizard?.isFormOpen?.()) {
+          goToStep(5);
+          currentStep = 5;
+          updateWizardButtons();
+          validateTab(5, { markInvalid: true });
+          updateWizardValidity();
+          alert("Please save or cancel the open document entry before saving the employee.");
+          return;
+        }
+
+        // Block submit until required asterisk fields are filled across all tabs
+        updateWizardValidity();
+        const firstBad = findFirstInvalidStep();
+        if (firstBad !== -1) {
+          // Jump to first invalid tab and highlight missing fields
+          goToStep(firstBad);
+          currentStep = firstBad;
+          updateWizardButtons();
+          validateTab(firstBad, { markInvalid: true });
+          updateWizardValidity();
+          alert("Please fill all required fields (*) before saving.");
+          return;
+        }
+
+        const formData = new FormData(addEmployeeForm);
+        const base = Object.fromEntries(formData.entries());
+
+        // Remove id from base; for edit we use URL param
+        delete base.id;
+
+        base.sendCredentialsEmail = sendCredentialsEmailCheckbox?.checked ? "true" : "false";
+        base.educations = collectEducationRows();
+        base.experiences = collectExperienceRows();
+        base.documents = collectDocumentRows();
+
+        let url = "/api/v1/employees";
+        let method = "POST";
+
+        if (formMode === "edit" && currentEditingId) {
+          url = "/api/v1/employees/" + currentEditingId;
+          method = "PUT";
+        }
+
         try {
-          await saveEmployeeFromForm();
+          const res = await fetch(url, {
+            method: method,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(base),
+          });
+
+          if (!res.ok) {
+            let err;
+            try {
+              err = await res.json();
+            } catch (e) {
+              err = {};
+            }
+            throw new Error(err.error || "Failed to save employee");
+          }
+
+          const saved = await res.json();
+
+          if (formMode === "create" && saved.portalAccess) {
+            bootstrap.Modal.getInstance(modalEl)?.hide();
+            reloadAfterPortalCredentials = true;
+            showPortalCredentialsModal(saved, saved.portalAccess);
+            return;
+          }
+
           window.location.reload();
         } catch (error) {
           alert(error.message);
         }
       });
     }
-
-    sendPortalCredentialsFormBtn?.addEventListener("click", sendPortalCredentialsFromForm);
 
     // =======================================
     // VIEW / EDIT / DELETE BUTTON HANDLERS
@@ -3190,7 +3041,7 @@ if (expContainer) {
         setEducationRows(emp.educations || []);
         setExperienceRows(emp.experiences || []);
         setDocumentRows(emp.documents || []);
-        setSendPortalCredentialsStatus("");
+        setPortalCredentialsMode(false);
 
         const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
         modal.show();
@@ -3256,14 +3107,14 @@ if (expContainer) {
 
         const portalAccess = data.portalAccess;
         const regenNote = data.passwordRegenerated
-          ? " A new temporary password was included."
+          ? " A new portal password was generated."
           : "";
 
         if (data.emailSent) {
-          alert(`Credentials sent to ${email}.${regenNote}`);
+          alert(`Credentials emailed to ${email}.${regenNote}`);
         } else {
-          const errMsg = data.emailError || "Credentials could not be emailed";
-          alert(`${errMsg}.${regenNote} You can share sign-in details manually below.`);
+          const errMsg = data.emailError || "Email could not be sent";
+          alert(`${errMsg}.${regenNote} Opening credentials so you can share them manually.`);
           if (portalAccess) {
             showPortalCredentialsModal(
               { id, empName: name, empEmail: email, empId: portalAccess.loginEmployeeCode },
@@ -3277,7 +3128,7 @@ if (expContainer) {
         if (triggerBtn) {
           triggerBtn.disabled = false;
           if (triggerBtn.classList.contains("dropdown-item")) {
-            triggerBtn.innerHTML = '<i class="fas fa-paper-plane me-2 text-info"></i>Send credentials';
+            triggerBtn.innerHTML = '<i class="fas fa-paper-plane me-2 text-info"></i>Send portal credentials';
           } else {
             triggerBtn.innerHTML = originalHtml || '<i class="fas fa-paper-plane"></i>';
           }
@@ -3329,6 +3180,17 @@ if (expContainer) {
           completeBtn.getAttribute("data-invited-role")
         );
         return;
+      }
+    });
+
+    addEmployeeForm?.elements?.empEmail?.addEventListener("input", syncPortalUsernameFromEmail);
+    portalPasswordInput?.addEventListener("input", updatePortalPasswordStrength);
+    document.getElementById("togglePortalPasswordBtn")?.addEventListener("click", togglePortalPasswordVisibility);
+    document.getElementById("copyPortalPasswordBtn")?.addEventListener("click", copyPortalPassword);
+    regenPortalPasswordBtn?.addEventListener("click", () => {
+      if (portalPasswordInput) {
+        portalPasswordInput.value = generateDefaultPortalPassword();
+        updatePortalPasswordStrength();
       }
     });
   })();
