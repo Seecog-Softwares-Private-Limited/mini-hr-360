@@ -60,6 +60,9 @@ const connectDB = async () => {
       console.log('🔄 Syncing Attendance models...');
       const {
         Business: BusinessModel, Employee: EmployeeModel,
+        EmployeeEducation: EmployeeEducationModel,
+        EmployeeExperience: EmployeeExperienceModel,
+        EmployeeDocument: EmployeeDocumentModel,
         AttendancePolicy, Shift, Holiday, EmployeeShiftAssignment,
         AttendancePunch, AttendanceDailySummary, AttendanceRegularization, AttendanceLock,
         PayrollSetup, SalaryStructure, EmployeeSalaryStructure, PayrollRun, PayrollRegister, Payslip, PayrollQuery, EmployeeBankDetail,
@@ -82,6 +85,9 @@ const connectDB = async () => {
       // Ensure dependencies exist
       await safeSync(BusinessModel, 'Business');
       await safeSync(EmployeeModel, 'Employee');
+      await safeSync(EmployeeEducationModel, 'EmployeeEducation');
+      await safeSync(EmployeeExperienceModel, 'EmployeeExperience');
+      await safeSync(EmployeeDocumentModel, 'EmployeeDocument');
 
       // Sync new models independent of each other
       await safeSync(AttendancePolicy, 'AttendancePolicy');

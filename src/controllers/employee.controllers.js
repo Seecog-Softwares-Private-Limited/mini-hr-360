@@ -19,7 +19,7 @@ import path from 'path';
 import { getEffectiveAssignment } from '../services/attendance.service.js';
 import { generatePassword } from '../utils/passwordGenerator.js';
 import { sendDocumentEmail } from '../utils/emailService.js';
-import { resolveOrganizationIdFromRequest } from '../services/organization.service.js';
+import { resolveOrganizationIdFromRequest, userBelongsToOrganization } from '../services/organization.service.js';
 
 const toBool = (val) =>
     val === true || val === 'true' || val === '1' || val === 'on';
@@ -561,44 +561,7 @@ export const listEmployees = async (req, res, next) => {
  */
 export const getEmployeeById = async (req, res, next) => {
     try {
-        const userId = req.user?.id;
-        const isAdmin = isAdminUser(req.user);
-        const rawId = String(req.params.id || '').trim();
-
-        // Support numeric primary key id, and fallback to empId string (e.g. EMP0001)
-        const numericId = Number.parseInt(rawId, 10);
-        const isNumeric = !Number.isNaN(numericId);
-
-        const where = isNumeric ? { id: numericId } : { empId: rawId };
-        if (userId && !isAdmin) {
-            where.userId = userId;
-        }
-
-        let employee = await Employee.findOne({
-            where,
-            include: [
-                { model: EmployeeEducation, as: 'educations' },
-                { model: EmployeeExperience, as: 'experiences' },
-                { model: EmployeeDocument, as: 'documents' },
-            ],
-        });
-
-        // Legacy fallback: if not found and non-admin, allow lookup without userId
-        if (!employee && userId && !isAdmin) {
-            const legacy = await isLegacySingleTenantEmployees();
-            if (legacy) {
-                const legacyWhere = { ...where };
-                delete legacyWhere.userId;
-                employee = await Employee.findOne({
-                    where: legacyWhere,
-                    include: [
-                        { model: EmployeeEducation, as: 'educations' },
-                        { model: EmployeeExperience, as: 'experiences' },
-                        { model: EmployeeDocument, as: 'documents' },
-                    ],
-                });
-            }
-        }
+        const employee = await findEmployeeForUserWithRelations(req);
 
         if (!employee) {
             return res.status(404).json({ error: 'Employee not found' });
@@ -614,32 +577,89 @@ export const getEmployeeById = async (req, res, next) => {
     }
 };
 
+async function canAccessEmployee(req, employee) {
+    if (!employee) return false;
+    if (isAdminUser(req.user)) return true;
+
+    const userId = req.user?.id;
+    if (!userId) return false;
+
+    const organizationId = await resolveOrganizationIdFromRequest(req);
+    const employeeBusinessId =
+        employee.businessId != null && employee.businessId !== ''
+            ? Number(employee.businessId)
+            : null;
+
+    if (organizationId && employeeBusinessId === Number(organizationId)) {
+        return true;
+    }
+
+    if (employeeBusinessId && (await userBelongsToOrganization(userId, employeeBusinessId))) {
+        return true;
+    }
+
+    if (Number(employee.userId) === Number(userId)) {
+        return true;
+    }
+
+    return await isLegacySingleTenantEmployees();
+}
+
 async function findEmployeeForUser(req, options = {}) {
     const userId = req.user?.id;
     const isAdmin = isAdminUser(req.user);
+    const organizationId = !isAdmin ? await resolveOrganizationIdFromRequest(req) : null;
     const rawId = String(req.params.id || '').trim();
     const numericId = Number.parseInt(rawId, 10);
     const isNumeric = !Number.isNaN(numericId);
-    const where = isNumeric ? { id: numericId } : { empId: rawId };
+    const baseWhere = isNumeric ? { id: numericId } : { empId: rawId };
 
-    if (userId && !isAdmin) {
-        where.userId = userId;
+    const where = { ...baseWhere };
+    if (!isAdmin) {
+        if (organizationId) {
+            where.businessId = Number(organizationId);
+        } else if (userId) {
+            where.userId = userId;
+        }
     }
 
-    const query = { where, ...options };
+    let employee = await Employee.findOne({ where, ...options });
 
-    let employee = await Employee.findOne(query);
+    if (!employee) {
+        const candidate = await Employee.findOne({ where: baseWhere, ...options });
+        if (candidate && (await canAccessEmployee(req, candidate))) {
+            employee = candidate;
+        }
+    }
 
     if (!employee && userId && !isAdmin) {
         const legacy = await isLegacySingleTenantEmployees();
         if (legacy) {
-            const legacyWhere = { ...where };
-            delete legacyWhere.userId;
-            employee = await Employee.findOne({ where: legacyWhere, ...options });
+            employee = await Employee.findOne({ where: baseWhere, ...options });
         }
     }
 
     return employee;
+}
+
+const employeeRelationIncludes = [
+    { model: EmployeeEducation, as: 'educations' },
+    { model: EmployeeExperience, as: 'experiences' },
+    { model: EmployeeDocument, as: 'documents' },
+];
+
+async function findEmployeeForUserWithRelations(req) {
+    try {
+        return await findEmployeeForUser(req, { include: employeeRelationIncludes });
+    } catch (err) {
+        console.warn('Employee fetch with relations failed, retrying without includes:', err.message);
+        const employee = await findEmployeeForUser(req);
+        if (!employee) return null;
+        employee.setDataValue('educations', []);
+        employee.setDataValue('experiences', []);
+        employee.setDataValue('documents', []);
+        return employee;
+    }
 }
 
 /**
@@ -1050,8 +1070,6 @@ export const updateEmployee = async (req, res, next) => {
         console.log('Params id:', req.params.id);
         console.log('Body:', JSON.stringify(req.body, null, 2));
         console.log('User:', req.user?.id);
-        const userId = req.user?.id;
-        const isAdmin = isAdminUser(req.user);
         const id = Number.parseInt(String(req.params.id || '').trim(), 10);
 
         if (Number.isNaN(id)) {
@@ -1059,18 +1077,7 @@ export const updateEmployee = async (req, res, next) => {
             return res.status(400).json({ error: 'Invalid employee ID' });
         }
 
-        const where = { id };
-        if (userId && !isAdmin) where.userId = userId;
-
-        let employee = await Employee.findOne({ where, transaction: t, lock: t.LOCK.UPDATE });
-        // Legacy fallback: if not found and non-admin, allow update without userId scope only in single-tenant legacy mode
-        if (!employee && userId && !isAdmin) {
-            const legacy = await isLegacySingleTenantEmployees();
-            if (legacy) {
-                const legacyWhere = { id };
-                employee = await Employee.findOne({ where: legacyWhere, transaction: t, lock: t.LOCK.UPDATE });
-            }
-        }
+        let employee = await findEmployeeForUser(req, { transaction: t, lock: t.LOCK.UPDATE });
         if (!employee) {
             await t.rollback();
             return res.status(404).json({ error: 'Employee not found' });
@@ -1285,27 +1292,13 @@ export const updateEmployee = async (req, res, next) => {
  */
 export const resetEmployeePortalAccess = async (req, res, next) => {
     try {
-        const userId = req.user?.id;
-        const isAdmin = isAdminUser(req.user);
         const id = Number.parseInt(String(req.params.id || '').trim(), 10);
 
         if (Number.isNaN(id)) {
             return res.status(400).json({ error: 'Invalid employee ID' });
         }
 
-        const where = { id };
-        if (userId && !isAdmin) {
-            where.userId = userId;
-        }
-
-        let employee = await Employee.findOne({ where });
-        if (!employee && userId && !isAdmin) {
-            const legacy = await isLegacySingleTenantEmployees();
-            if (legacy) {
-                employee = await Employee.findOne({ where: { id } });
-            }
-        }
-
+        const employee = await findEmployeeForUser(req);
         if (!employee) {
             return res.status(404).json({ error: 'Employee not found' });
         }
@@ -1345,23 +1338,29 @@ export const resetEmployeePortalAccess = async (req, res, next) => {
 };
 
 async function findEmployeeForPortalAccess(req, id) {
-    const userId = req.user?.id;
-    const isAdmin = isAdminUser(req.user);
-
     if (Number.isNaN(id)) {
         return { error: { status: 400, message: 'Invalid employee ID' } };
     }
 
-    const where = { id };
-    if (userId && !isAdmin) {
-        where.userId = userId;
+    const userId = req.user?.id;
+    const isAdmin = isAdminUser(req.user);
+    const organizationId = !isAdmin ? await resolveOrganizationIdFromRequest(req) : null;
+    const baseWhere = { id };
+
+    const where = { ...baseWhere };
+    if (!isAdmin) {
+        if (organizationId) {
+            where.businessId = Number(organizationId);
+        } else if (userId) {
+            where.userId = userId;
+        }
     }
 
     let employee = await Employee.findOne({ where });
     if (!employee && userId && !isAdmin) {
         const legacy = await isLegacySingleTenantEmployees();
         if (legacy) {
-            employee = await Employee.findOne({ where: { id } });
+            employee = await Employee.findOne({ where: baseWhere });
         }
     }
 
@@ -1428,8 +1427,6 @@ export const sendEmployeePortalCredentials = async (req, res, next) => {
  */
 export const sendEmployeePortalCredentialsEmail = async (req, res, next) => {
     try {
-        const userId = req.user?.id;
-        const isAdmin = isAdminUser(req.user);
         const id = Number.parseInt(String(req.params.id || '').trim(), 10);
         const password = String(req.body?.password || '').trim();
 
@@ -1441,19 +1438,7 @@ export const sendEmployeePortalCredentialsEmail = async (req, res, next) => {
             return res.status(400).json({ error: 'Password is required to resend credentials email' });
         }
 
-        const where = { id };
-        if (userId && !isAdmin) {
-            where.userId = userId;
-        }
-
-        let employee = await Employee.findOne({ where });
-        if (!employee && userId && !isAdmin) {
-            const legacy = await isLegacySingleTenantEmployees();
-            if (legacy) {
-                employee = await Employee.findOne({ where: { id } });
-            }
-        }
-
+        const employee = await findEmployeeForUser(req);
         if (!employee) {
             return res.status(404).json({ error: 'Employee not found' });
         }
@@ -1488,8 +1473,6 @@ export const sendEmployeePortalCredentialsEmail = async (req, res, next) => {
 export const deleteEmployee = async (req, res, next) => {
     const t = await sequelize.transaction();
     try {
-        const userId = req.user?.id;
-        const isAdmin = isAdminUser(req.user);
         const id = Number.parseInt(String(req.params.id || '').trim(), 10);
 
         if (Number.isNaN(id)) {
@@ -1497,20 +1480,7 @@ export const deleteEmployee = async (req, res, next) => {
             return res.status(400).json({ error: 'Invalid employee ID' });
         }
 
-        const where = { id };
-        if (userId && !isAdmin) {
-            where.userId = userId;
-        }
-
-        let employee = await Employee.findOne({ where, transaction: t, lock: t.LOCK.UPDATE });
-        // Legacy fallback: if not found and non-admin, allow delete without userId scope only in single-tenant legacy mode
-        if (!employee && userId && !isAdmin) {
-            const legacy = await isLegacySingleTenantEmployees();
-            if (legacy) {
-                const legacyWhere = { id };
-                employee = await Employee.findOne({ where: legacyWhere, transaction: t, lock: t.LOCK.UPDATE });
-            }
-        }
+        const employee = await findEmployeeForUser(req, { transaction: t, lock: t.LOCK.UPDATE });
         if (!employee) {
             await t.rollback();
             return res.status(404).json({ error: 'Employee not found' });

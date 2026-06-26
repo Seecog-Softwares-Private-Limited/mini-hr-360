@@ -2660,15 +2660,23 @@
     }
 
     async function fetchEmployee(id) {
-      const res = await fetch("/api/v1/employees/" + id);
+      if (!id || id === "undefined" || id === "null") {
+        throw new Error("Invalid employee id");
+      }
+
+      const res = await fetch("/api/v1/employees/" + encodeURIComponent(id));
       if (!res.ok) {
-        let err;
+        let err = {};
         try {
           err = await res.json();
         } catch (e) {
           err = {};
         }
-        throw new Error(err.error || "Failed to fetch employee");
+        const message =
+          err.error ||
+          err.message ||
+          `Failed to fetch employee (${res.status} ${res.statusText})`;
+        throw new Error(message);
       }
       return res.json();
     }
