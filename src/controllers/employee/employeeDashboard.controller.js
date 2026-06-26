@@ -99,6 +99,9 @@ export const renderEmployeeDashboard = asyncHandler(async (req, res) => {
     title: 'Employee Dashboard',
     layout: 'employee-main',
     active: 'dashboard',
+    portalRole: req.portalRole,
+    portalAccess: req.portalAccess,
+    portalNav: req.portalNav,
     ...dashboardData,
   });
 });

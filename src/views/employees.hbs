@@ -72,6 +72,7 @@
         </div>
 
         {{!-- Search form --}}
+        <input type="hidden" id="activeOrganizationId" value="{{activeOrganizationId}}" />
         <form
           class="row mb-3"
           id="employeeSearchForm"
@@ -208,8 +209,9 @@
                                     data-email="{{empEmail}}"
                                     data-name="{{empName}}"
                                     {{#unless empEmail}}disabled{{/unless}}
+                                    title="Email portal login credentials to the employee"
                                   >
-                                    <i class="fas fa-paper-plane me-2 text-info"></i>Send portal credentials
+                                    <i class="fas fa-paper-plane me-2 text-info"></i>Send credentials
                                   </button>
                                 </li>
                                 <li><hr class="dropdown-divider my-1"></li>
@@ -622,7 +624,7 @@
             {{!-- TAB 2: PROFESSIONAL DETAILS --}}
             <div class="tab-pane fade" id="tab-job" role="tabpanel">
               <div class="row g-3">
-                <div class="col-md-4">
+                <div class="col-md-4" id="businessFieldWrap">
                   <label class="form-label">Business <span class="text-danger">*</span></label>
                   <select name="businessId" class="form-select" required>
                     <option value="">Select Business</option>
@@ -630,7 +632,7 @@
                     <option value="{{id}}">{{businessName}}</option>
                     {{/each}}
                   </select>
-                  <small class="text-muted">
+                  <small class="text-muted" id="businessFieldHint">
                     Select the business this employee belongs to
                   </small>
                 </div>
@@ -1342,41 +1344,15 @@
                 </div>
               </div>
 
-              <div class="mt-3 border rounded p-3" id="portalCredentialsSection">
-                <h6 class="mb-2"><i class="fas fa-key me-2"></i>Portal Credentials</h6>
-                <div class="row g-3">
-                  <div class="col-md-6">
-                    <label class="form-label">Username (Email)</label>
-                    <input
-                      type="text"
-                      class="form-control"
-                      id="portalUsernamePreview"
-                      placeholder="Will use employee email"
-                      readonly
-                    />
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label">Default Password</label>
-                    <div class="input-group">
-                      <input
-                        type="text"
-                        class="form-control"
-                        id="portalPasswordInput"
-                        name="portalPassword"
-                        placeholder="Auto-generated default password"
-                      />
-                      <button type="button" class="btn btn-outline-secondary" id="regenPortalPasswordBtn">Generate</button>
-                    </div>
-                  </div>
-                  <div class="col-12">
-                    <div class="form-check">
-                      <input class="form-check-input" type="checkbox" id="sendCredentialsEmailCheckbox" name="sendCredentialsEmail" value="true" checked />
-                      <label class="form-check-label" for="sendCredentialsEmailCheckbox">
-                        Send username and password to invited email on save
-                      </label>
-                    </div>
-                  </div>
-                </div>
+              <div class="mt-3 border rounded p-3 bg-light" id="portalCredentialsSection">
+                <h6 class="mb-2"><i class="fas fa-envelope me-2"></i>Portal access</h6>
+                <p class="text-muted small mb-3">
+                  Email portal login credentials to the employee's registered address. If the profile isn't saved yet, it will be saved automatically before credentials are sent.
+                </p>
+                <button type="button" class="btn btn-primary" id="sendPortalCredentialsFormBtn">
+                  <i class="fas fa-paper-plane me-2"></i>Send Credentials
+                </button>
+                <div class="small mt-2" id="sendPortalCredentialsFormStatus"></div>
               </div>
 
             </div>{{!-- end tab-documents --}}
@@ -1559,24 +1535,24 @@
     <div class="modal-content">
       <div class="modal-header" style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff;">
         <h5 class="modal-title" id="employeePortalCredentialsTitle">
-          <i class="fas fa-user-lock me-2"></i>Employee portal login
+          <i class="fas fa-user-lock me-2"></i>Portal sign-in details
         </h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <p class="text-muted small mb-3" id="portalCredentialsIntro">
-          Share these credentials with the employee. They can sign in at the employee portal using <strong>email</strong> or <strong>employee code</strong>.
+          Share these sign-in details with the employee. They can access the portal using their <strong>email</strong> or <strong>employee code</strong>.
         </p>
         <div id="portalEmailSentBanner" class="alert alert-success d-none py-2 small mb-3">
-          <i class="fas fa-envelope-circle-check me-1"></i> Credentials were also emailed to the employee.
+          <i class="fas fa-envelope-circle-check me-1"></i> Credentials emailed to the employee.
         </div>
         <div id="portalEmailFailedBanner" class="alert alert-warning d-none py-2 small mb-3">
           <i class="fas fa-triangle-exclamation me-1"></i>
-          <span id="portalEmailFailedText">Email could not be sent — copy and share these credentials manually.</span>
+          <span id="portalEmailFailedText">Credentials could not be emailed — share these sign-in details manually.</span>
         </div>
         <div id="portalEmailRetryWrap" class="d-none mb-3">
           <button type="button" class="btn btn-sm btn-outline-primary" id="portalRetryEmailBtn">
-            <i class="fas fa-paper-plane me-1"></i> Retry send email
+            <i class="fas fa-paper-plane me-1"></i> Resend credentials
           </button>
         </div>
 
@@ -1660,10 +1636,8 @@
     let currentViewEmployeeId = null;
     let reloadAfterPortalCredentials = false;
     let currentPortalEmployeeId = null;
-    const portalUsernamePreview = document.getElementById("portalUsernamePreview");
-    const portalPasswordInput = document.getElementById("portalPasswordInput");
-    const regenPortalPasswordBtn = document.getElementById("regenPortalPasswordBtn");
-    const sendCredentialsEmailCheckbox = document.getElementById("sendCredentialsEmailCheckbox");
+    const sendPortalCredentialsFormBtn = document.getElementById("sendPortalCredentialsFormBtn");
+    const sendPortalCredentialsFormStatus = document.getElementById("sendPortalCredentialsFormStatus");
     const portalCredentialsSection = document.getElementById("portalCredentialsSection");
     const viewDefaultPortalPasswordBtn = document.getElementById("viewDefaultPortalPasswordBtn");
     const viewEmployeeActiveToggle = document.getElementById("viewEmployeeActiveToggle");
@@ -1673,29 +1647,10 @@
     const viewEmpStatusIcon = document.getElementById("viewEmpStatusIcon");
     let isUpdatingEmployeeStatus = false;
 
-    function generateDefaultPortalPassword() {
-      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$";
-      let out = "";
-      for (let i = 0; i < 12; i += 1) {
-        out += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      return out;
-    }
-
-    function syncPortalUsernameFromEmail() {
-      const email = addEmployeeForm?.elements?.empEmail?.value || "";
-      if (portalUsernamePreview) portalUsernamePreview.value = email;
-    }
-
-    function setPortalCredentialsMode(isCreateMode) {
-      if (!portalCredentialsSection) return;
-      portalCredentialsSection.style.display = isCreateMode ? "" : "none";
-      if (isCreateMode) {
-        if (portalPasswordInput && !portalPasswordInput.value) {
-          portalPasswordInput.value = generateDefaultPortalPassword();
-        }
-        if (sendCredentialsEmailCheckbox) sendCredentialsEmailCheckbox.checked = true;
-      }
+    function setSendPortalCredentialsStatus(message, type = "muted") {
+      if (!sendPortalCredentialsFormStatus) return;
+      sendPortalCredentialsFormStatus.textContent = message || "";
+      sendPortalCredentialsFormStatus.className = `small mt-2 text-${type}`;
     }
 
     function copyInputValue(inputId) {
@@ -1742,8 +1697,8 @@
         failedBanner?.classList.remove("d-none");
         if (failedText) {
           failedText.textContent = portalAccess.emailError
-            ? `Email could not be sent: ${portalAccess.emailError}`
-            : "Email could not be sent — copy and share these credentials manually.";
+            ? `Credentials could not be emailed: ${portalAccess.emailError}`
+            : "Credentials could not be emailed — share these sign-in details manually.";
         }
         retryWrap?.classList.toggle("d-none", !currentPortalEmployeeId);
       } else {
@@ -1814,7 +1769,7 @@
         `Employee Code: ${document.getElementById("portalCredEmpId")?.value || ""}`,
         `Password: ${document.getElementById("portalCredPassword")?.value || ""}`,
       ].join("\n");
-      navigator.clipboard.writeText(text).then(() => alert("All credentials copied to clipboard."))
+      navigator.clipboard.writeText(text).then(() => alert("Sign-in details copied to clipboard."))
         .catch(() => alert("Copy failed."));
     });
 
@@ -2349,8 +2304,29 @@
       resetDynamicSection(experienceContainer, ".experience-row");
       resetDynamicSection(documentContainer, ".document-row");
 
-      // Reset gender dropdown display
       updateGenderDropdownDisplay();
+      applyActiveOrganizationToEmployeeForm();
+      setSendPortalCredentialsStatus("");
+    }
+
+    function applyActiveOrganizationToEmployeeForm() {
+      const orgId = document.getElementById("activeOrganizationId")?.value;
+      const businessSelect = addEmployeeForm?.elements?.businessId;
+      const businessWrap = document.getElementById("businessFieldWrap");
+      const businessHint = document.getElementById("businessFieldHint");
+
+      if (!businessSelect) return;
+
+      if (orgId) {
+        businessSelect.value = orgId;
+        businessSelect.required = false;
+        if (businessWrap) businessWrap.classList.add("d-none");
+        if (businessHint) businessHint.textContent = "Organization is set automatically from your active company.";
+      } else {
+        businessSelect.required = true;
+        if (businessWrap) businessWrap.classList.remove("d-none");
+        if (businessHint) businessHint.textContent = "Select the business this employee belongs to";
+      }
     }
 
     // =======================================
@@ -2633,10 +2609,12 @@
         resetEmployeeForm();
         const emailInput = addEmployeeForm?.elements?.empEmail;
         if (emailInput) emailInput.readOnly = false;
-        setPortalCredentialsMode(true);
-        syncPortalUsernameFromEmail();
+        setSendPortalCredentialsStatus("");
+        applyActiveOrganizationToEmployeeForm();
       });
     }
+
+    applyActiveOrganizationToEmployeeForm();
 
     function splitName(fullName) {
       const text = String(fullName || "").trim();
@@ -2664,8 +2642,8 @@
 
       const emailInput = addEmployeeForm?.elements?.empEmail;
       if (emailInput) emailInput.readOnly = true;
-      setPortalCredentialsMode(true);
-      syncPortalUsernameFromEmail();
+      setSendPortalCredentialsStatus("");
+      applyActiveOrganizationToEmployeeForm();
 
       const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
       modal.show();
@@ -2674,75 +2652,125 @@
     // =======================================
     // Form submit logic (Create / Edit)
     // =======================================
+    async function saveEmployeeFromForm() {
+      if (!addEmployeeForm) throw new Error("Employee form not found");
+
+      updateWizardValidity();
+      const firstBad = findFirstInvalidStep();
+      if (firstBad !== -1) {
+        goToStep(firstBad);
+        currentStep = firstBad;
+        updateWizardButtons();
+        validateTab(firstBad, { markInvalid: true });
+        updateWizardValidity();
+        throw new Error("Please fill all required fields (*) before saving.");
+      }
+
+      const formData = new FormData(addEmployeeForm);
+      const base = Object.fromEntries(formData.entries());
+      delete base.id;
+
+      base.sendCredentialsEmail = "false";
+      base.educations = collectEducationRows();
+      base.experiences = collectExperienceRows();
+      base.documents = collectDocumentRows();
+
+      let url = "/api/v1/employees";
+      let method = "POST";
+
+      if (formMode === "edit" && currentEditingId) {
+        url = "/api/v1/employees/" + currentEditingId;
+        method = "PUT";
+      }
+
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(base),
+      });
+
+      if (!res.ok) {
+        let err;
+        try {
+          err = await res.json();
+        } catch (e) {
+          err = {};
+        }
+        throw new Error(err.error || err.message || "Failed to save employee");
+      }
+
+      return res.json();
+    }
+
+    async function sendPortalCredentialsFromForm() {
+      const email = addEmployeeForm?.elements?.empEmail?.value?.trim();
+      if (!email) {
+        alert("Employee email is required to send credentials.");
+        return;
+      }
+
+      if (!confirm(`Send portal login credentials to ${email}?`)) return;
+
+      const btn = sendPortalCredentialsFormBtn;
+      const originalHtml = btn?.innerHTML;
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Sending...';
+      }
+      setSendPortalCredentialsStatus("Saving employee profile...", "muted");
+
+      try {
+        let employeeId = currentEditingId;
+        if (!employeeId || formMode === "create") {
+          const saved = await saveEmployeeFromForm();
+          employeeId = saved.id;
+          currentEditingId = employeeId;
+          formMode = "edit";
+          if (employeeIdField) employeeIdField.value = String(employeeId);
+        }
+
+        setSendPortalCredentialsStatus("Sending credentials...", "muted");
+
+        const res = await fetch(`/api/v1/employees/${employeeId}/portal-access/send`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to send credentials");
+
+        if (data.emailSent) {
+          const regenNote = data.passwordRegenerated ? " A new temporary password was included." : "";
+          setSendPortalCredentialsStatus(`Credentials sent to ${email}.${regenNote}`, "success");
+        } else {
+          throw new Error(data.emailError || "Credentials could not be emailed. Check SMTP settings.");
+        }
+      } catch (error) {
+        setSendPortalCredentialsStatus(error.message || "Failed to send credentials.", "danger");
+        alert(error.message || "Failed to send credentials.");
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = originalHtml || '<i class="fas fa-paper-plane me-2"></i>Send Credentials';
+        }
+      }
+    }
+
     if (addEmployeeForm) {
       addEmployeeForm.addEventListener("submit", async function (e) {
         e.preventDefault();
 
-        // Block submit until required asterisk fields are filled across all tabs
-        updateWizardValidity();
-        const firstBad = findFirstInvalidStep();
-        if (firstBad !== -1) {
-          // Jump to first invalid tab and highlight missing fields
-          goToStep(firstBad);
-          currentStep = firstBad;
-          updateWizardButtons();
-          validateTab(firstBad, { markInvalid: true });
-          updateWizardValidity();
-          alert("Please fill all required fields (*) before saving.");
-          return;
-        }
-
-        const formData = new FormData(addEmployeeForm);
-        const base = Object.fromEntries(formData.entries());
-
-        // Remove id from base; for edit we use URL param
-        delete base.id;
-
-        base.sendCredentialsEmail = sendCredentialsEmailCheckbox?.checked ? "true" : "false";
-        base.educations = collectEducationRows();
-        base.experiences = collectExperienceRows();
-        base.documents = collectDocumentRows();
-
-        let url = "/api/v1/employees";
-        let method = "POST";
-
-        if (formMode === "edit" && currentEditingId) {
-          url = "/api/v1/employees/" + currentEditingId;
-          method = "PUT";
-        }
-
         try {
-          const res = await fetch(url, {
-            method: method,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(base),
-          });
-
-          if (!res.ok) {
-            let err;
-            try {
-              err = await res.json();
-            } catch (e) {
-              err = {};
-            }
-            throw new Error(err.error || "Failed to save employee");
-          }
-
-          const saved = await res.json();
-
-          if (formMode === "create" && saved.portalAccess) {
-            bootstrap.Modal.getInstance(modalEl)?.hide();
-            reloadAfterPortalCredentials = true;
-            showPortalCredentialsModal(saved, saved.portalAccess);
-            return;
-          }
-
+          await saveEmployeeFromForm();
           window.location.reload();
         } catch (error) {
           alert(error.message);
         }
       });
     }
+
+    sendPortalCredentialsFormBtn?.addEventListener("click", sendPortalCredentialsFromForm);
 
     // =======================================
     // VIEW / EDIT / DELETE BUTTON HANDLERS
@@ -3162,7 +3190,7 @@ if (expContainer) {
         setEducationRows(emp.educations || []);
         setExperienceRows(emp.experiences || []);
         setDocumentRows(emp.documents || []);
-        setPortalCredentialsMode(false);
+        setSendPortalCredentialsStatus("");
 
         const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
         modal.show();
@@ -3228,14 +3256,14 @@ if (expContainer) {
 
         const portalAccess = data.portalAccess;
         const regenNote = data.passwordRegenerated
-          ? " A new portal password was generated."
+          ? " A new temporary password was included."
           : "";
 
         if (data.emailSent) {
-          alert(`Credentials emailed to ${email}.${regenNote}`);
+          alert(`Credentials sent to ${email}.${regenNote}`);
         } else {
-          const errMsg = data.emailError || "Email could not be sent";
-          alert(`${errMsg}.${regenNote} Opening credentials so you can share them manually.`);
+          const errMsg = data.emailError || "Credentials could not be emailed";
+          alert(`${errMsg}.${regenNote} You can share sign-in details manually below.`);
           if (portalAccess) {
             showPortalCredentialsModal(
               { id, empName: name, empEmail: email, empId: portalAccess.loginEmployeeCode },
@@ -3249,7 +3277,7 @@ if (expContainer) {
         if (triggerBtn) {
           triggerBtn.disabled = false;
           if (triggerBtn.classList.contains("dropdown-item")) {
-            triggerBtn.innerHTML = '<i class="fas fa-paper-plane me-2 text-info"></i>Send portal credentials';
+            triggerBtn.innerHTML = '<i class="fas fa-paper-plane me-2 text-info"></i>Send credentials';
           } else {
             triggerBtn.innerHTML = originalHtml || '<i class="fas fa-paper-plane"></i>';
           }
@@ -3302,11 +3330,6 @@ if (expContainer) {
         );
         return;
       }
-    });
-
-    addEmployeeForm?.elements?.empEmail?.addEventListener("input", syncPortalUsernameFromEmail);
-    regenPortalPasswordBtn?.addEventListener("click", () => {
-      if (portalPasswordInput) portalPasswordInput.value = generateDefaultPortalPassword();
     });
   })();
 </script>

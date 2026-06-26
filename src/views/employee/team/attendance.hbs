@@ -1,0 +1,70 @@
+<div class="container-fluid">
+  <div class="row">
+    {{> employee-sidebar employee=employee active=active portalNav=portalNav portalAccess=portalAccess portalRole=portalRole}}
+
+    <div class="col-md-10 emp-main">
+      <div class="emp-page-header mb-4">
+        <h4 class="mb-1"><i class="fa-solid fa-user-clock me-2"></i>Team Attendance</h4>
+        <p class="text-muted mb-0">Today's attendance snapshot for your direct reports.</p>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col-md-4">
+          <div class="emp-stat-card">
+            <div class="emp-stat-label">Present today</div>
+            <div class="emp-stat-value text-success">{{stats.presentToday}}</div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="emp-stat-card">
+            <div class="emp-stat-label">Absent / on leave</div>
+            <div class="emp-stat-value text-danger">{{stats.absentToday}}</div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="emp-stat-card">
+            <div class="emp-stat-label">Team size</div>
+            <div class="emp-stat-value">{{stats.teamSize}}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0">
+          <h6 class="mb-0">Team members</h6>
+        </div>
+        <div class="card-body p-0">
+          {{#if team.length}}
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Employee</th>
+                  <th>Department</th>
+                  <th>Designation</th>
+                  <th>Email</th>
+                </tr>
+              </thead>
+              <tbody>
+                {{#each team}}
+                <tr>
+                  <td>
+                    <div class="fw-600">{{empName}}</div>
+                    <small class="text-muted">{{empId}}</small>
+                  </td>
+                  <td>{{empDepartment}}</td>
+                  <td>{{empDesignation}}</td>
+                  <td class="text-muted small">{{empEmail}}</td>
+                </tr>
+                {{/each}}
+              </tbody>
+            </table>
+          </div>
+          {{else}}
+          <div class="p-4 text-center text-muted">No direct reports assigned.</div>
+          {{/if}}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

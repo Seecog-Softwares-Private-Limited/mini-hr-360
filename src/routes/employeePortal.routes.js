@@ -1,6 +1,7 @@
 // src/routes/employeePortal.routes.js
 import { Router } from 'express';
 import { verifyEmployee } from '../middleware/employeeAuthMiddleware.js';
+import { attachEmployeePortalContext } from '../middleware/employeePortalRbac.middleware.js';
 import {
   renderEmployeeLogin,
   loginEmployee,
@@ -69,57 +70,58 @@ router.post('/reset-password/:token', resetPassword);
 // ===================================
 // PROTECTED ROUTES (Employee Auth Required)
 // ===================================
+router.use(verifyEmployee, attachEmployeePortalContext);
 
 // Logout
-router.get('/logout', verifyEmployee, logoutEmployee);
-router.post('/logout', verifyEmployee, logoutEmployee);
+router.get('/logout', logoutEmployee);
+router.post('/logout', logoutEmployee);
 
 // Dashboard
-router.get('/dashboard', verifyEmployee, renderEmployeeDashboard);
+router.get('/dashboard', renderEmployeeDashboard);
 
 // My Work
-router.get('/work/timesheets', verifyEmployee, renderTimesheets);
-router.get('/work/tasks', verifyEmployee, renderTasks);
-router.get('/work/projects', verifyEmployee, renderProjects);
-router.get('/work/goals', verifyEmployee, renderGoals);
-router.get('/work/performance', verifyEmployee, renderPerformance);
+router.get('/work/timesheets', renderTimesheets);
+router.get('/work/tasks', renderTasks);
+router.get('/work/projects', renderProjects);
+router.get('/work/goals', renderGoals);
+router.get('/work/performance', renderPerformance);
 
 // Profile
-router.get('/profile', verifyEmployee, renderProfile);
-router.get('/change-password', verifyEmployee, renderChangePassword);
-router.post('/change-password', verifyEmployee, updatePassword);
+router.get('/profile', renderProfile);
+router.get('/change-password', renderChangePassword);
+router.post('/change-password', updatePassword);
 
 // Documents Vault
-router.get('/documents', verifyEmployee, renderDocumentsVault);
-router.get('/documents/:id/preview', verifyEmployee, previewDocument);
-router.get('/documents/:id/download', verifyEmployee, downloadDocument);
+router.get('/documents', renderDocumentsVault);
+router.get('/documents/:id/preview', previewDocument);
+router.get('/documents/:id/download', downloadDocument);
 
 // Leave Management - Page Routes
-router.get('/leaves', verifyEmployee, renderLeaveList);
-router.get('/leaves/apply', verifyEmployee, renderApplyLeave);
+router.get('/leaves', renderLeaveList);
+router.get('/leaves/apply', renderApplyLeave);
 
 // Leave Management - API Routes
-router.post('/leaves/apply', verifyEmployee, submitLeaveApplication);
-router.post('/leaves/:id/cancel', verifyEmployee, cancelLeave);
-router.get('/leaves/:id', verifyEmployee, getLeaveDetails);
+router.post('/leaves/apply', submitLeaveApplication);
+router.post('/leaves/:id/cancel', cancelLeave);
+router.get('/leaves/:id', getLeaveDetails);
 
 // ===================================
 // API ROUTES (JSON Response)
 // ===================================
 
 // Dashboard API
-router.get('/api/dashboard/stats', verifyEmployee, getDashboardStats);
-router.get('/api/dashboard/overview', verifyEmployee, getDashboardOverview);
-router.get('/api/profile', verifyEmployee, getEmployeeProfile);
+router.get('/api/dashboard/stats', getDashboardStats);
+router.get('/api/dashboard/overview', getDashboardOverview);
+router.get('/api/profile', getEmployeeProfile);
 
 // Documents API
-router.get('/api/documents', verifyEmployee, listDocumentsApi);
-router.get('/api/documents/:id', verifyEmployee, getDocumentDetail);
+router.get('/api/documents', listDocumentsApi);
+router.get('/api/documents/:id', getDocumentDetail);
 
 // Leave API
-router.get('/api/leaves/balances', verifyEmployee, getLeaveBalances);
-router.get('/api/leaves/list', verifyEmployee, getLeaveRequests);
-router.post('/api/leaves/validate', verifyEmployee, validateLeave);
+router.get('/api/leaves/balances', getLeaveBalances);
+router.get('/api/leaves/list', getLeaveRequests);
+router.post('/api/leaves/validate', validateLeave);
 
 export default router;
 export { router as employeePortalRouter };

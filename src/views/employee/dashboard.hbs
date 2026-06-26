@@ -1,6 +1,6 @@
 <div class="container-fluid">
     <div class="row">
-        {{> employee-sidebar employee=employee active='dashboard'}}
+        {{> employee-sidebar employee=employee active='dashboard' portalNav=portalNav portalAccess=portalAccess portalRole=portalRole}}
 
         <div class="col-md-10 emp-main">
             <!-- Hero -->
@@ -48,6 +48,12 @@
                     <i class="fa-solid fa-calendar"></i>
                     <span>Calendar</span>
                 </a>
+                {{#if portalAccess.canViewTeam}}
+                <a href="/employee/team" class="emp-quick-action">
+                    <i class="fa-solid fa-users"></i>
+                    <span>Team</span>
+                </a>
+                {{/if}}
             </div>
 
             <!-- Home Widgets -->

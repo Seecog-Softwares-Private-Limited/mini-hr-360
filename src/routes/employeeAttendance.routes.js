@@ -1,6 +1,7 @@
 
 import { Router } from 'express';
 import { verifyEmployee } from '../middleware/employeeAuthMiddleware.js';
+import { attachEmployeePortalContext } from '../middleware/employeePortalRbac.middleware.js';
 import {
     renderAttendanceDashboard,
     punch,
@@ -15,22 +16,24 @@ import {
 
 const router = Router();
 
+router.use(verifyEmployee, attachEmployeePortalContext);
+
 // Page Routes (Render Views)
-router.get('/', verifyEmployee, renderAttendanceDashboard); // /employee/attendance
-router.get('/today', verifyEmployee, renderAttendanceDashboard); // /employee/attendance/today (alias)
-router.get('/calendar', verifyEmployee, renderAttendanceCalendar); // /employee/attendance/calendar
-router.get('/regularization_form', verifyEmployee, renderRegularizationForm); // /employee/attendance/regularization_form
-router.get('/regularizations', verifyEmployee, renderRegularizationList); // /employee/attendance/regularizations
+router.get('/', renderAttendanceDashboard);
+router.get('/today', renderAttendanceDashboard);
+router.get('/calendar', renderAttendanceCalendar);
+router.get('/regularization_form', renderRegularizationForm);
+router.get('/regularizations', renderRegularizationList);
 
 // API Pair Routes
-router.post('/punch', verifyEmployee, punch);
-router.get('/api/month-summary', verifyEmployee, getMonthlyAttendance);
-router.get('/api/today-summary', verifyEmployee, getTodaySummary);
-router.get('/api/regularizations', verifyEmployee, getRegularizations);
-router.post('/regularization', verifyEmployee, createRegularizationRequest);
+router.post('/punch', punch);
+router.get('/api/month-summary', getMonthlyAttendance);
+router.get('/api/today-summary', getTodaySummary);
+router.get('/api/regularizations', getRegularizations);
+router.post('/regularization', createRegularizationRequest);
 
 // Shifts endpoint for regularization form
-router.get('/api/shifts', verifyEmployee, async (req, res) => {
+router.get('/api/shifts', async (req, res) => {
     try {
         const { Shift } = await import('../models/index.js');
         const shifts = await Shift.findAll({

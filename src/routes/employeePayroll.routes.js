@@ -1,6 +1,7 @@
 // src/routes/employeePayroll.routes.js
 import { Router } from 'express';
 import { verifyEmployee } from '../middleware/employeeAuthMiddleware.js';
+import { attachEmployeePortalContext } from '../middleware/employeePortalRbac.middleware.js';
 import {
     renderMyPayslips,
     getMyPayslips,
@@ -22,26 +23,24 @@ import {
 
 const router = Router();
 
-// ===================================
-// PROTECTED ROUTES (Employee Auth Required)
-// ===================================
+router.use(verifyEmployee, attachEmployeePortalContext);
 
 // Page Routes
-router.get('/payslips', verifyEmployee, renderMyPayslips);
-router.get('/payslips/:id/view', verifyEmployee, renderPayslipView);
-router.get('/bank-tax', verifyEmployee, renderBankTax);
-router.get('/salary-details', verifyEmployee, renderSalaryDetails);
-router.get('/queries', verifyEmployee, renderPayrollQueries);
+router.get('/payslips', renderMyPayslips);
+router.get('/payslips/:id/view', renderPayslipView);
+router.get('/bank-tax', renderBankTax);
+router.get('/salary-details', renderSalaryDetails);
+router.get('/queries', renderPayrollQueries);
 
 // API Routes
-router.get('/api/payslips', verifyEmployee, getMyPayslips);
-router.get('/api/payslips/:id', verifyEmployee, getPayslipDetail);
-router.get('/api/bank-tax', verifyEmployee, getBankAndTaxDetails);
-router.put('/api/bank-tax', verifyEmployee, updateBankAndTaxDetails);
-router.get('/api/salary-details', verifyEmployee, getSalaryDetails);
-router.get('/api/queries', verifyEmployee, getMyPayrollQueries);
-router.get('/api/queries/:id', verifyEmployee, getQueryDetail);
-router.post('/api/queries', verifyEmployee, raisePayrollQuery);
+router.get('/api/payslips', getMyPayslips);
+router.get('/api/payslips/:id', getPayslipDetail);
+router.get('/api/bank-tax', getBankAndTaxDetails);
+router.put('/api/bank-tax', updateBankAndTaxDetails);
+router.get('/api/salary-details', getSalaryDetails);
+router.get('/api/queries', getMyPayrollQueries);
+router.get('/api/queries/:id', getQueryDetail);
+router.post('/api/queries', raisePayrollQuery);
 
 export default router;
 export { router as employeePayrollRouter };
