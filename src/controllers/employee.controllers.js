@@ -287,6 +287,19 @@ async function sendWelcomeEmail(employee, password, portalUrl) {
 }
 
 function getPortalLoginUrl(req) {
+    const appUrl = String(process.env.APP_URL || '').trim().replace(/\/+$/, '');
+    if (appUrl) {
+        try {
+            const base = new URL(appUrl);
+            const port = process.env.PORT || '';
+            if (!base.port && port) {
+                base.port = String(port);
+            }
+            return new URL('/employee/login', base).href;
+        } catch {
+            // fall through to request host
+        }
+    }
     return `${req.protocol}://${req.get('host')}/employee/login`;
 }
 
