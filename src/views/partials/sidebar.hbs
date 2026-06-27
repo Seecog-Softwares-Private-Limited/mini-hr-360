@@ -29,6 +29,9 @@
         <a class="sidebar-link {{#if (eq active 'employees')}}active{{/if}}" href="/employees" data-nav="employees">
           <i class="fa-solid fa-user-tie nav-icon"></i> Employees
         </a>
+        <a class="sidebar-link {{#if (eq active 'candidates')}}active{{/if}}" href="/candidates" data-nav="candidates">
+          <i class="fa-solid fa-user-group nav-icon"></i> Candidates
+        </a>
 
         <button type="button" class="sidebar-link {{#if (startswith active 'attendance')}}active{{/if}}" data-menu-toggle="attendance-submenu" onclick="toggleMenu('attendance-submenu')">
           <i class="fa-solid fa-clock nav-icon"></i>
@@ -65,6 +68,9 @@
 
         <a class="sidebar-link {{#if (eq active 'documents')}}active{{/if}}" href="/documents" data-nav="documents">
           <i class="fa-solid fa-file-signature nav-icon"></i> Documents
+        </a>
+        <a class="sidebar-link {{#if (eq active 'documentApprovals')}}active{{/if}}" href="/document-approvals" data-nav="documentApprovals">
+          <i class="fa-solid fa-hourglass-half nav-icon"></i> Doc Approvals
         </a>
         <a class="sidebar-link {{#if (eq active 'documentTypes')}}active{{/if}}" href="/document-types" data-nav="documentTypes">
           <i class="fa-solid fa-layer-group nav-icon"></i> Document Types

@@ -22,7 +22,25 @@ razorpayService.initialize();
 
 await connectDB();
 
+const { startLifecycleAlertsJob } = await import('./jobs/lifecycleAlerts.job.js');
+startLifecycleAlertsJob();
+
 const PORT = Number.parseInt(process.env.PORT, 10) || 3007;
+
+function shutdownServer(signal) {
+  console.log(`${signal} received. Shutting down gracefully...`);
+  clearInterval(globalThis.__keepAlive);
+  if (globalThis.__server) {
+    globalThis.__server.close(() => {
+      console.log('Server closed');
+      process.exit(0);
+    });
+    // Force exit if close hangs (nodemon restart race)
+    setTimeout(() => process.exit(0), 2000).unref();
+  } else {
+    process.exit(0);
+  }
+}
 
 // Store server reference globally to prevent GC
 globalThis.__server = app.listen(PORT, '0.0.0.0', () => {
@@ -32,6 +50,16 @@ globalThis.__server = app.listen(PORT, '0.0.0.0', () => {
 
 // Keep the process alive with server error handling
 globalThis.__server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(
+      `\n❌ Port ${PORT} is already in use. Another server is still running.\n` +
+      `   Fix: stop the other process, then restart.\n` +
+      `   macOS/Linux: lsof -ti:${PORT} | xargs kill -9\n` +
+      `   Or use only one of: npm run dev  OR  npm start (not both).\n`
+    );
+    process.exit(1);
+    return;
+  }
   console.error('Server error:', err);
   process.exit(1);
 });
@@ -39,12 +67,7 @@ globalThis.__server.on('error', (err) => {
 // Keep the event loop active
 globalThis.__keepAlive = setInterval(() => {}, 1 << 30);
 
-// Handle graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received. Shutting down gracefully...');
-  clearInterval(globalThis.__keepAlive);
-  globalThis.__server.close(() => {
-    console.log('Server closed');
-    process.exit(0);
-  });
-});
+// nodemon sends SIGUSR2 on restart — release port before respawn
+process.on('SIGUSR2', () => shutdownServer('SIGUSR2'));
+process.on('SIGINT', () => shutdownServer('SIGINT'));
+process.on('SIGTERM', () => shutdownServer('SIGTERM'));

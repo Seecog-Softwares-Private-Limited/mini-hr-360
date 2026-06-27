@@ -157,6 +157,7 @@ export const PORTAL_NAV_SECTIONS = [
     id: 'account',
     items: [
       { key: 'documents', label: 'Documents', href: '/employee/documents', icon: 'fa-vault', permission: 'self.documents' },
+      { key: 'hr_letters', label: 'HR Letters', href: '/employee/hr-letters', icon: 'fa-file-contract', permission: 'self.documents' },
       { key: 'profile', label: 'Profile', href: '/employee/profile', icon: 'fa-id-card', permission: 'self.profile' },
       { key: 'notifications', label: 'Notifications', href: '/employee/dashboard#notifications', icon: 'fa-bell', permission: 'self.notifications' },
     ],

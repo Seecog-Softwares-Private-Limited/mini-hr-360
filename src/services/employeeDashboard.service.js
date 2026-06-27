@@ -8,6 +8,7 @@ import {
 } from '../models/index.js';
 import { getLeaveStats } from './leave.service.js';
 import { getCalendar, getToday } from './attendance.service.js';
+import { getEmployeePortalLifecycleSummary } from './employeePortalLifecycle.service.js';
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -163,7 +164,7 @@ export async function getEmployeeDashboardOverview(employee) {
   const month = now.toISOString().slice(0, 7);
   const today = now.toISOString().split('T')[0];
 
-  const [leaveStats, monthSummaries, pendingLeaves, pendingRegularizations, payrollSetting, teamBirthdays, todayAttendance] =
+  const [leaveStats, monthSummaries, pendingLeaves, pendingRegularizations, payrollSetting, teamBirthdays, todayAttendance, lifecycle] =
     await Promise.all([
       getLeaveStats(employee.id, businessId),
       getCalendar({ businessId, employeeId: employee.id, month }),
@@ -172,6 +173,7 @@ export async function getEmployeeDashboardOverview(employee) {
       PayrollSetting.findOne({ where: { businessId } }),
       getTeamBirthdays(businessId, employee.id),
       getTodayAttendanceWidget(employee),
+      getEmployeePortalLifecycleSummary(employee),
     ]);
 
   const workedDays = monthSummaries.filter(
@@ -224,6 +226,7 @@ export async function getEmployeeDashboardOverview(employee) {
     tasksSummary: { pending: 0, completed: 0, total: 0 },
     today,
     todayAttendance,
+    lifecycle,
     leaveBalances: (leaveStats.balances || []).map((b) => ({
       id: b.leaveTypeId,
       name: b.leaveTypeName,

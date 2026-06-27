@@ -47,6 +47,14 @@ import {
   downloadDocument,
   getDocumentDetail,
 } from '../controllers/employee/employeeDocument.controller.js';
+import {
+  renderHrLettersPage,
+  listHrLettersApi,
+  previewHrLetter,
+  downloadHrLetter,
+  acknowledgeHrLetter,
+  acceptOfferHrLetter,
+} from '../controllers/employee/employeeHrLetters.controller.js';
 
 const router = Router();
 
@@ -96,6 +104,13 @@ router.get('/documents', renderDocumentsVault);
 router.get('/documents/:id/preview', previewDocument);
 router.get('/documents/:id/download', downloadDocument);
 
+// HR Letters (system-generated)
+router.get('/hr-letters', renderHrLettersPage);
+router.get('/hr-letters/:id/preview', previewHrLetter);
+router.get('/hr-letters/:id/download', downloadHrLetter);
+router.post('/hr-letters/:id/acknowledge', acknowledgeHrLetter);
+router.post('/hr-letters/:id/accept-offer', acceptOfferHrLetter);
+
 // Leave Management - Page Routes
 router.get('/leaves', renderLeaveList);
 router.get('/leaves/apply', renderApplyLeave);
@@ -117,6 +132,7 @@ router.get('/api/profile', getEmployeeProfile);
 // Documents API
 router.get('/api/documents', listDocumentsApi);
 router.get('/api/documents/:id', getDocumentDetail);
+router.get('/api/hr-letters', listHrLettersApi);
 
 // Leave API
 router.get('/api/leaves/balances', getLeaveBalances);

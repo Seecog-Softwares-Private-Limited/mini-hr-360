@@ -8,8 +8,12 @@ import {
   AttendanceDailySummary,
   AttendanceRegularization,
   Notification,
+  Candidate,
+  DocumentApprovalRequest,
+  EmployeeGeneratedDocument,
 } from '../models/index.js';
 import { getDashboard as getAttendanceDashboard } from './attendance.service.js';
+import { getLifecycleAlertsSummary } from './lifecycleAlerts.service.js';
 
 const ACTIVE_STATUSES = ['Active', 'ACTIVE', 'active'];
 
@@ -29,6 +33,16 @@ export function emptyWidgets() {
       pendingRegularizations: 0,
     },
     tasks: { pending: 0, completed: 0, total: 0 },
+    lifecycle: {
+      offersPending: 0,
+      exitsInProgress: 0,
+      probationEndingSoon: 0,
+      contractEndingSoon: 0,
+      candidatesProspect: 0,
+      onboardingInProgress: 0,
+      unacknowledgedOffers: 0,
+      stageBreakdown: {},
+    },
   };
 }
 
@@ -38,6 +52,8 @@ export function emptyInsights() {
     upcomingBirthdays: [],
     attendanceTrend: [],
     recentActivity: [],
+    lifecycleAlerts: { counts: {}, probationEnding: [], contractEnding: [], exitsInProgress: [] },
+    lifecyclePipeline: null,
   };
 }
 
@@ -73,7 +89,7 @@ function relativeTime(date) {
 }
 
 async function getPendingApprovals(businessId, limit = 6) {
-  const [leaves, regularizations, payrollQueries] = await Promise.all([
+  const [leaves, regularizations, payrollQueries, docApprovals] = await Promise.all([
     LeaveRequest.findAll({
       where: { businessId, status: 'PENDING' },
       include: [
@@ -95,6 +111,12 @@ async function getPendingApprovals(businessId, limit = 6) {
       order: [['createdAt', 'DESC']],
       limit,
     }),
+    DocumentApprovalRequest.findAll({
+      where: { businessId, status: 'pending' },
+      include: [{ model: Employee, as: 'employee', attributes: ['empName', 'empId'] }],
+      order: [['createdAt', 'DESC']],
+      limit,
+    }).catch(() => []),
   ]);
 
   const items = [
@@ -125,19 +147,29 @@ async function getPendingApprovals(businessId, limit = 6) {
       href: '/admin/payroll/queries',
       icon: 'fa-money-bill-wave',
     })),
+    ...docApprovals.map((d) => ({
+      id: `doc-${d.id}`,
+      kind: 'document',
+      title: d.employee?.empName || 'Employee',
+      subtitle: `Offer approval · ${d.code}`,
+      timestamp: d.createdAt,
+      href: '/document-approvals',
+      icon: 'fa-file-signature',
+    })),
   ];
 
   items.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-  const [leaveCount, regCount, queryCount] = await Promise.all([
+  const [leaveCount, regCount, queryCount, docApprovalCount] = await Promise.all([
     LeaveRequest.count({ where: { businessId, status: 'PENDING' } }),
     AttendanceRegularization.count({ where: { businessId, status: 'PENDING' } }),
     PayrollQuery.count({ where: { businessId, status: 'Pending' } }).catch(() => 0),
+    DocumentApprovalRequest.count({ where: { businessId, status: 'pending' } }).catch(() => 0),
   ]);
 
   return {
-    total: leaveCount + regCount + queryCount,
-    counts: { leaves: leaveCount, regularizations: regCount, payrollQueries: queryCount },
+    total: leaveCount + regCount + queryCount + docApprovalCount,
+    counts: { leaves: leaveCount, regularizations: regCount, payrollQueries: queryCount, documentApprovals: docApprovalCount },
     items: items.slice(0, limit).map((item) => ({
       ...item,
       timestamp: item.timestamp?.toISOString?.() || item.timestamp,
@@ -338,15 +370,17 @@ async function getRecentActivity(businessId, userId, limit = 8) {
 export async function getInsightsData(businessId, userId) {
   if (!businessId) return emptyInsights();
 
-  const [pendingApprovals, upcomingBirthdays, attendanceTrend, recentActivity] =
+  const [pendingApprovals, upcomingBirthdays, attendanceTrend, recentActivity, lifecycleAlerts, lifecyclePipeline] =
     await Promise.all([
       getPendingApprovals(businessId),
       getUpcomingCelebrations(businessId),
       getAttendanceTrend(businessId),
       getRecentActivity(businessId, userId),
+      getLifecycleAlertsSummary(businessId),
+      getLifecycleWidgetStats(businessId),
     ]);
 
-  return { pendingApprovals, upcomingBirthdays, attendanceTrend, recentActivity };
+  return { pendingApprovals, upcomingBirthdays, attendanceTrend, recentActivity, lifecycleAlerts, lifecyclePipeline };
 }
 
 async function getEmployeeStats(businessId) {
@@ -376,12 +410,114 @@ async function getLeaveWidgetStats(businessId) {
   return stats;
 }
 
+async function getLifecycleStageBreakdown(businessId) {
+  const rows = await Employee.findAll({
+    where: { businessId },
+    attributes: [
+      'lifecycleStage',
+      [Employee.sequelize.fn('COUNT', Employee.sequelize.col('id')), 'count'],
+    ],
+    group: ['lifecycleStage'],
+    raw: true,
+  });
+
+  const breakdown = {
+    prospect: 0,
+    offer: 0,
+    joining: 0,
+    active: 0,
+    confirmed: 0,
+    offboarding: 0,
+    exited: 0,
+  };
+
+  rows.forEach((row) => {
+    const key = row.lifecycleStage || 'prospect';
+    if (key in breakdown) breakdown[key] = parseInt(row.count, 10) || 0;
+  });
+
+  return breakdown;
+}
+
+async function getUnacknowledgedOfferCount(businessId) {
+  const employees = await Employee.findAll({
+    where: { businessId, lifecycleStage: { [Op.in]: ['offer', 'joining'] } },
+    attributes: ['id'],
+    raw: true,
+  });
+  const ids = employees.map((e) => e.id);
+  if (!ids.length) return 0;
+
+  return EmployeeGeneratedDocument.count({
+    where: {
+      employeeId: { [Op.in]: ids },
+      code: { [Op.in]: ['OFFER_LETTER', 'INTERNSHIP_OFFER', 'PRE_PLACEMENT_OFFER'] },
+      acknowledgedAt: null,
+    },
+  }).catch(() => 0);
+}
+
+async function getLifecycleWidgetStats(businessId) {
+  const thirtyDaysFromNow = new Date();
+  thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+
+  const [offersPending, exitsInProgress, candidatesProspect, probationEmployees, contractEndingSoon, stageBreakdown, unacknowledgedOffers] =
+    await Promise.all([
+      DocumentApprovalRequest.count({ where: { businessId, status: 'pending' } }).catch(() => 0),
+      Employee.count({ where: { businessId, lifecycleStage: 'offboarding' } }),
+      Candidate.count({
+        where: { businessId, status: { [Op.in]: ['prospect', 'offer_pending'] } },
+      }).catch(() => 0),
+      Employee.findAll({
+        where: {
+          businessId,
+          lifecycleStage: { [Op.in]: ['joining', 'active'] },
+          employmentStatus: { [Op.in]: ACTIVE_STATUSES },
+          probationPeriodMonths: { [Op.gt]: 0 },
+        },
+        attributes: ['id', 'empDateOfJoining', 'probationPeriodMonths'],
+        raw: true,
+      }),
+      getLifecycleAlertsSummary(businessId).then((s) => s.counts.contractEnding).catch(() => 0),
+      getLifecycleStageBreakdown(businessId),
+      getUnacknowledgedOfferCount(businessId),
+    ]);
+
+  const now = new Date();
+  let probationEndingSoon = 0;
+  probationEmployees.forEach((emp) => {
+    if (!emp.empDateOfJoining) return;
+    const start = new Date(emp.empDateOfJoining);
+    if (isNaN(start.getTime())) return;
+    const months = Number(emp.probationPeriodMonths) || 3;
+    const end = new Date(start);
+    end.setMonth(end.getMonth() + months);
+    if (end >= now && end <= thirtyDaysFromNow) probationEndingSoon += 1;
+  });
+
+  const onboardingInProgress =
+    (stageBreakdown.prospect || 0) +
+    (stageBreakdown.offer || 0) +
+    (stageBreakdown.joining || 0);
+
+  return {
+    offersPending,
+    exitsInProgress,
+    probationEndingSoon,
+    contractEndingSoon,
+    candidatesProspect,
+    onboardingInProgress,
+    unacknowledgedOffers,
+    stageBreakdown,
+  };
+}
+
 export async function getWidgetData(businessId) {
   if (!businessId) return emptyWidgets();
 
   const today = new Date().toISOString().split('T')[0];
 
-  const [employeeStats, leaveStats, attendanceData, latestPayrollRun, pendingPayrollQueries] =
+  const [employeeStats, leaveStats, attendanceData, latestPayrollRun, pendingPayrollQueries, lifecycleStats] =
     await Promise.all([
       getEmployeeStats(businessId),
       getLeaveWidgetStats(businessId),
@@ -395,6 +531,7 @@ export async function getWidgetData(businessId) {
         attributes: ['id', 'status', 'periodMonth', 'periodYear', 'employeeCount', 'totalNetPay'],
       }),
       PayrollQuery.count({ where: { businessId, status: 'Pending' } }).catch(() => 0),
+      getLifecycleWidgetStats(businessId),
     ]);
 
   const counts = attendanceData?.counts || {};
@@ -424,5 +561,6 @@ export async function getWidgetData(businessId) {
       pendingRegularizations: attendanceData?.pendingRegularizations || 0,
     },
     tasks: { pending: 0, completed: 0, total: 0 },
+    lifecycle: lifecycleStats,
   };
 }

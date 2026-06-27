@@ -20,9 +20,115 @@ import { getEffectiveAssignment } from '../services/attendance.service.js';
 import { generatePassword } from '../utils/passwordGenerator.js';
 import { sendDocumentEmail } from '../utils/emailService.js';
 import { resolveOrganizationIdFromRequest, userBelongsToOrganization } from '../services/organization.service.js';
+import { LIFECYCLE_STAGE_LABELS } from '../config/lifecycleWorkflows.js';
+
+const LIFECYCLE_BADGE_CLASS = {
+  prospect: 'secondary',
+  offer: 'info',
+  joining: 'primary',
+  active: 'success',
+  confirmed: 'success',
+  offboarding: 'warning',
+  exited: 'dark',
+};
 
 const toBool = (val) =>
     val === true || val === 'true' || val === '1' || val === 'on';
+
+const isBlank = (value) => {
+    if (value === null || value === undefined) return true;
+    if (typeof value === 'string' && value.trim() === '') return true;
+    return false;
+};
+
+const strOrDefault = (value, fallback) => {
+    if (isBlank(value)) return fallback;
+    return String(value).trim();
+};
+
+const todayDateOnly = () => new Date().toISOString().slice(0, 10);
+
+const draftEmployeeEmail = (organizationId) =>
+    `draft.${organizationId}.${Date.now()}@draft.mini-hr-360.local`;
+
+const normalizePhone = (value, fallback = '0000000000') => {
+    const digits = String(value || '').replace(/\D/g, '');
+    return digits.length === 10 ? digits : fallback;
+};
+
+function mergeEmployeeField(body, existing, key, defaultValue) {
+    const raw = body[key];
+    if (!isBlank(raw)) {
+        return typeof raw === 'string' ? raw.trim() : raw;
+    }
+    const current = existing?.[key];
+    if (!isBlank(current)) return current;
+    return defaultValue;
+}
+
+const EMPLOYEE_TYPES = new Set(['Permanent', 'Contract', 'Intern', 'Consultant', 'Trainee']);
+
+const normalizeEmployeeType = (value, fallback = 'Permanent') => {
+    const normalized = strOrDefault(value, fallback);
+    return EMPLOYEE_TYPES.has(normalized) ? normalized : fallback;
+};
+
+/** Phase 6: contract / intern field rules */
+function validateEmployeeTypeFields(body, employeeType) {
+    const type = normalizeEmployeeType(employeeType || body.employeeType || 'Permanent');
+    const contractEnd = body.contractEndDate?.trim?.() || body.contractEndDate || null;
+
+    if ((type === 'Contract' || type === 'Consultant') && !contractEnd) {
+        return 'Contract end date is required for Contract and Consultant employees';
+    }
+
+    if (type === 'Intern') {
+        const stipend = isBlank(body.internStipend) ? 0 : Number(body.internStipend);
+        const ctc = isBlank(body.empCtc) ? 0 : Number(body.empCtc);
+        if (stipend < 0 || ctc < 0) {
+            return 'Stipend and CTC cannot be negative for interns';
+        }
+    }
+
+    return null;
+}
+
+function parseReportingManagerId(raw) {
+    const id = Number(raw);
+    return Number.isFinite(id) && id > 0 ? id : null;
+}
+
+async function assertReportingManagerForEmployee({ employeeId = null, businessId, reportingManagerId }) {
+    const managerId = parseReportingManagerId(reportingManagerId);
+    if (!managerId) {
+        const err = new Error('Reporting manager is required for every employee');
+        err.statusCode = 400;
+        throw err;
+    }
+
+    if (employeeId && managerId === Number(employeeId)) {
+        const err = new Error('An employee cannot be their own reporting manager');
+        err.statusCode = 400;
+        throw err;
+    }
+
+    const manager = await Employee.findOne({
+        where: {
+            id: managerId,
+            businessId: Number(businessId),
+            isActive: true,
+        },
+        attributes: ['id'],
+    });
+
+    if (!manager) {
+        const err = new Error('Selected reporting manager is invalid or not in this organization');
+        err.statusCode = 400;
+        throw err;
+    }
+
+    return managerId;
+}
 
 const isAdminUser = (user) => String(user?.role || '').toLowerCase() === 'admin';
 const HR_DEFAULT_PASSWORD_PREFIX = 'hr_default_pwd:';
@@ -338,6 +444,7 @@ const isLegacySingleTenantEmployees = async () => {
 export const renderEmployeesPage = async (req, res, next) => {
     try {
         const search = (req.query.search || '').trim();
+        const lifecycleFilter = (req.query.lifecycleStage || '').trim();
         const userId = req.user?.id;
         const isAdmin = isAdminUser(req.user);
         const organizationId = await resolveOrganizationIdFromRequest(req);
@@ -363,6 +470,7 @@ export const renderEmployeesPage = async (req, res, next) => {
                 countries: [],
                 states: [],
                 search,
+                lifecycleStage: lifecycleFilter,
             });
         }
 
@@ -378,6 +486,10 @@ export const renderEmployeesPage = async (req, res, next) => {
                 { empEmail: { [Op.like]: `%${search}%` } },
                 { empId: { [Op.like]: `%${search}%` } },
             ];
+        }
+
+        if (lifecycleFilter) {
+            where.lifecycleStage = lifecycleFilter;
         }
 
         let employeesPromise = Employee.findAll({
@@ -447,6 +559,8 @@ export const renderEmployeesPage = async (req, res, next) => {
         await Promise.all(employeesPlain.map(async (emp) => {
             try {
                 emp.initial = emp.empName ? String(emp.empName).charAt(0).toUpperCase() : '';
+                emp.lifecycleStageLabel = LIFECYCLE_STAGE_LABELS[emp.lifecycleStage] || emp.lifecycleStage || 'prospect';
+                emp.lifecycleBadgeClass = LIFECYCLE_BADGE_CLASS[emp.lifecycleStage] || 'secondary';
                 const assignment = await getEffectiveAssignment({ businessId: emp.businessId, employeeId: emp.id, date: todayStr });
                 if (assignment && assignment.shift) {
                     emp.shiftName = assignment.shift.name;
@@ -487,6 +601,7 @@ export const renderEmployeesPage = async (req, res, next) => {
             countries: countriesPlain,
             states: statesPlain,
             search,
+            lifecycleStage: lifecycleFilter,
         });
     } catch (err) {
         console.error('Error rendering employees page:', err);
@@ -716,54 +831,27 @@ export const createEmployee = async (req, res, next) => {
             });
         }
 
-        // Validate required fields before proceeding
-        // Helper function to check if a value is truly empty
-        const isEmpty = (value) => {
-            if (value === null || value === undefined) return true;
-            if (typeof value === 'string' && value.trim() === '') return true;
-            // For date fields, empty string from HTML date input means not filled
-            if (typeof value === 'string' && value === '') return true;
-            return false;
-        };
+        // Allow partial/draft employee records — apply defaults for unset required DB fields.
+        const firstName = strOrDefault(req.body.firstName, 'New');
+        const lastName = strOrDefault(req.body.lastName, 'Employee');
+        const empPhone = normalizePhone(req.body.empPhone);
+        const empEmail = strOrDefault(req.body.empEmail, draftEmployeeEmail(organizationId)).toLowerCase();
+        const empDesignation = strOrDefault(req.body.empDesignation, 'Unassigned');
+        const empDepartment = strOrDefault(req.body.empDepartment, 'General');
+        const empWorkLoc = strOrDefault(req.body.empWorkLoc, 'Unassigned');
+        const empDateOfJoining = strOrDefault(req.body.empDateOfJoining, todayDateOnly());
+        const empDob = strOrDefault(req.body.empDob, '1990-01-01');
+        const empCtc = isBlank(req.body.empCtc) ? 0 : Number(req.body.empCtc);
 
-        // Log received data for debugging
-        console.log('Received employee data:', {
-            empDateOfJoining: req.body.empDateOfJoining,
-            empDob: req.body.empDob,
-            empDateOfJoiningType: typeof req.body.empDateOfJoining,
-            empDobType: typeof req.body.empDob,
-            allBodyKeys: Object.keys(req.body)
+        const reportingManagerId = await assertReportingManagerForEmployee({
+            businessId: organizationId,
+            reportingManagerId: req.body.reportingManagerId,
         });
 
-        const requiredFields = {
-            firstName: req.body.firstName,
-            lastName: req.body.lastName,
-            empPhone: req.body.empPhone,
-            empEmail: req.body.empEmail,
-            empDesignation: req.body.empDesignation,
-            empDepartment: req.body.empDepartment,
-            empWorkLoc: req.body.empWorkLoc,
-            empDateOfJoining: req.body.empDateOfJoining,
-            empDob: req.body.empDob,
-            empCtc: req.body.empCtc
-        };
-
-        const missingFields = Object.entries(requiredFields)
-            .filter(([key, value]) => isEmpty(value))
-            .map(([key]) => key);
-
-        if (missingFields.length > 0) {
+        const typeValidationError = validateEmployeeTypeFields(req.body, req.body.employeeType);
+        if (typeValidationError) {
             await t.rollback();
-            return res.status(400).json({
-                error: `Missing required fields: ${missingFields.join(', ')}`,
-                message: 'Please fill in all required fields including Date of Birth and Date of Joining.',
-                received: {
-                    empDateOfJoining: req.body.empDateOfJoining || 'NOT PROVIDED',
-                    empDob: req.body.empDob || 'NOT PROVIDED',
-                    empDateOfJoiningType: typeof req.body.empDateOfJoining,
-                    empDobType: typeof req.body.empDob
-                }
-            });
+            return res.status(400).json({ error: typeValidationError });
         }
 
         // 1) Core Employee payload (Sections 1–3: Personal, Professional, Compensation)
@@ -771,9 +859,9 @@ export const createEmployee = async (req, res, next) => {
             userId,
 
             // --- Name ---
-            firstName: req.body.firstName.trim(),
+            firstName,
             middleName: req.body.middleName?.trim() || null,
-            lastName: req.body.lastName.trim(),
+            lastName,
 
             empName: req.body.empName?.trim() || undefined, // auto-built if undefined
 
@@ -787,9 +875,9 @@ export const createEmployee = async (req, res, next) => {
             languagesKnown: req.body.languagesKnown?.trim() || null,
 
             // Contacts
-            empPhone: String(req.body.empPhone).trim(),
+            empPhone,
             altPhone: req.body.altPhone?.trim() || null,
-            empEmail: req.body.empEmail.trim().toLowerCase(),
+            empEmail,
 
             // Emergency
             emergencyContactName: req.body.emergencyContactName || null,
@@ -814,25 +902,38 @@ export const createEmployee = async (req, res, next) => {
             permanentCountry: req.body.permanentCountry || null,
 
             // --- Professional (Section 2) ---
-            employeeType: req.body.employeeType || 'Permanent',
-            empDesignation: req.body.empDesignation.trim(),
-            empDepartment: req.body.empDepartment.trim(),
+            employeeType: normalizeEmployeeType(req.body.employeeType),
+            empDesignation,
+            empDepartment,
             division: req.body.division?.trim() || null,
             subDepartment: req.body.subDepartment?.trim() || null,
             gradeBandLevel: req.body.gradeBandLevel?.trim() || null,
-            reportingManagerId: req.body.reportingManagerId ? Number(req.body.reportingManagerId) : null,
-            empWorkLoc: req.body.empWorkLoc.trim(),
-            empDateOfJoining: req.body.empDateOfJoining,
+            reportingManagerId,
+            empWorkLoc,
+            empDateOfJoining,
             probationPeriodMonths: req.body.probationPeriodMonths ? Number(req.body.probationPeriodMonths) : null,
             confirmationDate: req.body.confirmationDate || null,
             employmentStatus: req.body.employmentStatus || 'Active',
             workMode: req.body.workMode || 'On-site',
+            lifecycleStage: req.body.lifecycleStage || 'prospect',
+            internStipend: isBlank(req.body.internStipend) ? null : Number(req.body.internStipend),
+            contractEndDate: req.body.contractEndDate || null,
+            internship_start_date: req.body.internship_start_date || req.body.internshipStartDate || null,
+            internship_end_date: req.body.internship_end_date || req.body.internshipEndDate || null,
+            internship_offer_date: req.body.internship_offer_date || req.body.internshipOfferDate || null,
+            resignationDate: req.body.resignationDate || null,
+            lastWorkingDay: req.body.lastWorkingDay || null,
+            noticePeriodDays: req.body.noticePeriodDays ? Number(req.body.noticePeriodDays) : null,
+            exitReason: req.body.exitReason || null,
+            exitType: req.body.exitType || null,
+            exitCategory: req.body.exitCategory || null,
+            empIncrementEffectiveDate: req.body.empIncrementEffectiveDate || null,
 
             // --- Dates ---
-            empDob: req.body.empDob || null,
+            empDob,
 
             // --- Compensation (Section 3) ---
-            empCtc: Number(req.body.empCtc) || 0,
+            empCtc,
             grossSalaryMonthly: req.body.grossSalaryMonthly || null,
             basicSalary: req.body.basicSalary || null,
             hra: req.body.hra || null,
@@ -1055,6 +1156,9 @@ export const createEmployee = async (req, res, next) => {
                     error: 'Duplicate entry: ' + (err.errors?.[0]?.message || err.message)
                 });
         }
+        if (err.statusCode === 400) {
+            return res.status(400).json({ error: err.message, message: err.message });
+        }
         next(err);
     }
 };
@@ -1083,79 +1187,128 @@ export const updateEmployee = async (req, res, next) => {
             return res.status(404).json({ error: 'Employee not found' });
         }
 
+        const reportingManagerId = await assertReportingManagerForEmployee({
+            employeeId: employee.id,
+            businessId: employee.businessId,
+            reportingManagerId: req.body.reportingManagerId ?? employee.reportingManagerId,
+        });
+
+        const mergedType = normalizeEmployeeType(
+            mergeEmployeeField(req.body, employee, 'employeeType', 'Permanent')
+        );
+        const typeValidationError = validateEmployeeTypeFields(
+            { ...employee.get({ plain: true }), ...req.body, employeeType: mergedType },
+            mergedType
+        );
+        if (typeValidationError) {
+            await t.rollback();
+            return res.status(400).json({ error: typeValidationError });
+        }
+
         const payload = {
             // keep userId as is
-            firstName: req.body.firstName,
-            middleName: req.body.middleName || null,
-            lastName: req.body.lastName,
-            empName: req.body.empName || employee.empName,
+            firstName: mergeEmployeeField(req.body, employee, 'firstName', 'New'),
+            middleName: mergeEmployeeField(req.body, employee, 'middleName', null),
+            lastName: mergeEmployeeField(req.body, employee, 'lastName', 'Employee'),
+            empName: mergeEmployeeField(req.body, employee, 'empName', employee.empName),
 
-            gender: req.body.gender || null,
-            maritalStatus: req.body.maritalStatus || null,
-            bloodGroup: req.body.bloodGroup || null,
-            nationality: req.body.nationality || null,
-            religion: req.body.religion || null,
-            casteCategory: req.body.casteCategory || null,
-            languagesKnown: req.body.languagesKnown || null,
+            gender: mergeEmployeeField(req.body, employee, 'gender', null),
+            maritalStatus: mergeEmployeeField(req.body, employee, 'maritalStatus', null),
+            bloodGroup: mergeEmployeeField(req.body, employee, 'bloodGroup', null),
+            nationality: mergeEmployeeField(req.body, employee, 'nationality', null),
+            religion: mergeEmployeeField(req.body, employee, 'religion', null),
+            casteCategory: mergeEmployeeField(req.body, employee, 'casteCategory', null),
+            languagesKnown: mergeEmployeeField(req.body, employee, 'languagesKnown', null),
 
-            empPhone: req.body.empPhone,
-            altPhone: req.body.altPhone || null,
-            empEmail: req.body.empEmail,
+            empPhone: normalizePhone(
+                mergeEmployeeField(req.body, employee, 'empPhone', '0000000000')
+            ),
+            altPhone: mergeEmployeeField(req.body, employee, 'altPhone', null),
+            empEmail: String(
+                mergeEmployeeField(
+                    req.body,
+                    employee,
+                    'empEmail',
+                    draftEmployeeEmail(employee.businessId || 0)
+                )
+            ).toLowerCase(),
 
-            emergencyContactName: req.body.emergencyContactName || null,
-            emergencyContactRelation: req.body.emergencyContactRelation || null,
-            emergencyContactNumber: req.body.emergencyContactNumber || null,
+            emergencyContactName: mergeEmployeeField(req.body, employee, 'emergencyContactName', null),
+            emergencyContactRelation: mergeEmployeeField(req.body, employee, 'emergencyContactRelation', null),
+            emergencyContactNumber: mergeEmployeeField(req.body, employee, 'emergencyContactNumber', null),
 
-            presentAddressLine1: req.body.presentAddressLine1 || null,
-            presentAddressLine2: req.body.presentAddressLine2 || null,
-            presentCity: req.body.presentCity || null,
-            presentState: req.body.presentState || null,
-            presentZip: req.body.presentZip || null,
-            presentCountry: req.body.presentCountry || null,
+            presentAddressLine1: mergeEmployeeField(req.body, employee, 'presentAddressLine1', null),
+            presentAddressLine2: mergeEmployeeField(req.body, employee, 'presentAddressLine2', null),
+            presentCity: mergeEmployeeField(req.body, employee, 'presentCity', null),
+            presentState: mergeEmployeeField(req.body, employee, 'presentState', null),
+            presentZip: mergeEmployeeField(req.body, employee, 'presentZip', null),
+            presentCountry: mergeEmployeeField(req.body, employee, 'presentCountry', null),
 
             permanentSameAsPresent: toBool(req.body.permanentSameAsPresent),
-            permanentAddressLine1: req.body.permanentAddressLine1 || null,
-            permanentAddressLine2: req.body.permanentAddressLine2 || null,
-            permanentCity: req.body.permanentCity || null,
-            permanentState: req.body.permanentState || null,
-            permanentZip: req.body.permanentZip || null,
-            permanentCountry: req.body.permanentCountry || null,
+            permanentAddressLine1: mergeEmployeeField(req.body, employee, 'permanentAddressLine1', null),
+            permanentAddressLine2: mergeEmployeeField(req.body, employee, 'permanentAddressLine2', null),
+            permanentCity: mergeEmployeeField(req.body, employee, 'permanentCity', null),
+            permanentState: mergeEmployeeField(req.body, employee, 'permanentState', null),
+            permanentZip: mergeEmployeeField(req.body, employee, 'permanentZip', null),
+            permanentCountry: mergeEmployeeField(req.body, employee, 'permanentCountry', null),
 
-            employeeType: req.body.employeeType || 'Permanent',
-            empDesignation: req.body.empDesignation,
-            empDepartment: req.body.empDepartment,
-            division: req.body.division || null,
-            subDepartment: req.body.subDepartment || null,
-            gradeBandLevel: req.body.gradeBandLevel || null,
-            reportingManagerId: req.body.reportingManagerId || null,
-            empWorkLoc: req.body.empWorkLoc,
-            empDateOfJoining: req.body.empDateOfJoining,
-            probationPeriodMonths: req.body.probationPeriodMonths || null,
-            confirmationDate: req.body.confirmationDate || null,
-            employmentStatus: req.body.employmentStatus || 'Active',
-            workMode: req.body.workMode || 'On-site',
+            employeeType: normalizeEmployeeType(
+                mergeEmployeeField(req.body, employee, 'employeeType', 'Permanent')
+            ),
+            empDesignation: mergeEmployeeField(req.body, employee, 'empDesignation', 'Unassigned'),
+            empDepartment: mergeEmployeeField(req.body, employee, 'empDepartment', 'General'),
+            division: mergeEmployeeField(req.body, employee, 'division', null),
+            subDepartment: mergeEmployeeField(req.body, employee, 'subDepartment', null),
+            gradeBandLevel: mergeEmployeeField(req.body, employee, 'gradeBandLevel', null),
+            reportingManagerId,
+            empWorkLoc: mergeEmployeeField(req.body, employee, 'empWorkLoc', 'Unassigned'),
+            empDateOfJoining: mergeEmployeeField(req.body, employee, 'empDateOfJoining', todayDateOnly()),
+            probationPeriodMonths: req.body.probationPeriodMonths
+                ? Number(req.body.probationPeriodMonths)
+                : employee.probationPeriodMonths,
+            confirmationDate: mergeEmployeeField(req.body, employee, 'confirmationDate', null),
+            employmentStatus: mergeEmployeeField(req.body, employee, 'employmentStatus', 'Active'),
+            workMode: mergeEmployeeField(req.body, employee, 'workMode', 'On-site'),
+            lifecycleStage: mergeEmployeeField(req.body, employee, 'lifecycleStage', employee.lifecycleStage || 'prospect'),
+            internStipend: isBlank(req.body.internStipend)
+                ? employee.internStipend
+                : Number(req.body.internStipend),
+            contractEndDate: mergeEmployeeField(req.body, employee, 'contractEndDate', null),
+            internship_start_date: mergeEmployeeField(req.body, employee, 'internship_start_date', employee.internship_start_date),
+            internship_end_date: mergeEmployeeField(req.body, employee, 'internship_end_date', employee.internship_end_date),
+            internship_offer_date: mergeEmployeeField(req.body, employee, 'internship_offer_date', employee.internship_offer_date),
+            resignationDate: mergeEmployeeField(req.body, employee, 'resignationDate', null),
+            lastWorkingDay: mergeEmployeeField(req.body, employee, 'lastWorkingDay', null),
+            noticePeriodDays: req.body.noticePeriodDays
+                ? Number(req.body.noticePeriodDays)
+                : employee.noticePeriodDays,
+            exitReason: mergeEmployeeField(req.body, employee, 'exitReason', null),
+            exitType: mergeEmployeeField(req.body, employee, 'exitType', null),
+            exitCategory: mergeEmployeeField(req.body, employee, 'exitCategory', null),
+            empIncrementEffectiveDate: mergeEmployeeField(req.body, employee, 'empIncrementEffectiveDate', null),
 
-            empDob: req.body.empDob,
+            empDob: mergeEmployeeField(req.body, employee, 'empDob', '1990-01-01'),
 
-            empCtc: req.body.empCtc,
-            grossSalaryMonthly: req.body.grossSalaryMonthly || null,
-            basicSalary: req.body.basicSalary || null,
-            hra: req.body.hra || null,
-            conveyanceAllowance: req.body.conveyanceAllowance || null,
-            medicalAllowance: req.body.medicalAllowance || null,
-            specialAllowance: req.body.specialAllowance || null,
-            performanceBonus: req.body.performanceBonus || null,
-            variablePay: req.body.variablePay || null,
-            overtimeEligible: toBool(req.body.overtimeEligible),
-            shiftAllowance: req.body.shiftAllowance || null,
-            pfDeduction: req.body.pfDeduction || null,
-            esiDeduction: req.body.esiDeduction || null,
-            professionalTax: req.body.professionalTax || null,
-            tdsDeduction: req.body.tdsDeduction || null,
-            netSalary: req.body.netSalary || null,
-
-            // empAadhar: req.body.empAadhar,
-            // empPan: req.body.empPan,
+            empCtc: isBlank(req.body.empCtc)
+                ? (employee.empCtc ?? 0)
+                : Number(req.body.empCtc),
+            grossSalaryMonthly: mergeEmployeeField(req.body, employee, 'grossSalaryMonthly', null),
+            basicSalary: mergeEmployeeField(req.body, employee, 'basicSalary', null),
+            hra: mergeEmployeeField(req.body, employee, 'hra', null),
+            conveyanceAllowance: mergeEmployeeField(req.body, employee, 'conveyanceAllowance', null),
+            medicalAllowance: mergeEmployeeField(req.body, employee, 'medicalAllowance', null),
+            specialAllowance: mergeEmployeeField(req.body, employee, 'specialAllowance', null),
+            performanceBonus: mergeEmployeeField(req.body, employee, 'performanceBonus', null),
+            variablePay: mergeEmployeeField(req.body, employee, 'variablePay', null),
+            overtimeEligible: req.body.overtimeEligible !== undefined
+                ? toBool(req.body.overtimeEligible)
+                : employee.overtimeEligible,
+            shiftAllowance: mergeEmployeeField(req.body, employee, 'shiftAllowance', null),
+            pfDeduction: mergeEmployeeField(req.body, employee, 'pfDeduction', null),
+            esiDeduction: mergeEmployeeField(req.body, employee, 'esiDeduction', null),
+            professionalTax: mergeEmployeeField(req.body, employee, 'professionalTax', null),
+            tdsDeduction: mergeEmployeeField(req.body, employee, 'tdsDeduction', null),
+            netSalary: mergeEmployeeField(req.body, employee, 'netSalary', null),
 
             // Business association
             businessId: req.body.businessId ? Number(req.body.businessId) : employee.businessId,
@@ -1281,6 +1434,9 @@ export const updateEmployee = async (req, res, next) => {
             return res
                 .status(400)
                 .json({ error: err.errors.map((e) => e.message).join(', ') });
+        }
+        if (err.statusCode === 400) {
+            return res.status(400).json({ error: err.message, message: err.message });
         }
         next(err);
     }
@@ -1610,6 +1766,54 @@ export const uploadEducationCertificate = async (req, res, next) => {
         });
     } catch (err) {
         console.error('Error uploading education certificate:', err);
+        next(err);
+    }
+};
+
+export const downloadBulkImportTemplate = async (req, res, next) => {
+    try {
+        const { getBulkImportCsvTemplate } = await import('../services/employeeBulkImport.service.js');
+        const csv = getBulkImportCsvTemplate();
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename="employee-import-template.csv"');
+        return res.send(csv);
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const bulkImportEmployees = async (req, res, next) => {
+    try {
+        const organizationId = await resolveOrganizationIdFromRequest(req);
+        if (!organizationId) {
+            return res.status(400).json({ error: 'No active organization selected' });
+        }
+
+        const { csv, defaultReportingManagerId } = req.body || {};
+        if (!csv || !String(csv).trim()) {
+            return res.status(400).json({ error: 'csv content is required' });
+        }
+
+        const {
+            parseEmployeeCsv,
+            bulkImportEmployees: runBulkImport,
+        } = await import('../services/employeeBulkImport.service.js');
+
+        const rows = parseEmployeeCsv(csv);
+        const results = await runBulkImport({
+            rows,
+            businessId: organizationId,
+            userId: req.user?.id || 1,
+            defaultReportingManagerId: Number(defaultReportingManagerId),
+            actorUserId: req.user?.id,
+        });
+
+        return res.json({
+            message: `Import complete: ${results.created.length} created, ${results.skipped.length} skipped, ${results.errors.length} errors`,
+            ...results,
+        });
+    } catch (err) {
+        if (err.statusCode === 400) return res.status(400).json({ error: err.message });
         next(err);
     }
 };

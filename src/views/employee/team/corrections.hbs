@@ -36,8 +36,26 @@
                   <td><span class="badge bg-warning text-dark">{{status}}</span></td>
                   <td class="text-end">
                     {{#if (eq status 'PENDING')}}
-                    <button type="button" class="btn btn-sm btn-success me-1 team-corr-approve" data-id="{{id}}">Approve</button>
-                    <button type="button" class="btn btn-sm btn-outline-danger team-corr-reject" data-id="{{id}}">Reject</button>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-success me-1 team-corr-approve"
+                      data-id="{{id}}"
+                      data-employee-name="{{employeeName}}"
+                      data-employee-id="{{employeeId}}"
+                      data-date="{{date}}"
+                      data-type="{{type}}"
+                      data-reason="{{reason}}"
+                    >Approve</button>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-danger team-corr-reject"
+                      data-id="{{id}}"
+                      data-employee-name="{{employeeName}}"
+                      data-employee-id="{{employeeId}}"
+                      data-date="{{date}}"
+                      data-type="{{type}}"
+                      data-reason="{{reason}}"
+                    >Reject</button>
                     {{else}}—{{/if}}
                   </td>
                 </tr>
@@ -54,30 +72,67 @@
   </div>
 </div>
 
+<script src="/assets/js/team-approve-modal.js"></script>
+<script src="/assets/js/team-reject-modal.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  async function act(action, id) {
-    const note = action === 'reject' ? prompt('Optional note:') : null;
+  function buildContextItems(btn) {
+    return [
+      { label: 'Employee', value: btn.dataset.employeeName || '—' },
+      { label: 'Employee ID', value: btn.dataset.employeeId || '—' },
+      { label: 'Date', value: btn.dataset.date || '—' },
+      { label: 'Type', value: btn.dataset.type || '—' },
+      { label: 'Reason', value: btn.dataset.reason || '—' },
+    ];
+  }
+
+  async function submitAction(action, id, note) {
     const res = await fetch(`/employee/team/api/corrections/${id}/${action}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ note }),
+      body: JSON.stringify({ note: note || null }),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Action failed');
+    if (!res.ok) throw new Error(data.error || data.message || 'Action failed');
     window.location.reload();
   }
 
   document.querySelectorAll('.team-corr-approve').forEach((btn) => {
-    btn.addEventListener('click', async () => {
-      try { await act('approve', btn.dataset.id); } catch (e) { alert(e.message); }
+    btn.addEventListener('click', () => {
+      openTeamApproveModal({
+        title: 'Approve correction request',
+        subtitle: 'The employee will be notified once you confirm this approval.',
+        confirmLabel: 'Approve correction',
+        contextItems: buildContextItems(btn),
+        quickNotes: [
+          'Approved — attendance record will be updated',
+          'Please ensure supporting details are accurate',
+        ],
+        onConfirm: async (message) => {
+          await submitAction('approve', btn.dataset.id, message);
+        },
+      });
     });
   });
+
   document.querySelectorAll('.team-corr-reject').forEach((btn) => {
-    btn.addEventListener('click', async () => {
-      if (!confirm('Reject this correction request?')) return;
-      try { await act('reject', btn.dataset.id); } catch (e) { alert(e.message); }
+    btn.addEventListener('click', () => {
+      openTeamRejectModal({
+        title: 'Reject correction request',
+        subtitle: 'The employee will receive your message with this decision.',
+        confirmLabel: 'Reject correction',
+        contextItems: buildContextItems(btn),
+        quickReasons: [
+          'Insufficient supporting details',
+          'Correction window has expired',
+          'Please attach valid proof and resubmit',
+          'Duplicate or conflicting entry',
+        ],
+        onConfirm: async (message) => {
+          await submitAction('reject', btn.dataset.id, message);
+        },
+      });
     });
   });
 });

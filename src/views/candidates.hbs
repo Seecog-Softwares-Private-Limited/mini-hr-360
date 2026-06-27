@@ -1,0 +1,279 @@
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+  <div>
+    <div class="page-title" style="font-size: 28px;">Candidates</div>
+    <div class="page-subtitle">Pre-employee pipeline — track prospects and convert to employees.</div>
+  </div>
+  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#candidateModal" onclick="openCandidateModal()">
+    <i class="fa-solid fa-user-plus me-2"></i>Add Candidate
+  </button>
+</div>
+
+<div class="section-card mb-4">
+  <div class="section-header">
+    <h5><i class="fa-solid fa-user-group"></i> Pipeline</h5>
+    <div class="d-flex gap-2 flex-wrap">
+      <input id="candidateSearch" type="search" class="form-control form-control-sm" placeholder="Search name or email" style="width:220px;" />
+      <select id="candidateStatusFilter" class="form-select form-select-sm" style="width:160px;">
+        <option value="">All statuses</option>
+        <option value="prospect">Prospect</option>
+        <option value="offer_pending">Offer pending</option>
+        <option value="offer_sent">Offer sent</option>
+        <option value="accepted">Accepted</option>
+        <option value="rejected">Rejected</option>
+        <option value="converted">Converted</option>
+      </select>
+    </div>
+  </div>
+  <div class="table-responsive p-3">
+    <table class="table table-premium align-middle mb-0">
+      <thead>
+        <tr class="text-muted small text-uppercase">
+          <th>Name</th>
+          <th>Email</th>
+          <th>Type</th>
+          <th>Designation</th>
+          <th>Expected CTC</th>
+          <th>Joining</th>
+          <th>Status</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="candidateTbody">
+        <tr><td colspan="8" class="text-center py-4 text-muted">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="candidateModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form id="candidateForm">
+        <div class="modal-header">
+          <h5 class="modal-title" id="candidateModalTitle">Add Candidate</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body row g-3">
+          <input type="hidden" id="candidateId" name="id" />
+          <div class="col-md-6">
+            <label class="form-label">First name</label>
+            <input class="form-control" name="firstName" required />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Last name</label>
+            <input class="form-control" name="lastName" required />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" name="email" required />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Phone</label>
+            <input class="form-control" name="phone" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Employee type</label>
+            <select class="form-select" name="employeeType">
+              <option>Permanent</option>
+              <option>Contract</option>
+              <option>Intern</option>
+              <option>Consultant</option>
+              <option>Trainee</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Designation</label>
+            <input class="form-control" name="designation" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Department</label>
+            <input class="form-control" name="department" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Expected CTC (annual)</label>
+            <input type="number" class="form-control" name="expectedCtc" step="0.01" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Intern stipend (monthly)</label>
+            <input type="number" class="form-control" name="internStipend" step="0.01" />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Tentative joining</label>
+            <input type="date" class="form-control" name="tentativeJoiningDate" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Work location</label>
+            <input class="form-control" name="workLocation" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Source</label>
+            <input class="form-control" name="source" placeholder="Referral, LinkedIn, Campus…" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Status</label>
+            <select class="form-select" name="status">
+              <option value="prospect">Prospect</option>
+              <option value="offer_pending">Offer pending</option>
+              <option value="offer_sent">Offer sent</option>
+              <option value="accepted">Accepted</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Notes</label>
+            <textarea class="form-control" name="notes" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="convertModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Convert to Employee</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="small text-muted" id="convertCandidateLabel">—</p>
+        <label class="form-label">Reporting manager</label>
+        <select class="form-select" id="convertManagerSelect" required>
+          <option value="">Select manager</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="confirmConvertBtn">Convert</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  let candidates = [];
+  let convertTargetId = null;
+
+  const statusBadge = (s) => {
+    const map = {
+      prospect: 'secondary',
+      offer_pending: 'warning',
+      offer_sent: 'info',
+      accepted: 'success',
+      rejected: 'danger',
+      converted: 'primary',
+    };
+    return `<span class="badge bg-${map[s] || 'secondary'}">${s}</span>`;
+  };
+
+  async function loadCandidates() {
+    const q = document.getElementById('candidateSearch').value.trim();
+    const status = document.getElementById('candidateStatusFilter').value;
+    const params = new URLSearchParams();
+    if (q) params.set('search', q);
+    if (status) params.set('status', status);
+    const res = await fetch(`/api/v1/candidates?${params}`);
+    candidates = await res.json();
+    renderTable();
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('candidateTbody');
+    if (!candidates.length) {
+      tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">No candidates found</td></tr>';
+      return;
+    }
+    tbody.innerHTML = candidates.map((c) => `
+      <tr>
+        <td>${c.firstName} ${c.lastName}</td>
+        <td>${c.email}</td>
+        <td>${c.employeeType || '—'}</td>
+        <td>${c.designation || '—'}</td>
+        <td>${c.expectedCtc ? '₹' + Number(c.expectedCtc).toLocaleString('en-IN') : '—'}</td>
+        <td>${c.tentativeJoiningDate || '—'}</td>
+        <td>${statusBadge(c.status)}</td>
+        <td class="text-end">
+          <button class="btn btn-sm btn-outline-primary me-1" onclick="editCandidate(${c.id})">Edit</button>
+          ${c.status !== 'converted' ? `<button class="btn btn-sm btn-success me-1" onclick="openConvert(${c.id})">Convert</button>` : ''}
+          ${c.convertedEmployeeId ? `<a class="btn btn-sm btn-outline-secondary" href="/employees">View emp #${c.convertedEmployeeId}</a>` : ''}
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  window.openCandidateModal = function (row) {
+    const form = document.getElementById('candidateForm');
+    form.reset();
+    document.getElementById('candidateId').value = row?.id || '';
+    document.getElementById('candidateModalTitle').textContent = row ? 'Edit Candidate' : 'Add Candidate';
+    if (row) {
+      Object.keys(row).forEach((k) => {
+        const el = form.elements[k];
+        if (el) el.value = row[k] ?? '';
+      });
+    }
+  };
+
+  window.editCandidate = async function (id) {
+    const res = await fetch(`/api/v1/candidates/${id}`);
+    const row = await res.json();
+    openCandidateModal(row);
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('candidateModal')).show();
+  };
+
+  window.openConvert = async function (id) {
+    convertTargetId = id;
+    const c = candidates.find((x) => x.id === id);
+    document.getElementById('convertCandidateLabel').textContent =
+      c ? `Create employee record for ${c.firstName} ${c.lastName}` : '';
+    const mgrRes = await fetch('/api/v1/candidates/managers');
+    const managers = await mgrRes.json();
+    const sel = document.getElementById('convertManagerSelect');
+    sel.innerHTML = '<option value="">Select manager</option>' +
+      managers.map((m) => `<option value="${m.id}">${m.empName} (${m.empDesignation || '—'})</option>`).join('');
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('convertModal')).show();
+  };
+
+  document.getElementById('candidateForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target).entries());
+    const id = data.id;
+    delete data.id;
+    const url = id ? `/api/v1/candidates/${id}` : '/api/v1/candidates';
+    const method = id ? 'PUT' : 'POST';
+    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      alert(err.error || 'Save failed');
+      return;
+    }
+    bootstrap.Modal.getInstance(document.getElementById('candidateModal'))?.hide();
+    await loadCandidates();
+  });
+
+  document.getElementById('confirmConvertBtn').addEventListener('click', async () => {
+    const reportingManagerId = document.getElementById('convertManagerSelect').value;
+    if (!reportingManagerId || !convertTargetId) return alert('Select a reporting manager');
+    const res = await fetch(`/api/v1/candidates/${convertTargetId}/convert`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reportingManagerId }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) return alert(body.error || 'Convert failed');
+    bootstrap.Modal.getInstance(document.getElementById('convertModal'))?.hide();
+    alert(`Employee created (ID ${body.employee?.id}). Open Employees to complete profile.`);
+    await loadCandidates();
+  });
+
+  document.getElementById('candidateSearch').addEventListener('input', () => loadCandidates());
+  document.getElementById('candidateStatusFilter').addEventListener('change', () => loadCandidates());
+  loadCandidates();
+})();
+</script>

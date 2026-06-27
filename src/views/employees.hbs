@@ -46,6 +46,7 @@
 .emp-actions-menu { min-width: 220px; padding: 6px; border-radius: 10px; box-shadow: 0 8px 24px rgba(15,23,42,0.12); }
 .emp-actions-menu .dropdown-item { border-radius: 6px; font-size: 14px; padding: 8px 12px; }
 .emp-actions-menu .dropdown-item:disabled { opacity: 0.5; }
+.lifecycle-badge { font-size: 11px; text-transform: capitalize; }
 </style>
 <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
@@ -63,6 +64,14 @@
               </small>
             {{/if}}
           </div>
+
+          <button
+            class="btn btn-outline-primary me-2"
+            data-bs-toggle="modal"
+            data-bs-target="#bulkImportModal"
+          >
+            <i class="fas fa-file-csv me-2"></i> Import CSV
+          </button>
 
           <button
             class="btn btn-primary"
@@ -90,6 +99,18 @@
               placeholder="Search by name, email, ID"
               value="{{search}}"
             />
+          </div>
+          <div class="col-md-3 mb-2">
+            <select name="lifecycleStage" class="form-select" onchange="this.form.submit()">
+              <option value="">All lifecycle stages</option>
+              <option value="prospect" {{#if (eq lifecycleStage 'prospect')}}selected{{/if}}>Prospect</option>
+              <option value="offer" {{#if (eq lifecycleStage 'offer')}}selected{{/if}}>Offer</option>
+              <option value="joining" {{#if (eq lifecycleStage 'joining')}}selected{{/if}}>Joining</option>
+              <option value="active" {{#if (eq lifecycleStage 'active')}}selected{{/if}}>Active</option>
+              <option value="confirmed" {{#if (eq lifecycleStage 'confirmed')}}selected{{/if}}>Confirmed</option>
+              <option value="offboarding" {{#if (eq lifecycleStage 'offboarding')}}selected{{/if}}>Offboarding</option>
+              <option value="exited" {{#if (eq lifecycleStage 'exited')}}selected{{/if}}>Exited</option>
+            </select>
           </div>
           <div class="col-md-2 mb-2">
             <button class="btn btn-outline-secondary w-100" type="submit">
@@ -119,6 +140,8 @@
                     <th>Phone</th>
                     <th>Designation</th>
                     <th>Department</th>
+                    <th>Type</th>
+                    <th>Lifecycle</th>
                     <th>DOJ</th>
                     <th>Shift</th>
                     <th class="text-end">Actions</th>
@@ -148,6 +171,16 @@
                           {{else}}
                             {{empDepartment}}
                           {{/if}}
+                        </td>
+                        <td>
+                          {{#unless isInvitedMember}}
+                            <span class="badge bg-light text-dark border">{{employeeType}}</span>
+                          {{/unless}}
+                        </td>
+                        <td>
+                          {{#unless isInvitedMember}}
+                            <span class="badge bg-{{lifecycleBadgeClass}} lifecycle-badge">{{lifecycleStageLabel}}</span>
+                          {{/unless}}
                         </td>
                         <td>{{empDateOfJoining}}</td>
                         <td>
@@ -204,6 +237,43 @@
                               </button>
                               <ul class="dropdown-menu dropdown-menu-end emp-actions-menu">
                                 <li>
+                                  <a class="dropdown-item" href="/onboarding-workflow/{{id}}">
+                                    <i class="fas fa-route me-2 text-primary"></i>Onboarding workflow
+                                  </a>
+                                </li>
+                                <li>
+                                  <a class="dropdown-item" href="/exit-workflow/{{id}}">
+                                    <i class="fas fa-door-open me-2 text-warning"></i>Exit workflow
+                                  </a>
+                                </li>
+                                <li>
+                                  <a class="dropdown-item" href="/documents?employeeId={{id}}">
+                                    <i class="fas fa-file-signature me-2 text-success"></i>Generate document
+                                  </a>
+                                </li>
+                                {{#if (eq employeeType 'Contract')}}
+                                <li>
+                                  <a class="dropdown-item" href="/contract-workflow/{{id}}">
+                                    <i class="fas fa-file-contract me-2 text-info"></i>Contract workflow
+                                  </a>
+                                </li>
+                                {{/if}}
+                                {{#if (eq employeeType 'Consultant')}}
+                                <li>
+                                  <a class="dropdown-item" href="/contract-workflow/{{id}}">
+                                    <i class="fas fa-file-contract me-2 text-info"></i>Contract workflow
+                                  </a>
+                                </li>
+                                {{/if}}
+                                {{#if (eq employeeType 'Intern')}}
+                                <li>
+                                  <a class="dropdown-item" href="/ppo-workflow/{{id}}">
+                                    <i class="fas fa-graduation-cap me-2 text-primary"></i>Intern / PPO workflow
+                                  </a>
+                                </li>
+                                {{/if}}
+                                <li><hr class="dropdown-divider my-1"></li>
+                                <li>
                                   <button
                                     type="button"
                                     class="dropdown-item send-credentials-btn"
@@ -235,7 +305,7 @@
                     {{/each}}
                   {{else}}
                     <tr>
-                      <td colspan="10" class="text-center py-3">
+                      <td colspan="12" class="text-center py-3">
                         No employees found.
                       </td>
                     </tr>
@@ -255,7 +325,7 @@
 <div class="modal fade" id="addEmployeeModal" tabindex="-1">
   <div class="modal-dialog modal-xl">
     <div class="modal-content">
-      <form id="addEmployeeForm">
+      <form id="addEmployeeForm" novalidate>
         <input type="hidden" name="id" id="employeeIdField" />
 
         <div class="modal-header">
@@ -338,6 +408,18 @@
                 6) Documents &amp; KYC
               </button>
             </li>
+            <li class="nav-item" role="presentation">
+              <button
+                class="nav-link"
+                id="lifecycle-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#tab-lifecycle"
+                type="button"
+                role="tab"
+              >
+                7) Lifecycle &amp; Exit
+              </button>
+            </li>
           </ul>
 
           {{!-- Tabs content --}}
@@ -349,7 +431,7 @@
                   <label class="form-label">
                     First Name <span class="text-danger">*</span>
                   </label>
-                  <input type="text" name="firstName" class="form-control" required />
+                  <input type="text" name="firstName" class="form-control" />
                 </div>
                 <div class="col-md-4">
                   <label class="form-label">Middle Name</label>
@@ -359,7 +441,7 @@
                   <label class="form-label">
                     Last Name <span class="text-danger">*</span>
                   </label>
-                  <input type="text" name="lastName" class="form-control" required />
+                  <input type="text" name="lastName" class="form-control" />
                 </div>
 
                 <div class="col-md-4">
@@ -418,7 +500,7 @@
 
                 <div class="col-md-4">
                   <label class="form-label">Date of Birth <span class="text-danger">*</span></label>
-                  <input type="date" name="empDob" class="form-control" required />
+                  <input type="date" name="empDob" class="form-control" />
                 </div>
 
                 <div class="col-md-4">
@@ -458,7 +540,6 @@
                     name="empPhone"
                     maxlength="10"
                     class="form-control"
-                    required
                   />
                 </div>
                 <div class="col-md-4">
@@ -474,7 +555,7 @@
                   <label class="form-label">
                     Personal Email <span class="text-danger">*</span>
                   </label>
-                  <input type="email" name="empEmail" class="form-control" required />
+                  <input type="email" name="empEmail" class="form-control" />
                   <small class="text-muted">Used as employee portal login (with auto-generated password)</small>
                 </div>
 
@@ -627,7 +708,7 @@
               <div class="row g-3">
                 <div class="col-md-4">
                   <label class="form-label">Business <span class="text-danger">*</span></label>
-                  <select name="businessId" class="form-select" required>
+                  <select name="businessId" class="form-select">
                     <option value="">Select Business</option>
                     {{#each businesses}}
                     <option value="{{id}}">{{businessName}}</option>
@@ -648,8 +729,8 @@
 
                 <div class="col-md-4">
                   <label class="form-label">Employee Type<span class="text-danger">*</span></label>
-                  <select name="employeeType" class="form-select" required>
-                    <option value="New Candidate">New Candidate</option>
+                  <select name="employeeType" class="form-select">
+                    <option value="">Select Employee Type</option>
                     <option value="Permanent">Permanent</option>
                     <option value="Contract">Contract</option>
                     <option value="Intern">Intern</option>
@@ -673,7 +754,7 @@
                   <label class="form-label">
                     Department <span class="text-danger">*</span>
                   </label>
-                  <select name="empDepartment" class="form-select" required>
+                  <select name="empDepartment" class="form-select">
                     <option value="">Select Department</option>
                     {{#each departments}}
                       <option value="{{name}}">{{name}}</option>
@@ -685,7 +766,7 @@
                   <label class="form-label">
                     Designation / Job Title <span class="text-danger">*</span>
                   </label>
-                  <select name="empDesignation" class="form-select" required>
+                  <select name="empDesignation" class="form-select">
                     <option value="">Select Designation</option>
                     {{#each designations}}
                       <option value="{{name}}">{{name}}</option>
@@ -709,14 +790,16 @@
 
                 <div class="col-md-4">
                   <label class="form-label">
-                    Reporting Manager (Employee ID / Ref)
+                    Reporting Manager <span class="text-danger">*</span>
                   </label>
-                  <select name="reportingManagerId" class="form-select">
+                  <select name="reportingManagerId" id="reportingManagerId" class="form-select">
                     <option value="">Select Manager</option>
                     {{#each employees}}
-                      <option value="{{id}}">{{empName}}</option>
+                      <option value="{{id}}">{{empName}}{{#if empId}} ({{empId}}){{/if}}</option>
                     {{/each}}
                   </select>
+                  <div class="invalid-feedback">Please select a reporting manager.</div>
+                  <small class="text-muted">Required for leave approvals and team management.</small>
                 </div>
 
                 <div class="col-md-4">
@@ -733,7 +816,7 @@
                     Work Location / Branch <span class="text-danger">*</span>
                   </label>
                   {{!-- <input type="text" name="empWorkLoc" class="form-control" required /> --}}
-                  <select name="empWorkLoc" class="form-control" required>
+                  <select name="empWorkLoc" class="form-control">
                         <option value="">Select Location</option>
                         {{#each businessAddresses}}
                         <option value="{{fullAddress}}">{{addressName}}</option>
@@ -748,7 +831,6 @@
                     type="date"
                     name="empDateOfJoining"
                     class="form-control"
-                    required
                   />
                 </div>
                 <div class="col-md-4">
@@ -763,6 +845,34 @@
                 <div class="col-md-4">
                   <label class="form-label">Confirmation Date</label>
                   <input type="date" name="confirmationDate" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Contract End Date</label>
+                  <input type="date" name="contractEndDate" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Lifecycle Stage</label>
+                  <select name="lifecycleStage" class="form-select">
+                    <option value="prospect">Prospect</option>
+                    <option value="offer">Offer</option>
+                    <option value="joining">Joining</option>
+                    <option value="active">Active</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="offboarding">Offboarding</option>
+                    <option value="exited">Exited</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Internship Start Date</label>
+                  <input type="date" name="internship_start_date" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Internship End Date</label>
+                  <input type="date" name="internship_end_date" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Monthly Stipend (Interns)</label>
+                  <input type="number" step="0.01" min="0" name="internStipend" class="form-control" placeholder="0 = unpaid" />
                 </div>
               </div>
             </div>
@@ -779,7 +889,6 @@
                     step="0.01"
                     name="empCtc"
                     class="form-control"
-                    required
                   />
                 </div>
                 <div class="col-md-4">
@@ -1386,6 +1495,91 @@
                 </div>
               </div>
             </div>{{!-- end tab-documents --}}
+
+            {{!-- TAB 7: LIFECYCLE & EXIT --}}
+            <div class="tab-pane fade" id="tab-lifecycle" role="tabpanel">
+              <div class="row g-3">
+                <div class="col-12">
+                  <div class="border rounded p-3 bg-light" id="lifecycleSummaryPanel">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                      <div>
+                        <div class="text-muted small">Current lifecycle stage</div>
+                        <div class="fw-semibold" id="lifecycleTabStageLabel">—</div>
+                      </div>
+                      <div id="lifecycleTabStageBadges"></div>
+                    </div>
+                    <div class="small text-muted mb-2" id="lifecycleTabRecommended">Recommended next document: —</div>
+                    <div id="lifecycleTabStageTrack" class="mb-2"></div>
+                    <div id="lifecycleTabTimeline" class="small text-muted mb-2" style="max-height:120px;overflow-y:auto;"></div>
+                    <div class="d-flex flex-wrap gap-2">
+                      <a href="#" class="btn btn-sm btn-outline-primary d-none" id="btnOnboardingWizard">Onboarding workflow</a>
+                      <a href="#" class="btn btn-sm btn-outline-warning d-none" id="btnExitWizardTab">Exit workflow</a>
+                      <a href="#" class="btn btn-sm btn-primary d-none" id="btnGenerateDocsTab">Generate documents</a>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Resignation Date</label>
+                  <input type="date" name="resignationDate" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Last Working Day</label>
+                  <input type="date" name="lastWorkingDay" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Notice Period (days)</label>
+                  <input type="number" min="0" name="noticePeriodDays" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Exit Type</label>
+                  <select name="exitType" class="form-select">
+                    <option value="">—</option>
+                    <option value="resignation">Resignation</option>
+                    <option value="termination">Termination</option>
+                    <option value="contract_end">Contract End</option>
+                    <option value="internship_end">Internship End</option>
+                    <option value="retirement">Retirement</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Exit Category</label>
+                  <input type="text" name="exitCategory" class="form-control" placeholder="Voluntary / Involuntary" />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Increment Effective Date</label>
+                  <input type="date" name="empIncrementEffectiveDate" class="form-control" />
+                </div>
+                <div class="col-12">
+                  <label class="form-label">Exit Reason</label>
+                  <textarea name="exitReason" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="col-12" id="offboardingChecklistSection">
+                  <hr />
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label class="form-label mb-0">Offboarding Checklist</label>
+                    <span class="badge bg-secondary" id="offboardingProgressBadge">0%</span>
+                  </div>
+                  <div id="offboardingChecklistItems" class="border rounded p-3 bg-light small text-muted">
+                    Save employee first, then open edit to manage checklist — or use View Employee → Lifecycle actions.
+                  </div>
+                </div>
+                <div class="col-12 d-flex flex-wrap gap-2" id="lifecycleActionBtns" style="display:none;">
+                  <button type="button" class="btn btn-sm btn-success d-none" id="btnAcceptOffer"><i class="fa-solid fa-handshake me-1"></i>Accept Offer</button>
+                  <button type="button" class="btn btn-sm btn-success d-none" id="btnConfirmEmployment"><i class="fa-solid fa-user-check me-1"></i>Confirm Employment</button>
+                  <a href="#" class="btn btn-sm btn-warning" id="btnOpenExitWizard"><i class="fa-solid fa-door-open me-1"></i>Exit Workflow</a>
+                  <button type="button" class="btn btn-sm btn-outline-warning" id="btnInitiateExit">Initiate Exit</button>
+                  <button type="button" class="btn btn-sm btn-outline-danger" id="btnCompleteExit">Complete Exit</button>
+                  <button type="button" class="btn btn-sm btn-outline-primary" id="btnSyncPayroll">Sync Payroll Structure</button>
+                  <a href="/documents" class="btn btn-sm btn-primary" id="btnGenerateDocs">Generate Documents</a>
+                </div>
+                <div class="col-12">
+                  <div class="alert alert-light border small mb-0">
+                    Use <strong>Documents → Generate</strong> for offer, appointment, increment, and exit letters.
+                    Lifecycle stage updates automatically when documents are generated.
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>{{!-- end tab-content --}}
         </div>{{!-- end modal-body --}}
 
@@ -1407,6 +1601,42 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+</div>
+
+{{!-- Bulk CSV import --}}
+<div class="modal fade" id="bulkImportModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Import employees (CSV)</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted small">
+          Upload a CSV with lifecycle stage and employee type. Offboarding/exited stages are not allowed via import.
+          <a href="/api/v1/employees/bulk-import/template" class="ms-1">Download template</a>
+        </p>
+        <div class="mb-3">
+          <label class="form-label">Default reporting manager <span class="text-danger">*</span></label>
+          <select class="form-select" id="bulkImportManagerId" required>
+            <option value="">Select manager</option>
+            {{#each employees}}
+              <option value="{{id}}">{{empName}} ({{empId}})</option>
+            {{/each}}
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">CSV file</label>
+          <input type="file" class="form-control" id="bulkImportFile" accept=".csv,text/csv" />
+        </div>
+        <div id="bulkImportResult" class="small"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" id="btnRunBulkImport">Import</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1653,6 +1883,7 @@
       "tab-education",
       "tab-experience",
       "tab-documents",
+      "tab-lifecycle",
     ];
 
     let currentStep = 0;
@@ -1988,59 +2219,67 @@
     }
 
     // =======================================
-    // Required-field validation (based on red asterisk)
-    // Wherever a label contains a red "*" marker, the associated control becomes required.
-    // "Next" is disabled until required fields in the current tab are filled.
-    // "Save" is disabled until required fields in ALL tabs are filled.
+    // Red asterisks are visual guidance only — they do not block save or next.
     // =======================================
 
-    function isElementVisible(el) {
-      if (!el) return false;
-      if (el.type === "hidden") return false;
-      if (el.disabled) return false;
-      // if inside collapsed/hidden tab-pane, offsetParent may be null
-      const style = window.getComputedStyle(el);
-      if (style.display === "none" || style.visibility === "hidden") return false;
-      // If any ancestor is display:none, getClientRects() will be empty
-      if (el.getClientRects().length === 0) return false;
-      return true;
-    }
-
-    function controlHasValue(el) {
-      if (!el) return false;
-      if (el.type === "checkbox") return el.checked === true;
-      if (el.type === "radio") {
-        const name = el.name;
-        if (!name) return el.checked === true;
-        return !!document.querySelector(`input[type="radio"][name="${CSS.escape(name)}"]:checked`);
-      }
-      if (el.type === "file") return (el.files && el.files.length > 0) || false;
-      return String(el.value || "").trim() !== "";
-    }
-
-    function markAsteriskRequired(root) {
+    function clearNativeRequiredConstraints(root) {
       if (!root) return;
-      // Look for labels that contain a red asterisk marker
+      root.querySelectorAll("input[required], select[required], textarea[required]").forEach((el) => {
+        el.required = false;
+        el.removeAttribute("required");
+      });
+    }
+
+    function markAsteriskFields(root) {
+      if (!root) return;
       root.querySelectorAll("label").forEach((label) => {
         const hasStar = !!label.querySelector(".text-danger");
         if (!hasStar) return;
 
-        // Find the closest control in the same field container
         const fieldWrap = label.closest(".col, .col-12, .col-md-12, .col-md-6, .col-md-4, .col-md-3, .col-lg-6, .col-lg-4, .mb-3, .row") || label.parentElement;
         if (!fieldWrap) return;
 
         const control = fieldWrap.querySelector("input, select, textarea");
         if (!control) return;
 
-        // Mark as required (idempotent)
-        control.required = true;
-        control.dataset.requiredByAsterisk = "true";
+        control.dataset.asteriskField = "true";
+        control.required = false;
+        control.removeAttribute("required");
       });
     }
 
     function getTabPaneByStep(stepIdx) {
       const id = steps[stepIdx];
       return id ? document.getElementById(id) : null;
+    }
+
+    function getReportingManagerSelect() {
+      return document.getElementById("reportingManagerId");
+    }
+
+    function refreshReportingManagerOptions(excludeEmployeeId) {
+      const select = getReportingManagerSelect();
+      if (!select) return;
+      const current = select.value;
+      Array.from(select.options).forEach((opt) => {
+        if (!opt.value) return;
+        const hide = excludeEmployeeId && Number(opt.value) === Number(excludeEmployeeId);
+        opt.hidden = hide;
+        opt.disabled = hide;
+      });
+      if (excludeEmployeeId && Number(current) === Number(excludeEmployeeId)) {
+        select.value = "";
+      }
+    }
+
+    function validateReportingManager({ markInvalid = false } = {}) {
+      const select = getReportingManagerSelect();
+      const value = String(select?.value || "").trim();
+      const ok = value !== "" && Number(value) > 0;
+      if (markInvalid && select) {
+        select.classList.toggle("is-invalid", !ok);
+      }
+      return ok;
     }
 
     function validateTab(stepIdx, { markInvalid = false } = {}) {
@@ -2053,25 +2292,10 @@
       if (stepIdx === 5 && window.EmployeeDocumentsWizard) {
         return window.EmployeeDocumentsWizard.isTabValid({ markInvalid });
       }
-
-      const pane = getTabPaneByStep(stepIdx);
-      if (!pane) return true;
-
-      // Gather required controls (native required OR asterisk-derived)
-      const requiredControls = Array.from(
-        pane.querySelectorAll("input[required], select[required], textarea[required], [data-required-by-asterisk='true']")
-      ).filter((el) => isElementVisible(el));
-
-      let ok = true;
-      requiredControls.forEach((el) => {
-        const filled = controlHasValue(el);
-        if (!filled) ok = false;
-        if (markInvalid) {
-          el.classList.toggle("is-invalid", !filled);
-        }
-      });
-
-      return ok;
+      if (stepIdx === 1) {
+        return validateReportingManager({ markInvalid });
+      }
+      return true;
     }
 
     function findFirstInvalidStep() {
@@ -2081,18 +2305,23 @@
       return -1;
     }
 
+    function controlHasValue(el) {
+      if (!el) return false;
+      if (el.type === "checkbox") return el.checked === true;
+      return String(el.value || "").trim() !== "";
+    }
+
     function updateWizardValidity() {
       if (!nextBtn || !saveBtn) return;
-      // Ensure asterisk-required mapping exists before validating
-      if (modalEl) markAsteriskRequired(modalEl);
+      if (modalEl) {
+        clearNativeRequiredConstraints(modalEl);
+        markAsteriskFields(modalEl);
+      }
 
       const currentOk = validateTab(currentStep);
-      const allOk = findFirstInvalidStep() === -1;
 
-      // Next: current tab only
       nextBtn.disabled = !currentOk;
-      // Save: all tabs
-      saveBtn.disabled = !allOk;
+      saveBtn.disabled = false;
     }
 
     function goToStep(index) {
@@ -2130,7 +2359,7 @@
           return;
         }
 
-        // Block moving forward if required fields (with red asterisk) aren't filled
+        // Block moving forward only if an education/experience/document sub-form is open
         const ok = validateTab(currentStep, { markInvalid: true });
         updateWizardValidity();
         if (!ok) return;
@@ -2163,8 +2392,9 @@
       modalEl.addEventListener("shown.bs.modal", function () {
         currentStep = 0;
         goToStep(currentStep);
-        // map required fields and set initial button states
-        markAsteriskRequired(modalEl);
+        // Ensure save/next are not blocked by native HTML validation
+        clearNativeRequiredConstraints(modalEl);
+        markAsteriskFields(modalEl);
         updateWizardButtons();
         updateWizardValidity();
       });
@@ -2180,10 +2410,18 @@
           updateWizardValidity();
         }
       });
-      modalEl.addEventListener("change", function () {
+      modalEl.addEventListener("change", function (e) {
+        if (e.target?.name === "reportingManagerId") {
+          validateReportingManager({ markInvalid: true });
+        }
         updateWizardValidity();
       });
     }
+
+    getReportingManagerSelect()?.addEventListener("change", () => {
+      validateReportingManager({ markInvalid: true });
+      updateWizardValidity();
+    });
 
     // =======================================
     // "Permanent same as present" helper
@@ -2306,6 +2544,9 @@
 
       // Reset gender dropdown display
       updateGenderDropdownDisplay();
+      refreshReportingManagerOptions(null);
+      const mgrSelect = getReportingManagerSelect();
+      if (mgrSelect) mgrSelect.classList.remove("is-invalid");
     }
 
     // =======================================
@@ -2482,6 +2723,7 @@
         }
 
         resetEmployeeForm();
+        refreshReportingManagerOptions(null);
         const emailInput = addEmployeeForm?.elements?.empEmail;
         if (emailInput) emailInput.readOnly = false;
         setPortalCredentialsMode(true);
@@ -2557,17 +2799,12 @@
           return;
         }
 
-        // Block submit until required asterisk fields are filled across all tabs
-        updateWizardValidity();
-        const firstBad = findFirstInvalidStep();
-        if (firstBad !== -1) {
-          // Jump to first invalid tab and highlight missing fields
-          goToStep(firstBad);
-          currentStep = firstBad;
+        if (!validateReportingManager({ markInvalid: true })) {
+          goToStep(1);
+          currentStep = 1;
           updateWizardButtons();
-          validateTab(firstBad, { markInvalid: true });
           updateWizardValidity();
-          alert("Please fill all required fields (*) before saving.");
+          alert("Please select a reporting manager before saving the employee.");
           return;
         }
 
@@ -2594,6 +2831,7 @@
           const res = await fetch(url, {
             method: method,
             headers: { "Content-Type": "application/json" },
+            credentials: "include",
             body: JSON.stringify(base),
           });
 
@@ -2604,7 +2842,7 @@
             } catch (e) {
               err = {};
             }
-            throw new Error(err.error || "Failed to save employee");
+            throw new Error(err.message || err.error || "Failed to save employee");
           }
 
           const saved = await res.json();
@@ -2786,6 +3024,14 @@
           ["Date of Joining", emp.empDateOfJoining],
           ["Probation Period (months)", emp.probationPeriodMonths],
           ["Confirmation Date", emp.confirmationDate],
+          ["Lifecycle Stage", emp.lifecycleStage],
+          ["Contract End Date", emp.contractEndDate],
+          ["Internship Start", emp.internship_start_date],
+          ["Internship End", emp.internship_end_date],
+          ["Monthly Stipend", emp.internStipend],
+          ["Resignation Date", emp.resignationDate],
+          ["Last Working Day", emp.lastWorkingDay],
+          ["Exit Type", emp.exitType],
         ]);
 
         renderKeyValueList("viewCompensationDetails", [
@@ -2948,6 +3194,7 @@ if (expContainer) {
 
         resetEmployeeForm();
         employeeIdField.value = emp.id;
+        refreshReportingManagerOptions(emp.id);
 
         // Base fields
         fillBaseField("firstName", emp.firstName);
@@ -3011,6 +3258,18 @@ if (expContainer) {
           emp.probationPeriodMonths
         );
         fillBaseField("confirmationDate", emp.confirmationDate);
+        fillBaseField("contractEndDate", emp.contractEndDate);
+        fillBaseField("lifecycleStage", emp.lifecycleStage || "prospect");
+        fillBaseField("internship_start_date", emp.internship_start_date);
+        fillBaseField("internship_end_date", emp.internship_end_date);
+        fillBaseField("internStipend", emp.internStipend);
+        fillBaseField("resignationDate", emp.resignationDate);
+        fillBaseField("lastWorkingDay", emp.lastWorkingDay);
+        fillBaseField("noticePeriodDays", emp.noticePeriodDays);
+        fillBaseField("exitType", emp.exitType);
+        fillBaseField("exitCategory", emp.exitCategory);
+        fillBaseField("exitReason", emp.exitReason);
+        fillBaseField("empIncrementEffectiveDate", emp.empIncrementEffectiveDate);
 
         fillBaseField("empCtc", emp.empCtc);
         fillBaseField("grossSalaryMonthly", emp.grossSalaryMonthly);
@@ -3050,6 +3309,8 @@ if (expContainer) {
         setExperienceRows(emp.experiences || []);
         setDocumentRows(emp.documents || []);
         setPortalCredentialsMode(false);
+
+        await loadLifecycleForEmployee(id);
 
         const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
         modal.show();
@@ -3199,6 +3460,235 @@ if (expContainer) {
       if (portalPasswordInput) {
         portalPasswordInput.value = generateDefaultPortalPassword();
         updatePortalPasswordStrength();
+      }
+    });
+
+    // --- Lifecycle & offboarding checklist ---
+    let editingEmployeeId = null;
+
+    function renderOffboardingChecklist(items, progress) {
+      const container = document.getElementById("offboardingChecklistItems");
+      const badge = document.getElementById("offboardingProgressBadge");
+      if (!container) return;
+      if (!items || !items.length) {
+        container.innerHTML = '<span class="text-muted">No checklist items.</span>';
+        return;
+      }
+      if (badge && progress) badge.textContent = progress.percent + "%";
+      container.innerHTML = items.map((item) => `
+        <div class="form-check mb-2">
+          <input class="form-check-input offboarding-check-item" type="checkbox"
+            data-key="${item.key}" id="chk_${item.key}" ${item.done ? "checked" : ""} />
+          <label class="form-check-label" for="chk_${item.key}">
+            <strong>${item.label}</strong>
+            <span class="text-muted">(${item.department})</span>
+          </label>
+        </div>
+      `).join("");
+    }
+
+    function renderLifecycleSummaryPanel(data) {
+      const stageLabel = document.getElementById("lifecycleTabStageLabel");
+      const recommended = document.getElementById("lifecycleTabRecommended");
+      const track = document.getElementById("lifecycleTabStageTrack");
+      const timeline = document.getElementById("lifecycleTabTimeline");
+      const btnOnboarding = document.getElementById("btnOnboardingWizard");
+      const btnExit = document.getElementById("btnExitWizardTab");
+      const btnDocs = document.getElementById("btnGenerateDocsTab");
+      const btnGenerateDocs = document.getElementById("btnGenerateDocs");
+
+      if (!data?.employee) return;
+
+      const emp = data.employee;
+      const stage = emp.lifecycleStage || "prospect";
+      if (stageLabel) {
+        stageLabel.textContent = `${emp.lifecycleStageLabel || stage} · ${emp.employeeType || "Permanent"}`;
+      }
+      if (recommended) {
+        recommended.textContent = data.recommendedDocument
+          ? `Recommended next document: ${data.recommendedDocument.name}`
+          : "No specific document recommendation for this stage.";
+      }
+      if (track && data.stages) {
+        track.innerHTML = data.stages.map((s) => {
+          const cls = s.current ? "bg-primary" : s.completed ? "bg-success" : "bg-light text-muted";
+          return `<span class="badge ${cls} me-1 mb-1">${s.label}</span>`;
+        }).join("");
+      }
+      if (timeline) {
+        const events = (data.events || []).slice(0, 5);
+        timeline.innerHTML = events.length
+          ? events.map((e) => `<div class="border-bottom pb-1 mb-1">${e.action || "event"} · ${e.fromStage || "—"} → ${e.toStage} · ${new Date(e.createdAt).toLocaleString()}</div>`).join("")
+          : "No lifecycle events recorded yet.";
+      }
+
+      const onboardingStages = ["prospect", "offer", "joining", "active", "confirmed"];
+      const exitStages = ["offboarding", "exited"];
+      if (btnOnboarding && editingEmployeeId) {
+        btnOnboarding.href = `/onboarding-workflow/${editingEmployeeId}`;
+        btnOnboarding.classList.toggle("d-none", !onboardingStages.includes(stage));
+      }
+      if (btnExit && editingEmployeeId) {
+        btnExit.href = `/exit-workflow/${editingEmployeeId}`;
+        btnExit.classList.toggle("d-none", !exitStages.includes(stage) && stage !== "active" && stage !== "confirmed");
+      }
+      if (btnDocs && editingEmployeeId) {
+        const docQs = data.recommendedDocument?.id ? `?employeeId=${editingEmployeeId}&docTypeId=${data.recommendedDocument.id}` : `?employeeId=${editingEmployeeId}`;
+        btnDocs.href = `/documents${docQs}`;
+        btnDocs.classList.remove("d-none");
+      }
+      if (btnGenerateDocs && editingEmployeeId) {
+        const docQs = data.recommendedDocument?.id ? `?employeeId=${editingEmployeeId}&docTypeId=${data.recommendedDocument.id}` : `?employeeId=${editingEmployeeId}`;
+        btnGenerateDocs.href = `/documents${docQs}`;
+      }
+
+      const btnAccept = document.getElementById("btnAcceptOffer");
+      const btnConfirm = document.getElementById("btnConfirmEmployment");
+      if (btnAccept) btnAccept.classList.toggle("d-none", stage !== "offer");
+      if (btnConfirm) btnConfirm.classList.toggle("d-none", stage !== "active");
+    }
+
+    async function loadLifecycleForEmployee(employeeId) {
+      if (!employeeId) return;
+      editingEmployeeId = employeeId;
+      const actionBtns = document.getElementById("lifecycleActionBtns");
+      if (actionBtns) actionBtns.style.display = "flex";
+
+      try {
+        const res = await fetch(`/api/v1/employees/${employeeId}/lifecycle`);
+        if (!res.ok) return;
+        const data = await res.json();
+        renderOffboardingChecklist(data.offboardingChecklist, data.offboardingProgress);
+        renderLifecycleSummaryPanel(data);
+      } catch (e) {
+        console.warn("Lifecycle load failed", e);
+      }
+    }
+
+    document.getElementById("offboardingChecklistItems")?.addEventListener("change", async (e) => {
+      const cb = e.target.closest(".offboarding-check-item");
+      if (!cb || !editingEmployeeId) return;
+      const items = Array.from(document.querySelectorAll(".offboarding-check-item")).map((el) => ({
+        key: el.getAttribute("data-key"),
+        done: el.checked,
+      }));
+      try {
+        const res = await fetch(`/api/v1/employees/${editingEmployeeId}/lifecycle/offboarding-checklist`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ items }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const badge = document.getElementById("offboardingProgressBadge");
+          if (badge && data.progress) badge.textContent = data.progress.percent + "%";
+        }
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+
+    document.getElementById("btnOpenExitWizard")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (!editingEmployeeId) return;
+      window.location.href = `/exit-workflow/${editingEmployeeId}`;
+    });
+
+    document.getElementById("btnInitiateExit")?.addEventListener("click", async () => {
+      if (!editingEmployeeId) return;
+      const lwd = document.querySelector('[name="lastWorkingDay"]')?.value;
+      if (!lwd) { alert("Set Last Working Day first."); return; }
+      const res = await fetch(`/api/v1/employees/${editingEmployeeId}/lifecycle/exit/initiate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          resignationDate: document.querySelector('[name="resignationDate"]')?.value,
+          lastWorkingDay: lwd,
+          noticePeriodDays: document.querySelector('[name="noticePeriodDays"]')?.value,
+          exitReason: document.querySelector('[name="exitReason"]')?.value,
+          exitType: document.querySelector('[name="exitType"]')?.value,
+        }),
+      });
+      const data = await res.json();
+      alert(res.ok ? "Exit initiated — stage: " + data.lifecycleStage : (data.error || "Failed"));
+    });
+
+    document.getElementById("btnCompleteExit")?.addEventListener("click", async () => {
+      if (!editingEmployeeId) return;
+      if (!confirm("Mark employee as exited and inactive?")) return;
+      const res = await fetch(`/api/v1/employees/${editingEmployeeId}/lifecycle/exit/complete`, { method: "POST" });
+      const data = await res.json();
+      alert(res.ok ? "Exit completed." : (data.error || "Failed"));
+    });
+
+    document.getElementById("btnSyncPayroll")?.addEventListener("click", async () => {
+      if (!editingEmployeeId) return;
+      const res = await fetch(`/api/v1/employees/${editingEmployeeId}/lifecycle/sync-payroll`, { method: "POST" });
+      const data = await res.json();
+      alert(res.ok ? "Payroll synced (" + data.action + ")." : (data.error || "Failed"));
+    });
+
+    document.getElementById("btnAcceptOffer")?.addEventListener("click", async () => {
+      if (!editingEmployeeId) return;
+      const doj = document.querySelector('[name="empDateOfJoining"]')?.value;
+      const res = await fetch(`/api/v1/employees/${editingEmployeeId}/lifecycle/offer/accept`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ empDateOfJoining: doj || undefined }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert("Offer accepted — stage: " + data.lifecycleStage);
+        loadLifecycleForEmployee(editingEmployeeId);
+      } else {
+        alert(data.error || "Failed");
+      }
+    });
+
+    document.getElementById("btnConfirmEmployment")?.addEventListener("click", async () => {
+      if (!editingEmployeeId) return;
+      if (!confirm("Confirm this employee's employment (post-probation)?")) return;
+      const res = await fetch(`/api/v1/employees/${editingEmployeeId}/lifecycle/confirm`, { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        alert("Employment confirmed — stage: " + data.lifecycleStage);
+        loadLifecycleForEmployee(editingEmployeeId);
+      } else {
+        alert(data.error || "Failed");
+      }
+    });
+
+    document.getElementById("btnRunBulkImport")?.addEventListener("click", async () => {
+      const managerId = document.getElementById("bulkImportManagerId")?.value;
+      const fileInput = document.getElementById("bulkImportFile");
+      const resultEl = document.getElementById("bulkImportResult");
+      if (!managerId) return alert("Select a default reporting manager.");
+      if (!fileInput?.files?.[0]) return alert("Choose a CSV file.");
+      const csv = await fileInput.files[0].text();
+      const btn = document.getElementById("btnRunBulkImport");
+      btn.disabled = true;
+      resultEl.innerHTML = '<span class="text-muted">Importing…</span>';
+      try {
+        const res = await fetch("/api/v1/employees/bulk-import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ csv, defaultReportingManagerId: managerId }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Import failed");
+        let html = `<div class="alert alert-success py-2">${data.message}</div>`;
+        if (data.errors?.length) {
+          html += "<ul class='text-danger'>" + data.errors.map((e) => `<li>Line ${e.line}: ${e.message}</li>`).join("") + "</ul>";
+        }
+        if (data.skipped?.length) {
+          html += "<ul class='text-warning'>" + data.skipped.map((s) => `<li>Line ${s.line}: ${s.reason}</li>`).join("") + "</ul>";
+        }
+        resultEl.innerHTML = html;
+        if (data.created?.length) setTimeout(() => window.location.reload(), 1500);
+      } catch (err) {
+        resultEl.innerHTML = `<div class="alert alert-danger py-2">${err.message}</div>`;
+      } finally {
+        btn.disabled = false;
       }
     });
   })();

@@ -11,6 +11,7 @@ import {
   buildCareerJourney,
   getCertificates,
 } from '../../services/employeeDashboard.service.js';
+import { getEmployeePortalLifecycleSummary } from '../../services/employeePortalLifecycle.service.js';
 
 const HR_DEFAULT_PASSWORD_PREFIX = 'hr_default_pwd:';
 
@@ -42,12 +43,14 @@ export const renderProfile = asyncHandler(async (req, res) => {
 
     const employeeJson = employee.toJSON();
     const overview = await getEmployeeDashboardOverview(employee);
+    const lifecycle = await getEmployeePortalLifecycleSummary(employee);
 
     res.render('employee/profile', {
         title: 'My Profile',
         layout: 'employee-main',
         active: 'profile',
         employee: employeeJson,
+        lifecycle,
         skills: parseSkills(employeeJson),
         careerJourney: buildCareerJourney(employeeJson, employeeJson.experiences || []),
         certificates: getCertificates(employeeJson.documents || []),

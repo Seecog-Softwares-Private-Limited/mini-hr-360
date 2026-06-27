@@ -38,8 +38,30 @@
                   <td><span class="badge bg-warning text-dark">{{status}}</span></td>
                   <td class="text-end">
                     {{#if (eq status 'PENDING')}}
-                    <button type="button" class="btn btn-sm btn-success me-1 team-leave-approve" data-id="{{id}}">Approve</button>
-                    <button type="button" class="btn btn-sm btn-outline-danger team-leave-reject" data-id="{{id}}">Reject</button>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-success me-1 team-leave-approve"
+                      data-id="{{id}}"
+                      data-employee-name="{{employeeName}}"
+                      data-employee-id="{{employeeId}}"
+                      data-department="{{department}}"
+                      data-leave-type="{{leaveType}}"
+                      data-dates="{{startDate}} – {{endDate}}"
+                      data-days="{{totalDays}}"
+                      data-reason="{{reason}}"
+                    >Approve</button>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-danger team-leave-reject"
+                      data-id="{{id}}"
+                      data-employee-name="{{employeeName}}"
+                      data-employee-id="{{employeeId}}"
+                      data-department="{{department}}"
+                      data-leave-type="{{leaveType}}"
+                      data-dates="{{startDate}} – {{endDate}}"
+                      data-days="{{totalDays}}"
+                      data-reason="{{reason}}"
+                    >Reject</button>
                     {{else}}
                     <span class="text-muted small">—</span>
                     {{/if}}
@@ -61,30 +83,77 @@
   </div>
 </div>
 
+<script src="/assets/js/team-approve-modal.js"></script>
+<script src="/assets/js/team-reject-modal.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  async function act(action, id) {
-    const note = action === 'reject' ? prompt('Optional note for the employee:') : null;
+  function buildContextItems(btn) {
+    const contextItems = [
+      { label: 'Employee', value: btn.dataset.employeeName || '—' },
+      { label: 'Employee ID', value: btn.dataset.employeeId || '—' },
+      { label: 'Leave type', value: btn.dataset.leaveType || '—' },
+      { label: 'Dates', value: btn.dataset.dates || '—' },
+      { label: 'Days', value: btn.dataset.days || '—' },
+    ];
+    if (btn.dataset.department) {
+      contextItems.splice(2, 0, { label: 'Department', value: btn.dataset.department });
+    }
+    if (btn.dataset.reason) {
+      contextItems.push({ label: 'Employee reason', value: btn.dataset.reason });
+    }
+    return contextItems;
+  }
+
+  async function submitAction(action, id, comments) {
     const res = await fetch(`/employee/team/api/leaves/${id}/${action}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ comments: note }),
+      body: JSON.stringify({ comments: comments || null }),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Action failed');
+    if (!res.ok) throw new Error(data.error || data.message || 'Action failed');
     window.location.reload();
   }
 
   document.querySelectorAll('.team-leave-approve').forEach((btn) => {
-    btn.addEventListener('click', async () => {
-      try { await act('approve', btn.dataset.id); } catch (e) { alert(e.message); }
+    btn.addEventListener('click', () => {
+      openTeamApproveModal({
+        title: 'Approve leave request',
+        subtitle: 'The employee will be notified once you confirm this approval.',
+        confirmLabel: 'Approve leave',
+        contextItems: buildContextItems(btn),
+        quickNotes: [
+          'Approved — enjoy your time off',
+          'Please ensure handover is complete before leave',
+          'Keep your phone reachable for urgent matters',
+          'Approved — coordinate with the team on coverage',
+        ],
+        onConfirm: async (message) => {
+          await submitAction('approve', btn.dataset.id, message);
+        },
+      });
     });
   });
+
   document.querySelectorAll('.team-leave-reject').forEach((btn) => {
-    btn.addEventListener('click', async () => {
-      if (!confirm('Reject this leave request?')) return;
-      try { await act('reject', btn.dataset.id); } catch (e) { alert(e.message); }
+    btn.addEventListener('click', () => {
+      openTeamRejectModal({
+        title: 'Reject leave request',
+        subtitle: 'The employee will receive your message with this decision.',
+        confirmLabel: 'Reject leave',
+        contextItems: buildContextItems(btn),
+        quickReasons: [
+          'Insufficient leave balance',
+          'Critical project deadline',
+          'Team coverage required during this period',
+          'Please resubmit with revised dates',
+          'Supporting documents required',
+        ],
+        onConfirm: async (message) => {
+          await submitAction('reject', btn.dataset.id, message);
+        },
+      });
     });
   });
 });

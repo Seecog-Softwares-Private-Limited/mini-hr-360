@@ -1,0 +1,138 @@
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+  <div>
+    <div class="page-title" style="font-size: 28px;">Document Approvals</div>
+    <div class="page-subtitle">Review offer letters before PDF is emailed and saved to the employee vault.</div>
+  </div>
+  <a href="/documents" class="btn btn-outline-primary"><i class="fa-solid fa-file-signature me-2"></i>Generate documents</a>
+</div>
+
+<div class="section-card">
+  <div class="section-header">
+    <h5><i class="fa-solid fa-hourglass-half"></i> Pending queue</h5>
+    <select id="approvalStatusFilter" class="form-select form-select-sm" style="width:160px;">
+      <option value="pending">Pending</option>
+      <option value="approved">Approved</option>
+      <option value="rejected">Rejected</option>
+      <option value="">All</option>
+    </select>
+  </div>
+  <div class="table-responsive p-3">
+    <table class="table table-premium align-middle mb-0">
+      <thead>
+        <tr class="text-muted small text-uppercase">
+          <th>Employee</th>
+          <th>Document</th>
+          <th>Requested</th>
+          <th>Status</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="approvalTbody">
+        <tr><td colspan="5" class="text-center py-4 text-muted">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal fade" id="reviewModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Review document</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p id="reviewSummary" class="small text-muted">—</p>
+        <label class="form-label">Note (optional)</label>
+        <textarea class="form-control" id="reviewNote" rows="2"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" id="previewPdfBtn">Preview PDF</button>
+        <button type="button" class="btn btn-danger" id="rejectBtn">Reject</button>
+        <button type="button" class="btn btn-success" id="approveBtn">Approve &amp; send</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  let rows = [];
+  let reviewId = null;
+
+  async function loadApprovals() {
+    const status = document.getElementById('approvalStatusFilter').value;
+    const params = status ? `?status=${status}` : '';
+    const res = await fetch(`/api/v1/document-approvals${params}`);
+    rows = await res.json();
+    render();
+  }
+
+  function render() {
+    const tbody = document.getElementById('approvalTbody');
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">No requests</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map((r) => {
+      const emp = r.employee || {};
+      const doc = r.documentType || {};
+      const when = r.createdAt ? new Date(r.createdAt).toLocaleString() : '—';
+      return `<tr>
+        <td>${emp.empName || '—'} <small class="text-muted">${emp.empId || ''}</small></td>
+        <td>${doc.name || r.code}</td>
+        <td>${when}</td>
+        <td><span class="badge bg-${r.status === 'pending' ? 'warning' : r.status === 'approved' ? 'success' : 'danger'}">${r.status}</span></td>
+        <td class="text-end">
+          <a class="btn btn-sm btn-outline-secondary me-1" href="/api/v1/document-approvals/${r.id}/preview" target="_blank">Preview</a>
+          ${r.status === 'pending' ? `<button class="btn btn-sm btn-primary" onclick="openReview(${r.id})">Review</button>` : ''}
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  window.openReview = function (id) {
+    reviewId = id;
+    const r = rows.find((x) => x.id === id);
+    const emp = r?.employee || {};
+    document.getElementById('reviewSummary').textContent =
+      `${emp.empName || 'Employee'} — ${r?.code || 'document'}`;
+    document.getElementById('reviewNote').value = '';
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('reviewModal')).show();
+  };
+
+  document.getElementById('previewPdfBtn').addEventListener('click', () => {
+    if (reviewId) window.open(`/api/v1/document-approvals/${reviewId}/preview`, '_blank');
+  });
+
+  document.getElementById('approveBtn').addEventListener('click', async () => {
+    if (!reviewId) return;
+    const res = await fetch(`/api/v1/document-approvals/${reviewId}/approve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reviewNote: document.getElementById('reviewNote').value }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) return alert(body.error || 'Approve failed');
+    bootstrap.Modal.getInstance(document.getElementById('reviewModal'))?.hide();
+    alert(body.message || 'Approved');
+    await loadApprovals();
+  });
+
+  document.getElementById('rejectBtn').addEventListener('click', async () => {
+    if (!reviewId || !confirm('Reject this document request?')) return;
+    const res = await fetch(`/api/v1/document-approvals/${reviewId}/reject`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reviewNote: document.getElementById('reviewNote').value }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) return alert(body.error || 'Reject failed');
+    bootstrap.Modal.getInstance(document.getElementById('reviewModal'))?.hide();
+    await loadApprovals();
+  });
+
+  document.getElementById('approvalStatusFilter').addEventListener('change', loadApprovals);
+  loadApprovals();
+})();
+</script>
