@@ -5,12 +5,6 @@ import { calculateEmployeePayroll } from './payrollCalculation.engine.js';
 
 const { PayrollRun, PayrollRunItem, Employee, AttendanceDailySummary, LeaveRequest } = Models;
 
-console.log('[PayrollRunService] Initializing. Models availability:', {
-  PayrollRun: !!PayrollRun,
-  PayrollRunItem: !!PayrollRunItem,
-  Employee: !!Employee
-});
-
 export const listRuns = async (businessId, filters = {}) => {
   return PayrollRun.findAll({
     where: { businessId, ...filters },

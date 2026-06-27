@@ -23,7 +23,6 @@ export const getSalaryStructure = asyncHandler(async (req, res) => {
 export const createSalaryStructure = asyncHandler(async (req, res) => {
   const businessId = await resolveBusinessId(req);
   try {
-    console.log('Creating SalaryStructure payload:', JSON.stringify(req.body));
     const created = await salaryService.createStructure(businessId, req.body);
     res.json(new ApiResponse(201, created));
   } catch (err) {

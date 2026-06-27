@@ -183,12 +183,10 @@ export const getPolicies = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'bussiness not found');
   }
 
-  console.log(businessId)
   const policies = await listPolicies({ businessId });
   if(!policies){
     throw new ApiError(400, 'policy not found');
   }
-  console.log(policies);
     return res.json(new ApiResponse(200, policies, 'Policies'));
 });
 
@@ -211,10 +209,7 @@ export const postPolicy = asyncHandler(async (req, res) => {
 
 export const patchPolicy = asyncHandler(async (req, res) => {
   const businessId = await resolveBusinessId(req);
-  console.log(businessId);
   const { id } = req.params;
-  console.log(id);
-  console.log(req.body);
   const patch = { ...(req.body || {}) };
   if (patch.description !== undefined || patch.effectiveFrom !== undefined) {
     const rulesJson = patch.rulesJson || {};
@@ -230,7 +225,6 @@ export const patchPolicy = asyncHandler(async (req, res) => {
     delete patch.effectiveFrom;
   }
   const policy = await updatePolicy({ id: Number(id), businessId, patch });
-  console.log(policy);
   return res.json(new ApiResponse(200, policy, 'Policy updated'));
 });
 

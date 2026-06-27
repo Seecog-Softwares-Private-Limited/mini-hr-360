@@ -1588,12 +1588,8 @@
             Cancel
           </button>
 
-          {{!-- Wizard buttons --}}
-          <button class="btn btn-primary" type="button" id="wizardNextBtn">
-            Next
-          </button>
           <button
-            class="btn btn-primary d-none"
+            class="btn btn-primary"
             type="submit"
             id="wizardSaveBtn"
           >
@@ -1887,7 +1883,6 @@
     ];
 
     let currentStep = 0;
-    const nextBtn = document.getElementById("wizardNextBtn");
     const saveBtn = document.getElementById("wizardSaveBtn");
     const tabsContainer = document.getElementById("addEmployeeTabs");
     const modalEl = document.getElementById("addEmployeeModal");
@@ -2223,18 +2218,13 @@
       }
     });
 
+    function updateSaveButtonLabel() {
+      if (!saveBtn) return;
+      saveBtn.textContent = formMode === "edit" ? "Update Employee" : "Save Employee";
+    }
+
     function updateWizardButtons() {
-      if (!nextBtn || !saveBtn) return;
-
-      if (currentStep === steps.length - 1) {
-        nextBtn.classList.add("d-none");
-        saveBtn.classList.remove("d-none");
-      } else {
-        nextBtn.classList.remove("d-none");
-        saveBtn.classList.add("d-none");
-      }
-
-      // Also enforce required-field validation state
+      updateSaveButtonLabel();
       updateWizardValidity();
     }
 
@@ -2332,16 +2322,11 @@
     }
 
     function updateWizardValidity() {
-      if (!nextBtn || !saveBtn) return;
+      if (!saveBtn) return;
       if (modalEl) {
         clearNativeRequiredConstraints(modalEl);
         markAsteriskFields(modalEl);
       }
-
-      const currentOk = validateTab(currentStep);
-
-      nextBtn.disabled = !currentOk;
-      saveBtn.disabled = false;
     }
 
     function goToStep(index) {
@@ -2356,40 +2341,6 @@
         const tab = new bootstrap.Tab(trigger);
         tab.show();
       }
-    }
-
-    if (nextBtn) {
-      nextBtn.addEventListener("click", function () {
-        if (currentStep === 3 && window.EmployeeEducationWizard?.isFormOpen?.()) {
-          validateTab(currentStep, { markInvalid: true });
-          updateWizardValidity();
-          alert("Please save or cancel the open education entry before continuing.");
-          return;
-        }
-        if (currentStep === 4 && window.EmployeeExperienceWizard?.isFormOpen?.()) {
-          validateTab(currentStep, { markInvalid: true });
-          updateWizardValidity();
-          alert("Please save or cancel the open experience entry before continuing.");
-          return;
-        }
-        if (currentStep === 5 && window.EmployeeDocumentsWizard?.isFormOpen?.()) {
-          validateTab(currentStep, { markInvalid: true });
-          updateWizardValidity();
-          alert("Please save or cancel the open document entry before continuing.");
-          return;
-        }
-
-        // Block moving forward only if an education/experience/document sub-form is open
-        const ok = validateTab(currentStep, { markInvalid: true });
-        updateWizardValidity();
-        if (!ok) return;
-
-        if (currentStep < steps.length - 1) {
-          currentStep += 1;
-          goToStep(currentStep);
-          updateWizardButtons();
-        }
-      });
     }
 
     if (tabsContainer) {
@@ -2799,7 +2750,6 @@
           currentStep = 3;
           updateWizardButtons();
           validateTab(3, { markInvalid: true });
-          updateWizardValidity();
           alert("Please save or cancel the open education entry before saving the employee.");
           return;
         }
@@ -2808,7 +2758,6 @@
           currentStep = 4;
           updateWizardButtons();
           validateTab(4, { markInvalid: true });
-          updateWizardValidity();
           alert("Please save or cancel the open experience entry before saving the employee.");
           return;
         }
@@ -2817,17 +2766,17 @@
           currentStep = 5;
           updateWizardButtons();
           validateTab(5, { markInvalid: true });
-          updateWizardValidity();
           alert("Please save or cancel the open document entry before saving the employee.");
           return;
         }
 
-        if (!validateReportingManager({ markInvalid: true })) {
-          goToStep(1);
-          currentStep = 1;
+        const invalidStep = findFirstInvalidStep();
+        if (invalidStep !== -1) {
+          goToStep(invalidStep);
+          currentStep = invalidStep;
+          validateTab(invalidStep, { markInvalid: true });
           updateWizardButtons();
-          updateWizardValidity();
-          alert("Please select a reporting manager before saving the employee.");
+          alert("Please complete required fields before saving the employee.");
           return;
         }
 
@@ -2849,6 +2798,10 @@
           url = "/api/v1/employees/" + currentEditingId;
           method = "PUT";
         }
+
+        const savingLabel = formMode === "edit" ? "Updating..." : "Saving...";
+        saveBtn.disabled = true;
+        saveBtn.textContent = savingLabel;
 
         try {
           const res = await fetch(url, {
@@ -2880,6 +2833,9 @@
           window.location.reload();
         } catch (error) {
           alert(error.message);
+        } finally {
+          saveBtn.disabled = false;
+          updateSaveButtonLabel();
         }
       });
     }
