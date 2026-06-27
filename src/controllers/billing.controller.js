@@ -91,8 +91,6 @@ export const getPlans = asyncHandler(async (req, res) => {
  * POST /api/v1/billing/create-order - Create payment order
  */
 export const createOrder = asyncHandler(async (req, res) => {
-  console.log('[Billing] createOrder called with body:', req.body);
-  
   if (!razorpay) {
     return res.status(500).json({
       success: false,

@@ -16,8 +16,6 @@ export default async function register(req, res) {
                 .json(new ApiResponse(400, null, 'firstName, lastName, phoneNo, email and password required'));
         }
 
-        console.log('registering user', normalizedEmail);
-
         const exists = await User.findOne({ where: { email: normalizedEmail } });
         if (exists) {
             return res.status(409).json(new ApiResponse(409, null, 'User already exists'));

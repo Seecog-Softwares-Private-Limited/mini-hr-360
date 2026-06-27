@@ -394,7 +394,6 @@ async function sendWelcomeEmail(employee, password, portalUrl) {
         });
 
         if (result.success) {
-            console.log(`Welcome email sent successfully to ${employee.empEmail}`);
             return { sent: true };
         }
 
@@ -407,6 +406,10 @@ async function sendWelcomeEmail(employee, password, portalUrl) {
 }
 
 function getPortalLoginUrl(req) {
+    const base = String(process.env.APP_URL || '').trim().replace(/\/+$/, '');
+    if (base) {
+        return `${base}/employee/login`;
+    }
     return `${req.protocol}://${req.get('host')}/employee/login`;
 }
 
@@ -549,9 +552,6 @@ export const renderEmployeesPage = async (req, res, next) => {
         }
 
         // const departments = await Department.findAll();
-        console.log("departments data : ", departments)
-
-        console.log("employees data : ", employees)
 
         const employeesPlain = employees.map((e) => e.get({ plain: true }));
         const departmentsPlain = departments.map((d) => d.get({ plain: true }));
@@ -562,8 +562,6 @@ export const renderEmployeesPage = async (req, res, next) => {
         const businessAddressesPlain = business_addresses.map((b) => b.get({ plain: true }));
         const countriesPlain = countries.map((c) => c.get({ plain: true }));
         const statesPlain = states.map((s) => s.get({ plain: true }));
-
-        console.log('Employees fetched for page');
 
         // Attach current effective shift (if any) for each employee (for today's date)
         const todayStr = new Date().toISOString().split('T')[0];
@@ -674,7 +672,6 @@ export const listEmployees = async (req, res, next) => {
             ? await buildPendingInvitedMembers(organizationId, employeesPlain)
             : [];
 
-        console.log('Employees listed via API');
         res.json([...pendingMembers, ...employeesPlain]);
     } catch (err) {
         console.error('Error listing employees:', err);
@@ -831,8 +828,6 @@ export const updateEmployeeStatus = async (req, res, next) => {
 export const createEmployee = async (req, res, next) => {
     const t = await sequelize.transaction();
     try {
-        console.log('Received POST request with body:', req.body);
-
         const userId = req.user?.id || 1;
         const organizationId = await resolveOrganizationIdFromRequest(req);
         if (!organizationId) {
@@ -1102,8 +1097,6 @@ export const createEmployee = async (req, res, next) => {
 
         await t.commit();
 
-        console.log('Created new employee with related records:', employeeId);
-
         const portalUrl = getPortalLoginUrl(req);
         let emailSent = false;
         let emailError = null;
@@ -1116,9 +1109,6 @@ export const createEmployee = async (req, res, next) => {
                 const emailResult = await sendWelcomeEmail(employee, plainPassword, portalUrl);
                 emailSent = emailResult.sent;
                 emailError = emailResult.error || null;
-                if (emailSent) {
-                    console.log('Welcome email sent to:', employee.empEmail);
-                }
             } catch (emailErrorCaught) {
                 console.error('Failed to send welcome email:', emailErrorCaught);
                 emailError = emailErrorCaught?.message || 'Email delivery failed';
@@ -1182,10 +1172,6 @@ export const createEmployee = async (req, res, next) => {
 export const updateEmployee = async (req, res, next) => {
     const t = await sequelize.transaction();
     try {
-        console.log('--- UPDATE EMPLOYEE CALLED ---');
-        console.log('Params id:', req.params.id);
-        console.log('Body:', JSON.stringify(req.body, null, 2));
-        console.log('User:', req.user?.id);
         const id = Number.parseInt(String(req.params.id || '').trim(), 10);
 
         if (Number.isNaN(id)) {
@@ -1437,7 +1423,6 @@ export const updateEmployee = async (req, res, next) => {
         }
 
         await t.commit();
-        console.log('Updated employee with id:', id);
         return res.json(employee);
     } catch (err) {
         await t.rollback();
@@ -1660,7 +1645,6 @@ export const deleteEmployee = async (req, res, next) => {
         await employee.destroy({ transaction: t });
 
         await t.commit();
-        console.log('Deleted employee with id:', id);
         return res.json({ success: true });
     } catch (err) {
         await t.rollback();

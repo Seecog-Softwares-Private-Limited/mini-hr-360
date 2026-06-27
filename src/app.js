@@ -185,12 +185,6 @@ const upload = multer({
 
 app.use(upload.single('file'));
 
-// Debug log
-app.use((req, res, next) => {
-    console.log(`Received ${req.method} request with body:`, req.body);
-    console.log(`Received ${req.method} request with params:`, req.params);
-    next();
-});
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 // ---------- Route imports ----------

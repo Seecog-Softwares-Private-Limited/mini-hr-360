@@ -13,9 +13,6 @@ const resolveUserId = (req, fieldName = 'userId') => {
     req.body?.[fieldName] ||      // allow from body for testing
     req.get('x-user-id');         // optional header fallback
 
-  console.log(`[resolveUserId] User:`, req.user ? { id: req.user.id } : 'MISSING');
-  console.log(`[resolveUserId] Body[${fieldName}]:`, req.body?.[fieldName]);
-
   const userId = raw ? Number(raw) : null;
 
   if (!userId || Number.isNaN(userId)) {

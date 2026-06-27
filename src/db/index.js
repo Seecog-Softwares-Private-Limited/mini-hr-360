@@ -60,7 +60,6 @@ const connectDB = async () => {
 
     await sequelize.authenticate();
     console.log(`\n✅ MySQL connected → ${sequelize.getDatabaseName()} @ ${DB_HOST}:${DB_PORT}`);
-    import('fs').then(fs => fs.appendFileSync('debug.log', `[DB] PID: ${process.pid}, Connected to: ${sequelize.getDatabaseName()} @ ${DB_HOST}\n`));
 
     // --- models ---
     if (SYNC_DB) {

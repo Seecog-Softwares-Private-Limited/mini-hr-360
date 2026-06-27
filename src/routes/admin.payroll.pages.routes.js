@@ -44,18 +44,11 @@ router.get('/structures', async (req, res) => {
 router.get('/runs', async (req, res) => {
   const user = { firstName: req.user.firstName, lastName: req.user.lastName, role: req.user.role };
   const businessId = await resolveBusinessId(req);
-  console.log(`[GET /runs] Resolved Business ID: ${businessId}`);
   let runs = [];
   if (businessId) {
     try {
       runs = await PayrollRun.findAll({ where: { businessId }, order: [['createdAt', 'DESC']] });
-      const logMsg = `[GET /runs] Found ${runs.length} runs for business ${businessId}. IDs: ${runs.map(r => r.id).join(', ')}`;
-      console.log(logMsg);
-      // Write to a temporary file we can read
-      import('fs').then(fs => fs.appendFileSync('debug_runs.log', logMsg + '\n'));
     } catch (e) {
-      console.error('Error fetching PayrollRun list:', e && e.message ? e.message : e);
-      import('fs').then(fs => fs.appendFileSync('debug_runs.log', `ERROR: ${e.message}\n`));
       runs = [];
     }
     // normalize display fields used in template
