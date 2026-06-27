@@ -10,6 +10,7 @@ import {
     Employee
 } from '../../models/index.js';
 import { Op } from 'sequelize';
+import { getEmployeePortalLifecycleSummary } from '../../services/employeePortalLifecycle.service.js';
 
 // Helper to format currency
 const formatCurrency = (amount) => {
@@ -40,11 +41,12 @@ const getMonthName = (month) => {
 export const renderMyPayslips = async (req, res) => {
     try {
         const employee = req.employee;
-        // Use the existing view `payslips.hbs` and the employee layout `employee-main`.
+        const lifecycle = await getEmployeePortalLifecycleSummary(employee);
         res.render('employee/payroll/payslips', {
             title: 'My Payslips',
             employee,
-            active: 'payslips',
+            lifecycle,
+            active: 'payroll_payslips',
             layout: 'employee-main'
         });
     } catch (error) {
@@ -77,9 +79,11 @@ export const renderBankTax = async (req, res) => {
 export const renderSalaryDetails = async (req, res) => {
     try {
         const employee = req.employee;
+        const lifecycle = await getEmployeePortalLifecycleSummary(employee);
         res.render('employee/payroll/salary_details', {
             title: 'Salary Details',
             employee,
+            lifecycle,
             active: 'salary-details',
             layout: 'employee-main',
         });

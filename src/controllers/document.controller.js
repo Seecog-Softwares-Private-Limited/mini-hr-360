@@ -2,7 +2,6 @@
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-import nodemailer from 'nodemailer';
 import { Op } from 'sequelize';
 
 import Employee from '../models/Employee.js';
@@ -10,56 +9,24 @@ import DocumentType from '../models/DocumentType.js';
 import { generatePdfFromTemplate } from '../utils/generatePdfFromTemplate.js';
 import {Designation} from '../models/Designation.js';
 import EmployeeDocument from '../models/EmployeeDocument.js';
+import {
+    loadEmployeeForLifecycle,
+    enrichEmployeeForDocuments,
+    validateDocumentGates,
+    isDocumentAllowed,
+    normalizeDocCode,
+} from '../services/employeeLifecycle.service.js';
+import { finalizeDocumentDelivery } from '../services/documentDelivery.service.js';
+import {
+    shouldQueueForApproval,
+    queueDocumentApproval,
+} from '../services/documentApproval.service.js';
+import { resolveOrganizationIdFromRequest } from '../services/organization.service.js';
+import { generateSalaryBreakup } from '../utils/salaryBreakup.util.js';
+import { canGenerateLifecycleDocument } from '../config/lifecycleDocumentAuth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-/* ------------------------------------------------------------------
-✉️ Nodemailer setup (all email logic lives in this file now)
------------------------------------------------------------------- */
-const mailTransporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587,
-    secure: process.env.SMTP_SECURE === 'true', // 'true' for 465, false for 587
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-    },
-});
-// console.log('Mailer configured:', mailTransporter.options);
-console.log('[Mailer] configured', {
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT || 587),
-  user: process.env.SMTP_USER,
-  secure: process.env.SMTP_SECURE === 'true',
-});
-
-
-/**
- * Send a simple notification email that a document has been generated.
- * No attachment is sent.
- */
-async function sendSimpleDocumentEmail({ to, cc, subject, html }) {
-    if (!to) {
-        console.warn('sendSimpleDocumentEmail called without "to" address.');
-        return false;
-    }
-
-    try {
-        const info = await mailTransporter.sendMail({
-            from: process.env.SMTP_FROM  || process.env.SMTP_USER,
-            to,
-            cc,
-            subject,
-            html,
-        });
-        console.log('Document email sent. MessageId:', info.messageId);
-        return true;
-    } catch (err) {
-        console.error('Error sending document email:', err);
-        return false;
-    }
-}
 
 // Helper: calculate total days + Sundays + working days (Sunday is weekly off)
 function getMonthWorkingMeta(dateObj) {
@@ -248,159 +215,6 @@ function addMonths(dateInput, months) {
 }
 
 /* ------------------------------------------------------------------
-   💸 Salary breakup helper (using empCtc)
------------------------------------------------------------------- */
-function generateSalaryBreakup(annualGrossCtc, options = {}) {
-    const {
-        variablePayPct = 0,
-        basicPctOfFixedGross = 0.40,
-        hraPctOfBasic = 0.40,
-
-        // Professional tax setup
-        monthlyProfessionalTax = 200,
-        professionalTaxThresholdMonthly = 25000,
-
-        // Indian payroll-style rules
-        pfPctOfBasic = 0,
-        esiPctOfGross = 0,
-        esiWageThresholdMonthly = 21000,
-        standardDeductionAnnual = 50000
-    } = options;
-
-    const round = (val) => Math.round(val);
-    const toMonthly = (val) => val / 12;
-
-    if (!annualGrossCtc || annualGrossCtc <= 0) {
-        return {
-            meta: {
-                currency: 'INR',
-                annualGrossCtc: 0,
-                variablePayPct: 0,
-            },
-            annual: {
-                fixedGross: 0,
-                variablePay: 0,
-                basic: 0,
-                hra: 0,
-                specialAllowance: 0,
-                totalCtc: 0,
-            },
-            monthly: {
-                fixedGross: 0,
-                variablePayTarget: 0,
-                basic: 0,
-                hra: 0,
-                specialAllowance: 0,
-            },
-            deductionsMonthly: {
-                professionalTax: 0,
-                pfEmployee: 0,
-                esiEmployee: 0,
-                incomeTaxTds: 0,
-                totalDeductions: 0,
-            },
-            netTakeHome: {
-                withoutVariable: 0,
-                withVariableAveraged: 0,
-            },
-        };
-    }
-
-    const monthlyCtc = toMonthly(annualGrossCtc);
-
-    const variablePayAnnual = annualGrossCtc * variablePayPct;
-    const fixedGrossAnnual = annualGrossCtc - variablePayAnnual;
-
-    const basicAnnual = fixedGrossAnnual * basicPctOfFixedGross;
-    const hraAnnual = basicAnnual * hraPctOfBasic;
-    const specialAllowanceAnnual = fixedGrossAnnual - basicAnnual - hraAnnual;
-
-    const basicMonthly = toMonthly(basicAnnual);
-    const hraMonthly = toMonthly(hraAnnual);
-    const specialAllowanceMonthly = toMonthly(specialAllowanceAnnual);
-    const fixedGrossMonthly = toMonthly(fixedGrossAnnual);
-    const variablePayMonthlyTarget = toMonthly(variablePayAnnual);
-
-    const professionalTaxMonthly =
-        monthlyCtc >= professionalTaxThresholdMonthly
-            ? monthlyProfessionalTax
-            : 0;
-
-    const pfMonthly = basicMonthly * pfPctOfBasic;
-
-    const esiMonthly =
-        fixedGrossMonthly <= esiWageThresholdMonthly
-            ? fixedGrossMonthly * esiPctOfGross
-            : 0;
-
-    const taxableIncomeAnnual = Math.max(
-        0,
-        annualGrossCtc - standardDeductionAnnual
-    );
-
-    let taxAnnual = 0;
-    if (taxableIncomeAnnual <= 250000) {
-        taxAnnual = 0;
-    } else if (taxableIncomeAnnual <= 500000) {
-        taxAnnual = (taxableIncomeAnnual - 250000) * 0.05;
-    } else if (taxableIncomeAnnual <= 1000000) {
-        taxAnnual =
-            250000 * 0.05 + (taxableIncomeAnnual - 500000) * 0.20;
-    } else {
-        taxAnnual =
-            250000 * 0.05 +
-            500000 * 0.20 +
-            (taxableIncomeAnnual - 1000000) * 0.30;
-    }
-    const incomeTaxMonthly = taxAnnual / 12;
-
-    const totalDeductionsMonthly =
-        professionalTaxMonthly + pfMonthly + esiMonthly + incomeTaxMonthly;
-
-    const netTakeHomeMonthlyWithoutVariable =
-        fixedGrossMonthly - totalDeductionsMonthly;
-
-    const netTakeHomeMonthlyWithVariable =
-        fixedGrossMonthly +
-        variablePayMonthlyTarget -
-        totalDeductionsMonthly;
-
-    return {
-        meta: {
-            currency: 'INR',
-            annualGrossCtc: round(annualGrossCtc),
-            variablePayPct: variablePayPct * 100,
-        },
-        annual: {
-            fixedGross: round(fixedGrossAnnual),
-            variablePay: round(variablePayAnnual),
-            basic: round(basicAnnual),
-            hra: round(hraAnnual),
-            specialAllowance: round(specialAllowanceAnnual),
-            totalCtc: round(annualGrossCtc),
-        },
-        monthly: {
-            fixedGross: round(fixedGrossMonthly),
-            variablePayTarget: round(variablePayMonthlyTarget),
-            basic: round(basicMonthly),
-            hra: round(hraMonthly),
-            specialAllowance: round(specialAllowanceMonthly),
-        },
-        deductionsMonthly: {
-            professionalTax: round(professionalTaxMonthly),
-            pfEmployee: round(pfMonthly),
-            esiEmployee: round(esiMonthly),
-            incomeTaxTds: round(incomeTaxMonthly),
-            totalDeductions: round(totalDeductionsMonthly),
-        },
-        netTakeHome: {
-            withoutVariable: round(netTakeHomeMonthlyWithoutVariable),
-            withVariableAveraged: round(netTakeHomeMonthlyWithVariable),
-        },
-    };
-}
-
-/* ------------------------------------------------------------------
    Render documents page
 ------------------------------------------------------------------ */
 export const renderDocumentsPage = async (req, res, next) => {
@@ -435,6 +249,7 @@ export const renderDocumentsPage = async (req, res, next) => {
                 ...emp,
                 internshipStartDatePrefill: formatDate(startRaw),
                 internshipOfferDatePrefill: formatDate(offerRaw),
+                lifecycleStageLabel: emp.lifecycleStage || 'prospect',
             };
         });
 
@@ -466,20 +281,49 @@ export const renderDocumentsPage = async (req, res, next) => {
 ------------------------------------------------------------------ */
 export const generateDocument = async (req, res, next) => {
     try {
-        const { employeeId, documentTypeId } = req.body;
+        const { employeeId, documentTypeId, skipGates, skipApproval } = req.body;
 
-        const employee = await Employee.findByPk(employeeId);
+        let employeeRecord = await loadEmployeeForLifecycle(employeeId);
         const docType = await DocumentType.findByPk(documentTypeId);
 
-        if (!employee || !docType || docType.isDeleted) {
-            return res.status(400).send('Invalid employee or document type');
+        if (!employeeRecord || !docType || docType.isDeleted) {
+            return res.status(400).json({ error: 'Invalid employee or document type' });
         }
 
         if (!docType.templateHtml) {
-            return res
-                .status(400)
-                .send('No template HTML configured for this document type');
+            return res.status(400).json({
+                error: 'No template HTML configured for this document type',
+            });
         }
+
+        const employeePlain = enrichEmployeeForDocuments(employeeRecord);
+        const code = normalizeDocCode(docType.code || '');
+
+        const docAuth = canGenerateLifecycleDocument(req.user, code);
+        if (!docAuth.allowed) {
+            return res.status(403).json({ error: docAuth.message });
+        }
+
+        const skipGateCheck = skipGates === true || skipGates === 'true' || skipGates === '1';
+
+        if (!skipGateCheck) {
+            if (!isDocumentAllowed(employeePlain, code)) {
+                return res.status(400).json({
+                    error: `Document type ${docType.name} is not allowed at lifecycle stage "${employeePlain.lifecycleStage || 'prospect'}" for ${employeePlain.employeeType || 'Permanent'} employees.`,
+                });
+            }
+
+            const gates = validateDocumentGates(employeePlain, code);
+            if (!gates.valid) {
+                return res.status(400).json({
+                    error: 'Required employee data is missing for this document.',
+                    missingFields: gates.missing,
+                });
+            }
+        }
+
+        // Mutable employee instance for branches that save fields
+        const employee = employeeRecord;
 
         // 🔹 Build base64 image data for assets in src/assets
         const assetDir = path.join(__dirname, '..', 'assets');
@@ -514,8 +358,8 @@ export const generateDocument = async (req, res, next) => {
             SIGNATURE_SRC,
         };
 
-        const code = (docType.code || '').toUpperCase();
         let templateData = { ...baseData };
+        let postGenerateMeta = {};
 
         /* --------------------------------------------------------------
            Document-specific branches
@@ -1220,7 +1064,8 @@ export const generateDocument = async (req, res, next) => {
                 numberOfMonthsText = `${monthsCount} months`;
             }
 
-            const stipendAmountRaw = employee.internStipend || employee.empStipend || 0;
+            const stipendAmountRaw =
+                employee.internStipend || employee.empStipend || 0;
             let monthlyStipend = Number(stipendAmountRaw) || 0;
 
             // fallback: if not specifically set, derive from CTC
@@ -1428,10 +1273,17 @@ export const generateDocument = async (req, res, next) => {
 
             const joiningDateObj = joiningRaw ? new Date(joiningRaw) : null;
 
-            const probationPeriod =
+            const probationMonths = Number(
+                employee.probationPeriodMonths ||
                 employee.probationPeriod ||
                 employee.empProbationPeriod ||
-                '3 months';
+                3
+            );
+
+            const probationPeriod =
+                probationMonths === 1
+                    ? '1 month'
+                    : `${probationMonths} months`;
 
             let probationEndRaw =
                 employee.probationEndDate ||
@@ -1440,16 +1292,19 @@ export const generateDocument = async (req, res, next) => {
 
             if (!probationEndRaw && joiningDateObj && !isNaN(joiningDateObj)) {
                 const tmp = new Date(joiningDateObj);
-                tmp.setMonth(tmp.getMonth() + 3);
+                tmp.setMonth(tmp.getMonth() + probationMonths);
                 probationEndRaw = tmp;
             }
 
+            const enriched = enrichEmployeeForDocuments(employee);
             const reportingManagerName =
+                enriched.reportingManagerName ||
                 employee.reportingManagerName ||
                 employee.empReportingManagerName ||
                 '';
 
             const reportingManagerDesignation =
+                enriched.reportingManagerDesignation ||
                 employee.reportingManagerDesignation ||
                 employee.empReportingManagerDesignation ||
                 '';
@@ -1534,8 +1389,16 @@ export const generateDocument = async (req, res, next) => {
                 REVISED_ANNUAL_CTC_IN_WORDS: revisedAnnualWords,
             };
 
+            postGenerateMeta = {
+                revisedAnnualCtc: revisedAnnualCtc,
+                revisedMonthly,
+                incrementAmount: INCREMENT_AMOUNT,
+                promptUpdateCtc: true,
+            };
+
             // 🔹 Full & Final
         } else if (
+            code === 'FULL_FINAL_STATEMENT' ||
             code === 'FULL_FINAL' ||
             code === 'FULL_FINAL_SETTLEMENT' ||
             code === 'FULL_AND_FINAL' ||
@@ -1574,42 +1437,52 @@ export const generateDocument = async (req, res, next) => {
                 'Final Salary Period';
 
             const num = (v) => Number(v || 0);
+            const fnfStored =
+                typeof employee.fnfSettlement === 'string'
+                    ? (() => { try { return JSON.parse(employee.fnfSettlement); } catch { return {}; } })()
+                    : employee.fnfSettlement || {};
 
             const E_SALARY =
-                num(req.body.E_SALARY || employee.fnfSalary);
+                num(req.body.E_SALARY || fnfStored.E_SALARY || employee.fnfSalary);
             const E_LEAVE_ENCASHMENT =
                 num(
                     req.body.E_LEAVE_ENCASHMENT ||
+                    fnfStored.E_LEAVE_ENCASHMENT ||
                     employee.fnfLeaveEncashment
                 );
             const E_BONUS_INCENTIVE =
                 num(
                     req.body.E_BONUS_INCENTIVE ||
+                    fnfStored.E_BONUS_INCENTIVE ||
                     employee.fnfBonusIncentive
                 );
             const E_OTHER_EARNINGS =
                 num(
                     req.body.E_OTHER_EARNINGS ||
+                    fnfStored.E_OTHER_EARNINGS ||
                     employee.fnfOtherEarnings
                 );
 
             const D_NOTICE_RECOVERY =
                 num(
                     req.body.D_NOTICE_RECOVERY ||
+                    fnfStored.D_NOTICE_RECOVERY ||
                     employee.fnfNoticeRecovery
                 );
             const D_ADVANCE_RECOVERY =
                 num(
                     req.body.D_ADVANCE_RECOVERY ||
+                    fnfStored.D_ADVANCE_RECOVERY ||
                     employee.fnfAdvanceRecovery
                 );
             const D_PF_ESI =
-                num(req.body.D_PF_ESI || employee.fnfPfEsi);
+                num(req.body.D_PF_ESI || fnfStored.D_PF_ESI || employee.fnfPfEsi);
             const D_TDS_PT =
-                num(req.body.D_TDS_PT || employee.fnfTdsPt);
+                num(req.body.D_TDS_PT || fnfStored.D_TDS_PT || employee.fnfTdsPt);
             const D_OTHER_DEDUCTIONS =
                 num(
                     req.body.D_OTHER_DEDUCTIONS ||
+                    fnfStored.D_OTHER_DEDUCTIONS ||
                     employee.fnfOtherDeductions
                 );
 
@@ -1648,8 +1521,29 @@ export const generateDocument = async (req, res, next) => {
 
             const paymentDateRaw =
                 req.body.paymentDate ||
+                fnfStored.paymentDate ||
                 employee.fnfPaymentDate ||
                 settlementDateRaw;
+
+            try {
+                employee.fnfSettlement = {
+                    E_SALARY,
+                    E_LEAVE_ENCASHMENT,
+                    E_BONUS_INCENTIVE,
+                    E_OTHER_EARNINGS,
+                    D_NOTICE_RECOVERY,
+                    D_ADVANCE_RECOVERY,
+                    D_PF_ESI,
+                    D_TDS_PT,
+                    D_OTHER_DEDUCTIONS,
+                    paymentDate: formatDate(paymentDateRaw),
+                    settlementDate: formatDate(settlementDateRaw),
+                    updatedAt: new Date().toISOString(),
+                };
+                await employee.save();
+            } catch (fnfSaveErr) {
+                console.warn('Could not persist fnfSettlement:', fnfSaveErr?.message);
+            }
 
             const yyyymmdd2 =
                 formatDate(settlementDateRaw).replace(/-/g, '');
@@ -1797,89 +1691,74 @@ export const generateDocument = async (req, res, next) => {
         const fileName = `${docType.code}-${baseData.EMP_ID}.pdf`;
 
         // 📁 Save PDF into /GeneratedPdf at project root
-        let savedPdfPath = null;
         try {
             const generatedPdfDir = path.join(__dirname, '..', '..', 'GeneratedPdf');
             if (!fs.existsSync(generatedPdfDir)) {
                 fs.mkdirSync(generatedPdfDir, { recursive: true });
             }
-
-            savedPdfPath = path.join(generatedPdfDir, fileName);
-            fs.writeFileSync(savedPdfPath, pdfBuffer);
-            console.log('PDF saved at:', savedPdfPath);
+            fs.writeFileSync(path.join(generatedPdfDir, fileName), pdfBuffer);
         } catch (fileErr) {
             console.error('Error saving generated PDF to disk:', fileErr);
-            savedPdfPath = null;
+        }
+
+        const businessId =
+            employee.businessId ||
+            (await resolveOrganizationIdFromRequest(req));
+
+        /* --------------------------------------------------------------
+        Offer approval gate — queue before email/vault delivery
+        -------------------------------------------------------------- */
+        if (shouldQueueForApproval(code, skipApproval)) {
+            const approval = await queueDocumentApproval({
+                businessId,
+                employeeId: employee.id,
+                documentTypeId: docType.id,
+                code,
+                pdfBuffer,
+                fileName,
+                requestedByUserId: req.user?.id || null,
+                metadata: {
+                    templateData,
+                    postGenerateMeta,
+                    documentTypeName: docType.name,
+                },
+            });
+
+            return res.status(202).json({
+                requiresApproval: true,
+                approvalId: approval.id,
+                message: `${docType.name} generated and queued for HR approval before email delivery.`,
+                previewUrl: `/api/v1/document-approvals/${approval.id}/preview`,
+            });
         }
 
         /* --------------------------------------------------------------
-        📧 Send email directly from this controller
-        - For ALL document types (no attachment)
-        - For SALARY_SLIP: email must succeed, otherwise do NOT download PDF
+        Deliver: email with PDF attachment, vault, lifecycle, checklist
         -------------------------------------------------------------- */
-        let emailSent = true;
-        let emailAttempted = false;
+        let vaultRecord = null;
+        let lifecycleStage = employee.lifecycleStage;
+        let emailSent = false;
 
         try {
-            if (employee.empEmail) {
-                const companyName =
-                    process.env.COMPANY_NAME || 'Seecog Softwares Pvt. Ltd.';
-                const empName = employee.empName || 'Employee';
-                const docLabel = docType.name || docType.code || 'Document';
-
-                let subject = `${docLabel} generated for ${empName}`;
-                let html = `<p>Dear ${empName},</p>`;
-
-                if (code === 'SALARY_SLIP') {
-                    const monthText =
-                        templateData.EMAIL_MONTH_YEAR ||
-                        templateData.Month ||
-                        'this month';
-                    subject = `Salary Slip - ${monthText}`;
-                    html += `<p>Your salary slip for <strong>${monthText}</strong> has been generated.</p>`;
-                } else {
-                    html += `<p>Congratulations! We're pleased to extend to you an <strong>${docLabel}</strong> with Seecog Softwares Pvt. Ltd. 🎉</p>`;
-                }
-                html += `
-<p>Please find attached your ${docLabel} for your review and records. This is an automated notification from our HR system confirming that the document has been generated and securely stored in our records.</p>`;
-
-                html += `
-<p>We're excited to have you join us and look forward to seeing your contributions and growth during the internship. If you have any questions regarding the offer, joining formalities, or any part of the letter, please feel free to reply to this email—we'll be happy to assist you.</p>
-<p>Thanks & Regards<br/>HR Team<br/><br>Contact : 7348820668</br>${companyName}<br>Web : http://seecogsoftwares.com</br><br>T+91 8147614116</br><br></br><br>Prestige Cube, Site No. 26, Laskar Hosur Road, Adugodi, Koramangala, Bengaluru, Karnataka 560030</br><br>Cloud | Mobility | Social Media | Automation | BI/DW | Machine Learning | SaaS | DevOps |HealthcareIT | Salesforce (SFDC) | Azure | Frontend (UI) | Digital Transformation |Software Engineering Services</br></p>
-                `;
-
-                emailAttempted = true;
-                emailSent = await sendSimpleDocumentEmail({
-                    to: employee.empEmail,
-                    cc: 'sonam@seecogsoftwares.com', // same as earlier
-                    subject,
-                    html,
-                });
-
-                if (emailSent) {
-                    console.log(
-                        `Document notification email SENT to ${employee.empEmail} for document type ${docType.code}`
-                    );
-                } else {
-                    console.warn(
-                        `Document notification email NOT sent to ${employee.empEmail} for document type ${docType.code}`
-                    );
-                }
-            } else {
-                console.log(
-                    `Employee ${employee.id} has no email (empEmail), skipping email.`
-                );
+            const delivery = await finalizeDocumentDelivery({
+                employee,
+                docType,
+                code,
+                pdfBuffer,
+                fileName,
+                templateData,
+                actorUserId: req.user?.id || null,
+                postGenerateMeta,
+            });
+            vaultRecord = delivery.vaultRecord;
+            lifecycleStage = delivery.lifecycleStage;
+            emailSent = delivery.emailSent;
+        } catch (persistErr) {
+            if (persistErr.statusCode) {
+                return res.status(persistErr.statusCode).json({ error: persistErr.message });
             }
-        } catch (emailErr) {
-            emailSent = false;
-            console.error('Error sending document email wrapper:', emailErr);
-        }
-
-        // 🧷 Special rule: for SALARY_SLIP, only allow download if email was sent successfully
-        if (code === 'SALARY_SLIP' && emailAttempted && !emailSent) {
-            return res
-                .status(500)
-                .send('Failed to send salary slip email. PDF not downloaded.');
+            console.error('Error finalizing document delivery:', persistErr);
+            return res.status(500).json({ error: 'Failed to save or deliver document' });
         }
 
         /* --------------------------------------------------------------
@@ -1891,6 +1770,14 @@ export const generateDocument = async (req, res, next) => {
             `attachment; filename="${fileName}"`
         );
         res.setHeader('Content-Length', pdfBuffer.length);
+        res.setHeader('X-Lifecycle-Stage', lifecycleStage || '');
+        res.setHeader('X-Email-Sent', emailSent ? '1' : '0');
+        if (postGenerateMeta.revisedAnnualCtc != null) {
+            res.setHeader('X-Revised-Annual-Ctc', String(postGenerateMeta.revisedAnnualCtc));
+        }
+        if (vaultRecord?.generatedDocument?.id) {
+            res.setHeader('X-Generated-Document-Id', String(vaultRecord.generatedDocument.id));
+        }
 
         return res.send(pdfBuffer);
     } catch (err) {

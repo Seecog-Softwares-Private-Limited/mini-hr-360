@@ -1,0 +1,107 @@
+<div class="container-fluid">
+  <div class="row">
+    {{> employee-sidebar employee=employee active='hr_letters'}}
+
+    <div class="col-md-10 emp-main">
+      <div class="emp-doc-vault-hero mb-4">
+        <div class="emp-doc-vault-hero-content">
+          <div class="emp-doc-vault-icon"><i class="fa-solid fa-file-contract"></i></div>
+          <div>
+            <h1 class="emp-page-title mb-1">My HR Letters</h1>
+            <p class="text-muted mb-0">Offer letters, appointment letters, increments, and other HR documents issued to you</p>
+          </div>
+        </div>
+      </div>
+
+      {{> employee-lifecycle-widget lifecycle=lifecycle}}
+
+      {{#if letters.length}}
+        <div class="emp-doc-grid">
+          {{#each letters}}
+            <article class="emp-doc-card">
+              <div class="emp-doc-card-accent" style="background:#ec4899;"></div>
+              <div class="emp-doc-card-body">
+                <div class="emp-doc-card-top">
+                  <div class="emp-doc-card-icon" style="color:#ec4899;background:color-mix(in srgb,#ec4899 12%,white);">
+                    <i class="fa-solid fa-file-pdf"></i>
+                  </div>
+                  <span class="emp-badge emp-badge-approved">v{{version}}</span>
+                </div>
+                <h3 class="emp-doc-card-title">{{label}}</h3>
+                <p class="emp-doc-card-meta text-muted small mb-2">{{fileName}}</p>
+                <p class="emp-doc-card-meta text-muted small">{{createdAt}}</p>
+                <div class="emp-doc-card-actions mt-3">
+                  <a href="{{previewUrl}}" class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener">
+                    <i class="fa-solid fa-eye me-1"></i> Preview
+                  </a>
+                  <a href="{{downloadUrl}}" class="btn btn-sm btn-primary">
+                    <i class="fa-solid fa-download me-1"></i> Download
+                  </a>
+                  {{#if canAcceptOffer}}
+                    <button type="button" class="btn btn-sm btn-success btn-accept-offer" data-id="{{id}}">
+                      <i class="fa-solid fa-handshake me-1"></i> Accept Offer
+                    </button>
+                  {{else}}
+                    {{#if offerAccepted}}
+                      <span class="badge bg-success align-self-center">Offer accepted</span>
+                    {{else}}
+                      {{#unless acknowledged}}
+                        <button type="button" class="btn btn-sm btn-outline-success btn-ack-letter" data-id="{{id}}">
+                          <i class="fa-solid fa-check me-1"></i> Acknowledge
+                        </button>
+                      {{else}}
+                        <span class="badge bg-success align-self-center">Acknowledged</span>
+                      {{/unless}}
+                    {{/if}}
+                  {{/if}}
+                </div>
+              </div>
+            </article>
+          {{/each}}
+        </div>
+      {{else}}
+        <div class="emp-doc-empty text-center py-5">
+          <i class="fa-solid fa-file-circle-xmark fa-3x text-muted mb-3"></i>
+          <p class="text-muted mb-0">No HR letters have been generated for you yet.</p>
+        </div>
+      {{/if}}
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.btn-ack-letter').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id');
+      if (!id || !confirm('Confirm you have read this letter?')) return;
+      btn.disabled = true;
+      try {
+        const res = await fetch(`/employee/hr-letters/${id}/acknowledge`, { method: 'POST' });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || 'Failed to acknowledge');
+        location.reload();
+      } catch (err) {
+        alert(err.message || 'Could not acknowledge letter');
+        btn.disabled = false;
+      }
+    });
+  });
+
+  document.querySelectorAll('.btn-accept-offer').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id');
+      if (!id || !confirm('Accept this offer? HR will be notified and your joining process will begin.')) return;
+      btn.disabled = true;
+      try {
+        const res = await fetch(`/employee/hr-letters/${id}/accept-offer`, { method: 'POST' });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.message || 'Failed to accept offer');
+        alert(data.message || 'Offer accepted');
+        location.reload();
+      } catch (err) {
+        alert(err.message || 'Could not accept offer');
+        btn.disabled = false;
+      }
+    });
+  });
+</script>

@@ -508,6 +508,32 @@ const Employee = sequelize.define(
       type: DataTypes.STRING(100),
       allowNull: true,
     },
+    internStipend: {
+      type: DataTypes.DECIMAL(15, 2),
+      allowNull: true,
+      comment: 'Monthly stipend for interns (paid). 0 or null = unpaid.',
+    },
+    contractEndDate: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+    },
+    empIncrementEffectiveDate: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+    },
+    lifecycleStage: {
+      type: DataTypes.ENUM(
+        'prospect',
+        'offer',
+        'joining',
+        'active',
+        'confirmed',
+        'offboarding',
+        'exited'
+      ),
+      allowNull: false,
+      defaultValue: 'prospect',
+    },
 
     // --- Exit details (for offboarding) ---
     exitType: {
@@ -541,6 +567,15 @@ const Employee = sequelize.define(
     exitCategory: {
       type: DataTypes.STRING(100),
       allowNull: true,
+    },
+    offboardingChecklist: {
+      type: DataTypes.JSON,
+      allowNull: true,
+    },
+    fnfSettlement: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      comment: 'Full & final settlement draft (earnings/deductions)',
     },
 
     isActive: {
@@ -608,9 +643,15 @@ Employee.beforeValidate(async (employee) => {
   }
 
   // Auto-build empName from first/middle/last if not set
-  if (!employee.empName && employee.firstName && employee.lastName) {
-    employee.empName = `${employee.firstName} ${employee.middleName ? employee.middleName + ' ' : ''
-      }${employee.lastName}`.trim();
+  if (!employee.empName) {
+    const parts = [employee.firstName, employee.middleName, employee.lastName]
+      .map((part) => (part == null ? '' : String(part).trim()))
+      .filter(Boolean);
+    if (parts.length) {
+      employee.empName = parts.join(' ');
+    } else if (!employee.empName) {
+      employee.empName = 'New Employee';
+    }
   }
 
   if (employee.empEmail) {

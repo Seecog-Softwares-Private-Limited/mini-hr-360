@@ -5,7 +5,7 @@
   'use strict';
 
   const PREFS_KEY = 'mh360:dashboard-widgets';
-  const DEFAULT_ORDER = ['employees', 'attendance', 'leaves', 'payroll', 'tasks'];
+  const DEFAULT_ORDER = ['employees', 'lifecycle', 'attendance', 'leaves', 'payroll', 'tasks'];
 
   const WIDGET_DEFS = {
     employees: {
@@ -14,6 +14,13 @@
       gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
       href: '/employees',
       linkLabel: 'Manage employees',
+    },
+    lifecycle: {
+      title: 'Lifecycle',
+      icon: 'fa-route',
+      gradient: 'linear-gradient(135deg,#a855f7,#ec4899)',
+      href: '/candidates',
+      linkLabel: 'Hiring pipeline',
     },
     attendance: {
       title: 'Attendance',
@@ -145,6 +152,28 @@
     `;
   }
 
+  function renderLifecycle(data) {
+    const d = data?.lifecycle || {};
+    const stages = d.stageBreakdown || {};
+    const stageLine = ['offer', 'joining', 'active', 'offboarding']
+      .filter((k) => (stages[k] || 0) > 0)
+      .map((k) => `${k}: ${stages[k]}`)
+      .join(' · ');
+    return `
+      <div class="widget-primary-value" data-kpi="lifecycle-offers">${d.offersPending ?? 0}</div>
+      <div class="widget-secondary-line">Offers pending approval</div>
+      <div class="widget-metrics">
+        <div class="widget-metric">Onboarding<strong data-kpi="lifecycle-onboarding">${d.onboardingInProgress ?? 0}</strong></div>
+        <div class="widget-metric">Exits<strong data-kpi="lifecycle-exits">${d.exitsInProgress ?? 0}</strong></div>
+        <div class="widget-metric">Probation<strong data-kpi="lifecycle-probation">${d.probationEndingSoon ?? 0}</strong></div>
+        <div class="widget-metric">Contracts<strong data-kpi="lifecycle-contracts">${d.contractEndingSoon ?? 0}</strong></div>
+        <div class="widget-metric">Unacked offers<strong data-kpi="lifecycle-unacked">${d.unacknowledgedOffers ?? 0}</strong></div>
+        <div class="widget-metric">Candidates<strong data-kpi="lifecycle-candidates">${d.candidatesProspect ?? 0}</strong></div>
+      </div>
+      ${stageLine ? `<div class="widget-secondary-line small mt-2">${stageLine}</div>` : ''}
+    `;
+  }
+
   function renderTasks(data) {
     const d = data?.tasks || {};
     return `
@@ -159,6 +188,7 @@
 
   const RENDERERS = {
     employees: renderEmployees,
+    lifecycle: renderLifecycle,
     attendance: renderAttendance,
     leaves: renderLeaves,
     payroll: renderPayroll,

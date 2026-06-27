@@ -11,6 +11,7 @@ import {
   resolveDocumentFile,
   mimeFromPath,
 } from '../../services/employeeDocument.service.js';
+import { getEmployeePortalLifecycleSummary } from '../../services/employeePortalLifecycle.service.js';
 
 function getFileSourceFromDoc(doc) {
   return doc.fileUrl || doc.documentImageUrl || null;
@@ -24,11 +25,13 @@ export const renderDocumentsVault = asyncHandler(async (req, res) => {
   const documents = await listEmployeeDocuments(employee.id);
   const reminders = await getExpiryReminders(employee.id);
   const summary = getVaultSummary(documents);
+  const lifecycle = await getEmployeePortalLifecycleSummary(employee);
 
   res.render('employee/documents/vault', {
     title: 'Documents Vault',
     layout: 'employee-main',
     active: 'documents',
+    lifecycle,
     employee: {
       id: employee.id,
       empName: employee.empName,

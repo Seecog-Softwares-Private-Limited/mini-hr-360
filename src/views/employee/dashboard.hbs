@@ -152,6 +152,11 @@
                     </div>
                 </article>
 
+                <!-- Employment lifecycle -->
+                {{#if overview.lifecycle}}
+                {{> employee-lifecycle-widget lifecycle=overview.lifecycle}}
+                {{/if}}
+
                 <!-- Tasks -->
                 <article class="emp-home-widget" id="widget-tasks">
                     <div class="emp-home-widget-header">

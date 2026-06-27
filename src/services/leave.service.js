@@ -55,6 +55,45 @@ export async function checkLeaveOverlap(employeeId, startDate, endDate, excludeR
   return overlapping;
 }
 
+function parseMaxPerYear(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const num = parseFloat(value);
+  return Number.isFinite(num) ? num : null;
+}
+
+/**
+ * Align stored balance allocation with the leave type's current maxPerYear.
+ */
+export async function syncBalanceAllocationWithLeaveType(balance, leaveType) {
+  const maxPerYear = parseMaxPerYear(leaveType?.maxPerYear);
+  if (maxPerYear === null) return balance;
+
+  const current = parseFloat(balance.allocated) || 0;
+  if (current === maxPerYear) return balance;
+
+  await balance.update({ allocated: maxPerYear });
+  balance.allocated = maxPerYear;
+  return balance;
+}
+
+/**
+ * Propagate leave type maxPerYear to all employee balances for a year.
+ */
+export async function syncLeaveBalancesForLeaveType(leaveTypeId, year = new Date().getFullYear()) {
+  const leaveType = await LeaveType.findByPk(leaveTypeId);
+  if (!leaveType) return { updated: 0 };
+
+  const maxPerYear = parseMaxPerYear(leaveType.maxPerYear);
+  if (maxPerYear === null) return { updated: 0 };
+
+  const [updated] = await LeaveBalance.update(
+    { allocated: maxPerYear },
+    { where: { leaveTypeId, year, businessId: leaveType.businessId } }
+  );
+
+  return { updated };
+}
+
 /**
  * Get employee leave balance for a specific leave type and year
  */
@@ -79,7 +118,7 @@ export async function getLeaveBalance(employeeId, leaveTypeId, year = new Date()
       employeeId,
       leaveTypeId,
       year,
-      allocated: leaveType.maxPerYear || 0,
+      allocated: parseMaxPerYear(leaveType.maxPerYear) ?? 0,
       used: 0,
       pending: 0,
       carriedForward: 0,
@@ -89,6 +128,11 @@ export async function getLeaveBalance(employeeId, leaveTypeId, year = new Date()
     balance = await LeaveBalance.findByPk(balance.id, {
       include: [{ model: LeaveType, as: 'leaveType' }],
     });
+  } else {
+    const leaveType = balance.leaveType || await LeaveType.findByPk(leaveTypeId);
+    if (leaveType) {
+      await syncBalanceAllocationWithLeaveType(balance, leaveType);
+    }
   }
 
   return balance;
@@ -494,6 +538,8 @@ export default {
   checkLeaveOverlap,
   getLeaveBalance,
   getAllLeaveBalances,
+  syncBalanceAllocationWithLeaveType,
+  syncLeaveBalancesForLeaveType,
   validateLeaveRequest,
   applyLeave,
   approveLeaveRequest,

@@ -1,0 +1,287 @@
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
+  <div>
+    <div class="page-title" style="font-size: 28px;">Exit Workflow</div>
+    <div class="page-subtitle" id="exitWizardSubtitle">{{employeeName}} ({{employeeCode}})</div>
+  </div>
+  <a href="/employees" class="btn btn-outline-secondary"><i class="fa-solid fa-arrow-left me-2"></i>Back to Employees</a>
+</div>
+
+<div class="section-card mb-4">
+  <div class="p-3">
+    <div class="d-flex flex-wrap gap-2 mb-3" id="exitStepBadges">
+      <span class="badge bg-primary">1. Exit details</span>
+      <span class="badge bg-light text-muted">2. Documents</span>
+      <span class="badge bg-light text-muted">3. Clearance</span>
+      <span class="badge bg-light text-muted">4. Complete</span>
+    </div>
+    <div id="exitReadinessBar" class="small text-muted mb-0">Loading workflow…</div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="section-card h-100">
+      <div class="section-header"><h5><i class="fa-solid fa-door-open"></i> Step 1 — Exit details</h5></div>
+      <div class="p-3">
+        <form id="exitDetailsForm" class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Resignation date</label>
+            <input type="date" name="resignationDate" class="form-control" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Last working day *</label>
+            <input type="date" name="lastWorkingDay" class="form-control" required />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Notice period (days)</label>
+            <input type="number" min="0" name="noticePeriodDays" class="form-control" />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Exit type</label>
+            <select name="exitType" class="form-select">
+              <option value="resignation">Resignation</option>
+              <option value="termination">Termination</option>
+              <option value="contract_end">Contract end</option>
+              <option value="internship_end">Internship end</option>
+              <option value="retirement">Retirement</option>
+            </select>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Exit reason</label>
+            <textarea name="exitReason" class="form-control" rows="2"></textarea>
+          </div>
+          <div class="col-12">
+            <button type="submit" class="btn btn-warning" id="btnInitiateExitWizard">
+              <i class="fa-solid fa-play me-2"></i>Initiate exit (offboarding)
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="section-card mb-4">
+      <div class="section-header"><h5><i class="fa-solid fa-file-signature"></i> Step 2 — Exit documents</h5></div>
+      <div class="p-3" id="exitDocSteps">
+        <p class="text-muted mb-0">Loading document sequence…</p>
+      </div>
+    </div>
+
+    <div class="section-card mb-4" id="fnfSection" style="display:none;">
+      <div class="section-header"><h5><i class="fa-solid fa-calculator"></i> F&amp;F settlement draft</h5></div>
+      <div class="p-3">
+        <form id="fnfForm" class="row g-2 small">
+          <div class="col-md-6"><label class="form-label">Salary (E)</label><input type="number" step="0.01" name="E_SALARY" class="form-control form-control-sm" /></div>
+          <div class="col-md-6"><label class="form-label">Leave encashment (E)</label><input type="number" step="0.01" name="E_LEAVE_ENCASHMENT" class="form-control form-control-sm" /></div>
+          <div class="col-md-6"><label class="form-label">Bonus / incentive (E)</label><input type="number" step="0.01" name="E_BONUS_INCENTIVE" class="form-control form-control-sm" /></div>
+          <div class="col-md-6"><label class="form-label">Other earnings (E)</label><input type="number" step="0.01" name="E_OTHER_EARNINGS" class="form-control form-control-sm" /></div>
+          <div class="col-md-6"><label class="form-label">Notice recovery (D)</label><input type="number" step="0.01" name="D_NOTICE_RECOVERY" class="form-control form-control-sm" /></div>
+          <div class="col-md-6"><label class="form-label">Advance recovery (D)</label><input type="number" step="0.01" name="D_ADVANCE_RECOVERY" class="form-control form-control-sm" /></div>
+          <div class="col-md-6"><label class="form-label">PF / ESI (D)</label><input type="number" step="0.01" name="D_PF_ESI" class="form-control form-control-sm" /></div>
+          <div class="col-md-6"><label class="form-label">TDS / PT (D)</label><input type="number" step="0.01" name="D_TDS_PT" class="form-control form-control-sm" /></div>
+          <div class="col-md-6"><label class="form-label">Other deductions (D)</label><input type="number" step="0.01" name="D_OTHER_DEDUCTIONS" class="form-control form-control-sm" /></div>
+          <div class="col-md-6"><label class="form-label">Payment date</label><input type="date" name="paymentDate" class="form-control form-control-sm" /></div>
+          <div class="col-12 mt-2">
+            <button type="submit" class="btn btn-sm btn-outline-primary">Save F&amp;F draft</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary ms-2" id="btnFnfFromPayrollExit">Pull from payroll</button>
+            <a href="/documents" class="btn btn-sm btn-primary ms-2" id="linkGenerateFnf">Generate F&amp;F PDF</a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="section-card mb-4">
+      <div class="section-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fa-solid fa-list-check"></i> Step 3 — Department clearance</h5>
+        <span class="badge bg-secondary" id="checklistPctBadge">0%</span>
+      </div>
+      <div class="p-3" id="exitChecklistItems"><p class="text-muted mb-0">—</p></div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-header"><h5><i class="fa-solid fa-flag-checkered"></i> Step 4 — Complete exit</h5></div>
+      <div class="p-3">
+        <p class="small text-muted" id="completeExitHint">Complete all documents and checklist items before marking employee as exited.</p>
+        <button type="button" class="btn btn-danger" id="btnCompleteExitWizard" disabled>
+          <i class="fa-solid fa-check me-2"></i>Complete exit &amp; deactivate
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section-card mt-4">
+  <div class="section-header"><h5><i class="fa-solid fa-clock-rotate-left"></i> Lifecycle timeline</h5></div>
+  <div class="p-3" id="exitTimeline"><p class="text-muted mb-0">—</p></div>
+</div>
+
+<script>
+(function () {
+  const employeeId = {{employeeId}};
+  let wizardState = null;
+
+  function fillForm(form, data) {
+    if (!form || !data) return;
+    Object.keys(data).forEach((k) => {
+      const el = form.elements[k];
+      if (el && data[k] != null) el.value = data[k];
+    });
+  }
+
+  function renderDocSteps(steps) {
+    const el = document.getElementById('exitDocSteps');
+    if (!steps?.length) {
+      el.innerHTML = '<p class="text-muted">No exit document sequence for this employee type.</p>';
+      return;
+    }
+    el.innerHTML = '<ol class="list-group list-group-numbered">' + steps.map((s) => `
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        <div>
+          <strong>${s.label}</strong>
+          <div class="small text-muted">${s.code}</div>
+        </div>
+        ${s.generated
+          ? '<span class="badge bg-success">Generated</span>'
+          : `<a class="btn btn-sm btn-outline-primary" href="/documents?employeeId=${employeeId}&docTypeId=${s.documentTypeId || ''}">Generate</a>`}
+      </li>`).join('') + '</ol>';
+
+    const hasFnf = steps.some((s) => s.code === 'FULL_FINAL_STATEMENT');
+    document.getElementById('fnfSection').style.display = hasFnf ? 'block' : 'none';
+  }
+
+  function renderChecklist(items, progress) {
+    const el = document.getElementById('exitChecklistItems');
+    const badge = document.getElementById('checklistPctBadge');
+    if (!items?.length) {
+      el.innerHTML = '<p class="text-muted">No checklist items.</p>';
+      return;
+    }
+    badge.textContent = (progress?.percent ?? 0) + '%';
+    el.innerHTML = items.map((item) => `
+      <div class="form-check mb-2">
+        <input class="form-check-input exit-check-item" type="checkbox" id="chk-${item.key}"
+          data-key="${item.key}" ${item.done ? 'checked' : ''} />
+        <label class="form-check-label" for="chk-${item.key}">
+          ${item.label} <span class="badge bg-light text-dark border">${item.department}</span>
+        </label>
+      </div>`).join('');
+  }
+
+  function renderTimeline(events) {
+    const el = document.getElementById('exitTimeline');
+    if (!events?.length) {
+      el.innerHTML = '<p class="text-muted">No lifecycle events yet.</p>';
+      return;
+    }
+    el.innerHTML = '<ul class="list-unstyled mb-0">' + events.slice(0, 10).map((e) => `
+      <li class="mb-2 small border-bottom pb-2">
+        <strong>${e.action || 'event'}</strong>
+        <span class="text-muted"> · ${e.fromStage || '—'} → ${e.toStage}</span>
+        <div class="text-muted">${new Date(e.createdAt).toLocaleString()}</div>
+      </li>`).join('') + '</ul>';
+  }
+
+  function updateReadiness(r) {
+    const bar = document.getElementById('exitReadinessBar');
+    const btn = document.getElementById('btnCompleteExitWizard');
+    const hint = document.getElementById('completeExitHint');
+    if (!r) return;
+    bar.innerHTML = `Documents: <strong>${r.docsComplete ? 'Complete' : 'Pending'}</strong> · Checklist: <strong>${r.checklistComplete ? 'Complete' : 'Pending'}</strong>`;
+    btn.disabled = !r.canCompleteExit;
+    hint.textContent = r.canCompleteExit
+      ? 'Ready to complete exit and deactivate employee account.'
+      : 'Complete all exit documents and checklist items before finishing.';
+  }
+
+  async function loadWizard() {
+    const res = await fetch(`/api/v1/employees/${employeeId}/exit-wizard`);
+    if (!res.ok) return alert('Failed to load exit workflow');
+    wizardState = await res.json();
+
+    document.getElementById('exitWizardSubtitle').textContent =
+      `${wizardState.employee.empName} (${wizardState.employee.empId}) — ${wizardState.employee.lifecycleStageLabel}`;
+
+    const emp = await fetch(`/api/v1/employees/${employeeId}`).then((r) => r.json()).catch(() => ({}));
+    fillForm(document.getElementById('exitDetailsForm'), emp);
+
+    renderDocSteps(wizardState.documentSteps);
+    renderChecklist(wizardState.offboardingChecklist, wizardState.offboardingProgress);
+    renderTimeline(wizardState.events);
+    updateReadiness(wizardState.readiness);
+
+    if (wizardState.fnfSettlement) {
+      fillForm(document.getElementById('fnfForm'), wizardState.fnfSettlement);
+    }
+  }
+
+  document.getElementById('exitDetailsForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target).entries());
+    const res = await fetch(`/api/v1/employees/${employeeId}/exit-wizard/initiate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) return alert(body.error || 'Failed to initiate exit');
+    alert('Exit initiated — offboarding stage started. HR team notified.');
+    await loadWizard();
+  });
+
+  document.getElementById('fnfForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target).entries());
+    const res = await fetch(`/api/v1/employees/${employeeId}/fnf-settlement`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) return alert('Failed to save F&F draft');
+    alert('F&F settlement draft saved');
+  });
+
+  document.getElementById('btnFnfFromPayrollExit')?.addEventListener('click', async () => {
+    const res = await fetch(`/api/v1/employees/${employeeId}/fnf-settlement/from-payroll`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ months: 1 }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) return alert(body.error || 'Could not pull from payroll');
+    fillForm(document.getElementById('fnfForm'), body.fnfSettlement || {});
+    alert('F&F draft loaded from payroll register');
+    await loadWizard();
+  });
+
+  document.getElementById('exitChecklistItems').addEventListener('change', async (e) => {
+    const cb = e.target.closest('.exit-check-item');
+    if (!cb) return;
+    const items = Array.from(document.querySelectorAll('.exit-check-item')).map((el) => ({
+      key: el.dataset.key,
+      done: el.checked,
+    }));
+    const res = await fetch(`/api/v1/employees/${employeeId}/exit-wizard/checklist`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items }),
+    });
+    if (res.ok) await loadWizard();
+  });
+
+  document.getElementById('btnCompleteExitWizard').addEventListener('click', async () => {
+    if (!confirm('Mark employee as exited and deactivate?')) return;
+    const res = await fetch(`/api/v1/employees/${employeeId}/exit-wizard/complete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) return alert(body.error || 'Cannot complete exit yet');
+    alert('Exit completed');
+    await loadWizard();
+  });
+
+  loadWizard();
+})();
+</script>

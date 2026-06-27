@@ -72,19 +72,24 @@ const connectDB = async () => {
       // Disable FK checks to avoid issues with existing tables or circular deps
       await sequelize.query('SET FOREIGN_KEY_CHECKS = 0', { raw: true });
 
-      const safeSync = async (model, name, force = false) => {
+      const safeSync = async (model, name, force = false, { allowAlter = true } = {}) => {
         try {
-          const options = force ? { force: true } : { alter: true };
+          let options = {};
+          if (force) options = { force: true };
+          else if (allowAlter) options = { alter: true };
+          // else: plain sync() — create if missing, no ALTER (safe for hub tables)
           await model.sync(options);
-          console.log(`   ✅ ${name} synced`);
+          console.log(`   ✅ ${name} synced${!force && !allowAlter ? ' (no alter)' : ''}`);
         } catch (e) {
           console.error(`   ⚠️ Failed to sync ${name}: ${e.message}`);
         }
       };
 
-      // Ensure dependencies exist
-      await safeSync(BusinessModel, 'Business');
+      // businesses is an FK hub (20+ child tables) — never alter-sync (MySQL 64-key limit)
+      await safeSync(BusinessModel, 'Business', false, { allowAlter: false });
       await safeSync(EmployeeModel, 'Employee');
+      const { ensureEmployeeLifecycleColumns } = await import('./ensureEmployeeColumns.js');
+      await ensureEmployeeLifecycleColumns(sequelize);
       await safeSync(EmployeeEducationModel, 'EmployeeEducation');
       await safeSync(EmployeeExperienceModel, 'EmployeeExperience');
       await safeSync(EmployeeDocumentModel, 'EmployeeDocument');

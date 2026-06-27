@@ -13,6 +13,7 @@ import {
   approveLeaveRequest,
   rejectLeaveRequest,
   getAllLeaveBalances,
+  syncLeaveBalancesForLeaveType,
 } from '../../services/leave.service.js';
 import {
   getUserOrganizations,
@@ -338,6 +339,8 @@ export const updateLeaveType = asyncHandler(async (req, res) => {
       }
     }
 
+    const previousMaxPerYear = leaveType.maxPerYear;
+
     await leaveType.update({
       name: name || leaveType.name,
       code: code ? code.toUpperCase() : leaveType.code,
@@ -351,6 +354,11 @@ export const updateLeaveType = asyncHandler(async (req, res) => {
       color: color || leaveType.color,
       status: status || leaveType.status,
     });
+
+    if (maxPerYear !== undefined && String(previousMaxPerYear) !== String(leaveType.maxPerYear)) {
+      const year = new Date().getFullYear();
+      await syncLeaveBalancesForLeaveType(leaveType.id, year);
+    }
 
     return res.json({ success: true, message: 'Leave type updated', data: leaveType });
   } catch (error) {

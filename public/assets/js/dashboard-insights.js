@@ -29,6 +29,12 @@
       gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
       viewAll: '/leave-requests',
     },
+    lifecycle: {
+      title: 'Lifecycle Alerts',
+      icon: 'fa-route',
+      gradient: 'linear-gradient(135deg,#a855f7,#ec4899)',
+      viewAll: '/employees',
+    },
   };
 
   let insightsData = null;
@@ -234,11 +240,71 @@
     `;
   }
 
+  function renderLifecycle(data) {
+    const alerts = data?.lifecycleAlerts;
+    const pipeline = data?.lifecyclePipeline || {};
+    const items = [
+      ...(pipeline.offersPending > 0
+        ? [{
+            href: '/document-approvals',
+            icon: 'fa-file-signature',
+            title: `${pipeline.offersPending} offer(s) pending approval`,
+            subtitle: 'Review before email to candidates',
+            meta: 'HR',
+          }]
+        : []),
+      ...(pipeline.unacknowledgedOffers > 0
+        ? [{
+            href: '/employees?lifecycleStage=offer',
+            icon: 'fa-envelope-open',
+            title: `${pipeline.unacknowledgedOffers} unacknowledged offer letter(s)`,
+            subtitle: 'Employees have not accepted via portal',
+            meta: '',
+          }]
+        : []),
+      ...(alerts?.exitsInProgress || []).map((e) => ({
+        href: e.href,
+        icon: 'fa-door-open',
+        title: e.empName,
+        subtitle: `Exit in progress · LWD ${e.lastWorkingDay || '—'}`,
+        meta: '',
+      })),
+      ...(alerts?.probationEnding || []).slice(0, 3).map((e) => ({
+        href: `/onboarding-workflow/${e.id}`,
+        icon: 'fa-hourglass-half',
+        title: e.empName,
+        subtitle: `Probation ends ${e.probationEndDate}`,
+        meta: `${e.daysRemaining}d`,
+      })),
+      ...(alerts?.contractEnding || []).slice(0, 3).map((e) => ({
+        href: e.href,
+        icon: 'fa-file-contract',
+        title: e.empName,
+        subtitle: `Contract ends ${e.contractEndDate}`,
+        meta: `${e.daysRemaining}d`,
+      })),
+    ];
+
+    if (!items.length) {
+      return emptyBody('fa-check-circle', 'No probation, contract, or exit alerts');
+    }
+
+    const c = alerts?.counts || {};
+    return `
+      <div class="insight-summary-badge">${(c.exitsInProgress || 0) + (c.probationEnding || 0) + (c.contractEnding || 0)} alerts</div>
+      <div class="insight-summary-text">${c.exitsInProgress || 0} exits · ${c.probationEnding || 0} probation · ${c.contractEnding || 0} contracts</div>
+      <div class="insight-list">
+        ${items.slice(0, 6).map((item) => listItem(item)).join('')}
+      </div>
+    `;
+  }
+
   const RENDERERS = {
     approvals: renderApprovals,
     birthdays: renderBirthdays,
     trend: renderTrend,
     activity: renderActivity,
+    lifecycle: renderLifecycle,
   };
 
   function renderPanel() {

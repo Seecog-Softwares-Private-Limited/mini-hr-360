@@ -1,261 +1,254 @@
-<h2 class="mb-4">Generate Documents</h2>
+<h2 class="mb-2">Generate Documents</h2>
+<p class="text-muted small mb-3">Three-step wizard: pick employee → document type → options &amp; generate</p>
 
-        <div class="card">
-          <div class="card-body">
-            <form id="generateDocumentForm" method="POST" action="/documents/generate">
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <label class="form-label">Employee</label>
-                  <select name="employeeId" id="employeeSelect" class="form-select" required>
-                    <option value="">Select employee</option>
-                    {{#each employees}}
-                      <option
-                        value="{{id}}"
-                        data-internship-start-date="{{internshipStartDatePrefill}}"
-                        data-internship-offer-date="{{internshipOfferDatePrefill}}"
-                      >
-                        {{empName}} ({{empId}})
-                      </option>
-                    {{/each}}
-                  </select>
-                </div>
+<ul class="nav nav-pills nav-fill mb-3 doc-wizard-nav" id="docWizardNav">
+  <li class="nav-item">
+    <button type="button" class="nav-link active" data-wizard-step="1">
+      <span class="badge bg-light text-dark me-1">1</span> Employee
+    </button>
+  </li>
+  <li class="nav-item">
+    <button type="button" class="nav-link" data-wizard-step="2" disabled>
+      <span class="badge bg-light text-dark me-1">2</span> Document
+    </button>
+  </li>
+  <li class="nav-item">
+    <button type="button" class="nav-link" data-wizard-step="3" disabled>
+      <span class="badge bg-light text-dark me-1">3</span> Generate
+    </button>
+  </li>
+</ul>
 
-                <div class="col-md-6">
-                  <label class="form-label">Document Type</label>
-                  {{!-- Icon-capable dropdown (keeps hidden select for form submit + existing JS) --}}
-                  <div class="dropdown w-100" id="documentTypeDropdown">
-                    <button
-                      class="btn btn-outline-secondary dropdown-toggle w-100 text-start d-flex align-items-center justify-content-between"
-                      type="button"
-                      data-bs-toggle="dropdown"
-                      aria-expanded="false"
-                      id="documentTypeDropdownBtn"
-                    >
-                      <span class="d-flex align-items-center gap-2" id="documentTypeDropdownLabel">
-                        <i class="fas fa-file-lines text-muted"></i>
-                        <span>Select document type</span>
-                      </span>
-                    </button>
-                    <ul
-                      class="dropdown-menu w-100"
-                      id="documentTypeDropdownMenu"
-                      style="max-height: 280px; overflow:auto;"
-                    >
-                      {{#each documentTypes}}
-                        <li>
-                          <button
-                            class="dropdown-item d-flex align-items-center gap-2"
-                            type="button"
-                            data-id="{{id}}"
-                            data-code="{{code}}"
-                            data-icon="{{icon}}"
-                          >
-                            {{#if icon}}
-                              <i class="{{icon}}"></i>
-                            {{else}}
-                              <i class="fas fa-file-lines"></i>
-                            {{/if}}
-                            <span>{{name}}</span>
-                          </button>
-                        </li>
-                      {{/each}}
-                    </ul>
-                  </div>
+<div class="card mb-3" id="lifecycleSummaryCard" style="display:none;">
+  <div class="card-body py-3">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <div>
+        <div class="text-muted small">Employee lifecycle</div>
+        <div class="fw-semibold" id="lifecycleEmployeeLabel">—</div>
+      </div>
+      <div>
+        <span class="badge bg-secondary" id="lifecycleTypeBadge">—</span>
+        <span class="badge bg-primary" id="lifecycleStageBadge">—</span>
+      </div>
+    </div>
+    <div class="mt-2 small text-muted" id="lifecycleRecommended">Select an employee to see recommended next document.</div>
+    <div class="mt-2 small" id="lifecyclePayrollLink" style="display:none;"></div>
+    <div class="mt-2" id="lifecycleStageTrack"></div>
+  </div>
+</div>
 
-                  {{!-- Hidden select still drives form submit + dynamic-field JS --}}
-                  <select
-                    name="documentTypeId"
-                    id="documentTypeSelect"
-                    class="form-select d-none"
-                    required
-                  >
-                    <option value="">Select document type</option>
-                    {{#each documentTypes}}
-                      <option
-                        value="{{id}}"
-                        data-code="{{code}}"
-                        data-icon="{{icon}}"
-                      >
-                        {{name}}
-                      </option>
-                    {{/each}}
-                  </select>
-                </div>
-              </div>
+<div class="alert alert-warning d-none" id="documentGatesAlert" role="alert"></div>
 
-              {{!-- Extra dynamic fields section --}}
-              <div class="row g-3 mt-3">
-                {{!-- Bonus Letter extra field --}}
-                <div class="col-md-6" id="bonusFieldWrapper" style="display: none;">
-                  <label class="form-label" for="bonusAmount">
-                    Bonus Amount (₹)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    class="form-control"
-                    id="bonusAmount"
-                    name="bonusAmount"
-                    placeholder="Enter bonus amount"
-                  />
-                </div>
+<div class="card mb-3 d-none" id="documentVersionCard">
+  <div class="card-body py-2">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div class="small fw-semibold text-muted">Document version history</div>
+      <span class="badge bg-secondary" id="documentVersionBadge">—</span>
+    </div>
+    <ul class="list-unstyled small mb-0 mt-2" id="documentVersionList"></ul>
+    <p class="small text-muted mb-0 mt-2">Regenerating creates a new version (v2, v3…) — prior versions remain in the vault.</p>
+  </div>
+</div>
 
-                {{!-- Increment Letter extra field --}}
-                <div class="col-md-6" id="incrementFieldWrapper" style="display: none;">
-                  <label class="form-label" for="incrementAmount">
-                    Salary Increment (₹)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    class="form-control"
-                    id="incrementAmount"
-                    name="incrementAmount"
-                    placeholder="Enter increment amount"
-                  />
-                </div>
-              </div>
+<div class="card">
+  <div class="card-body">
+    <form id="generateDocumentForm" method="POST" action="/documents/generate">
+      <div class="doc-wizard-panel" data-wizard-panel="1">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Employee</label>
+          <select name="employeeId" id="employeeSelect" class="form-select" required>
+            <option value="">Select employee</option>
+            {{#each employees}}
+              <option
+                value="{{id}}"
+                data-employee-type="{{employeeType}}"
+                data-lifecycle-stage="{{lifecycleStage}}"
+                data-internship-start-date="{{internshipStartDatePrefill}}"
+                data-internship-offer-date="{{internshipOfferDatePrefill}}"
+              >
+                {{empName}} ({{empId}}) — {{employeeType}}
+              </option>
+            {{/each}}
+          </select>
+        </div>
+      </div>
+      <div class="d-flex justify-content-end mt-3">
+        <button type="button" class="btn btn-primary" id="docWizardNext1" disabled>Next: Document type</button>
+      </div>
+      </div>
 
-              {{!-- Salary Slip extra fields --}}
-              <div class="row g-3 mt-3">
-                <div class="col-md-6" id="salaryMonthWrapper" style="display: none;">
-                  <label class="form-label" for="salaryMonth">
-                    Salary Month
-                  </label>
-                  <select
-                    class="form-select"
-                    id="salaryMonth"
-                    name="salaryMonth"
-                  >
-                    <option value="">Select month</option>
-                    <option value="1">January</option>
-                    <option value="2">February</option>
-                    <option value="3">March</option>
-                    <option value="4">April</option>
-                    <option value="5">May</option>
-                    <option value="6">June</option>
-                    <option value="7">July</option>
-                    <option value="8">August</option>
-                    <option value="9">September</option>
-                    <option value="10">October</option>
-                    <option value="11">November</option>
-                    <option value="12">December</option>
-                  </select>
-                </div>
+      <div class="doc-wizard-panel d-none" data-wizard-panel="2">
+      <div class="row g-3">
+        <div class="col-md-12">
+          <label class="form-label">Document Type</label>
+          <div class="dropdown w-100" id="documentTypeDropdown">
+            <button
+              class="btn btn-outline-secondary dropdown-toggle w-100 text-start d-flex align-items-center justify-content-between"
+              type="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+              id="documentTypeDropdownBtn"
+            >
+              <span class="d-flex align-items-center gap-2" id="documentTypeDropdownLabel">
+                <i class="fas fa-file-lines text-muted"></i>
+                <span>Select document type</span>
+              </span>
+            </button>
+            <ul
+              class="dropdown-menu w-100"
+              id="documentTypeDropdownMenu"
+              style="max-height: 280px; overflow:auto;"
+            ></ul>
+          </div>
 
-                <div class="col-md-6" id="reimbursementWrapper" style="display: none;">
-                  <label class="form-label" for="reimbursement">
-                    Reimbursement (₹)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    class="form-control"
-                    id="reimbursement"
-                    name="reimbursement"
-                    placeholder="Enter reimbursement amount"
-                  />
-                </div>
+          <select
+            name="documentTypeId"
+            id="documentTypeSelect"
+            class="form-select d-none"
+            required
+          >
+            <option value="">Select document type</option>
+            {{#each documentTypes}}
+              <option value="{{id}}" data-code="{{code}}" data-icon="{{icon}}" data-name="{{name}}">
+                {{name}}
+              </option>
+            {{/each}}
+          </select>
+        </div>
+      </div>
 
-                {{!-- ✅ NEW: Non Paid Leave (0 to 28) --}}
-                <div class="col-md-6" id="nonPaidLeaveWrapper" style="display: none;">
-                  <label class="form-label" for="nonPaidLeave">
-                    Non Paid Leave (LOP Days)
-                  </label>
-                  <select class="form-select" id="nonPaidLeave" name="nonPaidLeave">
-                    <option value="0">0</option>
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                    <option value="6">6</option>
-                    <option value="7">7</option>
-                    <option value="8">8</option>
-                    <option value="9">9</option>
-                    <option value="10">10</option>
-                    <option value="11">11</option>
-                    <option value="12">12</option>
-                    <option value="13">13</option>
-                    <option value="14">14</option>
-                    <option value="15">15</option>
-                    <option value="16">16</option>
-                    <option value="17">17</option>
-                    <option value="18">18</option>
-                    <option value="19">19</option>
-                    <option value="20">20</option>
-                    <option value="21">21</option>
-                    <option value="22">22</option>
-                    <option value="23">23</option>
-                    <option value="24">24</option>
-                    <option value="25">25</option>
-                    <option value="26">26</option>
-                    <option value="27">27</option>
-                    <option value="28">28</option>
-                  </select>
-                </div>
-              </div>
+      <div class="d-flex justify-content-between mt-3">
+        <button type="button" class="btn btn-outline-secondary" id="docWizardBack2">Back</button>
+        <button type="button" class="btn btn-primary" id="docWizardNext2" disabled>Next: Options</button>
+      </div>
+      </div>
 
-              {{!-- Offer Letter extra fields --}}
-              <div class="row g-3 mt-3">
-                <div class="col-md-6" id="offerJoiningDateWrapper" style="display: none;">
-                  <label class="form-label" for="offerJoiningDate">
-                    Joining Date
-                  </label>
-                  <input
-                    type="date"
-                    class="form-control"
-                    id="offerJoiningDate"
-                    name="joiningDate"
-                  />
-                </div>
-              </div>
+      <div class="doc-wizard-panel d-none" data-wizard-panel="3">
+      <div class="alert alert-light border small mb-3" id="docWizardStep3Summary">Review options and generate PDF.</div>
 
-              {{!-- Internship Offer extra fields --}}
-              <div class="row g-3 mt-3">
-                <div class="col-md-6" id="internshipOfferDateWrapper" style="display: none;">
-                  <label class="form-label" for="internshipOfferDate">
-                    Internship Offer Date
-                  </label>
-                  <input
-                    type="date"
-                    class="form-control"
-                    id="internshipOfferDate"
-                    name="internshipOfferDate"
-                  />
-                </div>
-                
-                <div class="col-md-6" id="internshipStartWrapper" style="display: none;">
-                  <label class="form-label" for="internshipStartDate">
-                    Internship Start Date
-                  </label>
-                  <input
-                    type="date"
-                    class="form-control"
-                    id="internshipStartDate"
-                    name="internshipStartDate"
-                  />
-                </div>
+      <div class="row g-3 mt-1">
+        <div class="col-md-6" id="bonusFieldWrapper" style="display: none;">
+          <label class="form-label" for="bonusAmount">Bonus Amount (₹)</label>
+          <input type="number" step="0.01" min="0" class="form-control" id="bonusAmount" name="bonusAmount" />
+        </div>
+        <div class="col-md-6" id="incrementFieldWrapper" style="display: none;">
+          <label class="form-label" for="incrementAmount">Salary Increment — monthly (₹)</label>
+          <input type="number" step="0.01" min="0" class="form-control" id="incrementAmount" name="incrementAmount" />
+        </div>
+      </div>
 
-                
-              </div>
+      <div class="row g-3 mt-3">
+        <div class="col-md-6" id="salaryMonthWrapper" style="display: none;">
+          <label class="form-label" for="salaryMonth">Salary Month</label>
+          <div class="d-flex gap-2">
+            <select class="form-select" id="salaryMonth" name="salaryMonth">
+              <option value="">Select month</option>
+              <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+              <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+              <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+              <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+            </select>
+            <button type="button" class="btn btn-outline-primary btn-sm text-nowrap" id="btnPrefillSalarySlip" title="Load LOP &amp; amounts from payroll register">
+              From payroll
+            </button>
+          </div>
+          <input type="hidden" name="usePayrollRegister" id="usePayrollRegister" value="" />
+          <input type="hidden" name="payrollRunId" id="payrollRunId" value="" />
+        </div>
+        <div class="col-md-6" id="reimbursementWrapper" style="display: none;">
+          <label class="form-label" for="reimbursement">Reimbursement (₹)</label>
+          <input type="number" step="0.01" min="0" class="form-control" id="reimbursement" name="reimbursement" />
+        </div>
+        <div class="col-md-6" id="nonPaidLeaveWrapper" style="display: none;">
+          <label class="form-label" for="nonPaidLeave">Non Paid Leave (LOP Days)</label>
+          <select class="form-select" id="nonPaidLeave" name="nonPaidLeave">
+            <option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option>
+            <option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option>
+            <option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option>
+            <option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option>
+            <option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option>
+            <option value="20">20</option><option value="21">21</option><option value="22">22</option><option value="23">23</option>
+            <option value="24">24</option><option value="25">25</option><option value="26">26</option><option value="27">27</option>
+            <option value="28">28</option>
+          </select>
+        </div>
+      </div>
 
-              <div class="mt-4 d-flex justify-content-end">
-                <button type="submit" class="btn btn-primary">
-                  <i class="fas fa-file-pdf me-2"></i>Generate Document (PDF)
-                </button>
-              </div>
-            </form>
+      <div class="row g-3 mt-3">
+        <div class="col-md-6" id="offerJoiningDateWrapper" style="display: none;">
+          <label class="form-label" for="offerJoiningDate">Joining Date</label>
+          <input type="date" class="form-control" id="offerJoiningDate" name="joiningDate" />
+        </div>
+      </div>
 
-            <p class="text-muted mt-3">
-              The PDF will be generated in A4 size and downloaded automatically.
-            </p>
+      <div class="row g-3 mt-3">
+        <div class="col-md-6" id="internshipOfferDateWrapper" style="display: none;">
+          <label class="form-label" for="internshipOfferDate">Internship Offer Date</label>
+          <input type="date" class="form-control" id="internshipOfferDate" name="internshipOfferDate" />
+        </div>
+        <div class="col-md-6" id="internshipStartWrapper" style="display: none;">
+          <label class="form-label" for="internshipStartDate">Internship Start Date</label>
+          <input type="date" class="form-control" id="internshipStartDate" name="internshipStartDate" />
+        </div>
+      </div>
+
+      <div class="row g-3 mt-3" id="fnfFieldsWrapper" style="display: none;">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+          <div class="fw-semibold small text-muted">Full &amp; Final settlement amounts</div>
+          <button type="button" class="btn btn-sm btn-outline-primary" id="btnFnfFromPayroll">Pull from payroll register</button>
+        </div>
+        <div class="col-md-4"><label class="form-label">Salary (E)</label><input type="number" step="0.01" class="form-control" name="E_SALARY" /></div>
+        <div class="col-md-4"><label class="form-label">Leave encashment (E)</label><input type="number" step="0.01" class="form-control" name="E_LEAVE_ENCASHMENT" /></div>
+        <div class="col-md-4"><label class="form-label">Bonus / incentive (E)</label><input type="number" step="0.01" class="form-control" name="E_BONUS_INCENTIVE" /></div>
+        <div class="col-md-4"><label class="form-label">Other earnings (E)</label><input type="number" step="0.01" class="form-control" name="E_OTHER_EARNINGS" /></div>
+        <div class="col-md-4"><label class="form-label">Notice recovery (D)</label><input type="number" step="0.01" class="form-control" name="D_NOTICE_RECOVERY" /></div>
+        <div class="col-md-4"><label class="form-label">Advance recovery (D)</label><input type="number" step="0.01" class="form-control" name="D_ADVANCE_RECOVERY" /></div>
+        <div class="col-md-4"><label class="form-label">PF / ESI (D)</label><input type="number" step="0.01" class="form-control" name="D_PF_ESI" /></div>
+        <div class="col-md-4"><label class="form-label">TDS / PT (D)</label><input type="number" step="0.01" class="form-control" name="D_TDS_PT" /></div>
+        <div class="col-md-4"><label class="form-label">Other deductions (D)</label><input type="number" step="0.01" class="form-control" name="D_OTHER_DEDUCTIONS" /></div>
+        <div class="col-md-4"><label class="form-label">Settlement date</label><input type="date" class="form-control" name="settlementDate" /></div>
+        <div class="col-md-4"><label class="form-label">Payment date</label><input type="date" class="form-control" name="paymentDate" /></div>
+      </div>
+
+      <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-2 doc-wizard-panel" data-wizard-panel="3">
+        <button type="button" class="btn btn-outline-secondary" id="docWizardBack3">Back</button>
+        <div class="d-flex flex-wrap align-items-center gap-3">
+        <div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="skipGates" name="skipGates" value="1" />
+            <label class="form-check-label small text-muted" for="skipGates">Override data validation (HR admin)</label>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="skipApproval" name="skipApproval" value="1" />
+            <label class="form-check-label small text-muted" for="skipApproval">Skip offer approval (send immediately)</label>
           </div>
         </div>
+        <button type="submit" class="btn btn-primary" id="generateDocumentBtn">
+          <i class="fas fa-file-pdf me-2"></i>Generate Document (PDF)
+        </button>
+        </div>
+      </div>
+      </div>
+      </div>
+    </form>
 
+    <p class="text-muted mt-3 mb-0">
+      Offer letters queue for <a href="/document-approvals">HR approval</a> before email. Other PDFs save to vault with lifecycle updates.
+    </p>
+  </div>
+</div>
+
+<div class="modal fade" id="postGenerateModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Document generated</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="postGenerateBody"></div>
+      <div class="modal-footer" id="postGenerateFooter">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
       </div>
     </div>
   </div>
@@ -263,169 +256,488 @@
 
 <script>
   (function () {
+    const form = document.getElementById('generateDocumentForm');
     const docTypeSelect = document.getElementById('documentTypeSelect');
     const docTypeDropdownMenu = document.getElementById('documentTypeDropdownMenu');
     const docTypeDropdownLabel = document.getElementById('documentTypeDropdownLabel');
     const employeeSelect = document.getElementById('employeeSelect');
+    const lifecycleSummaryCard = document.getElementById('lifecycleSummaryCard');
+    const gatesAlert = document.getElementById('documentGatesAlert');
+    const versionCard = document.getElementById('documentVersionCard');
+    const versionList = document.getElementById('documentVersionList');
+    const versionBadge = document.getElementById('documentVersionBadge');
 
-    const bonusFieldWrapper = document.getElementById('bonusFieldWrapper');
-    const incrementFieldWrapper = document.getElementById('incrementFieldWrapper');
-    const bonusAmountInput = document.getElementById('bonusAmount');
-    const incrementAmountInput = document.getElementById('incrementAmount');
+    const allDocTypeOptions = Array.from(docTypeSelect.options).filter((o) => o.value);
+    let lifecycleData = null;
+    let wizardStep = 1;
 
-    const salaryMonthWrapper = document.getElementById('salaryMonthWrapper');
-    const reimbursementWrapper = document.getElementById('reimbursementWrapper');
-    const salaryMonthInput = document.getElementById('salaryMonth');
-    const reimbursementInput = document.getElementById('reimbursement');
+    function setWizardStep(step) {
+      wizardStep = step;
+      document.querySelectorAll('[data-wizard-panel]').forEach((el) => {
+        el.classList.toggle('d-none', Number(el.dataset.wizardPanel) !== step);
+      });
+      document.querySelectorAll('#docWizardNav .nav-link').forEach((btn) => {
+        const s = Number(btn.dataset.wizardStep);
+        btn.classList.toggle('active', s === step);
+        if (s === 1) btn.disabled = false;
+        else if (s === 2) btn.disabled = !employeeSelect?.value;
+        else if (s === 3) btn.disabled = !employeeSelect?.value || !docTypeSelect?.value;
+      });
+      if (lifecycleSummaryCard) {
+        lifecycleSummaryCard.style.display = step >= 2 && employeeSelect?.value ? '' : 'none';
+      }
+      if (step === 3) updateStep3Summary();
+    }
 
-    // ✅ NEW: Non Paid Leave
-    const nonPaidLeaveWrapper = document.getElementById('nonPaidLeaveWrapper');
-    const nonPaidLeaveInput = document.getElementById('nonPaidLeave');
+    function updateStep3Summary() {
+      const empOpt = employeeSelect?.options[employeeSelect.selectedIndex];
+      const docOpt = docTypeSelect?.options[docTypeSelect.selectedIndex];
+      const el = document.getElementById('docWizardStep3Summary');
+      if (!el) return;
+      el.textContent = `${empOpt?.text?.trim() || 'Employee'} · ${docOpt?.text?.trim() || 'Document'} — configure options below, then generate.`;
+    }
 
-    const offerJoiningDateWrapper = document.getElementById('offerJoiningDateWrapper');
-    const offerJoiningDateInput = document.getElementById('offerJoiningDate');
+    document.getElementById('docWizardNext1')?.addEventListener('click', () => setWizardStep(2));
+    document.getElementById('docWizardBack2')?.addEventListener('click', () => setWizardStep(1));
+    document.getElementById('docWizardNext2')?.addEventListener('click', () => {
+      handleDocTypeChange();
+      setWizardStep(3);
+    });
+    document.getElementById('docWizardBack3')?.addEventListener('click', () => setWizardStep(2));
 
-    // Internship Offer fields
-    const internshipStartWrapper = document.getElementById('internshipStartWrapper');
-    const internshipOfferDateWrapper = document.getElementById('internshipOfferDateWrapper');
-    const internshipStartInput = document.getElementById('internshipStartDate');
-    const internshipOfferDateInput = document.getElementById('internshipOfferDate');
+    const syncWizardNextButtons = () => {
+      const n1 = document.getElementById('docWizardNext1');
+      const n2 = document.getElementById('docWizardNext2');
+      if (n1) n1.disabled = !employeeSelect?.value;
+      if (n2) n2.disabled = !docTypeSelect?.value;
+    };
+
+    const wrappers = {
+      bonus: document.getElementById('bonusFieldWrapper'),
+      increment: document.getElementById('incrementFieldWrapper'),
+      salaryMonth: document.getElementById('salaryMonthWrapper'),
+      reimbursement: document.getElementById('reimbursementWrapper'),
+      nonPaidLeave: document.getElementById('nonPaidLeaveWrapper'),
+      offerJoining: document.getElementById('offerJoiningDateWrapper'),
+      internshipOffer: document.getElementById('internshipOfferDateWrapper'),
+      internshipStart: document.getElementById('internshipStartWrapper'),
+      fnf: document.getElementById('fnfFieldsWrapper'),
+    };
+
+    function normCode(code) {
+      return String(code || '').toUpperCase();
+    }
 
     function resetDynamicFields() {
-      bonusFieldWrapper.style.display = 'none';
-      incrementFieldWrapper.style.display = 'none';
-      salaryMonthWrapper.style.display = 'none';
-      reimbursementWrapper.style.display = 'none';
-      offerJoiningDateWrapper.style.display = 'none';
-      internshipStartWrapper.style.display = 'none';
-      internshipOfferDateWrapper.style.display = 'none';
-
-      // ✅ NEW
-      if (nonPaidLeaveWrapper) nonPaidLeaveWrapper.style.display = 'none';
-
-      if (bonusAmountInput) bonusAmountInput.value = '';
-      if (incrementAmountInput) incrementAmountInput.value = '';
-      if (salaryMonthInput) salaryMonthInput.selectedIndex = 0;
-      if (reimbursementInput) reimbursementInput.value = '';
-      if (offerJoiningDateInput) offerJoiningDateInput.value = '';
-      if (internshipStartInput) internshipStartInput.value = '';
-      if (internshipOfferDateInput) internshipOfferDateInput.value = '';
-
-      // ✅ NEW
-      if (nonPaidLeaveInput) nonPaidLeaveInput.selectedIndex = 0;
+      Object.values(wrappers).forEach((el) => { if (el) el.style.display = 'none'; });
     }
 
-    function isInternshipOfferSelected() {
-      const selectedOption = docTypeSelect.options[docTypeSelect.selectedIndex];
-      if (!selectedOption) return false;
+    function isInternshipOfferCode(code) {
+      const c = normCode(code);
+      return c === 'INTERNSHIP_OFFER' || c === 'INTERN_OFFER' || c === 'INTERNSHIP_OFFER_LETTER';
+    }
 
-      const rawCode = selectedOption.getAttribute('data-code') || '';
-      const code = rawCode.toUpperCase();
+    function renderStageTrack(stages) {
+      const track = document.getElementById('lifecycleStageTrack');
+      if (!track || !stages) return;
+      track.innerHTML = stages.map((s) => {
+        const cls = s.current ? 'bg-primary' : s.completed ? 'bg-success' : 'bg-light text-muted';
+        return `<span class="badge ${cls} me-1 mb-1">${s.label}</span>`;
+      }).join('');
+    }
 
-      return (
-        code === 'INTERNSHIP_OFFER' ||
-        code === 'INTERN_OFFER' ||
-        code === 'INTERNSHIP_OFFER_LETTER'
+    function rebuildDocTypeDropdown(allowedDocuments) {
+      docTypeDropdownMenu.innerHTML = '';
+      const allowedIds = new Set((allowedDocuments || []).map((d) => String(d.id)));
+
+      allDocTypeOptions.forEach((opt) => {
+        if (!allowedIds.has(String(opt.value))) return;
+        const li = document.createElement('li');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'dropdown-item d-flex align-items-center gap-2';
+        btn.dataset.id = opt.value;
+        btn.dataset.code = opt.getAttribute('data-code') || '';
+        btn.dataset.icon = opt.getAttribute('data-icon') || 'fas fa-file-lines';
+        const icon = document.createElement('i');
+        icon.className = btn.dataset.icon;
+        const span = document.createElement('span');
+        span.textContent = opt.getAttribute('data-name') || opt.textContent.trim();
+        btn.appendChild(icon);
+        btn.appendChild(span);
+        li.appendChild(btn);
+        docTypeDropdownMenu.appendChild(li);
+      });
+
+      Array.from(docTypeSelect.options).forEach((opt) => {
+        if (!opt.value) return;
+        opt.hidden = !allowedIds.has(String(opt.value));
+      });
+    }
+
+    async function loadLifecycle(employeeId) {
+      if (!employeeId) {
+        lifecycleData = null;
+        lifecycleSummaryCard.style.display = 'none';
+        rebuildDocTypeDropdown(allDocTypeOptions.map((o) => ({
+          id: o.value,
+          code: o.getAttribute('data-code'),
+          name: o.textContent.trim(),
+          icon: o.getAttribute('data-icon'),
+          gatesValid: true,
+          missingFields: [],
+        })));
+        return;
+      }
+
+      const res = await fetch(`/api/v1/documents/lifecycle/${employeeId}`);
+      if (!res.ok) return;
+      lifecycleData = await res.json();
+
+      lifecycleSummaryCard.style.display = 'block';
+      document.getElementById('lifecycleEmployeeLabel').textContent =
+        `${lifecycleData.employee.empName} (${lifecycleData.employee.empId})`;
+      document.getElementById('lifecycleTypeBadge').textContent = lifecycleData.employee.employeeType;
+      document.getElementById('lifecycleStageBadge').textContent = lifecycleData.employee.lifecycleStageLabel;
+      document.getElementById('lifecycleRecommended').textContent = lifecycleData.recommendedDocument
+        ? `Recommended next: ${lifecycleData.recommendedDocument.name}`
+        : 'No specific recommendation for this stage.';
+      const payrollEl = document.getElementById('lifecyclePayrollLink');
+      if (payrollEl && lifecycleData.payrollLink) {
+        const pl = lifecycleData.payrollLink;
+        const struct = pl.hasSalaryStructure
+          ? `Salary structure: ₹${Number(pl.salaryStructure?.ctc || 0).toLocaleString('en-IN')} (from ${pl.salaryStructure?.effectiveDate || '—'})`
+          : 'No active salary structure — sync after offer/appointment letter';
+        const run = pl.lastPayrollRun
+          ? ` · Last payroll: ${pl.lastPayrollRun.periodLabel} (net ₹${Number(pl.lastPayrollRun.netPay).toLocaleString('en-IN')})`
+          : '';
+        payrollEl.style.display = 'block';
+        payrollEl.innerHTML = `<span class="text-muted">${struct}${run}</span>`;
+        if (!pl.hasSalaryStructure && employeeSelect.value) {
+          payrollEl.innerHTML += ` <button type="button" class="btn btn-link btn-sm p-0 align-baseline" id="btnSyncPayrollFromDocs">Sync now</button>`;
+          document.getElementById('btnSyncPayrollFromDocs')?.addEventListener('click', async () => {
+            const res = await fetch(`/api/v1/employees/${employeeSelect.value}/payroll-structure/sync`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+            alert(res.ok ? 'Payroll structure synced' : 'Sync failed');
+            if (res.ok) await loadLifecycle(employeeSelect.value);
+          });
+        }
+      } else if (payrollEl) {
+        payrollEl.style.display = 'none';
+      }
+      renderStageTrack(lifecycleData.stages);
+      rebuildDocTypeDropdown(lifecycleData.allowedDocuments);
+
+      if (lifecycleData.recommendedDocument) {
+        docTypeSelect.value = String(lifecycleData.recommendedDocument.id);
+        docTypeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    }
+
+    function updateGatesAlert() {
+      if (!lifecycleData || !docTypeSelect.value) {
+        gatesAlert.classList.add('d-none');
+        return;
+      }
+      const selected = lifecycleData.allowedDocuments.find(
+        (d) => String(d.id) === String(docTypeSelect.value)
       );
+      if (!selected || selected.gatesValid) {
+        gatesAlert.classList.add('d-none');
+        return;
+      }
+      gatesAlert.classList.remove('d-none');
+      gatesAlert.innerHTML = `<strong>Missing data:</strong> ${selected.missingFields.join(', ')}. Update the employee profile or use override.`;
     }
 
-    function prefillInternshipDatesFromEmployee() {
-      if (!employeeSelect || !internshipStartInput || !internshipOfferDateInput) return;
+    function isFnfCode(code) {
+      const c = normCode(code);
+      return c === 'FULL_FINAL_STATEMENT' || c === 'FULL_FINAL' || c === 'FNF_STATEMENT' || c === 'FULL_AND_FINAL';
+    }
 
-      const empOpt = employeeSelect.options[employeeSelect.selectedIndex];
-      if (!empOpt) return;
+    async function prefillFnfFields(employeeId) {
+      if (!employeeId) return;
+      try {
+        const res = await fetch(`/api/v1/employees/${employeeId}`);
+        if (!res.ok) return;
+        const emp = await res.json();
+        const fnf = emp.fnfSettlement || {};
+        const form = document.getElementById('generateDocumentForm');
+        ['E_SALARY','E_LEAVE_ENCASHMENT','E_BONUS_INCENTIVE','E_OTHER_EARNINGS',
+         'D_NOTICE_RECOVERY','D_ADVANCE_RECOVERY','D_PF_ESI','D_TDS_PT','D_OTHER_DEDUCTIONS',
+         'settlementDate','paymentDate'].forEach((name) => {
+          const el = form?.elements[name];
+          if (el && fnf[name] != null) el.value = fnf[name];
+        });
+      } catch { /* ignore */ }
+    }
 
-      const dbStart = empOpt.getAttribute('data-internship-start-date') || '';
-      const dbOffer = empOpt.getAttribute('data-internship-offer-date') || '';
+    async function pullFnfFromPayroll(employeeId) {
+      if (!employeeId) return;
+      const res = await fetch(`/api/v1/employees/${employeeId}/fnf-settlement/from-payroll`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ months: 1 }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return alert(data.error || 'Could not pull from payroll');
+      await prefillFnfFields(employeeId);
+      alert('F&F fields updated from latest payroll register row.');
+    }
 
-      // If DB has values, set them
-      if (dbStart) internshipStartInput.value = dbStart;
-      if (dbOffer) internshipOfferDateInput.value = dbOffer;
+    async function prefillSalarySlipFromPayroll(employeeId) {
+      if (!employeeId) return;
+      const month = document.getElementById('salaryMonth')?.value;
+      const year = new Date().getFullYear();
+      const qs = month ? `?periodMonth=${month}&periodYear=${year}` : '';
+      const res = await fetch(`/api/v1/employees/${employeeId}/payroll-prefill/salary-slip${qs}`);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return alert(data.error || 'Payroll prefill failed');
+      if (data.salaryMonth) document.getElementById('salaryMonth').value = data.salaryMonth;
+      if (data.nonPaidLeave != null) document.getElementById('nonPaidLeave').value = String(data.nonPaidLeave);
+      if (data.reimbursement != null) document.getElementById('reimbursement').value = data.reimbursement;
+      if (data.payrollRunId) {
+        document.getElementById('payrollRunId').value = data.payrollRunId;
+        document.getElementById('usePayrollRegister').value = data.source === 'payroll_register' ? '1' : '';
+      }
+      alert(data.source === 'payroll_register'
+        ? `Loaded from payroll: ${data.periodLabel} (net ₹${Number(data.netPay).toLocaleString('en-IN')})`
+        : (data.message || 'No payroll row — using CTC breakup'));
+    }
+
+    async function loadDocumentVersionHistory(employeeId, code) {
+      if (!versionCard || !versionList) return;
+      if (!employeeId || !code) {
+        versionCard.classList.add('d-none');
+        return;
+      }
+      try {
+        const res = await fetch(`/api/v1/employees/${employeeId}/generated-documents/versions?code=${encodeURIComponent(code)}`);
+        const data = await res.json().catch(() => ({}));
+        const versions = data.versions || [];
+        if (!versions.length) {
+          versionCard.classList.add('d-none');
+          return;
+        }
+        versionCard.classList.remove('d-none');
+        if (versionBadge) {
+          versionBadge.textContent = versions.length > 1
+            ? `${versions.length} versions — next will be v${versions[0].version + 1}`
+            : `v${versions[0].version} on file`;
+        }
+        versionList.innerHTML = versions.map((v) => {
+          const when = v.createdAt ? new Date(v.createdAt).toLocaleString() : '';
+          const latest = v.isLatest ? ' <span class="badge bg-primary">latest</span>' : '';
+          return `<li class="border-bottom py-1">v${v.version} · ${v.fileName || code}${latest}<br><span class="text-muted">${when}</span></li>`;
+        }).join('');
+      } catch {
+        versionCard.classList.add('d-none');
+      }
     }
 
     function handleDocTypeChange() {
       resetDynamicFields();
+      const opt = docTypeSelect.options[docTypeSelect.selectedIndex];
+      if (!opt || !opt.value) return;
+      const code = normCode(opt.getAttribute('data-code'));
 
-      const selectedOption = docTypeSelect.options[docTypeSelect.selectedIndex];
-      if (!selectedOption) return;
-
-      const rawCode = selectedOption.getAttribute('data-code') || '';
-      const code = rawCode.toUpperCase();
-
-      // Show Bonus field for BONUS_LETTER / BONUS
-      if (code === 'BONUS_LETTER' || code === 'BONUS') {
-        bonusFieldWrapper.style.display = 'block';
-      }
-
-      // Show Increment field for INCREMENT_LETTER / INCREMENT
-      if (code === 'INCREMENT_LETTER' || code === 'INCREMENT') {
-        incrementFieldWrapper.style.display = 'block';
-      }
-
-      // Show Salary Slip fields for SALARY_SLIP
+      if (code === 'BONUS_LETTER' || code === 'BONUS') wrappers.bonus.style.display = 'block';
+      if (code === 'INCREMENT_LETTER' || code === 'INCREMENT') wrappers.increment.style.display = 'block';
       if (code === 'SALARY_SLIP') {
-        salaryMonthWrapper.style.display = 'block';
-        reimbursementWrapper.style.display = 'block';
-
-        // ✅ NEW
-        if (nonPaidLeaveWrapper) nonPaidLeaveWrapper.style.display = 'block';
+        wrappers.salaryMonth.style.display = 'block';
+        wrappers.reimbursement.style.display = 'block';
+        wrappers.nonPaidLeave.style.display = 'block';
+      }
+      if (code === 'OFFER_LETTER') wrappers.offerJoining.style.display = 'block';
+      if (isInternshipOfferCode(code)) {
+        wrappers.internshipOffer.style.display = 'block';
+        wrappers.internshipStart.style.display = 'block';
+        const empOpt = employeeSelect.options[employeeSelect.selectedIndex];
+        if (empOpt) {
+          const start = empOpt.getAttribute('data-internship-start-date');
+          const offer = empOpt.getAttribute('data-internship-offer-date');
+          if (start) document.getElementById('internshipStartDate').value = start;
+          if (offer) document.getElementById('internshipOfferDate').value = offer;
+        }
+      }
+      if (isFnfCode(code)) {
+        wrappers.fnf.style.display = 'block';
+        prefillFnfFields(employeeSelect?.value);
       }
 
-      // Show Offer Letter fields for OFFER_LETTER
-      if (code === 'OFFER_LETTER') {
-        offerJoiningDateWrapper.style.display = 'block';
-      }
-
-      // Show Internship Offer fields
-      if (isInternshipOfferSelected()) {
-        internshipStartWrapper.style.display = 'block';
-        internshipOfferDateWrapper.style.display = 'block';
-
-        // ✅ Prefill from DB (employee option dataset)
-        prefillInternshipDatesFromEmployee();
-      }
+      syncDocTypeDropdownLabel();
+      updateGatesAlert();
+      loadDocumentVersionHistory(employeeSelect?.value, code);
     }
 
     function syncDocTypeDropdownLabel() {
-      if (!docTypeDropdownLabel || !docTypeSelect) return;
       const opt = docTypeSelect.options[docTypeSelect.selectedIndex];
       if (!opt || !opt.value) {
-        docTypeDropdownLabel.innerHTML = `<i class="fas fa-file-lines text-muted"></i><span>Select document type</span>`;
+        docTypeDropdownLabel.innerHTML = '<i class="fas fa-file-lines text-muted"></i><span>Select document type</span>';
         return;
       }
       const iconClass = opt.getAttribute('data-icon') || 'fas fa-file-lines';
-      const name = opt.textContent || 'Selected';
-      docTypeDropdownLabel.innerHTML = `<i class="${iconClass}"></i><span>${name}</span>`;
+      docTypeDropdownLabel.innerHTML = `<i class="${iconClass}"></i><span>${opt.textContent.trim()}</span>`;
     }
 
-    // Dropdown click -> update hidden select + trigger existing logic
-    if (docTypeDropdownMenu && docTypeSelect) {
-      docTypeDropdownMenu.addEventListener('click', function (e) {
+    if (docTypeDropdownMenu) {
+      docTypeDropdownMenu.addEventListener('click', (e) => {
         const btn = e.target.closest('button.dropdown-item');
         if (!btn) return;
-        const id = btn.getAttribute('data-id') || '';
-        docTypeSelect.value = id;
+        docTypeSelect.value = btn.dataset.id || '';
         docTypeSelect.dispatchEvent(new Event('change', { bubbles: true }));
       });
     }
 
-    function handleEmployeeChange() {
-      // Only prefill when Internship Offer is selected
-      if (isInternshipOfferSelected()) {
-        prefillInternshipDatesFromEmployee();
-      }
+    if (employeeSelect) {
+      employeeSelect.addEventListener('change', async () => {
+        docTypeSelect.value = '';
+        syncDocTypeDropdownLabel();
+        syncWizardNextButtons();
+        await loadLifecycle(employeeSelect.value);
+        handleDocTypeChange();
+        if (!employeeSelect.value) setWizardStep(1);
+      });
     }
 
     if (docTypeSelect) {
-      docTypeSelect.addEventListener('change', handleDocTypeChange);
-      docTypeSelect.addEventListener('change', syncDocTypeDropdownLabel);
-      handleDocTypeChange();
-      syncDocTypeDropdownLabel();
+      docTypeSelect.addEventListener('change', () => {
+        handleDocTypeChange();
+        syncWizardNextButtons();
+      });
     }
 
-    if (employeeSelect) {
-      employeeSelect.addEventListener('change', handleEmployeeChange);
-      handleEmployeeChange();
+    document.getElementById('btnPrefillSalarySlip')?.addEventListener('click', () => {
+      prefillSalarySlipFromPayroll(employeeSelect?.value);
+    });
+
+    document.getElementById('btnFnfFromPayroll')?.addEventListener('click', () => {
+      pullFnfFromPayroll(employeeSelect?.value);
+    });
+
+    if (form) {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('generateDocumentBtn');
+        btn.disabled = true;
+        gatesAlert.classList.add('d-none');
+
+        try {
+          const res = await fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form),
+          });
+
+          const contentType = res.headers.get('content-type') || '';
+          if (!res.ok) {
+            if (contentType.includes('application/json')) {
+              const err = await res.json();
+              gatesAlert.classList.remove('d-none');
+              gatesAlert.innerHTML = `<strong>${err.error || 'Generation failed'}</strong>${
+                err.missingFields ? ': ' + err.missingFields.join(', ') : ''
+              }`;
+            } else {
+              gatesAlert.classList.remove('d-none');
+              gatesAlert.textContent = await res.text();
+            }
+            return;
+          }
+
+          if (res.status === 202 || contentType.includes('application/json')) {
+            const data = await res.json();
+            if (data.requiresApproval) {
+              const body = document.getElementById('postGenerateBody');
+              const footer = document.getElementById('postGenerateFooter');
+              body.innerHTML = `<p>${data.message}</p>
+                <p><a href="${data.previewUrl}" target="_blank" class="btn btn-sm btn-outline-primary">Preview PDF</a>
+                <a href="/document-approvals" class="btn btn-sm btn-primary ms-2">Open approvals queue</a></p>`;
+              footer.innerHTML = '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>';
+              bootstrap.Modal.getOrCreateInstance(document.getElementById('postGenerateModal')).show();
+              return;
+            }
+          }
+
+          const blob = await res.blob();
+          const dispo = res.headers.get('content-disposition') || '';
+          const match = dispo.match(/filename="([^"]+)"/);
+          const fileName = match ? match[1] : 'document.pdf';
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = fileName;
+          a.click();
+          URL.revokeObjectURL(url);
+
+          const revisedCtc = res.headers.get('x-revised-annual-ctc');
+          const stage = res.headers.get('x-lifecycle-stage');
+          const body = document.getElementById('postGenerateBody');
+          const footer = document.getElementById('postGenerateFooter');
+          body.innerHTML = `<p>PDF downloaded and saved to employee vault.</p>${
+            stage ? `<p>Lifecycle stage: <strong>${stage}</strong></p>` : ''
+          }`;
+          footer.innerHTML = '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>';
+
+          if (revisedCtc && employeeSelect.value) {
+            body.innerHTML += `<p>Update employee CTC to <strong>₹${Number(revisedCtc).toLocaleString('en-IN')}</strong> (annual)?</p>`;
+            const applyBtn = document.createElement('button');
+            applyBtn.type = 'button';
+            applyBtn.className = 'btn btn-primary';
+            applyBtn.textContent = 'Apply revised CTC';
+            applyBtn.onclick = async () => {
+              await fetch(`/api/v1/employees/${employeeSelect.value}/lifecycle/increment/apply-ctc`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ revisedAnnualCtc: revisedCtc }),
+              });
+              applyBtn.textContent = 'CTC updated';
+              applyBtn.disabled = true;
+            };
+            footer.prepend(applyBtn);
+          }
+
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('postGenerateModal')).show();
+          await loadLifecycle(employeeSelect.value);
+        } catch (err) {
+          gatesAlert.classList.remove('d-none');
+          gatesAlert.textContent = err.message || 'Unexpected error';
+        } finally {
+          btn.disabled = false;
+        }
+      });
     }
+
+    rebuildDocTypeDropdown(allDocTypeOptions.map((o) => ({
+      id: o.value,
+      code: o.getAttribute('data-code'),
+      name: o.textContent.trim(),
+      icon: o.getAttribute('data-icon'),
+      gatesValid: true,
+      missingFields: [],
+    })));
+
+    async function applyUrlPrefill() {
+      const params = new URLSearchParams(window.location.search);
+      const employeeId = params.get('employeeId');
+      const docTypeId = params.get('docTypeId');
+      if (!employeeId || !employeeSelect) {
+        setWizardStep(1);
+        syncWizardNextButtons();
+        return;
+      }
+      employeeSelect.value = employeeId;
+      syncWizardNextButtons();
+      await loadLifecycle(employeeId);
+      if (docTypeId) {
+        docTypeSelect.value = docTypeId;
+        handleDocTypeChange();
+        syncWizardNextButtons();
+        setWizardStep(3);
+      } else {
+        setWizardStep(2);
+      }
+    }
+
+    setWizardStep(1);
+    syncWizardNextButtons();
+    applyUrlPrefill();
   })();
 </script>

@@ -28,7 +28,12 @@
     "reset-db": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules reset-database.js",
     "migrate": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config scripts/run_migrations.js",
     "test:e2e": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config scripts/e2e_subscription_test.js",
+    "test:lifecycle": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config scripts/lifecycle-smoke-test.js",
+    "test:lifecycle:scenarios": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config scripts/lifecycle-scenario-tests.js",
+    "lifecycle:backfill": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config scripts/lifecycle-backfill-stages.js",
     "sync-db": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules database/sync-database.js",
+    "seed:document-types": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config database/seeders/document-types-seeder.js",
+    "seed:lifecycle-emails": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config database/seeders/lifecycle-email-templates-seeder.js",
     "screen": "cross-env DOTENV_CONFIG_PATH=./property.env SYNC_DB=true nodemon -r dotenv/config --experimental-json-modules src/index.js",
     "update-departments-business": "node scripts/update-departments-business.js"
   },

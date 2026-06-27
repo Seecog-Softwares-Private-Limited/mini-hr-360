@@ -31,6 +31,10 @@ import Shift from './Shift.js';
 import EmployeeEducation from './EmployeeEducation.js';
 import EmployeeExperience from './EmployeeExperience.js';
 import EmployeeDocument from './EmployeeDocument.js';
+import EmployeeGeneratedDocument from './EmployeeGeneratedDocument.js';
+import EmployeeLifecycleEvent from './EmployeeLifecycleEvent.js';
+import Candidate from './Candidate.js';
+import DocumentApprovalRequest from './DocumentApprovalRequest.js';
 // Attendance
 // Attendance
 
@@ -258,6 +262,53 @@ EmployeeDocument.belongsTo(Employee, {
   as: 'employee',
 });
 
+/* Employee ⇄ reporting manager (self-reference) */
+Employee.belongsTo(Employee, {
+  foreignKey: 'reportingManagerId',
+  as: 'reportingManager',
+});
+Employee.hasMany(Employee, {
+  foreignKey: 'reportingManagerId',
+  as: 'directReports',
+});
+
+/* Employee ⇄ generated HR documents */
+Employee.hasMany(EmployeeGeneratedDocument, {
+  foreignKey: 'employeeId',
+  as: 'generatedDocuments',
+  onDelete: 'CASCADE',
+});
+EmployeeGeneratedDocument.belongsTo(Employee, {
+  foreignKey: 'employeeId',
+  as: 'employee',
+});
+EmployeeGeneratedDocument.belongsTo(DocumentType, {
+  foreignKey: 'documentTypeId',
+  as: 'documentType',
+});
+
+/* Employee ⇄ lifecycle events */
+Employee.hasMany(EmployeeLifecycleEvent, {
+  foreignKey: 'employeeId',
+  as: 'lifecycleEvents',
+  onDelete: 'CASCADE',
+});
+EmployeeLifecycleEvent.belongsTo(Employee, {
+  foreignKey: 'employeeId',
+  as: 'employee',
+});
+
+/* Business ⇄ Candidates */
+Business.hasMany(Candidate, { foreignKey: 'businessId', as: 'candidates', onDelete: 'CASCADE' });
+Candidate.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+Candidate.belongsTo(Employee, { foreignKey: 'convertedEmployeeId', as: 'convertedEmployee' });
+
+/* Document approval requests */
+Business.hasMany(DocumentApprovalRequest, { foreignKey: 'businessId', as: 'documentApprovals', onDelete: 'CASCADE' });
+DocumentApprovalRequest.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+DocumentApprovalRequest.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
+DocumentApprovalRequest.belongsTo(DocumentType, { foreignKey: 'documentTypeId', as: 'documentType' });
+
 // DocumentType ⇄ EmailTemplate
 DocumentType.hasMany(EmailTemplate, {
   foreignKey: 'documentTypeId',
@@ -429,6 +480,10 @@ export {
   EmployeeEducation,
   EmployeeExperience,
   EmployeeDocument,
+  EmployeeGeneratedDocument,
+  EmployeeLifecycleEvent,
+  Candidate,
+  DocumentApprovalRequest,
   EmailTemplate,
   // Billing models
   Plan,

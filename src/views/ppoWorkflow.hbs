@@ -1,0 +1,197 @@
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
+  <div>
+    <div class="page-title" style="font-size: 28px;">Intern &amp; PPO Workflow</div>
+    <div class="page-subtitle" id="ppoWizardSubtitle">{{employeeName}} ({{employeeCode}})</div>
+  </div>
+  <a href="/employees" class="btn btn-outline-secondary"><i class="fa-solid fa-arrow-left me-2"></i>Back to Employees</a>
+</div>
+
+<div class="section-card mb-4">
+  <div class="p-3" id="internStatusBar">Loading…</div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="section-card mb-4">
+      <div class="section-header"><h5><i class="fa-solid fa-graduation-cap"></i> Internship status</h5></div>
+      <div class="p-3" id="internDetails"><p class="text-muted mb-0">—</p></div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-header"><h5><i class="fa-solid fa-flag-checkered"></i> End internship (no PPO)</h5></div>
+      <div class="p-3">
+        <p class="small text-muted">For interns not converting to permanent. Unpaid interns skip F&amp;F; only certificate + relieving apply.</p>
+        <form id="completeInternForm" class="row g-3">
+          <div class="col-12">
+            <label class="form-label">Last working day *</label>
+            <input type="date" name="lastWorkingDay" class="form-control" required id="internLwd" />
+          </div>
+          <div class="col-12">
+            <button type="submit" class="btn btn-warning">
+              <i class="fa-solid fa-door-open me-2"></i>Start internship completion exit
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="section-card mb-4">
+      <div class="section-header"><h5><i class="fa-solid fa-user-plus"></i> Convert to permanent (PPO)</h5></div>
+      <div class="p-3">
+        <form id="ppoConvertForm" class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Permanent joining date *</label>
+            <input type="date" name="empDateOfJoining" class="form-control" required />
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Annual CTC *</label>
+            <input type="number" step="0.01" min="0" name="empCtc" class="form-control" required />
+          </div>
+          <div class="col-12">
+            <label class="form-label">Permanent designation</label>
+            <input type="text" name="empDesignation" class="form-control" id="ppoDesignation" />
+          </div>
+          <div class="col-12">
+            <button type="submit" class="btn btn-primary" id="btnPpoConvert">
+              <i class="fa-solid fa-arrow-right me-2"></i>Convert to permanent
+            </button>
+            <a href="#" class="btn btn-outline-primary ms-2" id="linkGeneratePpo">Generate PPO letter</a>
+          </div>
+        </form>
+        <div id="ppoGateAlert" class="alert alert-warning small mt-3 d-none"></div>
+      </div>
+    </div>
+
+    <div class="section-card mb-4">
+      <div class="section-header"><h5><i class="fa-solid fa-file-signature"></i> PPO document</h5></div>
+      <div class="p-3" id="ppoDocStep"><p class="text-muted mb-0">—</p></div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-header"><h5><i class="fa-solid fa-clock-rotate-left"></i> Timeline</h5></div>
+      <div class="p-3" id="ppoTimeline"><p class="text-muted mb-0">—</p></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const employeeId = {{employeeId}};
+  let state = null;
+
+  function renderInternBar(s) {
+    const intern = s.intern || {};
+    const paidLabel = intern.paid ? `Paid · ₹${intern.monthlyStipend || '—'}/mo` : 'Unpaid';
+    document.getElementById('internStatusBar').innerHTML = `
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div>
+          <div class="text-muted small">${s.employee?.lifecycleStageLabel || ''}</div>
+          <div class="fw-semibold">Intern · ${paidLabel}</div>
+        </div>
+        <span class="badge ${intern.paid ? 'bg-success' : 'bg-secondary'}">${intern.paid ? 'Paid' : 'Unpaid'}</span>
+      </div>`;
+
+    document.getElementById('internDetails').innerHTML = `
+      <dl class="row small mb-0">
+        <dt class="col-sm-4">Start</dt><dd class="col-sm-8">${intern.internshipStart || '—'}</dd>
+        <dt class="col-sm-4">End</dt><dd class="col-sm-8">${intern.internshipEnd || '—'}</dd>
+        <dt class="col-sm-4">Exit docs</dt><dd class="col-sm-8">${intern.paid ? 'Certificate + relieving (+ dues if applicable)' : 'Certificate + relieving only (no F&amp;F)'}</dd>
+      </dl>`;
+
+    if (intern.internshipEnd) {
+      document.getElementById('internLwd').value = intern.internshipEnd;
+    }
+    if (s.employee?.empDesignation) {
+      document.getElementById('ppoDesignation').value = s.employee.empDesignation;
+    }
+  }
+
+  function renderPpoStep(step) {
+    const el = document.getElementById('ppoDocStep');
+    if (!step) {
+      el.innerHTML = '<p class="text-muted">PPO document type not configured.</p>';
+      return;
+    }
+    el.innerHTML = `
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <strong>${step.label}</strong>
+          ${!step.gatesValid ? `<div class="small text-danger">Missing: ${(step.missingFields || []).join(', ')}</div>` : ''}
+        </div>
+        ${step.generated
+          ? '<span class="badge bg-success">Generated</span>'
+          : `<a class="btn btn-sm btn-outline-primary" href="/documents?employeeId=${employeeId}&docTypeId=${step.documentTypeId || ''}">Generate PPO</a>`}
+      </div>`;
+
+    const alert = document.getElementById('ppoGateAlert');
+    if (!step.gatesValid && step.missingFields?.length) {
+      alert.classList.remove('d-none');
+      alert.textContent = `Before PPO: update employee profile — ${step.missingFields.join(', ')}`;
+    } else {
+      alert.classList.add('d-none');
+    }
+
+    document.getElementById('linkGeneratePpo').href =
+      `/documents?employeeId=${employeeId}&docTypeId=${step.documentTypeId || ''}`;
+  }
+
+  function renderTimeline(events) {
+    const el = document.getElementById('ppoTimeline');
+    if (!events?.length) {
+      el.innerHTML = '<p class="text-muted">No events yet.</p>';
+      return;
+    }
+    el.innerHTML = events.slice(0, 8).map((e) => `
+      <div class="small border-bottom pb-2 mb-2">
+        <strong>${e.action}</strong> · ${e.fromStage || '—'} → ${e.toStage}
+        <div class="text-muted">${new Date(e.createdAt).toLocaleString()}</div>
+      </div>`).join('');
+  }
+
+  async function loadWizard() {
+    const res = await fetch(`/api/v1/employees/${employeeId}/ppo-wizard`);
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) return alert(body.error || 'Failed to load intern workflow');
+    state = body;
+
+    document.getElementById('ppoWizardSubtitle').textContent =
+      `${state.employee.empName} (${state.employee.empId})`;
+
+    renderInternBar(state);
+    renderPpoStep(state.ppoStep);
+    renderTimeline(state.events);
+  }
+
+  document.getElementById('ppoConvertForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target).entries());
+    const res = await fetch(`/api/v1/employees/${employeeId}/ppo-wizard/convert`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) return alert(body.error || 'Conversion failed');
+    alert('Converted to permanent at joining stage. Generate PPO letter next.');
+    await loadWizard();
+  });
+
+  document.getElementById('completeInternForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!confirm('Start internship completion offboarding?')) return;
+    const data = Object.fromEntries(new FormData(e.target).entries());
+    const res = await fetch(`/api/v1/employees/${employeeId}/ppo-wizard/complete-internship`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) return alert(body.error || 'Failed');
+    window.location.href = `/exit-workflow/${employeeId}`;
+  });
+
+  loadWizard();
+})();
+</script>

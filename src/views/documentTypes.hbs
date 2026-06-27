@@ -104,11 +104,22 @@
             </div>
             <div class="col-12">
               <label class="form-label">Template HTML</label>
+              <div class="d-flex gap-2 mb-2 flex-wrap">
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#placeholderReference">
+                  <i class="fas fa-code me-1"></i> Placeholder reference
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="previewTemplateBtn">
+                  <i class="fas fa-eye me-1"></i> Live preview (sample data)
+                </button>
+              </div>
+              <div class="collapse mb-2" id="placeholderReference">
+                <div class="border rounded p-2 bg-light small" id="placeholderList" style="max-height:180px;overflow:auto;"></div>
+              </div>
               <textarea
-                class="form-control"
+                class="form-control font-monospace"
                 id="docTypeTemplateHtml"
                 name="templateHtml"
-                rows="5"
+                rows="8"
               ></textarea>
             </div>
           </div>
@@ -138,6 +149,80 @@
 </div>
 
 <script>
+  // Build placeholder tokens without curly braces in this .hbs source file
+  function ph(key) {
+    return '{' + '{' + key + '}' + '}';
+  }
+
+  const PLACEHOLDER_GROUPS = [
+    { label: 'Employee', placeholders: [
+      { token: ph('EMP_NAME'), desc: 'Full name' },
+      { token: ph('EMP_ID'), desc: 'Employee ID' },
+      { token: ph('DESIGNATION'), desc: 'Job title' },
+      { token: ph('JOINING_DATE'), desc: 'Joining date' },
+    ]},
+    { label: 'Compensation', placeholders: [
+      { token: ph('CTC'), desc: 'Annual CTC' },
+      { token: ph('CTC_IN_WORDS'), desc: 'CTC in words' },
+      { token: ph('NET_PAY'), desc: 'Net monthly' },
+    ]},
+    { label: 'Branding', placeholders: [
+      { token: ph('LOGO_SRC'), desc: 'Logo image' },
+      { token: ph('STAMP_SRC'), desc: 'Stamp' },
+      { token: ph('SIGNATURE_SRC'), desc: 'Signature' },
+    ]},
+  ];
+
+  const SAMPLE_DATA = {
+    EMP_NAME: 'Priya Sharma',
+    EMP_ID: 'EMP-1042',
+    DESIGNATION: 'Software Engineer',
+    JOINING_DATE: '15 July 2025',
+    CTC: '8,40,000.00',
+    CTC_IN_WORDS: 'Eight Lakh Forty Thousand Rupees Only',
+    NET_PAY: '62,500.00',
+    LETTER_DATE: '26 June 2025',
+  };
+
+  function renderPlaceholderReference() {
+    const el = document.getElementById('placeholderList');
+    if (!el) return;
+    el.innerHTML = PLACEHOLDER_GROUPS.map((g) => `
+      <div class="mb-2"><strong>${g.label}</strong>
+        <div class="d-flex flex-wrap gap-1 mt-1">
+          ${g.placeholders.map((p) => `
+            <button type="button" class="btn btn-xs btn-outline-dark btn-sm insert-token" data-token="${p.token}" title="${p.desc}">
+              ${p.token}
+            </button>`).join('')}
+        </div>
+      </div>
+    `).join('');
+    el.querySelectorAll('.insert-token').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const ta = document.getElementById('docTypeTemplateHtml');
+        const token = btn.getAttribute('data-token');
+        const start = ta.selectionStart;
+        const end = ta.selectionEnd;
+        const val = ta.value;
+        ta.value = val.slice(0, start) + token + val.slice(end);
+        ta.focus();
+        ta.selectionStart = ta.selectionEnd = start + token.length;
+      });
+    });
+  }
+
+  document.getElementById('previewTemplateBtn')?.addEventListener('click', () => {
+    let html = document.getElementById('docTypeTemplateHtml').value || '';
+    Object.entries(SAMPLE_DATA).forEach(([k, v]) => {
+      html = html.split(ph(k)).join(v);
+    });
+    const container = document.getElementById('templatePreview');
+    container.innerHTML = html || '<p class="text-muted">No template HTML</p>';
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('viewTemplateModal')).show();
+  });
+
+  renderPlaceholderReference();
+
   // Small helper to avoid broken HTML when showing text fields inside preview
   function escapeHtml(str) {
     if (!str) return '';
