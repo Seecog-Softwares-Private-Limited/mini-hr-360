@@ -19,7 +19,7 @@ import path from 'path';
 import { getEffectiveAssignment } from '../services/attendance.service.js';
 import { generatePassword } from '../utils/passwordGenerator.js';
 import { sendDocumentEmail } from '../utils/emailService.js';
-import { resolveOrganizationIdFromRequest, userBelongsToOrganization } from '../services/organization.service.js';
+import { resolveOrganizationIdFromRequest, userBelongsToOrganization, getUserOrganizations } from '../services/organization.service.js';
 import { LIFECYCLE_STAGE_LABELS } from '../config/lifecycleWorkflows.js';
 
 const LIFECYCLE_BADGE_CLASS = {
@@ -31,6 +31,18 @@ const LIFECYCLE_BADGE_CLASS = {
   offboarding: 'warning',
   exited: 'dark',
 };
+
+async function loadBusinessesForEmployeePage(user, isAdmin) {
+  if (isAdmin) {
+    const rows = await Business.findAll({ order: [['businessName', 'ASC']] });
+    return rows.map((b) => b.get({ plain: true }));
+  }
+  const organizations = await getUserOrganizations(user);
+  return organizations.map((o) => ({
+    id: o.id,
+    businessName: o.businessName,
+  }));
+}
 
 const toBool = (val) =>
     val === true || val === 'true' || val === '1' || val === 'on';
@@ -507,10 +519,7 @@ export const renderEmployeesPage = async (req, res, next) => {
                 where: { status: 'ACTIVE' },
                 order: [['name', 'ASC']],
             }),
-            Business.findAll({
-                where: userId && !isAdmin ? { ownerId: userId } : {},
-                order: [['businessName', 'ASC']],
-            }),
+            loadBusinessesForEmployeePage(req.user, isAdmin),
             BusinessAddress.findAll({
                 where: { status: 'ACTIVE' },
                 order: [['addressName', 'ASC']],
@@ -547,7 +556,9 @@ export const renderEmployeesPage = async (req, res, next) => {
         const employeesPlain = employees.map((e) => e.get({ plain: true }));
         const departmentsPlain = departments.map((d) => d.get({ plain: true }));
         const designationsPlain = designations.map((d) => d.get({ plain: true }));
-        const businessesPlain = businesses.map((b) => b.get({ plain: true }));
+        const businessesPlain = Array.isArray(businesses)
+            ? businesses
+            : businesses.map((b) => b.get({ plain: true }));
         const businessAddressesPlain = business_addresses.map((b) => b.get({ plain: true }));
         const countriesPlain = countries.map((c) => c.get({ plain: true }));
         const statesPlain = states.map((s) => s.get({ plain: true }));
@@ -602,6 +613,7 @@ export const renderEmployeesPage = async (req, res, next) => {
             states: statesPlain,
             search,
             lifecycleStage: lifecycleFilter,
+            organizationId: organizationId || req.organizationId || null,
         });
     } catch (err) {
         console.error('Error rendering employees page:', err);

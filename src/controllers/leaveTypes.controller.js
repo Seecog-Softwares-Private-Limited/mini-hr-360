@@ -1,5 +1,6 @@
 import { Op } from 'sequelize';
 import { LeaveType } from '../models/index.js';
+import { resolveOrganizationIdFromRequest } from '../services/organization.service.js';
 
 const whereFromQuery = (q) => {
     const where = {};
@@ -15,7 +16,11 @@ const whereFromQuery = (q) => {
 export async function createLeaveType(req, res) {
     try {
         const body = req.body || {};
-        if (body.businessId == null) return res.status(400).json({ message: 'businessId is required' });
+        let businessId = body.businessId;
+        if (businessId == null) {
+            businessId = req.organizationId || (await resolveOrganizationIdFromRequest(req));
+        }
+        if (businessId == null) return res.status(400).json({ message: 'businessId is required' });
         if (!body.name) return res.status(400).json({ message: 'name is required' });
 
         const row = await LeaveType.create(body);

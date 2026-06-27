@@ -165,7 +165,7 @@ export const renderLeaveRequests = asyncHandler(async (req, res) => {
     },
     businesses,
     currentStatus: status,
-    currentBusinessId: businessId,
+    currentBusinessId: businessId || req.organizationId || null,
     stats,
   });
 });
@@ -246,7 +246,7 @@ export const renderLeaveTypes = asyncHandler(async (req, res) => {
       hasPrev: page > 1,
     },
     businesses,
-    currentBusinessId: businessId,
+    currentBusinessId: businessId || req.organizationId || null,
     currentSearch: search,
     currentSortBy: sortBy,
     currentSortOrder: sortOrder,
@@ -259,7 +259,11 @@ export const renderLeaveTypes = asyncHandler(async (req, res) => {
  */
 export const createLeaveType = asyncHandler(async (req, res) => {
   try {
-    const { businessId, name, code, description, maxPerYear, isPaid, allowHalfDay, allowCarryForward, requiresAttachment, minDaysNotice, color, status } = req.body;
+    let { businessId, name, code, description, maxPerYear, isPaid, allowHalfDay, allowCarryForward, requiresAttachment, minDaysNotice, color, status } = req.body;
+
+    if (!businessId) {
+      businessId = req.organizationId || (await resolveOrganizationIdFromRequest(req));
+    }
 
     if (!businessId || !name || !code) {
       return res.status(400).json({ success: false, message: 'Business, name, and code are required' });
@@ -431,7 +435,7 @@ export const renderLeaveBalances = asyncHandler(async (req, res) => {
     activeGroup: 'workspace',
     employeeBalances,
     businesses,
-    currentBusinessId: businessId,
+    currentBusinessId: businessId || req.organizationId || null,
     year,
     years: [year - 1, year, year + 1],
   });

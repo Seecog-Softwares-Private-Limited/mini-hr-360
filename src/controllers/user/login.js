@@ -3,7 +3,8 @@ import { ApiResponse } from "../../utils/ApiResponse.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { buildTokenPair, hashToken } from "../../utils/token.util.js";
 import { clearUserAuthCookies, setUserAuthCookies } from "../../utils/authCookie.util.js";
-import { clearWorkspaceCookie } from "../../utils/workspaceCookie.util.js";
+import { clearWorkspaceCookie, setOrganizationCookie } from "../../utils/workspaceCookie.util.js";
+import { resolveDefaultOrganizationIdForUser } from "../../services/organization.service.js";
 
 export const loginUser = asyncHandler(async (req, res) => {
     try {
@@ -28,6 +29,11 @@ export const loginUser = asyncHandler(async (req, res) => {
         await user.save();
 
         setUserAuthCookies(res, accessToken, refreshToken, refreshExp);
+
+        const defaultOrgId = await resolveDefaultOrganizationIdForUser(user);
+        if (defaultOrgId) {
+            setOrganizationCookie(res, defaultOrgId);
+        }
 
         return res
             .status(200)

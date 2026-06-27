@@ -97,6 +97,11 @@ export const apiConvertCandidate = async (req, res, next) => {
     res.json(result);
   } catch (err) {
     if (err.statusCode) return res.status(err.statusCode).json({ error: err.message });
+    if (err.name === 'SequelizeUniqueConstraintError') {
+      return res.status(400).json({
+        error: err.errors?.[0]?.message || 'An employee with this contact information already exists',
+      });
+    }
     next(err);
   }
 };

@@ -142,6 +142,12 @@ app.use((req, res, next) => {
             };
             options.user = { ...shellUser, ...(options.user || {}) };
         }
+        if (req.organizationId != null && options.organizationId == null) {
+            options.organizationId = req.organizationId;
+        }
+        if (req.businessId != null && options.activeBusinessId == null) {
+            options.activeBusinessId = req.businessId;
+        }
         return render(view, options, callback);
     };
     next();

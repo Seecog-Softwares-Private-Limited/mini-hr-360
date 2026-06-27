@@ -632,7 +632,7 @@
             if (contentType.includes('application/json')) {
               const err = await res.json();
               gatesAlert.classList.remove('d-none');
-              gatesAlert.innerHTML = `<strong>${err.error || 'Generation failed'}</strong>${
+              gatesAlert.innerHTML = `<strong>${err.error || err.message || 'Generation failed'}</strong>${
                 err.missingFields ? ': ' + err.missingFields.join(', ') : ''
               }`;
             } else {

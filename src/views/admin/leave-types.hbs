@@ -248,7 +248,7 @@
                             <select class="form-select" id="formBusinessId" required>
                                 <option value="">Select Business</option>
                                 {{#each businesses}}
-                                <option value="{{this.id}}">{{this.businessName}}</option>
+                                <option value="{{this.id}}" {{#if (eq ../organizationId this.id)}}selected{{/if}}>{{this.businessName}}</option>
                                 {{/each}}
                             </select>
                         </div>
@@ -324,8 +324,23 @@
     let leaveTypeModal;
     let isEditMode = false;
 
+    const PAGE_ORGANIZATION_ID = '{{organizationId}}' || '';
+
+    function resolveActiveOrganizationId() {
+        if (typeof getOrganizationId === 'function') {
+            const fromClient = getOrganizationId();
+            if (fromClient) return String(fromClient);
+        }
+        return PAGE_ORGANIZATION_ID ? String(PAGE_ORGANIZATION_ID) : '';
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         leaveTypeModal = new bootstrap.Modal(document.getElementById('leaveTypeModal'));
+        const filterBusiness = document.querySelector('select[name="businessId"]');
+        const activeOrgId = resolveActiveOrganizationId();
+        if (filterBusiness && activeOrgId && !filterBusiness.value) {
+            filterBusiness.value = activeOrgId;
+        }
     });
 
     function goToPage(page) {
@@ -346,7 +361,7 @@
         isEditMode = false;
         document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-plus me-2"></i> Add Leave Type';
         document.getElementById('leaveTypeId').value = '';
-        document.getElementById('formBusinessId').value = '';
+        document.getElementById('formBusinessId').value = resolveActiveOrganizationId();
         document.getElementById('formBusinessId').disabled = false;
         document.getElementById('formName').value = '';
         document.getElementById('formCode').value = '';

@@ -26,10 +26,17 @@ export const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
   port: DB_PORT,
   dialect: 'mysql',
   logging: false,
-  pool: { max: 10, min: 0, acquire: 30000, idle: 10000 },
+  pool: {
+    max: 15,
+    min: 0,
+    acquire: 60000,
+    idle: 10000,
+    evict: 10000,
+  },
   dialectOptions: {
     charset: 'utf8mb4',
-    timezone: '+05:30' // IST (India Standard Time)
+    timezone: '+05:30',
+    connectTimeout: 60000,
   },
   timezone: '+05:30', // IST
   define: { charset: 'utf8mb4', collate: 'utf8mb4_unicode_ci' },
@@ -85,9 +92,10 @@ const connectDB = async () => {
         }
       };
 
-      // businesses is an FK hub (20+ child tables) — never alter-sync (MySQL 64-key limit)
+      // Hub tables (many FKs) — never alter-sync; Sequelize alter can try to DROP stale
+      // constraint names (e.g. employees_ibfk_690) that no longer exist in MySQL.
       await safeSync(BusinessModel, 'Business', false, { allowAlter: false });
-      await safeSync(EmployeeModel, 'Employee');
+      await safeSync(EmployeeModel, 'Employee', false, { allowAlter: false });
       const { ensureEmployeeLifecycleColumns } = await import('./ensureEmployeeColumns.js');
       await ensureEmployeeLifecycleColumns(sequelize);
       await safeSync(EmployeeEducationModel, 'EmployeeEducation');
@@ -99,8 +107,8 @@ const connectDB = async () => {
       await safeSync(Shift, 'Shift');
       await safeSync(Holiday, 'Holiday');
       await safeSync(EmployeeShiftAssignment, 'EmployeeShiftAssignment');
-      await safeSync(AttendancePunch, 'AttendancePunch', true);
-      await safeSync(AttendanceDailySummary, 'AttendanceDailySummary', true);
+      await safeSync(AttendancePunch, 'AttendancePunch');
+      await safeSync(AttendanceDailySummary, 'AttendanceDailySummary');
       await safeSync(AttendanceRegularization, 'AttendanceRegularization');
       await safeSync(AttendanceLock, 'AttendanceLock');
 

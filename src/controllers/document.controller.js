@@ -1782,6 +1782,9 @@ export const generateDocument = async (req, res, next) => {
         return res.send(pdfBuffer);
     } catch (err) {
         console.error('Error generating document PDF:', err);
-        return next(err);
+        const status = err.statusCode || 500;
+        return res.status(status).json({
+            error: err.message || 'Failed to generate document PDF',
+        });
     }
 };

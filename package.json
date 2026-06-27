@@ -34,6 +34,7 @@
     "sync-db": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config --experimental-json-modules database/sync-database.js",
     "seed:document-types": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config database/seeders/document-types-seeder.js",
     "seed:lifecycle-emails": "cross-env DOTENV_CONFIG_PATH=./property.env node -r dotenv/config database/seeders/lifecycle-email-templates-seeder.js",
+    "setup:pdf": "cross-env PUPPETEER_CACHE_DIR=./.cache/puppeteer npx puppeteer browsers install chrome",
     "screen": "cross-env DOTENV_CONFIG_PATH=./property.env SYNC_DB=true nodemon -r dotenv/config --experimental-json-modules src/index.js",
     "update-departments-business": "node scripts/update-departments-business.js"
   },

@@ -4,6 +4,7 @@ import { User } from "../models/User.js"
 import { verifyAccessToken } from "../utils/token.util.js"
 import { rotateUserSession } from "../services/userSession.service.js"
 import { clearUserAuthCookies, setUserAuthCookies } from "../utils/authCookie.util.js"
+import { ensureOrganizationContext } from "../services/organization.service.js"
 
 function shouldRedirectToLogin(req) {
     // Only redirect for real browser page navigations to HTML pages.
@@ -75,6 +76,7 @@ export const verifyUser = asyncHandler(async (req, res, next) => {
 
     if (auth.user) {
         req.user = auth.user;
+        await ensureOrganizationContext(req, res);
         return next();
     }
 

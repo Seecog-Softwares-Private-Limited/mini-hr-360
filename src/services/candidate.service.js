@@ -2,6 +2,7 @@ import { Op } from 'sequelize';
 import Candidate from '../models/Candidate.js';
 import Employee from '../models/Employee.js';
 import EmployeeLifecycleEvent from '../models/EmployeeLifecycleEvent.js';
+import { resolveUniqueEmployeePhone } from '../utils/employeeContact.util.js';
 
 export async function listCandidates(businessId, { status, search } = {}) {
   const where = { businessId };
@@ -103,6 +104,13 @@ export async function deleteCandidate(id, businessId) {
 }
 
 export async function convertCandidateToEmployee(id, businessId, { reportingManagerId, userId, actorUserId }) {
+  const tenantUserId = Number(userId);
+  if (!Number.isFinite(tenantUserId) || tenantUserId <= 0) {
+    const err = new Error('Authenticated user is required to convert candidate');
+    err.statusCode = 400;
+    throw err;
+  }
+
   const candidate = await getCandidate(id, businessId);
   if (!candidate) {
     const err = new Error('Candidate not found');
@@ -133,15 +141,16 @@ export async function convertCandidateToEmployee(id, businessId, { reportingMana
 
   const empName = `${candidate.firstName} ${candidate.lastName}`.trim();
   const isIntern = candidate.employeeType === 'Intern';
+  const empPhone = await resolveUniqueEmployeePhone(tenantUserId, candidate.phone);
 
   const employee = await Employee.create({
     businessId,
-    userId: userId || null,
+    userId: tenantUserId,
     firstName: candidate.firstName,
     lastName: candidate.lastName,
     empName,
     empEmail: candidate.email,
-    empPhone: candidate.phone || '0000000000',
+    empPhone,
     employeeType: candidate.employeeType || 'Permanent',
     empDesignation: candidate.designation || 'Unassigned',
     empDepartment: candidate.department || 'General',

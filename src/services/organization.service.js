@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { Op } from 'sequelize';
 import { Business, OrganizationMember, Subscription, User } from '../models/index.js';
+import { setOrganizationCookie } from '../utils/workspaceCookie.util.js';
 
 const ACTIVE_SUBSCRIPTION_STATUSES = ['active', 'trialing'];
 
@@ -202,6 +203,36 @@ export async function resolveOrganizationIdFromRequest(req) {
   return owned?.id ?? organizations[0]?.id ?? null;
 }
 
+/** Default organization for a user (owner org first, else first membership). */
+export async function resolveDefaultOrganizationIdForUser(user) {
+  if (!user?.id) return null;
+  const organizations = await getUserOrganizations(user);
+  if (!organizations.length) return null;
+  const owned = organizations.find((o) => o.membershipType === 'owner');
+  return owned?.id ?? organizations[0]?.id ?? null;
+}
+
+/**
+ * Attach active organization to the request and persist cookie when missing.
+ * Call after authentication on each request so SSR pages and forms get the right tenant.
+ */
+export async function ensureOrganizationContext(req, res) {
+  if (!req.user?.id) return null;
+
+  const organizationId = await resolveOrganizationIdFromRequest(req);
+  if (!organizationId) return null;
+
+  const cookieRaw = req.cookies?.mh360_organization_id || req.cookies?.mh360_workspace_id;
+  if (String(cookieRaw || '') !== String(organizationId)) {
+    setOrganizationCookie(res, organizationId);
+  }
+
+  req.organizationId = organizationId;
+  req.workspaceId = organizationId;
+  req.businessId = organizationId;
+  return organizationId;
+}
+
 export async function getUserOrganizations(user) {
   const owned = await getUserOwnedBusinesses(user);
   const memberships = await getUserMemberships(user);
@@ -233,11 +264,11 @@ export async function userHasOrganization(user) {
   return memberCount > 0;
 }
 
-export async function getOrganizationCapabilities(user) {
-  const organizations = await getUserOrganizations(user);
+export async function getOrganizationCapabilities(user, { organizations: preloaded } = {}) {
+  const organizations = preloaded ?? (await getUserOrganizations(user));
   const hasOrganization = organizations.length > 0;
-  const ownedCount = await Business.count({ where: { ownerId: user.id } });
-  const hasPlan = await userHasActivePlan(user);
+  const ownedCount = organizations.filter((o) => o.membershipType === 'owner').length;
+  const hasPlan = hasOrganization ? await userHasActivePlan(user) : false;
 
   // Product rule: any authenticated user can either create one basic organization
   // or join one organization, but cannot be linked to more than one organization.

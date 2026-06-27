@@ -30,15 +30,30 @@ const PORT = Number.parseInt(process.env.PORT, 10) || 3007;
 function shutdownServer(signal) {
   console.log(`${signal} received. Shutting down gracefully...`);
   clearInterval(globalThis.__keepAlive);
+
+  const finish = () => process.exit(0);
+
+  const closeDb = async () => {
+    try {
+      const { sequelize } = await import('./db/index.js');
+      await sequelize.close();
+    } catch (_) {
+      /* ignore */
+    }
+  };
+
   if (globalThis.__server) {
-    globalThis.__server.close(() => {
+    globalThis.__server.close(async () => {
+      await closeDb();
       console.log('Server closed');
-      process.exit(0);
+      finish();
     });
-    // Force exit if close hangs (nodemon restart race)
-    setTimeout(() => process.exit(0), 2000).unref();
+    setTimeout(async () => {
+      await closeDb();
+      finish();
+    }, 2000).unref();
   } else {
-    process.exit(0);
+    closeDb().finally(finish);
   }
 }
 

@@ -31,6 +31,38 @@
   // Backward-compatible alias used by apiCall in main layout
   window.getWorkspaceId = window.getOrganizationId;
 
+  function applyActiveOrganizationToPage() {
+    const orgId = getOrganizationId();
+    if (!orgId) return;
+
+    const selectors = [
+      'select[name="businessId"]',
+      '#formBusinessId',
+      '#employeeBusinessSelect',
+      '#customerBusiness',
+      '#editCustomerBusiness',
+    ];
+
+    selectors.forEach((selector) => {
+      document.querySelectorAll(selector).forEach((el) => {
+        if (el.disabled) return;
+        const hasOption = Array.from(el.options || []).some(
+          (opt) => String(opt.value) === String(orgId)
+        );
+        if (!hasOption) return;
+        if (!el.value || el.value === '') {
+          el.value = String(orgId);
+        }
+      });
+    });
+
+    document.querySelectorAll('[data-auto-organization="true"]').forEach((el) => {
+      if (!el.value) el.value = orgId;
+    });
+  }
+
+  window.applyActiveOrganizationToPage = applyActiveOrganizationToPage;
+
   function persistOrganizationId(organizationId) {
     if (!organizationId) return;
     const id = String(organizationId);
@@ -49,10 +81,14 @@
 
       const current = getOrganizationId();
       const allowed = new Set(organizations.map((o) => String(o.id)));
-      if (current && allowed.has(String(current))) return;
+      if (current && allowed.has(String(current))) {
+        applyActiveOrganizationToPage();
+        return;
+      }
 
       const preferred = organizations.find((o) => o.membershipType === 'owner') || organizations[0];
       if (preferred?.id) persistOrganizationId(preferred.id);
+      applyActiveOrganizationToPage();
     } catch (err) {
       console.warn('Could not initialize organization context:', err?.message || err);
     }
@@ -130,6 +166,8 @@
     initSidebarState();
     initResponsiveSidebar();
     highlightActiveRoutes();
-    initOrganizationContext();
+    initOrganizationContext().finally(() => applyActiveOrganizationToPage());
+
+    document.addEventListener('shown.bs.modal', () => applyActiveOrganizationToPage());
   });
 })();

@@ -423,7 +423,7 @@ export const getAllMyBusinesses = asyncHandler(async (req, res) => {
             }));
         }
 
-        const capabilities = await getOrganizationCapabilities(req.user);
+        const capabilities = await getOrganizationCapabilities(req.user, { organizations });
 
         return res.status(200).json({
             organizations,

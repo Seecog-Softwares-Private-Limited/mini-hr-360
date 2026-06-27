@@ -708,10 +708,10 @@
               <div class="row g-3">
                 <div class="col-md-4">
                   <label class="form-label">Business <span class="text-danger">*</span></label>
-                  <select name="businessId" class="form-select">
+                  <select name="businessId" class="form-select" id="employeeBusinessSelect">
                     <option value="">Select Business</option>
                     {{#each businesses}}
-                    <option value="{{id}}">{{businessName}}</option>
+                    <option value="{{id}}" {{#if (eq ../organizationId id)}}selected{{/if}}>{{businessName}}</option>
                     {{/each}}
                   </select>
                   <small class="text-muted">
@@ -1897,6 +1897,26 @@
 
     let formMode = "create"; // 'create' or 'edit'
     let currentEditingId = null;
+    const PAGE_ORGANIZATION_ID = "{{organizationId}}";
+
+    function resolveActiveOrganizationId() {
+      if (typeof getOrganizationId === "function") {
+        const fromClient = getOrganizationId();
+        if (fromClient) return String(fromClient);
+      }
+      return PAGE_ORGANIZATION_ID ? String(PAGE_ORGANIZATION_ID) : "";
+    }
+
+    function applyEmployeeBusinessDefault() {
+      const orgId = resolveActiveOrganizationId();
+      if (!orgId || !addEmployeeForm) return;
+      const el = addEmployeeForm.elements.businessId;
+      if (!el || el.disabled) return;
+      const hasOption = Array.from(el.options || []).some(
+        (opt) => String(opt.value) === orgId
+      );
+      if (hasOption) el.value = orgId;
+    }
     let currentViewEmployeeId = null;
     let reloadAfterPortalCredentials = false;
     let currentPortalEmployeeId = null;
@@ -2547,6 +2567,7 @@
       refreshReportingManagerOptions(null);
       const mgrSelect = getReportingManagerSelect();
       if (mgrSelect) mgrSelect.classList.remove("is-invalid");
+      applyEmployeeBusinessDefault();
     }
 
     // =======================================
@@ -2672,6 +2693,7 @@
     const addEmployeeModalEl = document.getElementById("addEmployeeModal");
     if (addEmployeeModalEl) {
       addEmployeeModalEl.addEventListener("shown.bs.modal", function() {
+        applyEmployeeBusinessDefault();
         setTimeout(() => {
           initGenderDropdown();
         }, 100);
@@ -2724,6 +2746,7 @@
 
         resetEmployeeForm();
         refreshReportingManagerOptions(null);
+        applyEmployeeBusinessDefault();
         const emailInput = addEmployeeForm?.elements?.empEmail;
         if (emailInput) emailInput.readOnly = false;
         setPortalCredentialsMode(true);
