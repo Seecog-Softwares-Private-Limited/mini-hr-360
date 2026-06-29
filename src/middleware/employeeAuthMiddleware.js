@@ -111,7 +111,7 @@ export const verifyEmployee = asyncHandler(async (req, res, next) => {
 
   if (auth.error === 'inactive') {
     if (shouldRedirectToEmployeeLogin(req)) {
-      return res.redirect('/employee/login?error=inactive');
+      return res.redirect('/login?error=inactive');
     }
     return res.status(403).json({
       success: false,
@@ -122,7 +122,7 @@ export const verifyEmployee = asyncHandler(async (req, res, next) => {
 
   if (auth.error === 'noaccess') {
     if (shouldRedirectToEmployeeLogin(req)) {
-      return res.redirect('/employee/login?error=noaccess');
+      return res.redirect('/login?error=noaccess');
     }
     return res.status(403).json({
       success: false,
@@ -133,7 +133,7 @@ export const verifyEmployee = asyncHandler(async (req, res, next) => {
 
   if (shouldRedirectToEmployeeLogin(req)) {
     clearEmployeeAuthCookies(res);
-    return res.redirect('/employee/login');
+    return res.redirect('/login');
   }
 
   return res.status(401).json({

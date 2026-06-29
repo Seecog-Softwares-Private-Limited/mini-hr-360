@@ -189,6 +189,8 @@ app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 // ---------- Route imports ----------
 import userRoutes from './routes/user.routes.js';
+import authRoutes from './routes/auth.routes.js';
+import { unifiedLogin } from './controllers/auth/unifiedLogin.controller.js';
 import { waRouter } from './routes/wa.routes.js';
 import businessRouter from './routes/business.routes.js';
 import { customerRouter } from './routes/customer.routes.js';
@@ -236,7 +238,6 @@ app.get('/', (req, res) => {
 });
 
 app.get('/login', (req, res) => {
-    const mode = req.query.mode === 'hr' ? 'hr' : 'employee';
     let errorMessage = null;
     const error = req.query.error;
 
@@ -244,16 +245,22 @@ app.get('/login', (req, res) => {
         errorMessage = 'Your account has been deactivated. Please contact HR.';
     } else if (error === 'noaccess') {
         errorMessage = 'You do not have portal access. Please contact HR.';
+    } else if (error) {
+        try {
+            errorMessage = decodeURIComponent(error);
+        } catch {
+            errorMessage = error;
+        }
     }
 
     res.render('login', {
         title: 'mini-hr-360',
         pageClass: 'auth',
-        defaultMode: mode,
         errorMessage,
     });
 });
-app.get('/hr', (req, res) => res.redirect('/login?mode=hr'));
+app.post('/login', unifiedLogin);
+app.get('/hr', (req, res) => res.redirect('/login'));
 app.get('/register', (req, res) => res.render('register', { title: 'mini-hr-360', pageClass: 'auth' }));
 
 app.get('/dashboard', verifyUser, (req, res) => {
@@ -327,6 +334,7 @@ app.use('/storage', express.static('storage'));
 
 // ---------- API routes ----------
 app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/business', businessRouter);
 

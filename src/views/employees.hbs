@@ -1822,7 +1822,7 @@
           <div class="input-group input-group-sm">
             <input type="text" class="form-control font-monospace" id="portalCredUrl" readonly>
             <button class="btn btn-outline-secondary" type="button" data-copy-target="portalCredUrl">Copy</button>
-            <a class="btn btn-outline-primary" id="portalCredOpenLink" href="/employee/login" target="_blank" rel="noopener">Open</a>
+            <a class="btn btn-outline-primary" id="portalCredOpenLink" href="/login" target="_blank" rel="noopener">Open</a>
           </div>
         </div>
 
@@ -2026,14 +2026,14 @@
 
       document.getElementById("portalCredEmployeeName").textContent =
         employee?.empName || `${employee?.firstName || ""} ${employee?.lastName || ""}`.trim() || "Employee";
-      document.getElementById("portalCredUrl").value = portalAccess.portalUrl || `${window.location.origin}/employee/login`;
+      document.getElementById("portalCredUrl").value = portalAccess.portalUrl || `${window.location.origin}/login`;
       document.getElementById("portalCredEmail").value = portalAccess.loginEmail || "";
       document.getElementById("portalCredEmpId").value = portalAccess.loginEmployeeCode || "";
       const visiblePassword = portalAccess.password || portalAccess.hrVisibleDefaultPassword || "";
       document.getElementById("portalCredPassword").value = visiblePassword;
 
       const openLink = document.getElementById("portalCredOpenLink");
-      if (openLink) openLink.href = portalAccess.portalUrl || "/employee/login";
+      if (openLink) openLink.href = portalAccess.portalUrl || "/login";
 
       const sentBanner = document.getElementById("portalEmailSentBanner");
       const failedBanner = document.getElementById("portalEmailFailedBanner");

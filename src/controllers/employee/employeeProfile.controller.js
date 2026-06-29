@@ -135,11 +135,7 @@ export const renderResetPassword = asyncHandler(async (req, res) => {
     });
 
     if (!employee) {
-        return res.render('employee/login', {
-            error: 'Password reset token is invalid or has expired.',
-            layout: 'employee-main',
-            pageClass: 'auth'
-        });
+        return res.redirect('/login?error=' + encodeURIComponent('Password reset token is invalid or has expired.'));
     }
 
     res.render('employee/reset-password', {
