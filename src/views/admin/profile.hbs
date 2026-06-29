@@ -25,20 +25,26 @@
                                         <span id="profileAvatarInitials">{{substring user.firstName 0 1}}{{substring user.lastName 0 1}}</span>
                                         {{/if}}
                                     </div>
-                                    <label for="profilePhotoInput" class="profile-photo-edit-btn" title="Update profile photo">
+                                    <label for="profilePhotoInput" class="profile-photo-edit-btn" title="Update profile photo" onclick="event.stopPropagation()">
                                         <i class="fa-solid fa-camera"></i>
                                     </label>
                                     <input type="file" id="profilePhotoInput" accept="image/jpeg,image/png,image/webp" hidden>
                                 </div>
                                 <div class="small text-muted mt-2">JPG, PNG or WEBP · max 5MB</div>
+                                <div id="profilePhotoPreviewPanel" class="profile-photo-preview-panel d-none mt-3">
+                                    <div class="small text-muted mb-2">Preview</div>
+                                    <img id="profilePhotoPreviewImg" class="profile-photo-preview-img" alt="Profile photo preview">
+                                    <div class="d-flex gap-2 mt-2">
+                                        <button type="button" id="profilePhotoUploadBtn" class="btn btn-primary btn-sm">Save photo</button>
+                                        <button type="button" id="profilePhotoCancelBtn" class="btn btn-outline-secondary btn-sm">Cancel</button>
+                                    </div>
+                                </div>
                                 <div id="profilePhotoStatus" class="small mt-1"></div>
                             </div>
                             <div class="col">
                                 <h3 class="mb-1" style="font-weight: 800; color: #1e293b;">{{user.firstName}}
                                     {{user.lastName}}</h3>
-                                <p class="text-muted mb-0">
-                                    {{#if (eq user.role 'HR_MANAGER')}}HR Manager{{else if (eq user.role 'HR_EXECUTIVE')}}HR Executive{{else if (eq user.role 'FINANCE')}}Finance{{else if (eq user.role 'MANAGER')}}Manager{{else if (eq user.role 'EMPLOYEE')}}Employee{{else if (eq user.role 'shop_manager')}}Shop Manager{{else if (eq user.role 'shop_worker')}}Shop Worker{{else if (eq user.role 'shop_owner')}}Owner{{else if (eq user.role 'admin')}}Administrator{{else if (eq user.role 'SUPER_ADMIN')}}Super Admin{{else}}{{user.role}}{{/if}}
-                                </p>
+                                <p class="text-muted mb-0">{{#if user.displayRole}}{{user.displayRole}}{{else}}{{roleLabel user.role}}{{/if}}</p>
                             </div>
                         </div>
 
@@ -72,7 +78,7 @@
                             <div class="col-md-4">
                                 <label class="text-muted small d-block mb-1">Account Type</label>
                                 <div class="fw-bold text-capitalize">
-                                    {{#if (eq user.role 'HR_MANAGER')}}HR Manager{{else if (eq user.role 'HR_EXECUTIVE')}}HR Executive{{else if (eq user.role 'FINANCE')}}Finance{{else if (eq user.role 'MANAGER')}}Manager{{else if (eq user.role 'EMPLOYEE')}}Employee{{else if (eq user.role 'shop_manager')}}Shop Manager{{else if (eq user.role 'shop_worker')}}Shop Worker{{else if (eq user.role 'shop_owner')}}Owner{{else if (eq user.role 'admin')}}Administrator{{else if (eq user.role 'SUPER_ADMIN')}}Super Admin{{else}}{{user.role}}{{/if}}
+                                    {{#if user.displayRole}}{{user.displayRole}}{{else}}{{roleLabel user.role}}{{/if}}
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -178,61 +184,57 @@
         color: #fff;
         transform: scale(1.05);
     }
+
+    .profile-photo-preview-panel {
+        max-width: 220px;
+    }
+
+    .profile-photo-preview-img {
+        width: 180px;
+        height: 180px;
+        object-fit: cover;
+        border-radius: 12px;
+        border: 2px solid #e2e8f0;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
+    }
+
+    .profile-photo-view-img {
+        max-width: 100%;
+        max-height: 70vh;
+        border-radius: 12px;
+        object-fit: contain;
+    }
 </style>
 
+<div class="modal fade" id="profilePhotoViewModal" tabindex="-1" aria-labelledby="profilePhotoViewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="profilePhotoViewModalLabel">Profile Photo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center pb-4">
+                <img id="profilePhotoViewImg" class="profile-photo-view-img" alt="Profile photo full view">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/assets/js/profile-photo-upload.js"></script>
 <script>
-    (function () {
-        const input = document.getElementById('profilePhotoInput');
-        const statusEl = document.getElementById('profilePhotoStatus');
-        const avatarDisplay = document.getElementById('profileAvatarDisplay');
-
-        if (!input || !avatarDisplay) return;
-
-        input.addEventListener('change', async function () {
-            const file = input.files?.[0];
-            if (!file) return;
-
-            if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-                statusEl.textContent = 'Please choose a JPG, PNG, or WEBP image.';
-                statusEl.className = 'small mt-1 text-danger';
-                input.value = '';
-                return;
-            }
-
-            if (file.size > 5 * 1024 * 1024) {
-                statusEl.textContent = 'Image must be 5MB or smaller.';
-                statusEl.className = 'small mt-1 text-danger';
-                input.value = '';
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('file', file);
-
-            statusEl.textContent = 'Uploading...';
-            statusEl.className = 'small mt-1 text-primary';
-
-            try {
-                const response = await fetch('/admin/profile/avatar', {
-                    method: 'POST',
-                    credentials: 'include',
-                    body: formData,
-                });
-
-                const data = await response.json();
-                if (!response.ok || !data.success) {
-                    throw new Error(data.message || 'Upload failed');
-                }
-
-                statusEl.textContent = 'Profile photo updated.';
-                statusEl.className = 'small mt-1 text-success';
-                setTimeout(() => window.location.reload(), 600);
-            } catch (error) {
-                statusEl.textContent = error.message || 'Upload failed';
-                statusEl.className = 'small mt-1 text-danger';
-            } finally {
-                input.value = '';
-            }
-        });
-    })();
+    initProfilePhotoUpload({
+        inputId: 'profilePhotoInput',
+        avatarDisplayId: 'profileAvatarDisplay',
+        statusId: 'profilePhotoStatus',
+        previewPanelId: 'profilePhotoPreviewPanel',
+        previewImgId: 'profilePhotoPreviewImg',
+        uploadBtnId: 'profilePhotoUploadBtn',
+        cancelBtnId: 'profilePhotoCancelBtn',
+        viewModalId: 'profilePhotoViewModal',
+        viewImgId: 'profilePhotoViewImg',
+        uploadUrl: '/admin/profile/avatar',
+        responsePhotoKey: 'avatarUrl',
+        originalPhotoUrl: {{#if user.avatarUrl}}'{{user.avatarUrl}}'{{else}}''{{/if}},
+        initialsHtml: '<span id="profileAvatarInitials">{{substring user.firstName 0 1}}{{substring user.lastName 0 1}}</span>',
+    });
 </script>

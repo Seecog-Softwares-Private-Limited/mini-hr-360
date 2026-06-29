@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import { User, Business, UserEducation, UserExperience, UserDocument } from '../../models/index.js';
+import { resolveUserDisplayRole } from '../../utils/roleLabel.util.js';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { Op } from 'sequelize';
@@ -39,10 +40,13 @@ export const renderProfile = asyncHandler(async (req, res) => {
         ]
     });
 
+    const userJson = user.toJSON();
+    userJson.displayRole = await resolveUserDisplayRole(user, req.organizationId);
+
     res.render('admin/profile', {
         title: 'My Profile',
         active: 'profile',
-        user: user.toJSON(),
+        user: userJson,
     });
 });
 

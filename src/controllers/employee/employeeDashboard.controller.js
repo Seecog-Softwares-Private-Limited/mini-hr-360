@@ -52,6 +52,7 @@ export const renderEmployeeDashboard = asyncHandler(async (req, res) => {
       empDateOfJoining: employee.empDateOfJoining,
       empPhone: employee.empPhone,
       role: employee.role,
+      profilePhoto: employee.profilePhoto,
       shiftName: null,
       shiftStartTime: null,
       shiftEndTime: null,

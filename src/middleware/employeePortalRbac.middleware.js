@@ -5,6 +5,7 @@ import {
   resolveEmployeePortalRole,
   roleHasPermission,
 } from '../services/employeePortalPermissions.service.js';
+import { resolveEmployeeDisplayRole } from '../utils/roleLabel.util.js';
 
 function shouldRedirectHtml(req) {
   const accept = String(req.headers?.accept || '');
@@ -26,6 +27,7 @@ export const attachEmployeePortalContext = asyncHandler(async (req, res, next) =
   res.locals.portalAccess = req.portalAccess;
   res.locals.portalNav = req.portalNav;
   res.locals.employee = req.employee;
+  res.locals.employeeDisplayRole = resolveEmployeeDisplayRole(req.employee);
 
   next();
 });

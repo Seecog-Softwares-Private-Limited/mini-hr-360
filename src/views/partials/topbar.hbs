@@ -36,9 +36,7 @@
             {{#if user.firstName}}{{user.firstName}}{{else}}User{{/if}}{{#if user.lastName}} {{user.lastName}}{{/if}}
           </div>
           <div class="topbar-user-role" id="profileMenuRoleLabel">
-            {{#if user.role}}
-              {{#if (eq user.role 'HR_MANAGER')}}HR Manager{{else if (eq user.role 'HR_EXECUTIVE')}}HR Executive{{else if (eq user.role 'FINANCE')}}Finance{{else if (eq user.role 'MANAGER')}}Manager{{else if (eq user.role 'EMPLOYEE')}}Employee{{else if (eq user.role 'shop_manager')}}Shop Manager{{else if (eq user.role 'shop_worker')}}Shop Worker{{else if (eq user.role 'shop_owner')}}Owner{{else if (eq user.role 'admin')}}Administrator{{else if (eq user.role 'SUPER_ADMIN')}}Super Admin{{else}}{{user.role}}{{/if}}
-            {{else}}Administrator{{/if}}
+            {{#if user.displayRole}}{{user.displayRole}}{{else}}{{roleLabel user.role}}{{/if}}
           </div>
         </div>
         <i class="fa-solid fa-chevron-down profile-menu-chevron d-none d-md-block" aria-hidden="true"></i>
@@ -67,9 +65,7 @@
             <div class="profile-menu-header-email">{{user.email}}</div>
             {{/if}}
             <span class="profile-menu-role-badge" id="profileMenuRoleBadge" data-role="{{#if user.role}}{{user.role}}{{else}}Administrator{{/if}}">
-              {{#if user.role}}
-                {{#if (eq user.role 'HR_MANAGER')}}HR Manager{{else if (eq user.role 'HR_EXECUTIVE')}}HR Executive{{else if (eq user.role 'FINANCE')}}Finance{{else if (eq user.role 'MANAGER')}}Manager{{else if (eq user.role 'EMPLOYEE')}}Employee{{else if (eq user.role 'shop_manager')}}Shop Manager{{else if (eq user.role 'shop_worker')}}Shop Worker{{else if (eq user.role 'shop_owner')}}Owner{{else if (eq user.role 'admin')}}Administrator{{else if (eq user.role 'SUPER_ADMIN')}}Super Admin{{else}}{{user.role}}{{/if}}
-              {{else}}Administrator{{/if}}
+              {{#if user.displayRole}}{{user.displayRole}}{{else}}{{roleLabel user.role}}{{/if}}
             </span>
           </div>
         </div>

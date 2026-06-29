@@ -18,6 +18,7 @@ import {
   renderProfile,
   renderChangePassword,
   updatePassword,
+  uploadProfilePhoto,
   forgotPassword,
   renderResetPassword,
   resetPassword,
@@ -96,6 +97,7 @@ router.get('/work/performance', renderPerformance);
 
 // Profile
 router.get('/profile', renderProfile);
+router.post('/profile/photo', uploadProfilePhoto);
 router.get('/change-password', renderChangePassword);
 router.post('/change-password', updatePassword);
 

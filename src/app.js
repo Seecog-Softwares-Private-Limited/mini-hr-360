@@ -10,6 +10,7 @@ import { fileURLToPath } from 'url';
 import { setupSwagger } from './swagger.js';
 import { verifyUser } from './middleware/authMiddleware.js';
 import { errorHandler } from "./middleware/errorMiddleware.js";
+import { formatUserRoleLabel, formatEmployeeRecordRoleLabel } from './utils/roleLabel.util.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -108,6 +109,12 @@ app.engine(
                 if (key === 'profile' && current === 'profile') return true;
                 return false;
             },
+            roleLabel(role) {
+                return formatUserRoleLabel(role);
+            },
+            employeeRoleLabel(role) {
+                return formatEmployeeRecordRoleLabel(role);
+            },
         },
         runtimeOptions: {
             allowProtoPropertiesByDefault: true,
@@ -128,7 +135,7 @@ app.use((req, res, next) => {
             options = {};
         }
         options = options || {};
-        for (const key of ['portalNav', 'portalAccess', 'portalRole']) {
+        for (const key of ['portalNav', 'portalAccess', 'portalRole', 'employeeDisplayRole', 'userDisplayRole']) {
             if (res.locals[key] !== undefined && options[key] === undefined) {
                 options[key] = res.locals[key];
             }
@@ -138,10 +145,27 @@ app.use((req, res, next) => {
                 firstName: req.user.firstName,
                 lastName: req.user.lastName,
                 role: req.user.role,
+                displayRole: req.userDisplayRole || formatUserRoleLabel(req.user.role),
                 email: req.user.email,
                 avatarUrl: req.user.avatarUrl,
             };
             options.user = { ...shellUser, ...(options.user || {}) };
+        }
+        if (res.locals.employee) {
+            const emp = res.locals.employee;
+            const shellEmployee = {
+                id: emp.id,
+                empName: emp.empName,
+                empDesignation: emp.empDesignation,
+                empDepartment: emp.empDepartment,
+                profilePhoto: emp.profilePhoto,
+                role: emp.role,
+            };
+            const mergedEmployee = { ...shellEmployee, ...(options.employee || {}) };
+            if (!mergedEmployee.profilePhoto && emp.profilePhoto) {
+                mergedEmployee.profilePhoto = emp.profilePhoto;
+            }
+            options.employee = mergedEmployee;
         }
         if (req.organizationId != null && options.organizationId == null) {
             options.organizationId = req.organizationId;
