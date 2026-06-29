@@ -1,6 +1,8 @@
 // src/controllers/employee/employeeProfile.controller.js
+import fs from 'fs';
+import path from 'path';
 import { asyncHandler } from '../../utils/asyncHandler.js';
-import { Employee, EmployeeEducation, EmployeeExperience, EmployeeDocument, Business } from '../../models/index.js';
+import { Employee, EmployeeEducation, EmployeeExperience, EmployeeDocument, Business, User } from '../../models/index.js';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { Op } from 'sequelize';
@@ -14,6 +16,24 @@ import {
 import { getEmployeePortalLifecycleSummary } from '../../services/employeePortalLifecycle.service.js';
 
 const HR_DEFAULT_PASSWORD_PREFIX = 'hr_default_pwd:';
+
+const PHOTO_MIMES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const PHOTO_EXT = {
+    'image/jpeg': '.jpg',
+    'image/png': '.png',
+    'image/webp': '.webp',
+};
+
+function deleteStoredProfilePhoto(photoUrl) {
+    if (!photoUrl || !String(photoUrl).includes('/storage/')) return;
+    const relative = String(photoUrl).replace(/^\/storage\//, '').replace(/^storage\//, '');
+    const filePath = path.join(process.cwd(), 'storage', relative);
+    try {
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    } catch (err) {
+        console.warn('Could not delete old profile photo:', err.message);
+    }
+}
 
 function clearHrVisibleDefaultPassword(employee) {
     if (!employee) return;
@@ -90,6 +110,55 @@ export const updatePassword = asyncHandler(async (req, res) => {
     await employee.save();
 
     res.json({ success: true, message: 'Password updated successfully' });
+});
+
+/**
+ * POST /employee/profile/photo - Upload or update employee profile photo
+ */
+export const uploadProfilePhoto = asyncHandler(async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ success: false, message: 'No image uploaded' });
+    }
+
+    if (!PHOTO_MIMES.has(req.file.mimetype)) {
+        return res.status(400).json({ success: false, message: 'Use JPG, PNG, or WEBP image' });
+    }
+
+    const employee = await Employee.findByPk(req.employee.id);
+    if (!employee) {
+        return res.status(404).json({ success: false, message: 'Employee not found' });
+    }
+
+    const dir = path.join(process.cwd(), 'storage', 'employee-avatars');
+    fs.mkdirSync(dir, { recursive: true });
+
+    const ext = path.extname(req.file.originalname) || PHOTO_EXT[req.file.mimetype] || '.jpg';
+    const safeName = `emp-${employee.id}-${Date.now()}${ext}`;
+    fs.writeFileSync(path.join(dir, safeName), req.file.buffer);
+
+    deleteStoredProfilePhoto(employee.profilePhoto);
+
+    const profilePhoto = `/storage/employee-avatars/${safeName}`;
+    employee.profilePhoto = profilePhoto;
+    await employee.save();
+
+    const email = String(employee.empEmail || '').trim().toLowerCase();
+    if (email) {
+        const user = await User.findOne({ where: { email } });
+        if (user) {
+            deleteStoredProfilePhoto(user.avatarUrl);
+            user.avatarUrl = profilePhoto;
+            await user.save();
+        }
+    }
+
+    req.employee.profilePhoto = profilePhoto;
+
+    return res.json({
+        success: true,
+        message: 'Profile photo updated',
+        profilePhoto,
+    });
 });
 
 /**
@@ -179,6 +248,7 @@ export default {
     renderProfile,
     renderChangePassword,
     updatePassword,
+    uploadProfilePhoto,
     forgotPassword,
     renderResetPassword,
     resetPassword,

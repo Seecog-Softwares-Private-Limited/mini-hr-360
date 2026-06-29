@@ -3,7 +3,11 @@
 
   <div class="sidebar-profile">
     <div class="profile-avatar">
+      {{#if user.avatarUrl}}
+      <img src="{{user.avatarUrl}}" alt="" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
+      {{else}}
       <i class="fa-solid fa-user"></i>
+      {{/if}}
     </div>
     <div class="profile-meta">
       <div class="profile-name">
@@ -11,9 +15,7 @@
         {{#if user.lastName}} {{user.lastName}}{{/if}}
       </div>
       <div class="profile-role">
-        {{#if user.role}}
-          {{#if (eq user.role 'HR_MANAGER')}}HR Manager{{else if (eq user.role 'HR_EXECUTIVE')}}HR Executive{{else if (eq user.role 'FINANCE')}}Finance{{else if (eq user.role 'MANAGER')}}Manager{{else if (eq user.role 'EMPLOYEE')}}Employee{{else if (eq user.role 'shop_manager')}}Shop Manager{{else if (eq user.role 'shop_worker')}}Shop Worker{{else if (eq user.role 'shop_owner')}}Owner{{else if (eq user.role 'admin')}}Administrator{{else if (eq user.role 'SUPER_ADMIN')}}Super Admin{{else}}{{user.role}}{{/if}}
-        {{else}}Administrator{{/if}}
+        {{#if user.displayRole}}{{user.displayRole}}{{else}}{{roleLabel user.role}}{{/if}}
       </div>
     </div>
   </div>

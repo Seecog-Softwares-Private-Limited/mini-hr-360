@@ -25,16 +25,18 @@
         aria-label="Account menu"
       >
         <div class="topbar-user-avatar" id="profileMenuAvatar" aria-hidden="true">
+          {{#if user.avatarUrl}}
+          <img src="{{user.avatarUrl}}" alt="" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
+          {{else}}
           {{#if user.firstName}}{{substring user.firstName 0 1}}{{else}}U{{/if}}{{#if user.lastName}}{{substring user.lastName 0 1}}{{/if}}
+          {{/if}}
         </div>
         <div class="topbar-user-meta d-none d-md-block">
           <div class="topbar-user-name" id="profileMenuName">
             {{#if user.firstName}}{{user.firstName}}{{else}}User{{/if}}{{#if user.lastName}} {{user.lastName}}{{/if}}
           </div>
           <div class="topbar-user-role" id="profileMenuRoleLabel">
-            {{#if user.role}}
-              {{#if (eq user.role 'HR_MANAGER')}}HR Manager{{else if (eq user.role 'HR_EXECUTIVE')}}HR Executive{{else if (eq user.role 'FINANCE')}}Finance{{else if (eq user.role 'MANAGER')}}Manager{{else if (eq user.role 'EMPLOYEE')}}Employee{{else if (eq user.role 'shop_manager')}}Shop Manager{{else if (eq user.role 'shop_worker')}}Shop Worker{{else if (eq user.role 'shop_owner')}}Owner{{else if (eq user.role 'admin')}}Administrator{{else if (eq user.role 'SUPER_ADMIN')}}Super Admin{{else}}{{user.role}}{{/if}}
-            {{else}}Administrator{{/if}}
+            {{#if user.displayRole}}{{user.displayRole}}{{else}}{{roleLabel user.role}}{{/if}}
           </div>
         </div>
         <i class="fa-solid fa-chevron-down profile-menu-chevron d-none d-md-block" aria-hidden="true"></i>
@@ -49,7 +51,11 @@
       >
         <div class="profile-menu-header">
           <div class="profile-menu-header-avatar" aria-hidden="true">
+            {{#if user.avatarUrl}}
+            <img src="{{user.avatarUrl}}" alt="" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
+            {{else}}
             {{#if user.firstName}}{{substring user.firstName 0 1}}{{else}}U{{/if}}{{#if user.lastName}}{{substring user.lastName 0 1}}{{/if}}
+            {{/if}}
           </div>
           <div class="profile-menu-header-meta">
             <div class="profile-menu-header-name">
@@ -59,9 +65,7 @@
             <div class="profile-menu-header-email">{{user.email}}</div>
             {{/if}}
             <span class="profile-menu-role-badge" id="profileMenuRoleBadge" data-role="{{#if user.role}}{{user.role}}{{else}}Administrator{{/if}}">
-              {{#if user.role}}
-                {{#if (eq user.role 'HR_MANAGER')}}HR Manager{{else if (eq user.role 'HR_EXECUTIVE')}}HR Executive{{else if (eq user.role 'FINANCE')}}Finance{{else if (eq user.role 'MANAGER')}}Manager{{else if (eq user.role 'EMPLOYEE')}}Employee{{else if (eq user.role 'shop_manager')}}Shop Manager{{else if (eq user.role 'shop_worker')}}Shop Worker{{else if (eq user.role 'shop_owner')}}Owner{{else if (eq user.role 'admin')}}Administrator{{else if (eq user.role 'SUPER_ADMIN')}}Super Admin{{else}}{{user.role}}{{/if}}
-              {{else}}Administrator{{/if}}
+              {{#if user.displayRole}}{{user.displayRole}}{{else}}{{roleLabel user.role}}{{/if}}
             </span>
           </div>
         </div>
