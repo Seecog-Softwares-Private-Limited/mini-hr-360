@@ -15,15 +15,23 @@
                     <div class="card-body p-4">
                         <div class="row align-items-center mb-4">
                             <div class="col-auto">
-                                <div class="profile-avatar"
-                                    style="width: 100px; height: 100px; font-size: 40px; background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);">
-                                    {{#if user.avatarUrl}}
-                                    <img src="{{user.avatarUrl}}" alt="Profile"
-                                        style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-                                    {{else}}
-                                    {{user.firstName.[0]}}{{user.lastName.[0]}}
-                                    {{/if}}
+                                <div class="profile-photo-wrap position-relative">
+                                    <div class="profile-avatar" id="profileAvatarDisplay"
+                                        style="width: 100px; height: 100px; font-size: 36px; font-weight: 700; background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3); overflow: hidden;">
+                                        {{#if user.avatarUrl}}
+                                        <img src="{{user.avatarUrl}}" alt="Profile photo" id="profileAvatarImg"
+                                            style="width: 100%; height: 100%; object-fit: cover;">
+                                        {{else}}
+                                        <span id="profileAvatarInitials">{{substring user.firstName 0 1}}{{substring user.lastName 0 1}}</span>
+                                        {{/if}}
+                                    </div>
+                                    <label for="profilePhotoInput" class="profile-photo-edit-btn" title="Update profile photo">
+                                        <i class="fa-solid fa-camera"></i>
+                                    </label>
+                                    <input type="file" id="profilePhotoInput" accept="image/jpeg,image/png,image/webp" hidden>
                                 </div>
+                                <div class="small text-muted mt-2">JPG, PNG or WEBP · max 5MB</div>
+                                <div id="profilePhotoStatus" class="small mt-1"></div>
                             </div>
                             <div class="col">
                                 <h3 class="mb-1" style="font-weight: 800; color: #1e293b;">{{user.firstName}}
@@ -142,4 +150,89 @@
         margin-right: 10px;
         vertical-align: middle;
     }
+
+    .profile-photo-wrap {
+        width: 100px;
+        height: 100px;
+    }
+
+    .profile-photo-edit-btn {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: #fff;
+        color: #6366f1;
+        border: 2px solid #e2e8f0;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+        transition: transform 0.15s ease, background 0.15s ease;
+    }
+
+    .profile-photo-edit-btn:hover {
+        background: #6366f1;
+        color: #fff;
+        transform: scale(1.05);
+    }
 </style>
+
+<script>
+    (function () {
+        const input = document.getElementById('profilePhotoInput');
+        const statusEl = document.getElementById('profilePhotoStatus');
+        const avatarDisplay = document.getElementById('profileAvatarDisplay');
+
+        if (!input || !avatarDisplay) return;
+
+        input.addEventListener('change', async function () {
+            const file = input.files?.[0];
+            if (!file) return;
+
+            if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+                statusEl.textContent = 'Please choose a JPG, PNG, or WEBP image.';
+                statusEl.className = 'small mt-1 text-danger';
+                input.value = '';
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                statusEl.textContent = 'Image must be 5MB or smaller.';
+                statusEl.className = 'small mt-1 text-danger';
+                input.value = '';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            statusEl.textContent = 'Uploading...';
+            statusEl.className = 'small mt-1 text-primary';
+
+            try {
+                const response = await fetch('/admin/profile/avatar', {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData,
+                });
+
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || 'Upload failed');
+                }
+
+                statusEl.textContent = 'Profile photo updated.';
+                statusEl.className = 'small mt-1 text-success';
+                setTimeout(() => window.location.reload(), 600);
+            } catch (error) {
+                statusEl.textContent = error.message || 'Upload failed';
+                statusEl.className = 'small mt-1 text-danger';
+            } finally {
+                input.value = '';
+            }
+        });
+    })();
+</script>

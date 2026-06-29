@@ -139,6 +139,7 @@ app.use((req, res, next) => {
                 lastName: req.user.lastName,
                 role: req.user.role,
                 email: req.user.email,
+                avatarUrl: req.user.avatarUrl,
             };
             options.user = { ...shellUser, ...(options.user || {}) };
         }
@@ -174,7 +175,7 @@ const upload = multer({
     storage: multer.memoryStorage(), // Store files in memory
     limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
     fileFilter: (req, file, cb) => {
-        const allowedMimes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/png'];
+        const allowedMimes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/jpeg', 'image/png', 'image/webp'];
         if (allowedMimes.includes(file.mimetype)) {
             cb(null, true);
         } else {

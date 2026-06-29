@@ -5,6 +5,7 @@ import {
     renderProfile,
     renderChangePassword,
     updatePassword,
+    uploadAvatar,
 } from '../controllers/admin/adminProfile.controller.js';
 import { isPlatformAdmin, listUsersForRequest } from '../services/organization.service.js';
 
@@ -12,6 +13,7 @@ const router = Router();
 
 // Dashboard-style profile routes
 router.get('/profile', verifyUser, renderProfile);
+router.post('/profile/avatar', verifyUser, uploadAvatar);
 router.get('/change-password', verifyUser, renderChangePassword);
 router.post('/change-password', verifyUser, updatePassword);
 
