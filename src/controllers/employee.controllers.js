@@ -243,7 +243,7 @@ async function buildPendingInvitedMembers(organizationId, existingEmployees = []
  * Generate welcome email HTML template
  */
 function generateWelcomeEmailHTML(employee, password, loginUrl) {
-    const portalLoginUrl = loginUrl || '/employee/login';
+    const portalLoginUrl = loginUrl || '/login';
     const employeeName = employee.empName || `${employee.firstName} ${employee.lastName}`.trim();
 
     return `
@@ -382,7 +382,7 @@ async function sendWelcomeEmail(employee, password, portalUrl) {
         return { sent: false, error: message };
     }
 
-    const loginUrl = portalUrl || '/employee/login';
+    const loginUrl = portalUrl || '/login';
     const subject = `Welcome to Mini HR 360 - Your Employee Portal Login`;
     const html = generateWelcomeEmailHTML(employee, password, loginUrl);
 
@@ -406,11 +406,20 @@ async function sendWelcomeEmail(employee, password, portalUrl) {
 }
 
 function getPortalLoginUrl(req) {
-    const base = String(process.env.APP_URL || '').trim().replace(/\/+$/, '');
-    if (base) {
-        return `${base}/employee/login`;
+    const appUrl = String(process.env.APP_URL || '').trim().replace(/\/+$/, '');
+    if (appUrl) {
+        try {
+            const base = new URL(appUrl);
+            const port = process.env.PORT || '';
+            if (!base.port && port) {
+                base.port = String(port);
+            }
+            return new URL('/login', base).href;
+        } catch {
+            // fall through to request host
+        }
     }
-    return `${req.protocol}://${req.get('host')}/employee/login`;
+    return `${req.protocol}://${req.get('host')}/login`;
 }
 
 function sanitizeEmployeeJson(employee) {

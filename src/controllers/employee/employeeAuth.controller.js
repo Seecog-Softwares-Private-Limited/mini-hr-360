@@ -1,148 +1,23 @@
 // src/controllers/employee/employeeAuth.controller.js
-import { Op } from 'sequelize';
 import Employee from '../../models/Employee.js';
-import { Business } from '../../models/Business.js';
 import { ApiResponse } from '../../utils/ApiResponse.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
-import { hashToken } from '../../utils/token.util.js';
-import { buildEmployeeTokenPair } from '../../utils/employeeToken.util.js';
 import { clearEmployeeAuthCookies, setEmployeeAuthCookies } from '../../utils/authCookie.util.js';
 import { rotateEmployeeSession } from '../../services/employeeSession.service.js';
+import { unifiedLogin } from '../auth/unifiedLogin.controller.js';
 
 /**
  * GET /employee/login - Render login page
  */
 export const renderEmployeeLogin = (req, res) => {
-  const params = new URLSearchParams({ mode: 'employee' });
+  const params = new URLSearchParams();
   if (req.query.error) params.set('error', req.query.error);
-  return res.redirect(`/login?${params.toString()}`);
+  const query = params.toString();
+  return res.redirect(query ? `/login?${query}` : '/login');
 };
 
-/**
- * POST /employee/login - Handle employee login
- * Supports login via email OR employee code + password
- */
-export const loginEmployee = asyncHandler(async (req, res) => {
-  try {
-    const { identifier, password } = req.body;
-
-    if (!identifier || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email/Employee Code and Password are required',
-      });
-    }
-
-    // Find employee by email OR employee code (empId)
-    const employee = await Employee.findOne({
-      where: {
-        [Op.or]: [
-          { empEmail: identifier.toLowerCase() },
-          { workEmail: identifier.toLowerCase() },
-          { empId: identifier.toUpperCase() },
-        ],
-      },
-      include: [
-        {
-          model: Business,
-          as: 'business',
-          attributes: ['id', 'businessName'],
-        },
-      ],
-    });
-
-    if (!employee) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials',
-        error: 'No employee found with this email or code',
-      });
-    }
-
-    // Check if employee can login
-    if (!employee.canLogin) {
-      return res.status(403).json({
-        success: false,
-        message: 'Portal access not enabled',
-        error: 'Please contact HR to enable portal access',
-      });
-    }
-
-    // Check if employee is active
-    if (!employee.isActive) {
-      return res.status(403).json({
-        success: false,
-        message: 'Account inactive',
-        error: 'Your account has been deactivated',
-      });
-    }
-
-    // Check if employee has a password set
-    if (!employee.password) {
-      return res.status(401).json({
-        success: false,
-        message: 'Password not set',
-        error: 'Please contact HR to set up your password',
-      });
-    }
-
-    // Verify password
-    const isValid = await employee.isPasswordCorrect(password);
-    if (!isValid) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid credentials',
-        error: 'Incorrect password',
-      });
-    }
-
-    // Generate tokens
-    const { accessToken, refreshToken, refreshExp } = buildEmployeeTokenPair(
-      employee.id,
-      employee.businessId
-    );
-
-    // Update employee with refresh token
-    employee.employeeRefreshToken = hashToken(refreshToken);
-    employee.employeeRefreshTokenExpiresAt = refreshExp ? new Date(refreshExp * 1000) : null;
-    employee.lastEmployeeLoginAt = new Date();
-    await employee.save();
-
-    setEmployeeAuthCookies(res, accessToken, refreshToken, refreshExp);
-
-    const employeeData = {
-      id: employee.id,
-      empId: employee.empId,
-      empName: employee.empName,
-      firstName: employee.firstName,
-      lastName: employee.lastName,
-      empEmail: employee.empEmail,
-      empDepartment: employee.empDepartment,
-      empDesignation: employee.empDesignation,
-      role: employee.role,
-      businessId: employee.businessId,
-      businessName: employee.business?.businessName,
-    };
-
-    return res.status(200).json(
-      new ApiResponse(
-        200,
-        {
-          tokens: { accessToken, refreshToken },
-          employee: employeeData,
-        },
-        'Login successful'
-      )
-    );
-  } catch (error) {
-    console.error('Employee login error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: error.message,
-    });
-  }
-});
+/** POST /employee/login - backward-compatible alias for unified login */
+export const loginEmployee = unifiedLogin;
 
 /**
  * POST /employee/refresh - Rotate employee session tokens
@@ -211,7 +86,7 @@ export const logoutEmployee = asyncHandler(async (req, res) => {
       return res.status(200).json(new ApiResponse(200, null, 'Logout successful'));
     }
 
-    return res.redirect('/employee/login');
+    return res.redirect('/login');
   } catch (error) {
     console.error('Employee logout error:', error);
     return res.status(500).json({

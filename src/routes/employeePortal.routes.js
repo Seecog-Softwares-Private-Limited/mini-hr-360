@@ -4,10 +4,10 @@ import { verifyEmployee } from '../middleware/employeeAuthMiddleware.js';
 import { attachEmployeePortalContext } from '../middleware/employeePortalRbac.middleware.js';
 import {
   renderEmployeeLogin,
-  loginEmployee,
   refreshEmployee,
   logoutEmployee,
 } from '../controllers/employee/employeeAuth.controller.js';
+import { unifiedLogin } from '../controllers/auth/unifiedLogin.controller.js';
 import {
   renderEmployeeDashboard,
   getDashboardStats,
@@ -66,7 +66,7 @@ router.get('/', (req, res) => res.redirect('/login'));
 
 // Employee Login (unified login page)
 router.get('/login', renderEmployeeLogin);
-router.post('/login', loginEmployee);
+router.post('/login', unifiedLogin);
 router.post('/refresh', refreshEmployee);
 
 // Forgot Password
