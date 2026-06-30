@@ -136,6 +136,10 @@ export const createBusiness = asyncHandler(async (req, res) => {
 
         await upsertRegisteredAddress(business.id, addressName, fullAddress);
 
+        const { ensureSetupProgress, seedDefaultSetupData } = await import('../../services/setup/setupProgressService.js');
+        await ensureSetupProgress(business.id);
+        await seedDefaultSetupData(business.id);
+
         return res
             .status(201)
             .json(new ApiResponse(

@@ -254,6 +254,8 @@ import { adminProfileRouter } from './routes/adminProfile.routes.js';
 import adminPayrollPagesRouter from './routes/admin.payroll.pages.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 import dashboardRoutes from './routes/dashboard.routes.js';
+import setupRoutes from './routes/setup.routes.js';
+import { renderSetupPage } from './controllers/setupPage.controller.js';
 import { listUsersForRequest } from './services/organization.service.js';
 
 
@@ -302,6 +304,8 @@ app.get('/business', verifyUser, (req, res) => {
     const user = { firstName: req.user.firstName, lastName: req.user.lastName, role: req.user.role };
     res.render('business', { title: 'Company Profile', user, active: 'business', activeGroup: 'workspace' });
 });
+
+app.get('/admin/setup', verifyUser, renderSetupPage);
 
 app.get('/templates', verifyUser, (req, res) => {
     const user = { firstName: req.user.firstName, lastName: req.user.lastName, role: req.user.role };
@@ -362,6 +366,7 @@ app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/business', businessRouter);
+app.use('/api/setup', setupRoutes);
 
 app.get('/api/v1/health', (req, res) =>
     res.json({ ok: true, message: 'hello world 2' })

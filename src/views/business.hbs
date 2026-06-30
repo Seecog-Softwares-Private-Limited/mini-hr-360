@@ -1,58 +1,153 @@
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-    <h2>Company Profile</h2>
-    <div class="d-flex gap-2 align-items-center d-none" id="organizationActions">
-        <a class="btn btn-outline-secondary d-none align-items-center gap-2" id="manageRolesBtn" href="/admin/team">
-            <i class="fas fa-users-gear" style="width: 14px; text-align: center;"></i>
-            <span>Manage Roles &amp; People</span>
-        </a>
-        <button class="btn btn-outline-primary d-none align-items-center gap-2" id="joinOrganizationBtn" data-bs-toggle="modal" data-bs-target="#joinOrganizationModal" type="button">
-            <i class="fas fa-right-to-bracket" style="width: 14px; text-align: center;"></i>
-            <span>Join Organization</span>
-        </button>
-        <button class="btn btn-primary d-none align-items-center gap-2" id="addOrganizationBtn" data-bs-toggle="modal" data-bs-target="#addBusinessModal" type="button">
-            <i class="fas fa-plus" style="width: 14px; text-align: center;"></i>
-            <span>Add Organization</span>
-        </button>
+<link href="/assets/css/company-setup.css" rel="stylesheet">
+<link href="/assets/css/company-profile.css" rel="stylesheet">
+
+<div class="cp-page">
+  <div class="cp-header">
+    <div>
+      <div class="page-title" style="font-size: 28px;">Company Profile</div>
+      <div class="page-subtitle">Organization identity, setup health, and branch network</div>
     </div>
-</div>
+    <div class="cp-header-actions d-none" id="organizationActions">
+      <a class="btn btn-outline-secondary d-none align-items-center gap-2" id="manageRolesBtn" href="/admin/team">
+        <i class="fas fa-users-gear"></i> Manage Roles
+      </a>
+      <a class="btn btn-outline-primary d-none align-items-center gap-2" id="setupWizardBtn" href="/admin/setup">
+        <i class="fas fa-wand-magic-sparkles"></i> Company Setup
+      </a>
+      <button class="btn btn-outline-primary d-none align-items-center gap-2" id="joinOrganizationBtn" data-bs-toggle="modal" data-bs-target="#joinOrganizationModal" type="button">
+        <i class="fas fa-right-to-bracket"></i> Join Organization
+      </button>
+      <button class="btn btn-primary d-none align-items-center gap-2" id="addOrganizationBtn" data-bs-toggle="modal" data-bs-target="#addBusinessModal" type="button">
+        <i class="fas fa-plus"></i> Add Organization
+      </button>
+    </div>
+  </div>
 
-<div id="organizationHint" class="alert alert-info d-none mb-4"></div>
+  <div id="organizationHint" class="alert alert-info d-none mb-4"></div>
 
-<!-- Search and Filter -->
-<div class="row mb-4">
-    <div class="col-md-6">
+  <!-- Premium org dashboard (single active org) -->
+  <div id="cpOrgDashboard" class="d-none">
+    <div class="cp-hero" id="cpHero">
+      <div class="cp-hero-inner">
+        <div class="cp-logo-wrap" id="cpLogoWrap"><i class="fas fa-building"></i></div>
+        <div class="cp-hero-meta">
+          <h1 class="cp-hero-title" id="cpHeroTitle">—</h1>
+          <p class="cp-hero-sub" id="cpHeroSub">Loading organization…</p>
+          <div class="cp-chip-row" id="cpHeroChips"></div>
+        </div>
+      </div>
+      <div class="cp-stat-row" id="cpHeroStats"></div>
+    </div>
+
+    <div class="cp-dashboard-grid">
+      <div class="cp-main-col">
+        <div class="cp-panel mb-3" id="setupProfileCard">
+          <div class="cp-panel-head">
+            <h5><i class="fas fa-chart-pie"></i> Setup Health</h5>
+            <a href="/admin/setup" class="btn btn-primary btn-sm" id="setupProfileBtn">Continue Setup</a>
+          </div>
+          <div class="cp-panel-body">
+            <div class="cp-setup-layout">
+              <div class="cp-score-ring">
+                <svg viewBox="0 0 96 96" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="cpScoreGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stop-color="#6366f1"/>
+                      <stop offset="100%" stop-color="#22c55e"/>
+                    </linearGradient>
+                  </defs>
+                  <circle class="ring-bg" cx="48" cy="48" r="40"/>
+                  <circle class="ring-fill" id="setupProfileRing" cx="48" cy="48" r="40"
+                    stroke-dasharray="251.2" stroke-dashoffset="251.2"/>
+                </svg>
+                <div class="cp-score-value">
+                  <span id="setupProfilePercent">0</span>%
+                  <small>complete</small>
+                </div>
+              </div>
+              <div class="cp-setup-detail">
+                <div class="cp-setup-status" id="setupProfileScore">Checking setup status…</div>
+                <div class="cp-setup-hint" id="setupProfileHint">Complete onboarding to unlock payroll readiness.</div>
+                <div class="cp-step-pills" id="setupProfileSteps"></div>
+                <div class="cp-missing-list" id="setupProfileMissing"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cp-panel d-none" id="branchesProfileSection">
+          <div class="cp-panel-head">
+            <h5><i class="fas fa-map-location-dot"></i> Branches &amp; Locations</h5>
+            <a href="/admin/setup" class="btn btn-outline-secondary btn-sm">Manage</a>
+          </div>
+          <div class="cp-panel-body">
+            <div class="cp-branch-grid" id="branchesProfileList"></div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="cp-side-col">
+        <div class="cp-panel">
+          <div class="cp-panel-head"><h5><i class="fas fa-bolt"></i> Quick Actions</h5></div>
+          <div class="cp-panel-body pt-2 pb-2">
+            <a href="/admin/setup" class="cp-quick-action">
+              <i class="fas fa-wand-magic-sparkles"></i>
+              <div><span>Company Setup</span><small>Finish onboarding wizard</small></div>
+            </a>
+            <a href="/admin/payroll/setup" class="cp-quick-action">
+              <i class="fas fa-coins"></i>
+              <div><span>Payroll Setup</span><small>Salary components &amp; statutory</small></div>
+            </a>
+            <a href="/admin/attendance/shifts" class="cp-quick-action">
+              <i class="fas fa-clock"></i>
+              <div><span>Attendance</span><small>Shifts, policies &amp; holidays</small></div>
+            </a>
+            <a href="#" class="cp-quick-action" id="cpEditOrgBtn">
+              <i class="fas fa-pen-to-square"></i>
+              <div><span>Edit Profile</span><small>Update organization details</small></div>
+            </a>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <div class="cp-org-list-section" id="cpOrgListSection">
+    <div class="row mb-4">
+      <div class="col-md-6">
         <div class="input-group">
-            <input type="text" class="form-control" id="searchInput" placeholder="Search organizations...">
-            <button class="btn btn-outline-secondary" type="button" onclick="searchBusinesses()">
-                <i class="fas fa-search"></i>
-            </button>
+          <input type="text" class="form-control" id="searchInput" placeholder="Search organizations...">
+          <button class="btn btn-outline-secondary" type="button" onclick="searchBusinesses()">
+            <i class="fas fa-search"></i>
+          </button>
         </div>
-    </div>
-    <div class="col-md-3">
+      </div>
+      <div class="col-md-3">
         <select class="form-select" id="categoryFilter" onchange="filterByCategory()">
-            <option value="">All Categories</option>
-            <option value="restaurant">Restaurant</option>
-            <option value="retail">Retail</option>
-            <option value="healthcare">Healthcare</option>
-            <option value="education">Education</option>
-            <option value="technology">Technology</option>
-            <option value="other">Other</option>
+          <option value="">All Categories</option>
+          <option value="restaurant">Restaurant</option>
+          <option value="retail">Retail</option>
+          <option value="healthcare">Healthcare</option>
+          <option value="education">Education</option>
+          <option value="technology">Technology</option>
+          <option value="other">Other</option>
         </select>
-    </div>
-    <div class="col-md-3">
+      </div>
+      <div class="col-md-3">
         <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
-            <i class="fas fa-times me-2"></i>Clear Filters
+          <i class="fas fa-times me-2"></i>Clear Filters
         </button>
+      </div>
     </div>
-</div>
 
-<!-- Organizations Grid -->
-<div class="row" id="businessesGrid">
-    <div class="col-12 text-center py-4">
+    <div class="row" id="businessesGrid">
+      <div class="col-12 text-center py-4">
         <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
+          <span class="visually-hidden">Loading...</span>
         </div>
+      </div>
     </div>
+  </div>
 </div>
 
 <!-- Add Organization Modal -->
@@ -312,12 +407,16 @@
         const addBtn = document.getElementById('addOrganizationBtn');
         const joinBtn = document.getElementById('joinOrganizationBtn');
         const manageRolesBtn = document.getElementById('manageRolesBtn');
+        const setupWizardBtn = document.getElementById('setupWizardBtn');
         const hint = document.getElementById('organizationHint');
+        const orgDashboard = document.getElementById('cpOrgDashboard');
+        const orgListSection = document.getElementById('cpOrgListSection');
 
         const hasOrg = capabilities.hasOrganization === true
             || (Array.isArray(businesses) && businesses.length > 0);
         const canCreate = !hasOrg && !!capabilities.canCreate;
         const canJoin = !hasOrg && !!capabilities.canJoin;
+        const multiOrg = (businesses || []).length > 1;
 
         const showActions = hasOrg || canCreate || canJoin;
         if (actions) {
@@ -325,8 +424,14 @@
             actions.classList.toggle('d-flex', showActions);
         }
         setActionButtonVisible(manageRolesBtn, hasOrg);
+        setActionButtonVisible(setupWizardBtn, hasOrg);
         setActionButtonVisible(addBtn, canCreate);
         setActionButtonVisible(joinBtn, canJoin);
+
+        if (orgDashboard) orgDashboard.classList.toggle('d-none', !hasOrg);
+        if (orgListSection) {
+            orgListSection.classList.toggle('collapsed', hasOrg && !multiOrg);
+        }
 
         if (hint) {
             if (hasOrg) {
@@ -342,6 +447,60 @@
                 hint.textContent = 'Only one organization link is allowed per account.';
             }
         }
+    }
+
+    function renderCompanyHero(business, details) {
+        if (!business) return;
+        const title = details?.displayName || details?.legalName || business.businessName || 'Organization';
+        document.getElementById('cpHeroTitle').textContent = title;
+        const subParts = [
+            details?.registeredAddress || business.primaryAddress?.fullAddress,
+            [details?.city || business.city, details?.state || business.state, details?.pincode || business.pincode].filter(Boolean).join(', '),
+        ].filter(Boolean);
+        document.getElementById('cpHeroSub').textContent = subParts[0] || business.description || 'No address on file';
+
+        const chips = [];
+        if (business.category) chips.push(`<span class="cp-chip primary"><i class="fas fa-industry"></i> ${escapeHtml(business.category)}</span>`);
+        if (details?.panNumber) chips.push(`<span class="cp-chip success"><i class="fas fa-id-card"></i> PAN ${escapeHtml(details.panNumber)}</span>`);
+        if (details?.gstNumber) chips.push(`<span class="cp-chip"><i class="fas fa-receipt"></i> GST ${escapeHtml(details.gstNumber)}</span>`);
+        if (business.timezone) chips.push(`<span class="cp-chip"><i class="fas fa-clock"></i> ${escapeHtml(business.timezone)}</span>`);
+        if (business.membershipType === 'owner') chips.push('<span class="cp-chip success"><i class="fas fa-crown"></i> Owner</span>');
+        document.getElementById('cpHeroChips').innerHTML = chips.join('');
+
+        const logoWrap = document.getElementById('cpLogoWrap');
+        if (details?.logoUrl) {
+            logoWrap.innerHTML = `<img src="${escapeHtml(details.logoUrl)}" alt="Logo">`;
+        } else {
+            logoWrap.innerHTML = '<i class="fas fa-building"></i>';
+        }
+
+        const branchCount = document.getElementById('branchesProfileList')?.querySelectorAll('.cp-branch-card').length || 0;
+        document.getElementById('cpHeroStats').innerHTML = `
+          <div class="cp-mini-stat"><div class="val">${escapeHtml(business.country || '—')}</div><div class="lbl">Country</div></div>
+          <div class="cp-mini-stat"><div class="val">${branchCount || '—'}</div><div class="lbl">Branches</div></div>
+          <div class="cp-mini-stat"><div class="val">${business.createdAt ? new Date(business.createdAt).getFullYear() : '—'}</div><div class="lbl">Since</div></div>`;
+
+        const editBtn = document.getElementById('cpEditOrgBtn');
+        if (editBtn) {
+            editBtn.onclick = (e) => {
+                e.preventDefault();
+                if (business.membershipType === 'owner' || business.membershipType === 'admin') {
+                    editBusiness(business.id);
+                } else {
+                    showAlert('Only organization owners can edit the profile.', 'warning');
+                }
+            };
+        }
+    }
+
+    function updateSetupRing(score) {
+        const ring = document.getElementById('setupProfileRing');
+        const pct = document.getElementById('setupProfilePercent');
+        if (!ring || !pct) return;
+        const circumference = 251.2;
+        const offset = circumference - (circumference * Math.min(100, score)) / 100;
+        ring.style.strokeDashoffset = String(offset);
+        pct.textContent = Math.round(score);
     }
 
     async function loadBusinesses() {
@@ -364,6 +523,7 @@
                 document.cookie = `mh360_organization_id=${encodeURIComponent(id)}; path=/; max-age=${30 * 24 * 60 * 60}; samesite=lax`;
                 document.cookie = `mh360_workspace_id=${encodeURIComponent(id)}; path=/; max-age=${30 * 24 * 60 * 60}; samesite=lax`;
             }
+            await loadSetupProfile();
         } catch (error) {
             console.error('Error loading organizations:', error);
             document.getElementById('businessesGrid').innerHTML =
@@ -674,6 +834,94 @@
         setTimeout(() => { alertDiv.remove(); }, 5000);
     }
 
-    document.addEventListener('DOMContentLoaded', loadBusinesses);
+    async function loadSetupProfile() {
+        try {
+            const token = localStorage.getItem('accessToken');
+            const headers = { 'Content-Type': 'application/json' };
+            if (token) headers.Authorization = `Bearer ${token}`;
+            const orgId = typeof getOrganizationId === 'function' ? getOrganizationId() : localStorage.getItem('mh360:organizationId');
+            if (!orgId) return;
+            headers['x-business-id'] = orgId;
+
+            const activeBusiness = (businesses || []).find((b) => String(b.id) === String(orgId))
+                || (businesses || []).find((b) => b.membershipType === 'owner')
+                || (businesses || [])[0];
+
+            const [statusRes, branchesRes, detailsRes] = await Promise.all([
+                fetch('/api/setup/status', { credentials: 'include', headers }),
+                fetch('/api/setup/branches', { credentials: 'include', headers }),
+                fetch('/api/setup/company-details', { credentials: 'include', headers }),
+            ]);
+
+            let details = null;
+            if (detailsRes.ok) {
+                const dJson = await detailsRes.json();
+                details = dJson.data ?? dJson;
+            }
+            if (activeBusiness) renderCompanyHero(activeBusiness, details);
+
+            if (!statusRes.ok) return;
+            const statusJson = await statusRes.json();
+            const status = statusJson.data ?? statusJson;
+            const score = status.score || 0;
+
+            updateSetupRing(score);
+            document.getElementById('setupProfileScore').textContent = score >= 100
+                ? 'Setup complete — your organization is ready'
+                : `Company setup is ${score}% complete`;
+            document.getElementById('setupProfileHint').textContent = status.setupCompleted
+                ? 'All core onboarding steps are done. Review anytime.'
+                : 'Complete onboarding to unlock payroll readiness.';
+
+            const stepsEl = document.getElementById('setupProfileSteps');
+            if (stepsEl && status.steps) {
+                stepsEl.innerHTML = status.steps.map((s) =>
+                    `<span class="cp-step-pill ${s.completed ? 'done' : ''}">${escapeHtml(s.title)}</span>`
+                ).join('');
+            }
+
+            const missing = (status.missingItems || []).filter((m) => m.severity !== 'info').slice(0, 4);
+            const missingEl = document.getElementById('setupProfileMissing');
+            if (missingEl) {
+                if (!missing.length) {
+                    missingEl.className = 'cp-missing-list success';
+                    missingEl.innerHTML = '<i class="fas fa-check-circle me-1"></i> All key items configured';
+                } else {
+                    missingEl.className = 'cp-missing-list';
+                    missingEl.innerHTML = `<strong>Needs attention</strong><ul>${missing.map((m) => `<li>${escapeHtml(m.message)}</li>`).join('')}</ul>`;
+                }
+            }
+
+            const setupBtn = document.getElementById('setupProfileBtn');
+            if (setupBtn) {
+                setupBtn.textContent = status.setupCompleted || score >= 100 ? 'Review Setup' : 'Continue Setup';
+            }
+
+            if (branchesRes.ok) {
+                const bJson = await branchesRes.json();
+                const branches = (bJson.data ?? bJson).branches || [];
+                if (branches.length) {
+                    document.getElementById('branchesProfileSection')?.classList.remove('d-none');
+                    document.getElementById('branchesProfileList').innerHTML = branches.map((b) =>
+                        `<div class="cp-branch-card ${b.isPrimary ? 'primary' : ''}">
+                          <div class="cp-branch-name">
+                            ${escapeHtml(b.name)}
+                            ${b.isPrimary ? '<span class="badge bg-primary ms-1" style="font-size:9px">Primary</span>' : ''}
+                          </div>
+                          <div class="cp-branch-loc">
+                            <i class="fas fa-location-dot"></i>
+                            ${escapeHtml([b.city, b.state, b.pincode].filter(Boolean).join(', ') || b.address || 'No address')}
+                          </div>
+                          ${b.code ? `<div class="cp-branch-loc mt-1"><i class="fas fa-barcode"></i> ${escapeHtml(b.code)}</div>` : ''}
+                        </div>`
+                    ).join('');
+                }
+            }
+
+            if (activeBusiness) renderCompanyHero(activeBusiness, details);
+        } catch (e) { console.warn('Setup profile load failed', e); }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => { loadBusinesses(); });
     document.getElementById('searchInput').addEventListener('input', searchBusinesses);
 </script>

@@ -56,6 +56,12 @@ export const LeaveType = sequelize.define('LeaveType', {
         defaultValue: '#6366f1',
         comment: 'Color code for UI display',
     },
+    policyConfig: {
+        type: DataTypes.JSON,
+        allowNull: true,
+        defaultValue: {},
+        comment: 'Extended leave policy: accrual, encashment, approval flow, etc.',
+    },
 }, {
     tableName: 'leave_types',
     timestamps: true,

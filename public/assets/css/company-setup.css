@@ -1,0 +1,179 @@
+/* Company Setup Wizard */
+.setup-wizard-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr 280px;
+  gap: 1.25rem;
+  min-height: calc(100vh - 180px);
+}
+
+@media (max-width: 1200px) {
+  .setup-wizard-layout { grid-template-columns: 200px 1fr; }
+  .setup-missing-panel { display: none; }
+}
+
+@media (max-width: 768px) {
+  .setup-wizard-layout { grid-template-columns: 1fr; }
+  .setup-stepper { display: none; }
+}
+
+.setup-stepper {
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 16px;
+  padding: 1rem;
+  height: fit-content;
+  position: sticky;
+  top: 1rem;
+}
+
+.setup-step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.65rem 0.5rem;
+  border-radius: 10px;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  color: inherit;
+  transition: background 0.15s;
+}
+
+.setup-step-item:hover { background: rgba(99, 102, 241, 0.06); }
+.setup-step-item.active { background: rgba(99, 102, 241, 0.12); }
+.setup-step-item.completed .step-num { background: #22c55e; color: #fff; }
+
+.step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.setup-step-item.active .step-num {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+}
+
+.step-label { font-size: 13px; font-weight: 600; line-height: 1.3; }
+.step-sublabel { font-size: 11px; opacity: 0.65; }
+
+.setup-main {
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
+.setup-progress-header {
+  margin-bottom: 1.25rem;
+}
+
+.setup-progress-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  overflow: hidden;
+}
+
+.setup-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1, #22c55e);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.setup-missing-panel {
+  background: var(--card-bg, #fff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 16px;
+  padding: 1rem;
+  height: fit-content;
+  position: sticky;
+  top: 1rem;
+}
+
+.missing-item {
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  font-size: 13px;
+  border-left: 3px solid #f59e0b;
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.missing-item.critical {
+  border-left-color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.missing-item.info {
+  border-left-color: #6366f1;
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.badge-required-payroll {
+  font-size: 10px;
+  background: #fef3c7;
+  color: #b45309;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+}
+
+.badge-required-attendance {
+  font-size: 10px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+}
+
+.setup-step-form { display: none; }
+.setup-step-form.active { display: block; }
+
+.setup-footer-actions {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color, #e5e7eb);
+}
+
+.setup-banner {
+  background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(34,197,94,0.1));
+  border: 1px solid rgba(99,102,241,0.25);
+  border-radius: 16px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.setup-health-card {
+  border-radius: 14px;
+  padding: 1rem;
+  border: 1px solid var(--border-color, #e5e7eb);
+  background: var(--card-bg, #fff);
+}
+
+.branch-row, .component-row, .leave-row {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.readonly-overlay {
+  pointer-events: none;
+  opacity: 0.85;
+}
