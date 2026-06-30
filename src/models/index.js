@@ -59,6 +59,12 @@ import UserDocument from './UserDocument.js';
 import PayrollApproval from './PayrollApproval.js';
 import Notification from './Notification.js';
 import { OrganizationMember } from './OrganizationMember.js';
+import OrganizationSetupProgress from './OrganizationSetupProgress.js';
+import OrganizationStatutorySetting from './OrganizationStatutorySetting.js';
+import BranchLocation from './BranchLocation.js';
+import AttendanceRule from './AttendanceRule.js';
+import AuditLog from './AuditLog.js';
+import SalaryComponent from './payroll.SalaryComponent.js';
 
 
 /**
@@ -77,6 +83,20 @@ User.hasMany(OrganizationMember, { foreignKey: 'userId', as: 'organizationMember
 OrganizationMember.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 Business.hasMany(OrganizationMember, { foreignKey: 'businessId', as: 'members' });
 OrganizationMember.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+
+// Organization setup wizard
+Business.hasOne(OrganizationSetupProgress, { foreignKey: 'businessId', as: 'setupProgress' });
+OrganizationSetupProgress.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+Business.hasOne(OrganizationStatutorySetting, { foreignKey: 'businessId', as: 'statutorySetting' });
+OrganizationStatutorySetting.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+Business.hasMany(BranchLocation, { foreignKey: 'businessId', as: 'branchLocations' });
+BranchLocation.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+Business.hasOne(AttendanceRule, { foreignKey: 'businessId', as: 'attendanceRule' });
+AttendanceRule.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+Business.hasMany(SalaryComponent, { foreignKey: 'businessId', as: 'salaryComponents' });
+SalaryComponent.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+Business.hasMany(AuditLog, { foreignKey: 'businessId', as: 'auditLogs' });
+AuditLog.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
 
 // User ⇄ Customer
 User.hasMany(Customer, { foreignKey: 'userId', as: 'customers' });
@@ -510,5 +530,11 @@ export {
   PayrollApproval,
   Notification,
   OrganizationMember,
+  OrganizationSetupProgress,
+  OrganizationStatutorySetting,
+  BranchLocation,
+  AttendanceRule,
+  AuditLog,
+  SalaryComponent,
 };
 

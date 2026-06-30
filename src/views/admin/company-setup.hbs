@@ -1,0 +1,203 @@
+<link href="/assets/css/company-setup.css" rel="stylesheet">
+
+<div class="mb-3">
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+    <div>
+      <div class="page-title">Company Setup Wizard</div>
+      <div class="page-subtitle">Configure your HRMS in 6 guided steps — company, attendance, leave &amp; team. Salary &amp; statutory setup is in <a href="/admin/payroll/setup">Payroll → Setup</a>.</div>
+    </div>
+    <a href="/dashboard" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i> Dashboard</a>
+  </div>
+</div>
+
+<div id="setupReadOnlyBanner" class="alert alert-info d-none mb-3">
+  <i class="fas fa-eye me-2"></i> View-only mode — contact your organization owner to make changes.
+</div>
+
+<div class="setup-progress-header setup-banner">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <strong id="setupScoreLabel">Company setup: 0% complete</strong>
+    <span class="badge bg-primary" id="setupStepBadge">Step 1 of 6</span>
+  </div>
+  <div class="setup-progress-bar">
+    <div class="setup-progress-fill" id="setupProgressFill" style="width:0%"></div>
+  </div>
+</div>
+
+<div class="setup-wizard-layout">
+  <nav class="setup-stepper" id="setupStepper" aria-label="Setup steps"></nav>
+
+  <div class="setup-main">
+    <!-- Step 1: Company Details -->
+    <form class="setup-step-form active" id="step-company_details" data-step="company_details" novalidate>
+      <h5 class="mb-3"><i class="fas fa-building text-primary me-2"></i>Company Details</h5>
+      <div class="row g-3">
+        <div class="col-md-6"><label class="form-label">Legal Company Name *</label><input type="text" class="form-control" name="legalName" required></div>
+        <div class="col-md-6"><label class="form-label">Display Name</label><input type="text" class="form-control" name="displayName"></div>
+        <div class="col-md-4"><label class="form-label">GST Number</label><input type="text" class="form-control" name="gstNumber" placeholder="22AAAAA0000A1Z5"></div>
+        <div class="col-md-4"><label class="form-label">PAN Number *</label><input type="text" class="form-control" name="panNumber" placeholder="ABCDE1234F" maxlength="10" autocomplete="off"></div>
+        <div class="col-md-4"><label class="form-label">TAN Number</label><input type="text" class="form-control" name="tanNumber" placeholder="ABCD12345E"></div>
+        <div class="col-12"><label class="form-label">Registered Address *</label><textarea class="form-control" name="registeredAddress" rows="2" required></textarea></div>
+        <div class="col-md-3"><label class="form-label">City *</label><input type="text" class="form-control" name="city" required></div>
+        <div class="col-md-3"><label class="form-label">State *</label><input type="text" class="form-control" name="state" required></div>
+        <div class="col-md-3"><label class="form-label">Country *</label><input type="text" class="form-control" name="country" required></div>
+        <div class="col-md-3"><label class="form-label">Pincode *</label><input type="text" class="form-control" name="pincode" required maxlength="6"></div>
+        <div class="col-md-4"><label class="form-label">Industry / Category</label>
+          <select class="form-select" name="category">
+            <option value="technology">Technology</option><option value="healthcare">Healthcare</option>
+            <option value="education">Education</option><option value="retail">Retail</option>
+            <option value="restaurant">Restaurant</option><option value="other">Other</option>
+          </select>
+        </div>
+        <div class="col-md-4"><label class="form-label">Timezone *</label>
+          <select class="form-select" name="timezone"><option value="Asia/Kolkata">Asia/Kolkata (IST)</option><option value="UTC">UTC</option><option value="America/New_York">America/New_York</option></select>
+        </div>
+        <div class="col-md-4"><label class="form-label">Financial Year Start Month</label>
+          <select class="form-select" name="financialYearStartMonth">
+            <option value="1">January</option><option value="4" selected>April</option><option value="7">July</option>
+          </select>
+        </div>
+        <div class="col-md-6"><label class="form-label">Company Logo</label><input type="file" class="form-control" id="logoUpload" accept="image/*"><div id="logoPreview" class="mt-2"></div></div>
+      </div>
+    </form>
+
+    <!-- Step 2: Branches -->
+    <div class="setup-step-form" id="step-branches" data-step="branches">
+      <h5 class="mb-3"><i class="fas fa-map-marker-alt text-primary me-2"></i>Branches &amp; Locations</h5>
+      <div id="branchesList"></div>
+      <button type="button" class="btn btn-outline-primary btn-sm mt-2" id="addBranchBtn"><i class="fas fa-plus me-1"></i> Add Branch</button>
+      <template id="branchFormTemplate">
+        <div class="branch-row">
+          <div class="row g-2">
+            <div class="col-md-4"><input class="form-control form-control-sm" placeholder="Branch name *" data-field="name"></div>
+            <div class="col-md-2"><input class="form-control form-control-sm" placeholder="Code" data-field="code"></div>
+            <div class="col-md-3"><select class="form-select form-select-sm" data-field="locationType"><option value="HEAD_OFFICE">Head Office</option><option value="BRANCH">Branch</option><option value="REMOTE">Remote</option><option value="CLIENT_SITE">Client Site</option></select></div>
+            <div class="col-md-3"><div class="form-check mt-1"><input class="form-check-input" type="checkbox" data-field="isPrimary"><label class="form-check-label small">Primary</label></div></div>
+            <div class="col-12"><input class="form-control form-control-sm" placeholder="Address" data-field="address"></div>
+            <div class="col-md-3"><input class="form-control form-control-sm" placeholder="City" data-field="city"></div>
+            <div class="col-md-3"><input class="form-control form-control-sm" placeholder="State" data-field="state"></div>
+            <div class="col-md-3"><input class="form-control form-control-sm" placeholder="Country" data-field="country"></div>
+            <div class="col-md-3"><input class="form-control form-control-sm" placeholder="Pincode *" data-field="pincode"></div>
+            <div class="col-md-3"><input class="form-control form-control-sm" placeholder="Latitude" data-field="latitude"></div>
+            <div class="col-md-3"><input class="form-control form-control-sm" placeholder="Longitude" data-field="longitude"></div>
+            <div class="col-md-3"><input class="form-control form-control-sm" placeholder="Geo fence (m)" data-field="geoFenceRadiusMeters"></div>
+            <div class="col-md-3 text-end"><button type="button" class="btn btn-success btn-sm save-branch-btn">Save</button></div>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <!-- Step 3: Departments & Designations -->
+    <div class="setup-step-form" id="step-departments_designations" data-step="departments_designations">
+      <h5 class="mb-3"><i class="fas fa-sitemap text-primary me-2"></i>Departments &amp; Designations</h5>
+      <div class="row">
+        <div class="col-md-6">
+          <h6>Departments</h6>
+          <div id="deptList"></div>
+          <button type="button" class="btn btn-outline-primary btn-sm" id="addDeptBtn"><i class="fas fa-plus"></i> Add</button>
+        </div>
+        <div class="col-md-6">
+          <h6>Designations</h6>
+          <div id="desigList"></div>
+          <button type="button" class="btn btn-outline-primary btn-sm" id="addDesigBtn"><i class="fas fa-plus"></i> Add</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4: Leave Policies -->
+    <div class="setup-step-form" id="step-leave_policies" data-step="leave_policies">
+      <h5 class="mb-3"><i class="fas fa-calendar-check text-primary me-2"></i>Leave Policies</h5>
+      <div id="leaveList"></div>
+      <button type="button" class="btn btn-outline-primary btn-sm" id="addLeaveBtn"><i class="fas fa-plus"></i> Add Leave Type</button>
+    </div>
+
+    <!-- Step 5: Attendance Rules -->
+    <form class="setup-step-form" id="step-attendance_rules" data-step="attendance_rules">
+      <h5 class="mb-3"><i class="fas fa-clock text-primary me-2"></i>Attendance Rules <span class="badge-required-attendance">Required for attendance</span></h5>
+      <div class="row g-3">
+        <div class="col-md-4"><label class="form-label">Work Week</label>
+          <select class="form-select" name="workWeekType"><option value="MON_FRI">Monday – Friday</option><option value="MON_SAT">Monday – Saturday</option><option value="CUSTOM">Custom</option></select>
+        </div>
+        <div class="col-md-4"><label class="form-label">Default Shift</label><select class="form-select" name="defaultShiftId" id="shiftSelect"><option value="">Create default shift</option></select></div>
+        <div class="col-md-4"><label class="form-label">Grace Period (mins)</label><input type="number" class="form-control" name="gracePeriodMinutes" value="10" min="0"></div>
+        <div class="col-md-4"><label class="form-label">Half-day Threshold (hrs)</label><input type="number" class="form-control" name="halfDayThresholdHours" value="4" step="0.5"></div>
+        <div class="col-md-4"><label class="form-label">Full-day Threshold (hrs)</label><input type="number" class="form-control" name="fullDayThresholdHours" value="8" step="0.5"></div>
+        <div class="col-md-4"><label class="form-label">Late Marks Allowed / Month</label><input type="number" class="form-control" name="lateMarkAllowedCount" value="3" min="0"></div>
+        <div class="col-md-4"><label class="form-label">Attendance Lock Day</label><input type="number" class="form-control" name="attendanceLockDay" min="1" max="31" placeholder="e.g. 25"></div>
+        <div class="col-md-8 d-flex flex-wrap gap-3 align-items-end">
+          <div class="form-check"><input class="form-check-input" type="checkbox" name="autoAbsentEnabled" checked><label class="form-check-label">Auto absent if no check-in</label></div>
+          <div class="form-check"><input class="form-check-input" type="checkbox" name="overtimeEnabled"><label class="form-check-label">Overtime</label></div>
+          <div class="form-check"><input class="form-check-input" type="checkbox" name="geoAttendanceEnabled"><label class="form-check-label">Geo attendance</label></div>
+          <div class="form-check"><input class="form-check-input" type="checkbox" name="selfieAttendanceEnabled"><label class="form-check-label">Selfie attendance</label></div>
+          <div class="form-check"><input class="form-check-input" type="checkbox" name="regularizationAllowed" checked><label class="form-check-label">Regularization</label></div>
+        </div>
+      </div>
+    </form>
+
+    <!-- Step 6: Invite Employees -->
+    <div class="setup-step-form" id="step-invite_employees" data-step="invite_employees">
+      <h5 class="mb-3"><i class="fas fa-user-plus text-primary me-2"></i>Invite Employees</h5>
+      <div class="row g-3 mb-3">
+        <div class="col-md-4"><input class="form-control" id="invName" placeholder="Full name"></div>
+        <div class="col-md-4"><input class="form-control" id="invEmail" placeholder="Email *" type="email"></div>
+        <div class="col-md-4"><input class="form-control" id="invPhone" placeholder="Phone"></div>
+        <div class="col-md-3"><input class="form-control" id="invDept" placeholder="Department"></div>
+        <div class="col-md-3"><input class="form-control" id="invDesig" placeholder="Designation"></div>
+        <div class="col-md-3"><input class="form-control" id="invDoj" type="date" placeholder="DOJ"></div>
+        <div class="col-md-3"><input class="form-control" id="invSalary" type="number" placeholder="Salary (optional)"></div>
+        <div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" id="invSendEmail" checked><label class="form-check-label">Send invitation email</label></div></div>
+        <div class="col-12"><button type="button" class="btn btn-primary btn-sm" id="inviteSingleBtn">Invite Employee</button></div>
+      </div>
+      <hr>
+      <h6>Bulk Invite (CSV)</h6>
+      <div class="d-flex gap-2 flex-wrap">
+        <a href="/api/setup/invite-employees/sample-csv" class="btn btn-outline-secondary btn-sm" id="downloadCsvBtn">Download Sample CSV</a>
+        <input type="file" class="form-control form-control-sm" style="max-width:240px" id="csvUpload" accept=".csv">
+        <button type="button" class="btn btn-outline-primary btn-sm" id="uploadCsvBtn">Upload CSV</button>
+      </div>
+      <div id="invitedList" class="mt-3"></div>
+    </div>
+
+    <div class="setup-footer-actions">
+      <div>
+        <button type="button" class="btn btn-outline-secondary" id="setupBackBtn"><i class="fas fa-arrow-left me-1"></i> Back</button>
+        <button type="button" class="btn btn-link text-muted" id="setupSkipBtn" hidden>Skip for now</button>
+      </div>
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-primary" id="setupSaveDraftBtn">Save Draft</button>
+        <button type="button" class="btn btn-primary" id="setupContinueBtn">Save &amp; Continue <i class="fas fa-arrow-right ms-1"></i></button>
+        <button type="button" class="btn btn-success d-none" id="setupFinishBtn"><i class="fas fa-check me-1"></i> Finish Setup</button>
+      </div>
+    </div>
+  </div>
+
+  <aside class="setup-missing-panel">
+    <h6 class="mb-2"><i class="fas fa-list-check me-1"></i> Missing Items</h6>
+    <div id="missingItemsPanel"><p class="text-muted small">Loading…</p></div>
+  </aside>
+</div>
+
+<!-- Unsaved changes modal -->
+<div class="modal fade" id="unsavedModal" tabindex="-1">
+  <div class="modal-dialog modal-sm"><div class="modal-content">
+    <div class="modal-header"><h6 class="modal-title">Unsaved Changes</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">You have unsaved changes. Leave anyway?</div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Stay</button>
+      <button type="button" class="btn btn-danger btn-sm" id="confirmLeaveBtn">Leave</button>
+    </div>
+  </div></div>
+</div>
+
+<script>
+if (typeof window.showToast !== 'function') {
+  window.showToast = function(msg, type = 'info') {
+    const d = document.createElement('div');
+    d.className = `alert alert-${type === 'success' ? 'success' : type === 'danger' ? 'danger' : 'info'} alert-dismissible fade show`;
+    d.innerHTML = `${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+    (document.querySelector('.main-content') || document.body).prepend(d);
+    setTimeout(() => d.remove(), 4000);
+  };
+}
+</script>
+<script src="/assets/js/company-setup.js"></script>

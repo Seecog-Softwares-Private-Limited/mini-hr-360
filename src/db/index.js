@@ -61,6 +61,9 @@ const connectDB = async () => {
     await sequelize.authenticate();
     console.log(`\n✅ MySQL connected → ${sequelize.getDatabaseName()} @ ${DB_HOST}:${DB_PORT}`);
 
+    const { ensureSetupSchema } = await import('./ensureSetupSchema.js');
+    await ensureSetupSchema(sequelize);
+
     // --- models ---
     if (SYNC_DB) {
       console.log('🔄 Syncing Attendance models...');

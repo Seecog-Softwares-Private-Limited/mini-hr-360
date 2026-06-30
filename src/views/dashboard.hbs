@@ -1,46 +1,49 @@
-<link href="/assets/css/dashboard-widgets.css" rel="stylesheet">
-
-<div class="mb-4">
-  <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
-    <div>
-      <div class="page-title" style="font-size: 28px;">Dashboard</div>
-      <div class="page-subtitle">Your HR decision center — KPIs, insights, and actions in one place.</div>
-    </div>
-    <div class="dashboard-toolbar-actions">
-      <button type="button" class="btn btn-outline-secondary btn-sm" id="dashboardResetBtn" hidden>
-        <i class="fas fa-rotate-left"></i> Reset layout
-      </button>
-      <button type="button" class="btn btn-primary btn-sm" id="dashboardCustomizeBtn">
-        <i class="fas fa-sliders"></i> Customize
-      </button>
-      <button type="button" class="btn btn-success btn-sm" id="dashboardDoneBtn" hidden>
-        <i class="fas fa-check"></i> Done
-      </button>
-    </div>
-  </div>
-</div>
-
-<div class="widget-customize-panel" id="widgetHiddenPanel">
-  <h6><i class="fas fa-eye-slash"></i> Hidden widgets</h6>
-  <div class="widget-hidden-list" id="widgetHiddenList"></div>
-</div>
-
-<div class="widget-grid" id="dashboardWidgetGrid" aria-live="polite">
-  <div class="widget-empty-state">
-    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
-    <div class="mt-2">Loading widgets…</div>
-  </div>
-</div>
-
-<section class="insights-panel" aria-labelledby="insightsHeading">
-  <div class="insights-panel-header">
-    <div>
-      <h2 id="insightsHeading"><i class="fas fa-lightbulb text-warning me-2"></i>Insights</h2>
-      <p>Actionable items and trends to help you decide what needs attention today.</p>
-    </div>
-  </div>
-  <div class="insights-grid" id="dashboardInsights" aria-live="polite"></div>
-</section>
-
-<script src="/assets/js/dashboard-widgets.js"></script>
-<script src="/assets/js/dashboard-insights.js"></script>
+<link href="/assets/css/dashboard-widgets.css" rel="stylesheet">
+
+<div id="setupBannerContainer" class="d-none"></div>
+
+<div class="mb-4">
+  <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+    <div>
+      <div class="page-title" style="font-size: 28px;">Dashboard</div>
+      <div class="page-subtitle">Your HR decision center — KPIs, insights, and actions in one place.</div>
+    </div>
+    <div class="dashboard-toolbar-actions">
+      <button type="button" class="btn btn-outline-secondary btn-sm" id="dashboardResetBtn" hidden>
+        <i class="fas fa-rotate-left"></i> Reset layout
+      </button>
+      <button type="button" class="btn btn-primary btn-sm" id="dashboardCustomizeBtn">
+        <i class="fas fa-sliders"></i> Customize
+      </button>
+      <button type="button" class="btn btn-success btn-sm" id="dashboardDoneBtn" hidden>
+        <i class="fas fa-check"></i> Done
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="widget-customize-panel" id="widgetHiddenPanel">
+  <h6><i class="fas fa-eye-slash"></i> Hidden widgets</h6>
+  <div class="widget-hidden-list" id="widgetHiddenList"></div>
+</div>
+
+<div class="widget-grid" id="dashboardWidgetGrid" aria-live="polite">
+  <div class="widget-empty-state">
+    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+    <div class="mt-2">Loading widgets…</div>
+  </div>
+</div>
+
+<section class="insights-panel" aria-labelledby="insightsHeading">
+  <div class="insights-panel-header">
+    <div>
+      <h2 id="insightsHeading"><i class="fas fa-lightbulb text-warning me-2"></i>Insights</h2>
+      <p>Actionable items and trends to help you decide what needs attention today.</p>
+    </div>
+  </div>
+  <div class="insights-grid" id="dashboardInsights" aria-live="polite"></div>
+</section>
+
+<script src="/assets/js/dashboard-widgets.js"></script>
+<script src="/assets/js/dashboard-insights.js"></script>
+<script src="/assets/js/setup-banner.js"></script>
