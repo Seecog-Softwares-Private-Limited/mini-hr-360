@@ -18,6 +18,9 @@
           : mode;
         document.documentElement.setAttribute('data-theme', effective);
         document.documentElement.setAttribute('data-theme-mode', mode);
+        if (localStorage.getItem('mh360:focusMode') === 'true') {
+          document.documentElement.setAttribute('data-focus-mode', 'true');
+        }
       })();
     </script>
     <script src="https://cdn.ckeditor.com/ckeditor5/40.1.0/classic/ckeditor.js"></script>
@@ -1685,6 +1688,11 @@
         {{{body}}}
     {{else}}
         <div class="app-shell" id="appShell">
+            <script>
+              if (localStorage.getItem('mh360:focusMode') === 'true') {
+                document.getElementById('appShell').classList.add('focus-mode');
+              }
+            </script>
             <aside class="app-sidebar" id="appSidebar" aria-label="Application sidebar">
                 {{> sidebar}}
             </aside>

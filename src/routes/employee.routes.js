@@ -16,6 +16,19 @@ import {
     uploadEmployeeDocument,
     downloadBulkImportTemplate,
     bulkImportEmployees,
+    renderEmployeeProfilePage,
+    getEmployeeProfile,
+    getEmployeeLifecycleChecklist,
+    getEmployeeTimeline,
+    getEmployeeProfileTab,
+    getEmployeeBankDetailsApi,
+    putEmployeeBankDetailsApi,
+    putEmployeeProfileSalaryApi,
+    postEmployeeJobChangeApi,
+    getEmployeeJobChangeHistoryApi,
+    getEmployeeAssetsApi,
+    postEmployeeAssetApi,
+    patchEmployeeAssetReturnApi,
 } from '../controllers/employee.controllers.js';
 import {
     getLifecycle,
@@ -36,6 +49,7 @@ const router = express.Router();
 
 // HTML page
 router.get('/employees', verifyUser, renderEmployeesPage);
+router.get('/employees/:id', verifyUser, renderEmployeeProfilePage);
 
 // JSON APIs
 router.get('/api/v1/employees', verifyUser, listEmployees);
@@ -45,6 +59,18 @@ router.post('/api/v1/employees/bulk-import', verifyUser, express.json(), bulkImp
 router.post('/api/v1/employees/education-certificate/upload', verifyUser, uploadEducationCertificate);
 router.post('/api/v1/employees/experience-document/upload', verifyUser, uploadExperienceDocument);
 router.post('/api/v1/employees/document/upload', verifyUser, uploadEmployeeDocument);
+router.get('/api/v1/employees/:id/profile', verifyUser, getEmployeeProfile);
+router.get('/api/v1/employees/:id/lifecycle-checklist', verifyUser, getEmployeeLifecycleChecklist);
+router.get('/api/v1/employees/:id/timeline', verifyUser, getEmployeeTimeline);
+router.get('/api/v1/employees/:id/profile/tab/:tab', verifyUser, getEmployeeProfileTab);
+router.get('/api/v1/employees/:id/bank-details', verifyUser, getEmployeeBankDetailsApi);
+router.put('/api/v1/employees/:id/bank-details', verifyUser, express.json(), putEmployeeBankDetailsApi);
+router.put('/api/v1/employees/:id/profile/salary', verifyUser, express.json(), putEmployeeProfileSalaryApi);
+router.post('/api/v1/employees/:id/job-change', verifyUser, express.json(), postEmployeeJobChangeApi);
+router.get('/api/v1/employees/:id/job-change/history', verifyUser, getEmployeeJobChangeHistoryApi);
+router.get('/api/v1/employees/:id/assets', verifyUser, getEmployeeAssetsApi);
+router.post('/api/v1/employees/:id/assets', verifyUser, express.json(), postEmployeeAssetApi);
+router.patch('/api/v1/employees/:id/assets/:assetId/return', verifyUser, express.json(), patchEmployeeAssetReturnApi);
 router.get('/api/v1/employees/:id', verifyUser, getEmployeeById);
 router.put('/api/v1/employees/:id', verifyUser, updateEmployee);
 router.patch('/api/v1/employees/:id/status', verifyUser, updateEmployeeStatus);

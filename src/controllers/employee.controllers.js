@@ -5,6 +5,9 @@ import Employee from '../models/Employee.js';
 import EmployeeEducation from '../models/EmployeeEducation.js';
 import EmployeeExperience from '../models/EmployeeExperience.js';
 import EmployeeDocument from '../models/EmployeeDocument.js';
+import EmployeeBankDetail from '../models/EmployeeBankDetail.js';
+import EmployeeSalaryStructure from '../models/EmployeeSalaryStructure.js';
+import EmployeeShiftAssignment from '../models/EmployeeShiftAssignment.js';
 import { Department } from '../models/Department.js';
 import { Designation } from '../models/Designation.js';
 import { Business } from '../models/Business.js';
@@ -21,6 +24,33 @@ import { generatePassword } from '../utils/passwordGenerator.js';
 import { sendDocumentEmail } from '../utils/emailService.js';
 import { resolveOrganizationIdFromRequest, userBelongsToOrganization, getUserOrganizations } from '../services/organization.service.js';
 import { LIFECYCLE_STAGE_LABELS } from '../config/lifecycleWorkflows.js';
+import {
+    getEmployeeProfileOverview,
+    getEmployeeProfileTabData,
+    buildLifecycleChecklist,
+    buildEmployeeTimeline,
+    updateEmployeeProfileSalary,
+} from '../services/employeeProfile.service.js';
+import {
+    getEmployeeBankDetails,
+    upsertEmployeeBankDetails,
+} from '../services/employeeBank.service.js';
+import {
+    recordJobChange,
+    getJobChangeHistory,
+} from '../services/employeeJobChange.service.js';
+import {
+    listEmployeeAssets,
+    assignEmployeeAsset,
+    returnEmployeeAsset,
+} from '../services/employeeAsset.service.js';
+import {
+    getEmployeeProfilePermissions,
+    assertProfileTabAccess,
+    assertProfileFinancialEdit,
+    assertProfileEmployeeEdit,
+} from '../services/employeeProfilePermissions.service.js';
+import { logEmployeeProfileAction } from '../services/employeeProfileAudit.service.js';
 
 const LIFECYCLE_BADGE_CLASS = {
   prospect: 'secondary',
@@ -779,6 +809,23 @@ const employeeRelationIncludes = [
     { model: EmployeeEducation, as: 'educations' },
     { model: EmployeeExperience, as: 'experiences' },
     { model: EmployeeDocument, as: 'documents' },
+    { model: EmployeeBankDetail, as: 'bankDetails', required: false },
+    {
+        model: EmployeeSalaryStructure,
+        as: 'salaryStructures',
+        required: false,
+        separate: true,
+        order: [['effectiveDate', 'DESC']],
+        limit: 5,
+    },
+    {
+        model: EmployeeShiftAssignment,
+        as: 'shiftAssignments',
+        required: false,
+        separate: true,
+        order: [['effectiveFrom', 'DESC']],
+        limit: 3,
+    },
 ];
 
 async function findEmployeeForUserWithRelations(req) {
@@ -1823,3 +1870,282 @@ export const bulkImportEmployees = async (req, res, next) => {
     }
 };
 
+/**
+ * GET /employees/:id — Employee profile page (HR admin)
+ */
+export const renderEmployeeProfilePage = async (req, res, next) => {
+    try {
+        const employee = await findEmployeeForUser(req, {
+            attributes: ['id', 'empName', 'empId', 'businessId'],
+        });
+
+        if (!employee) {
+            return res.status(404).render('error', {
+                layout: 'main',
+                title: 'Not Found',
+                message: 'Employee not found',
+            });
+        }
+
+        const user = req.user
+            ? { firstName: req.user.firstName, lastName: req.user.lastName, role: req.user.role }
+            : {};
+
+        return res.render('employees/profile', {
+            layout: 'main',
+            title: employee.empName || 'Employee Profile',
+            user,
+            active: 'employees',
+            activeGroup: 'workspace',
+            employeeId: employee.id,
+        });
+    } catch (err) {
+        next(err);
+    }
+};
+
+async function resolveProfileBusinessId(req, employee) {
+    if (employee?.businessId) return Number(employee.businessId);
+    return resolveOrganizationIdFromRequest(req);
+}
+
+export const getEmployeeProfile = async (req, res, next) => {
+    try {
+        const employee = await findEmployeeForUser(req, { attributes: ['id', 'businessId'] });
+        if (!employee) return res.status(404).json({ error: 'Employee not found' });
+
+        const businessId = await resolveProfileBusinessId(req, employee);
+        if (!businessId) return res.status(400).json({ error: 'No organization context' });
+
+        const data = await getEmployeeProfileOverview(employee.id, businessId, req.user);
+        if (!data) return res.status(404).json({ error: 'Employee not found' });
+
+        return res.json(data);
+    } catch (err) {
+        console.error('getEmployeeProfile error:', err);
+        next(err);
+    }
+};
+
+export const getEmployeeLifecycleChecklist = async (req, res, next) => {
+    try {
+        const employee = await findEmployeeForUser(req);
+        if (!employee) return res.status(404).json({ error: 'Employee not found' });
+
+        const businessId = await resolveProfileBusinessId(req, employee);
+        const checklist = await buildLifecycleChecklist(employee.get({ plain: true }), businessId);
+        return res.json(checklist);
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const getEmployeeTimeline = async (req, res, next) => {
+    try {
+        const employee = await findEmployeeForUser(req, { attributes: ['id', 'businessId'] });
+        if (!employee) return res.status(404).json({ error: 'Employee not found' });
+
+        const businessId = await resolveProfileBusinessId(req, employee);
+        const items = await buildEmployeeTimeline(employee.id, businessId);
+        return res.json({ items });
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const getEmployeeProfileTab = async (req, res, next) => {
+    try {
+        const tab = String(req.params.tab || '').toLowerCase();
+        const employee = await findEmployeeForUser(req, { attributes: ['id', 'businessId'] });
+        if (!employee) return res.status(404).json({ error: 'Employee not found' });
+
+        const businessId = await resolveProfileBusinessId(req, employee);
+        assertProfileTabAccess(req.user, tab);
+        const data = await getEmployeeProfileTabData(employee.id, businessId, tab, {
+            month: req.query.month || null,
+            year: req.query.year ? Number(req.query.year) : null,
+        });
+        if (data === null) return res.status(404).json({ error: 'Unknown tab' });
+
+        return res.json({ tab, data });
+    } catch (err) {
+        if (err.statusCode === 403) return res.status(403).json({ error: err.message });
+        next(err);
+    }
+};
+
+export const getEmployeeBankDetailsApi = async (req, res, next) => {
+    try {
+        const employee = await findEmployeeForUser(req, { attributes: ['id'] });
+        if (!employee) return res.status(404).json({ error: 'Employee not found' });
+
+        const bank = await getEmployeeBankDetails(employee.id);
+        return res.json({ bank });
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const putEmployeeBankDetailsApi = async (req, res, next) => {
+    try {
+        assertProfileFinancialEdit(req.user);
+        const employee = await findEmployeeForUser(req, { attributes: ['id', 'businessId'] });
+        if (!employee) return res.status(404).json({ error: 'Employee not found' });
+
+        const businessId = await resolveProfileBusinessId(req, employee);
+        const before = await getEmployeeBankDetails(employee.id);
+        const bank = await upsertEmployeeBankDetails(employee.id, req.body || {});
+        await logEmployeeProfileAction(req, {
+            businessId,
+            employeeId: employee.id,
+            action: 'PROFILE_BANK_STATUTORY_UPDATED',
+            oldValue: before,
+            newValue: bank,
+        });
+
+        return res.json({ message: 'Bank and statutory details saved', bank });
+    } catch (err) {
+        if (err.statusCode === 403) return res.status(403).json({ error: err.message });
+        next(err);
+    }
+};
+
+export const putEmployeeProfileSalaryApi = async (req, res, next) => {
+    try {
+        assertProfileFinancialEdit(req.user);
+        const employee = await findEmployeeForUser(req, { attributes: ['id', 'businessId', 'empCtc'] });
+        if (!employee) return res.status(404).json({ error: 'Employee not found' });
+
+        const businessId = await resolveProfileBusinessId(req, employee);
+        const oldCtc = employee.empCtc;
+        const { empCtc, syncPayroll } = req.body || {};
+        const result = await updateEmployeeProfileSalary(employee.id, {
+            empCtc,
+            syncPayroll: syncPayroll === true || syncPayroll === 'true',
+        });
+
+        await logEmployeeProfileAction(req, {
+            businessId,
+            employeeId: employee.id,
+            action: syncPayroll ? 'PROFILE_SALARY_SYNCED' : 'PROFILE_SALARY_UPDATED',
+            oldValue: { empCtc: oldCtc },
+            newValue: { empCtc: result.empCtc, syncPayroll: Boolean(syncPayroll) },
+        });
+
+        return res.json({
+            message: syncPayroll ? 'CTC updated and payroll structure synced' : 'Salary updated',
+            ...result,
+        });
+    } catch (err) {
+        if (err.statusCode === 400) return res.status(400).json({ error: err.message });
+        if (err.statusCode === 403) return res.status(403).json({ error: err.message });
+        next(err);
+    }
+};
+
+export const postEmployeeJobChangeApi = async (req, res, next) => {
+    try {
+        assertProfileEmployeeEdit(req.user);
+        const employee = await findEmployeeForUser(req, { attributes: ['id', 'businessId'] });
+        if (!employee) return res.status(404).json({ error: 'Employee not found' });
+
+        const businessId = await resolveProfileBusinessId(req, employee);
+        const result = await recordJobChange(employee.id, businessId, req.body || {}, req.user?.id);
+
+        await logEmployeeProfileAction(req, {
+            businessId,
+            employeeId: employee.id,
+            action: 'PROFILE_JOB_CHANGE',
+            oldValue: result.before,
+            newValue: { changeType: result.changeType, after: result.after },
+        });
+
+        return res.json({
+            message: 'Job change recorded',
+            ...result,
+        });
+    } catch (err) {
+        if (err.statusCode === 400) return res.status(400).json({ error: err.message });
+        if (err.statusCode === 403) return res.status(403).json({ error: err.message });
+        if (err.statusCode === 404) return res.status(404).json({ error: err.message });
+        next(err);
+    }
+};
+
+export const getEmployeeJobChangeHistoryApi = async (req, res, next) => {
+    try {
+        const employee = await findEmployeeForUser(req, { attributes: ['id'] });
+        if (!employee) return res.status(404).json({ error: 'Employee not found' });
+
+        const items = await getJobChangeHistory(employee.id);
+        return res.json({ items });
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const getEmployeeAssetsApi = async (req, res, next) => {
+    try {
+        const employee = await findEmployeeForUser(req, { attributes: ['id', 'businessId'] });
+        if (!employee) return res.status(404).json({ error: 'Employee not found' });
+
+        const businessId = await resolveProfileBusinessId(req, employee);
+        const assets = await listEmployeeAssets(employee.id, businessId);
+        return res.json({ assets });
+    } catch (err) {
+        next(err);
+    }
+};
+
+export const postEmployeeAssetApi = async (req, res, next) => {
+    try {
+        assertProfileEmployeeEdit(req.user);
+        const employee = await findEmployeeForUser(req, { attributes: ['id', 'businessId'] });
+        if (!employee) return res.status(404).json({ error: 'Employee not found' });
+
+        const businessId = await resolveProfileBusinessId(req, employee);
+        const asset = await assignEmployeeAsset(employee.id, businessId, req.body || {}, req.user?.id);
+
+        await logEmployeeProfileAction(req, {
+            businessId,
+            employeeId: employee.id,
+            action: 'PROFILE_ASSET_ASSIGNED',
+            newValue: asset,
+        });
+
+        return res.json({ message: 'Asset assigned', asset });
+    } catch (err) {
+        if (err.statusCode === 400) return res.status(400).json({ error: err.message });
+        if (err.statusCode === 403) return res.status(403).json({ error: err.message });
+        next(err);
+    }
+};
+
+export const patchEmployeeAssetReturnApi = async (req, res, next) => {
+    try {
+        assertProfileEmployeeEdit(req.user);
+        const employee = await findEmployeeForUser(req, { attributes: ['id', 'businessId'] });
+        if (!employee) return res.status(404).json({ error: 'Employee not found' });
+
+        const businessId = await resolveProfileBusinessId(req, employee);
+        const asset = await returnEmployeeAsset(
+            Number(req.params.assetId),
+            employee.id,
+            businessId,
+            req.body || {},
+        );
+
+        await logEmployeeProfileAction(req, {
+            businessId,
+            employeeId: employee.id,
+            action: 'PROFILE_ASSET_RETURNED',
+            newValue: asset,
+        });
+
+        return res.json({ message: 'Asset updated', asset });
+    } catch (err) {
+        if (err.statusCode === 404) return res.status(404).json({ error: err.message });
+        if (err.statusCode === 403) return res.status(403).json({ error: err.message });
+        next(err);
+    }
+};
