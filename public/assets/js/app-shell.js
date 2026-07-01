@@ -4,6 +4,7 @@
  */
 (function () {
   const STORAGE_SUBMENUS = 'mh360:sidebar:submenus';
+  const STORAGE_FOCUS_MODE = 'mh360:focusMode';
   const ORG_STORAGE_KEY = 'mh360:organizationId';
 
   function getStoredSubmenus() {
@@ -150,6 +151,48 @@
     });
   }
 
+  function isFocusModeEnabled() {
+    return localStorage.getItem(STORAGE_FOCUS_MODE) === 'true';
+  }
+
+  function applyFocusMode(enabled) {
+    const shell = document.getElementById('appShell');
+    const btn = document.getElementById('topbarFocusModeBtn');
+    const icon = btn?.querySelector('i');
+
+    localStorage.setItem(STORAGE_FOCUS_MODE, enabled ? 'true' : 'false');
+
+    if (enabled) {
+      document.documentElement.setAttribute('data-focus-mode', 'true');
+      shell?.classList.add('focus-mode');
+    } else {
+      document.documentElement.removeAttribute('data-focus-mode');
+      shell?.classList.remove('focus-mode');
+    }
+
+    if (btn) {
+      btn.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+      btn.setAttribute('aria-label', enabled ? 'Exit focus mode' : 'Enter focus mode');
+      btn.title = enabled ? 'Exit focus mode' : 'Focus mode';
+      btn.classList.toggle('is-active', enabled);
+    }
+
+    if (icon) {
+      icon.className = enabled ? 'fa-solid fa-compress' : 'fa-solid fa-expand';
+    }
+  }
+
+  function initFocusMode() {
+    const btn = document.getElementById('topbarFocusModeBtn');
+    if (!btn) return;
+
+    applyFocusMode(isFocusModeEnabled());
+
+    btn.addEventListener('click', () => {
+      applyFocusMode(!isFocusModeEnabled());
+    });
+  }
+
   function highlightActiveRoutes() {
     const path = window.location.pathname;
     document.querySelectorAll('.app-sidebar .sidebar-link[href]').forEach((link) => {
@@ -165,6 +208,7 @@
     if (!document.getElementById('appShell')) return;
     initSidebarState();
     initResponsiveSidebar();
+    initFocusMode();
     highlightActiveRoutes();
     initOrganizationContext().finally(() => applyActiveOrganizationToPage());
 

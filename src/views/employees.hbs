@@ -3401,7 +3401,7 @@ if (expContainer) {
       const viewBtn = e.target.closest(".view-employee-btn");
       if (viewBtn) {
         const id = viewBtn.getAttribute("data-id");
-        if (id) openViewEmployeeModal(id);
+        if (id) window.location.href = `/employees/${id}`;
         return;
       }
 
@@ -3670,5 +3670,10 @@ if (expContainer) {
         btn.disabled = false;
       }
     });
+
+    const editFromQuery = new URLSearchParams(window.location.search).get("edit");
+    if (editFromQuery) {
+      openEditEmployeeModal(editFromQuery);
+    }
   })();
 </script>

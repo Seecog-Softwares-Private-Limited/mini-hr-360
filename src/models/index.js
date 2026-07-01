@@ -51,6 +51,7 @@ import PayrollRegister from './PayrollRegister.js';
 import PayrollQuery from './PayrollQuery.js';
 import StatutoryCompliance from './StatutoryCompliance.js';
 import EmployeeBankDetail from './EmployeeBankDetail.js';
+import EmployeeAsset from './EmployeeAsset.js';
 import UserEducation from './UserEducation.js';
 import UserExperience from './UserExperience.js';
 import UserDocument from './UserDocument.js';
@@ -434,6 +435,11 @@ PayrollQuery.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
 Employee.hasOne(EmployeeBankDetail, { foreignKey: 'employeeId', as: 'bankDetails' });
 EmployeeBankDetail.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
 
+Business.hasMany(EmployeeAsset, { foreignKey: 'businessId', as: 'employeeAssets' });
+EmployeeAsset.belongsTo(Business, { foreignKey: 'businessId', as: 'business' });
+Employee.hasMany(EmployeeAsset, { foreignKey: 'employeeId', as: 'assets' });
+EmployeeAsset.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
+
 // User ⇄ UserEducation
 User.hasMany(UserEducation, { foreignKey: 'userId', as: 'educations', onDelete: 'CASCADE' });
 UserEducation.belongsTo(User, { foreignKey: 'userId', as: 'user' });
@@ -523,6 +529,7 @@ export {
   PayrollQuery,
   StatutoryCompliance,
   EmployeeBankDetail,
+  EmployeeAsset,
   UserEducation,
   UserExperience,
   UserDocument,
